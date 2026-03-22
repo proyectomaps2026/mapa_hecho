@@ -2,167 +2,139 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Maps - Catastro Fiscal SC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>My Maps Satelital - SC</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: #f5f5f5; }
-        
-        /* Contenedor Principal */
-        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; z-index: 1; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Roboto', Arial, sans-serif; }
+        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; z-index: 1; background: #000; }
 
-        /* Panel Lateral Estilo My Maps */
-        .my-maps-sidebar {
+        /* Barra Lateral My Maps */
+        .sidebar {
             position: absolute; top: 10px; left: 10px; bottom: 10px;
-            width: 340px; background: white; z-index: 1000;
-            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-            display: flex; flex-direction: column; overflow: hidden;
+            width: 310px; background: white; z-index: 1000;
+            border-radius: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
         }
 
-        .header { background: #4285F4; color: white; padding: 18px; position: relative; }
-        .header h1 { margin: 0; font-size: 18px; font-weight: 400; }
-        .header p { margin: 5px 0 0; font-size: 12px; opacity: 0.8; }
+        .sidebar-header { background: #4285F4; color: white; padding: 15px; }
+        .sidebar-header h2 { margin: 0; font-size: 18px; font-weight: 400; }
+        
+        .content { padding: 15px; background: #fff; flex-grow: 1; overflow-y: auto; }
+        .layer-item { display: flex; align-items: center; margin-bottom: 20px; font-size: 14px; color: #555; }
+        
+        .import-box { background: #f8f9fa; padding: 15px; border: 1px dashed #4285F4; border-radius: 4px; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #4285F4; color: white; border: none; cursor: pointer; font-weight: bold; }
 
-        .content { flex-grow: 1; overflow-y: auto; background: #fff; padding: 0; }
-        .layer-box { border-bottom: 1px solid #e0e0e0; padding: 15px; }
-        .layer-title { display: flex; align-items: center; font-size: 14px; font-weight: bold; color: #5f6368; }
-        .layer-title input { margin-right: 12px; width: 18px; height: 18px; }
-
-        /* Input de Importación */
-        .import-section { padding: 20px; text-align: center; border-top: 1px solid #eee; }
-        .import-section input { 
-            width: 100%; padding: 10px; border: 1px dashed #4285F4; 
-            border-radius: 4px; margin-bottom: 10px; box-sizing: border-box; font-size: 12px;
-        }
-        .btn-blue { 
-            width: 100%; background: #4285F4; color: white; border: none; 
-            padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; 
-        }
-        .btn-blue:hover { background: #3367d6; }
-
-        /* Estilo de la Ficha del Negocio */
-        .popup-card { width: 220px; font-family: sans-serif; }
-        .popup-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
-        .status-tag { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        .vencida { background: #fce8e6; color: #d93025; }
-        .vigente { background: #e6f4ea; color: #1e8e3e; }
+        /* Ficha de información */
+        .popup-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div class="my-maps-sidebar">
-        <div class="header">
-            <h1>Censo Fiscal - San Cristóbal</h1>
-            <p>Alcaldía del Municipio</p>
+    <div id="map"></div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Censo Fiscal - Satelital</h2>
+            <p style="margin:0; font-size:11px; opacity:0.8;">San Cristóbal, Táchira</p>
         </div>
         
         <div class="content">
-            <div class="layer-box">
-                <div class="layer-title">
-                    <input type="checkbox" checked id="checkLayer">
-                    <span>Capa de Comercios</span>
-                </div>
+            <div class="layer-item">
+                <input type="checkbox" checked id="toggleLayer"> 
+                <span style="margin-left:10px; font-weight:bold;">Capa de Comercios</span>
             </div>
 
-            <div class="import-section" id="boxImport">
-                <p style="font-size: 13px; color: #666;">Importar desde Google Sheets</p>
-                <input type="text" id="urlSheet" placeholder="Pega el link de Publicar en la Web (CSV)...">
-                <button class="btn-blue" onclick="procesarDatos()">Importar Capa</button>
-                <p id="msg" style="font-size: 11px; margin-top: 10px; color: #888;"></p>
+            <div class="import-box" id="panel-import">
+                <input type="text" id="url-input" placeholder="Pega el link de Google Sheets (CSV)...">
+                <button onclick="cargarDatos()">CARGAR DATOS</button>
             </div>
+            <p id="msg" style="font-size:11px; color:#666; margin-top:10px;"></p>
         </div>
     </div>
 
-    <div id="map"></div>
-
     <script>
-        // Inicializar Mapa con fondo de Google
-        var map = L.map('map', { zoomControl: false }).setView([7.766, -72.225], 14);
-        
-        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        // 1. Configurar el mapa con ZOOM habilitado (rueda y doble clic)
+        var map = L.map('map', { 
+            zoomControl: false,
+            scrollWheelZoom: true,
+            dragging: true 
+        }).setView([7.766, -72.225], 14);
+
+        // 2. CAPA SATELITAL HÍBRIDA (Google Satélite + Etiquetas)
+        var googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains:['mt0','mt1','mt2','mt3']
         }).addTo(map);
 
-        L.control.zoom({ position: 'bottomright' }).addTo(map);var markersGroup = L.layerGroup().addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        function procesarDatos() {
-            const url = document.getElementById('urlSheet').value;
-            const msg = document.getElementById('msg');
+        var markersGroup = L.layerGroup().addTo(map);
 
-            if(!url.includes("output=csv")) {
-                alert("Error: Debes usar el link de 'Publicar en la Web' con formato CSV.");
-                return;
-            }
-
-            msg.innerText = "Conectando con Google...";
+        function cargarDatos() {
+            const url = document.getElementById('url-input').value;
+            if(!url.includes("output=csv")) return alert("Usa el link de 'Publicar en la web' (.csv)");
 
             Papa.parse(url, {
                 download: true,
                 header: true,
-                skipEmptyLines: true,
                 complete: function(results) {
                     markersGroup.clearLayers();
-                    let encontrados = 0;
+                    let count = 0;
 
                     results.data.forEach(row => {
-                        // Buscador de columnas de coordenadas
-                        let lat = parseFloat(row.latitud  row.Latitud  row.lat || row.Lat);
-                        let lon = parseFloat(row.longitud  row.Longitud  row.lng || row.Lng);
-
-                        if(!isNaN(lat) && !isNaN(lon)) {
-                            encontrados++;
-                            
-                            // Lógica de colores según tu columna de Licencia
+                        let lat = parseFloat(row.latitud  row.Latitud  row.lat);
+                        let lon = parseFloat(row.longitud  row.Longitud  row.lng);if(!isNaN(lat) && !isNaN(lon)) {
+                            count++;
                             let lic = row['Licencia Act. Ec.'] || "";
-                            let color = lic.includes("VENCIDA") ? "#d93025" : "#1e8e3e";
+                            // Rojo para Vencida, Verde para Vigente
+                            let color = lic.includes("VENCIDA") ? "#ff0000" : "#00ff00";
                             let foto = row.Imagen ? row.Imagen.replace(/[\[\]]/g, "") : "";
 
                             let marker = L.circleMarker([lat, lon], {
-                                radius: 9, fillColor: color, color: "white", weight: 2, fillOpacity: 0.9
+                                radius: 9, fillColor: color, color: "white", weight: 2, fillOpacity: 1
                             });
 
                             marker.bindPopup(
-                                <div class="popup-card">
+                                <div style="width:200px">
                                     ${foto ? <img src="${foto}" class="popup-img"> : ''}
-                                    <h3 style="margin:0; font-size:16px;">${row.Nombre || 'Comercio'}</h3>
-                                    <p style="margin:5px 0; font-size:12px;">RIF: ${row.RIF || 'N/A'}</p>
-                                    <span class="status-tag ${lic.includes('VENCIDA') ? 'vencida' : 'vigente'}">${lic}</span>
-                                    <hr>
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" style="text-decoration:none; color:#4285F4; font-weight:bold; font-size:12px;">¿CÓMO LLEGAR?</a>
+                                    <h4 style="margin:5px 0">${row.Nombre || 'Comercio'}</h4>
+                                    <p style="font-size:12px; margin:0"><b>RIF:</b> ${row.RIF || 'N/A'}</p>
+                                    <p style="font-size:12px; color:${color}; font-weight:bold;">${lic}</p>
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" style="display:block; text-align:center; margin-top:10px; color:#4285F4; font-weight:bold; text-decoration:none;">IR CON GPS</a>
                                 </div>
                             );
                             markersGroup.addLayer(marker);
                         }
                     });
 
-                    if(encontrados > 0) {
+                    if(count > 0) {
                         map.fitBounds(L.featureGroup(markersGroup.getLayers()).getBounds());
-                        msg.innerText = "Éxito: " + encontrados + " negocios cargados.";
-                        document.getElementById('boxImport').style.display = 'none'; // Se oculta al cargar, como My Maps
-                        localStorage.setItem("cache_mapa", url);
-                    } else {
-                        msg.innerText = "Error: No se encontraron latitudes/longitudes en el archivo.";
+                        document.getElementById('panel-import').style.display = 'none';
+                        document.getElementById('msg').innerText = count + " comercios cargados en el mapa satelital.";
+                        localStorage.setItem("url_guardada", url);
                     }
                 }
             });
         }
 
-        // Auto-carga si ya existe el link guardado
+        // Recuperar última sesión automáticamente
         window.onload = () => {
-            const saved = localStorage.getItem("cache_mapa");
+            const saved = localStorage.getItem("url_guardada");
             if(saved) {
-                document.getElementById('urlSheet').value = saved;
-                procesarDatos();
+                document.getElementById('url-input').value = saved;
+                cargarDatos();
             }
         };
 
-        // Apagar/Encender capa
-        document.getElementById('checkLayer').addEventListener('change', function(e) {
+        // Encender/Apagar capa
+        document.getElementById('toggleLayer').addEventListener('change', function(e) {
             if(e.target.checked) map.addLayer(markersGroup);
             else map.removeLayer(markersGroup);
         });
