@@ -1,90 +1,86 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Ayacucho Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Fiscal Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
+    
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #f0f0f0; }
+        /* Esto obliga al mapa a llenar toda la pantalla */
+        html, body, #map { height: 100%; margin: 0; padding: 0; background: #222; }
         
+        /* Cursor de mano estilo Google Maps */
+        .leaflet-container { cursor: grab !important; }
+        .leaflet-container:active { cursor: grabbing !important; }
+
+        /* Barra lateral estilo My Maps */
         .sidebar {
             position: absolute; top: 10px; left: 10px; z-index: 1000;
-            width: 280px; background: white; border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); font-family: Arial, sans-serif;
+            width: 300px; background: white; padding: 15px;
+            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            font-family: Arial, sans-serif;
         }
-        .header { background: #4285F4; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
-        .content { padding: 15px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #34a853; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
-
-        .my-pin {
-            width: 24px; height: 24px; background: #4285F4;
-            border: 2px solid white; border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-
-        .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
+        .header { background: #4285F4; color: white; margin: -15px -15px 15px -15px; padding: 15px; border-radius: 8px 8px 0 0; }
+        input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; box-sizing: border-box; }
+        button { width: 100%; background: #4285F4; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header"><h3 style="margin:0">Censo Ayacucho</h3></div>
-        <div class="content">
-            <input type="text" id="url-csv" placeholder="Pega el link CSV aquí...">
-            <button onclick="cargar()">CARGAR MAPA</button>
-            <p id="info" style="font-size:11px; color:gray; margin-top:10px; text-align:center;"></p>
+        <div class="header">
+            <h3 style="margin:0">Ayacucho - Censo</h3>
+            <small>San Juan de Colón</small>
         </div>
+        <label><input type="checkbox" checked> Capa de Comercios</label>
+        <input type="text" id="url-csv" placeholder="Pega el link de Google Sheets...">
+        <button onclick="cargar()">CARGAR DATOS</button>
+        <p id="status" style="font-size:11px; color:gray;"></p>
     </div>
 
     <div id="map"></div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <script>
-        // Capas ultra-estables (No se bloquean)
-        var mapaCalle = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
-        var mapaSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+        // 1. Iniciamos el mapa centrado en San Juan de Colón
+        var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
 
-        var map = L.map('map', { zoomControl: false, layers: [mapaCalle] }).setView([8.038, -72.261], 15);
+        // 2. Capa de Satélite de Google (Híbrida: fotos + nombres)
+        L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
+        }).addTo(map);
 
-        var baseMaps = { "🗺️ Mapa Calles": mapaCalle, "🛰️ Satélite Real": mapaSat };
-        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var capaPuntos = L.layerGroup().addTo(map);
+        var markers = L.layerGroup().addTo(map);
 
         function cargar() {
             var url = document.getElementById('url-csv').value;
+            if(!url.includes("output=csv")) return alert("El link debe terminar en output=csv");
+
             Papa.parse(url, {
                 download: true,
                 header: true,
-                skipEmptyLines: true,
                 complete: function(res) {
-                    capaPuntos.clearLayers();
+                    markers.clearLayers();
                     res.data.forEach(row => {
-                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);
+                        var lat = parseFloat(row.latitud || row.Latitud);
+                        var lon = parseFloat(row.longitud || row.Longitud);
                         if(!isNaN(lat)) {
-                            var icon = L.divIcon({
-                                className: 'div-pin',
-                                html: '<div class="my-pin"></div>',
-                                iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -24]
-                            });
-                            var html = "<div style='font-size:13px;'>";for(var k in row){ html += "<b>"+k+":</b> "+row[k]+"<br>"; }
-                            L.marker([lat, lon], {icon: icon}).bindPopup(html+"</div>").addTo(capaPuntos);
+                            var color = (row['Licencia Act. Ec.'] || "").includes("VENCIDA") ? "red" : "green";
+                            L.circleMarker([lat, lon], { radius: 8, fillColor: color, color: "white", weight: 2, fillOpacity: 0.9 })
+                             .bindPopup("<b>"+row.Nombre+"</b><br>Estado: "+row['Licencia Act. Ec.'])
+                             .addTo(markers);
                         }
                     });
-                    document.getElementById('info').innerText = "Capa sincronizada correctamente.";
-                    if(capaPuntos.getLayers().length > 0) map.fitBounds(L.featureGroup(capaPuntos.getLayers()).getBounds());
+                    document.getElementById('status').innerText = "Datos cargados.";
                 }
             });
         }
-
-        window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 600); };
     </script>
 </body>
 </html>
