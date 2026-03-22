@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Fiscal Pro</title>
+    <title>Mapa Fiscal Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -30,6 +30,7 @@
             transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
 
+        /* Selector de Capas */
         .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
         .leaflet-container { cursor: grab !important; }
     </style>
@@ -48,20 +49,22 @@
     <div id="map"></div>
 
     <script>
-        // Capas Satelitales de Google
-        var sPuro = L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
-        var sCalle = L.tileLayer('https://mt{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
-        var sPOI = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
+        // Capas Satelitales (Las 3 de Google)
+        var capa1 = L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
+        var capa2 = L.tileLayer('https://mt{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
+        var capa3 = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
 
-        // Inicializar Mapa
-        var map = L.map('map', { zoomControl: false, layers: [sPOI] }).setView([8.038, -72.261], 15);
+        // Inicializar Mapa con la capa híbrida por defecto
+        var map = L.map('map', { zoomControl: false, layers: [capa3] }).setView([8.038, -72.261], 15);
 
-        // Control de Capas
+        // Definición de objetos para el selector
         var baseMaps = { 
-            "Satélite Puro": sPuro, 
-            "Satélite + Calles": sCalle, 
-            "Satélite + POI": sPOI 
+            "Satélite Puro": capa1, 
+            "Solo Calles": capa2, 
+            "Satélite + POI": capa3 
         };
+
+        // Agregar selector al mapa
         L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -78,8 +81,9 @@
                 complete: function(res) {
                     capaPuntos.clearLayers();
                     res.data.forEach(function(row) {
-                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);if(!isNaN(lat) && !isNaN(lon)) {
+                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);var lon = parseFloat(row.longitud  row.Longitud  row.lon);
+                        
+                        if(!isNaN(lat) && !isNaN(lon)) {
                             var icon = L.divIcon({
                                 className: 'div-pin',
                                 html: '<div class="pin"></div>',
@@ -99,9 +103,9 @@
             });
         }
 
-        // Forzar renderizado correcto
+        // Forzar dibujo del mapa
         window.onload = function() {
-            setTimeout(function() { map.invalidateSize(); }, 500);
+            setTimeout(function() { map.invalidateSize(); }, 600);
         };
     </script>
 </body>
