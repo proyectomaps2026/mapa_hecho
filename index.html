@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Fiscal Ayacucho</title>
+    <title>Censo Ayacucho - Sistema Estable</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #222; }
-        .leaflet-container { cursor: grab !important; }
-        .leaflet-container:active { cursor: grabbing !important; }
-
+        html, body, #map { height: 100%; margin: 0; padding: 0; background: #eee; }
+        
+        /* Panel de control */
         .sidebar {
             position: absolute; top: 10px; left: 10px; z-index: 1000;
-            width: 300px; background: white; padding: 15px;
+            width: 280px; background: white; padding: 15px;
             border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             font-family: Arial, sans-serif;
         }
         .header { background: #4285F4; color: white; margin: -15px -15px 15px -15px; padding: 15px; border-radius: 8px 8px 0 0; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; box-sizing: border-box; border-radius: 4px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; }
         
-        /* Pincheta Azul Estilo My Maps */
+        /* Pincheta Azul */
         .pin {
             width: 22px; height: 22px; background: #4285F4;
             border: 2px solid white; border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
+
+        /* Selector de capas */
+        .leaflet-control-layers { border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; }
     </style>
 </head>
 <body>
@@ -37,8 +39,8 @@
             <h3 style="margin:0">Ayacucho - Censo</h3>
             <small>San Juan de Colón</small>
         </div>
-        <input type="text" id="url-csv" placeholder="Pega el link del CSV aquí...">
-        <button onclick="cargar()">CARGAR DATOS</button>
+        <input type="text" id="url-csv" placeholder="Link de Google Sheets (CSV)...">
+        <button onclick="cargar()">SINCRONIZAR DATOS</button>
         <p id="status" style="font-size:11px; color:gray; margin-top:10px; text-align:center;"></p>
     </div>
 
@@ -48,23 +50,28 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <script>
-        // 1. Mapa centrado en Colón
-        var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
+        // 1. Capas Base (Las dos opciones)
+        var mapaCalles = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 });
+        var mapaHibrido = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
 
-        // 2. Capa Híbrida (La que te gusta: Satélite + Calles)
-        L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
-        }).addTo(map);
+        // 2. Inicializar mapa con la de calles (es la más rápida)
+        var map = L.map('map', { zoomControl: false, layers: [mapaCalles] }).setView([8.038, -72.261], 15);
 
+        // 3. Control de Capas (El cuadrito para cambiar de vista)
+        var baseMaps = {
+            "🗺️ Mapa Simple": mapaCalles,
+            "🛰️ Satélite": mapaHibrido
+        };
+        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         var markers = L.layerGroup().addTo(map);
 
         function cargar() {
             var url = document.getElementById('url-csv').value;
-            if(!url) return alert("Por favor pega el enlace");
+            if(!url) return alert("Pega el enlace del CSV");
 
-            document.getElementById('status').innerText = "Procesando...";
+            document.getElementById('status').innerText = "Cargando datos...";
 
             Papa.parse(url, {
                 download: true,
@@ -72,42 +79,34 @@
                 skipEmptyLines: true,
                 complete: function(res) {
                     markers.clearLayers();
-                    var listaPuntos = [];
+                    var list = [];
 
                     res.data.forEach(row => {
-                        // Busca latitud y longitud sin importar si es mayúscula o minúscula
-                        var lat = parseFloat(row.latitud  row.Latitud  row.lat || row.LAT);
-                        var lon = parseFloat(row.longitud  row.Longitud  row.lon  row.long  row.LON);
+                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);
+                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);
                         
-                        if(!isNaN(lat) && !isNaN(lon)) {
-                            var icon = L.divIcon({
+                        if(!isNaN(lat)) {var icon = L.divIcon({
                                 className: 'custom-pin',
                                 html: '<div class="pin"></div>',
                                 iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -22]
-                            });// Crea el popup con toda la información de la fila
-                            var popupContenido = "<div>";
-                            for(var clave in row) {
-                                popupContenido += "<b>" + clave + ":</b> " + row[clave] + "<br>";
-                            }
-                            popupContenido += "</div>";
+                            });
 
-                            var m = L.marker([lat, lon], {icon: icon}).bindPopup(popupContenido);
-                            m.addTo(markers);
-                            listaPuntos.push([lat, lon]);
+                            // Esta es la función que NO se pierde: Muestra TODOS tus datos
+                            var info = "<div>";
+                            for(var k in row) { info += "<b>"+k+":</b> "+row[k]+"<br>"; }
+                            
+                            L.marker([lat, lon], {icon: icon}).bindPopup(info+"</div>").addTo(markers);
+                            list.push([lat, lon]);
                         }
                     });
 
-                    if(listaPuntos.length > 0) {
-                        document.getElementById('status').innerText = "Cargados " + listaPuntos.length + " locales.";
-                        map.fitBounds(listaPuntos); // Esto hace que el mapa salte a donde están los puntos
-                    } else {
-                        document.getElementById('status').innerText = "Error: No se detectaron coordenadas.";
+                    if(list.length > 0) {
+                        document.getElementById('status').innerText = list.length + " locales cargados.";
+                        map.fitBounds(list);
                     }
                 }
             });
         }
-
-        // Corrección de tamaño al cargar
         window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 500); };
     </script>
 </body>
