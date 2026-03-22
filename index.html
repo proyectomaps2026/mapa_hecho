@@ -1,53 +1,51 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Google Maps Fiscal - Ayacucho</title>
+    <title>Visor Fiscal Pro - Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #000; }
+        /* Forzamos que el mapa ocupe toda la pantalla */
+        html, body { height: 100%; margin: 0; padding: 0; background: #1a1a1a; overflow: hidden; }
+        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; height: 100%; width: 100%; z-index: 1; }
         
-        /* Panel Lateral estilo My Maps */
         .sidebar {
-            position: absolute; top: 12px; left: 12px; z-index: 1000;
-            width: 310px; background: white; border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-family: 'Roboto', Arial, sans-serif;
-            overflow: hidden;
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            width: 290px; background: white; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5); font-family: Arial, sans-serif;
         }
-        .header { background: #4285F4; color: white; padding: 18px; }
-        .header h2 { margin: 0; font-size: 18px; font-weight: 400; }
-        
+        .header { background: #4285F4; color: white; padding: 12px; border-radius: 8px 8px 0 0; }
         .content { padding: 15px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #34a853; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #34a853; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; }
 
-        /* DISEÑO DE MARCADOR "GOOGLE STYLE" */
-        .custom-pin {
+        /* DISEÑO DE PIN TIPO GOOGLE */
+        .leaflet-div-icon { background: transparent; border: none; }
+        .pin {
+            width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
+            position: absolute; transform: rotate(-45deg);
+            border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
             display: flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
-        .custom-pin i { transform: rotate(45deg); color: white; font-weight: bold; font-family: Arial; font-style: normal; font-size: 14px; }
-        .vencida { background: #ea4335; } /* Rojo Google */
-        .vigente { background: #34a853; } /* Verde Google */
+        .pin span { transform: rotate(45deg); color: white; font-weight: bold; font-size: 14px; }
+        .vencida { background: #ea4335; }
+        .vigente { background: #34a853; }
 
-        /* Selector de capas en la esquina */
-        .leaflet-control-layers { border-radius: 8px !important; border: none !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
+        /* Selector de capas siempre visible */
+        .leaflet-control-layers { border-radius: 8px !important; padding: 8px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header">
-            <h2>Censo Ayacucho</h2>
-            <p style="margin:0; font-size:11px; opacity:0.8;">San Juan de Colón</p>
-        </div>
+        <div class="header"><h3 style="margin:0">Censo Colón</h3></div>
         <div class="content">
-            <input type="text" id="csv-url" placeholder="Pega el CSV de Google Sheets...">
-            <button onclick="actualizarMapa()">ACTUALIZAR DATOS</button>
-            <p id="info" style="font-size:11px; color:#777; margin-top:10px;"></p>
+            <input type="text" id="url-csv" placeholder="Link de Google Sheets (CSV)...">
+            <button onclick="cargar()">SINCRONIZAR</button>
+            <p id="status" style="font-size:11px; color:#666; margin-top:8px;"></p>
         </div>
     </div>
 
@@ -57,60 +55,59 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <script>
-        // 1. LAS 3 CAPAS QUE PEDISTE
-        // Satélite Limpio (Solo foto)
+        // 1. CAPAS
         var satLimpio = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
-        
-        // Satélite Callejero (Foto + Solo líneas y nombres de calles)
-        var satCallejero = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
-        
-        // Satélite POI (Foto + Hospitales, Plazas, Iglesias)
+        var satCalle = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
         var satPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
 
-        // 2. INICIAR MAPA EN AYACUCHO
-        var map = L.map('map', { 
-            zoomControl: false,
-            layers: [satPOI] // Inicia con POI por defecto
-        }).setView([8.038, -72.261], 15);
+        // 2. MAPA
+        var map = L.map('map', { zoomControl: false, layers: [satPOI] }).setView([8.038, -72.261], 15);
 
-        // Selector de capas
         var baseMaps = {
-            "🛰️ Satélite Limpio": satLimpio,
-            "🛣️ Satélite Callejero": satCallejero,
-            "🏥 Satélite + POI": satPOI
+            "🛰️ Satélite Puro": satLimpio,
+            "🛣️ Satélite + Calles": satCalle,
+            "🏛️ Satélite + POI": satPOI
         };
+
         L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var censoLayer = L.layerGroup().addTo(map);function actualizarMapa() {
-            var url = document.getElementById('csv-url').value;
-            Papa.parse(url, {
-                download: true,
+        var markers = L.layerGroup().addTo(map);
+
+        function cargar() {
+            var url = document.getElementById('url-csv').value;
+            if(!url) return;
+
+            Papa.parse(url, {download: true,
                 header: true,
                 complete: function(res) {
-                    censoLayer.clearLayers();
+                    markers.clearLayers();
                     res.data.forEach(row => {
-                        var lat = parseFloat(row.latitud || row.Latitud);
-                        var lon = parseFloat(row.longitud || row.Longitud);
+                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);
+                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);
                         
                         if(!isNaN(lat)) {
-                            var status = (row['Licencia Act. Ec.'] || "").toUpperCase();
-                            var esVencida = status.includes("VENCIDA");
-                            var clase = esVencida ? "vencida" : "vigente";
-                            var icono = esVencida ? "!" : "✓";
+                            var estado = (row['Licencia Act. Ec.'] || "").toUpperCase();
+                            var color = estado.includes("VENCIDA") ? "vencida" : "vigente";
+                            var icon = estado.includes("VENCIDA") ? "!" : "✓";
 
-                            // Crear el pin elaborado
-                            var iconHtml = L.divIcon({
-                                className: 'custom-div-icon',
-                                html: <div class="custom-pin ${clase}"><i>${icono}</i></div>,
-                                iconSize: [30, 42],
-                                iconAnchor: [15, 42],
-                                popupAnchor: [0, -40]
+                            var myIcon = L.divIcon({
+                                html: <div class="pin ${color}"><span>${icon}</span></div>,
+                                iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -30]
                             });
 
-                            L.marker([lat, lon], { icon: iconHtml })
-                             .bindPopup(<b>${row.Nombre}</b><br>RIF: ${row.RIF}<br>Estatus: ${status})
-                             .addTo(censoLayer);
+                            L.marker([lat, lon], { icon: myIcon })
+                             .bindPopup("<b>"+row.Nombre+"</b><br>Estado: "+estado)
+                             .addTo(markers);
                         }
                     });
-                    document.getElementById('info').innerText = "
+                    document.getElementById('status').innerText = "Actualizado.";
+                }
+            });
+        }
+        
+        // Esto arregla el problema de "mapa negro" al cargar
+        setTimeout(function(){ map.invalidateSize(); }, 500);
+    </script>
+</body>
+</html>
