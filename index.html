@@ -3,55 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Google Maps Fiscal Ayacucho</title>
+    <title>Sistema de Gestión Fiscal - Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #1a1a1a; }
+        html, body, #map { height: 100%; margin: 0; padding: 0; background: #202124; }
         
-        /* Cursor de mano de Google Maps */
-        .leaflet-container { cursor: grab !important; }
+        /* Interacción: Cursor de Google Maps */
+        .leaflet-container { cursor: grab !important; font-family: 'Roboto', Arial, sans-serif; }
         .leaflet-container:active { cursor: grabbing !important; }
 
         /* Panel Lateral estilo My Maps */
         .sidebar {
             position: absolute; top: 12px; left: 12px; z-index: 1000;
-            width: 300px; background: white; border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-family: 'Roboto', Arial, sans-serif;
+            width: 320px; background: white; border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3); overflow: hidden;
         }
-        .header { background: #4285F4; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
-        .content { padding: 15px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #34a853; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; }
+        .header { background: #4285F4; color: white; padding: 18px; }
+        .header h2 { margin: 0; font-size: 18px; font-weight: 400; }
+        
+        .content { padding: 15px; max-height: 80vh; overflow-y: auto; }
+        input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #34a853; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.3s; }
+        button:hover { background: #2d9249; }
 
-        /* DISEÑO DE PIN ELABORADO (Gota con borde blanco) */
-        .custom-pin {
-            width: 32px; height: 32px;
+        /* Estilo de los Pines Elaborados */
+        .google-pin {
+            width: 30px; height: 30px;
             border-radius: 50% 50% 50% 0;
             position: absolute; transform: rotate(-45deg);
-            border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
             display: flex; align-items: center; justify-content: center;
         }
-        .pin-text { transform: rotate(45deg); color: white; font-weight: bold; font-size: 14px; font-family: Arial; }
-        .vencida { background: #ea4335; } /* Rojo Google */
-        .vigente { background: #34a853; } /* Verde Google */
+        .pin-icon { transform: rotate(45deg); color: white; font-weight: bold; font-size: 14px; }
+        .vencida { background: #ea4335; }
+        .vigente { background: #34a853; }
 
-        /* Selector de Capas (Abierto por defecto para que sea fácil) */
-        .leaflet-control-layers { border-radius: 8px !important; padding: 10px !important; border: none !important; }
+        /* Controles de Capas (Esquina inferior izquierda) */
+        .leaflet-control-layers { 
+            border: none !important; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; 
+            border-radius: 8px !important; 
+            padding: 10px !important;
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <div class="header">
-            <h3 style="margin:0">Censo Ayacucho</h3>
-            <p style="margin:4px 0 0; font-size:11px; opacity:0.8;">San Juan de Colón</p>
+            <h2>Censo Fiscal Ayacucho</h2>
+            <p style="margin:4px 0 0; font-size:12px; opacity:0.9;">Control de Licencias Económicas</p>
         </div>
         <div class="content">
-            <input type="text" id="csv-url" placeholder="Pega el link del CSV aquí...">
-            <button onclick="sincronizar()">ACTUALIZAR MAPA</button>
-            <p id="msg" style="font-size:11px; color:gray; margin-top:10px;"></p>
+            <p style="font-size: 13px; color: #666;">Pega el enlace CSV de Google Sheets para ver los comercios en el mapa.</p>
+            <input type="text" id="csv-url" placeholder="Enlace de Publicar en la Web (CSV)...">
+            <button onclick="sincronizar()">SINCRONIZAR DATOS</button>
+            <div id="stats" style="margin-top:15px; font-size:12px; color:#555;"></div>
         </div>
     </div>
 
@@ -61,70 +69,110 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <script>
-        // 1. LAS 3 CAPAS QUE PEDISTE (Directas de Google para que no fallen)
-        var satLimpio = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
-        var satCallejero = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
-        var satPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
-
-        // 2. INICIAR MAPA
+        // 1. DEFINICIÓN DE CAPAS BASE (LOS 3 SATÉLITES)
+        var satPuro = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Satélite'
+        });
+        
+        var satCallejero = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', {
+            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Calles'
+        });
+        
+        var satPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Híbrido + POI'
+        });// 2. INICIALIZAR EL MAPA
         var map = L.map('map', { 
-            zoomControl: false,
-            layers: [satPOI] // Inicia con POI e Instituciones
-        }).setView([8.038, -72.261], 15);
+            zoomControl: false, 
+            layers: [satPOI] // Capa inicial con POI
+        }).setView([8.038, -72.261], 16);
 
-        // Selector de capas
-        var baseMaps = {
-            "🛰️ Satélite Puro": satLimpio,
+        // 3. SECTOR DE CAPAS (Aquí puedes añadir hasta 11 si quieres)
+        var baseLayers = {
+            "🛰️ Satélite Puro": satPuro,
             "🛣️ Satélite + Calles": satCallejero,
-            "🏛️ Satélite + POI": satPOI
+            "🏛️ Satélite + POI (Puntos de Interés)": satPOI
         };
-        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
+
+        var overlayLayers = {}; // Aquí se guardarán las capas de datos (Comercios, etc.)
+        
+        var layerControl = L.control.layers(baseLayers, overlayLayers, { 
+            position: 'bottomleft', 
+            collapsed: false 
+        }).addTo(map);
+
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var censo = L.layerGroup().addTo(map);function sincronizar() {
+        // Grupo de marcadores
+        var markersGroup = L.layerGroup().addTo(map);
+        layerControl.addOverlay(markersGroup, "<b>Mis Comercios (Censo)</b>");
+
+        // 4. FUNCIÓN DE CARGA
+        function sincronizar() {
             var url = document.getElementById('csv-url').value;
-            if(!url.includes("csv")) return alert("El link debe ser CSV");
+            if(!url.includes("output=csv")) {
+                alert("Error: Asegúrate de usar el link de 'Publicar en la Web' en formato CSV.");
+                return;
+            }
 
             Papa.parse(url, {
                 download: true,
                 header: true,
-                complete: function(res) {
-                    censo.clearLayers();
-                    res.data.forEach(row => {
-                        var lat = parseFloat(row.latitud || row.Latitud);
-                        var lon = parseFloat(row.longitud || row.Longitud);
-                        
-                        if(!isNaN(lat)) {
-                            var estado = (row['Licencia Act. Ec.'] || "").toUpperCase();
-                            var esVencida = estado.includes("VENCIDA");
-                            var clase = esVencida ? "vencida" : "vigente";
-                            var iconChar = esVencida ? "!" : "✓";
+                skipEmptyLines: true,
+                complete: function(results) {
+                    markersGroup.clearLayers();
+                    let vigentes = 0;
+                    let vencidas = 0;
 
-                            var myIcon = L.divIcon({
-                                className: 'empty',
-                                html: <div class="custom-pin ${clase}"><span class="pin-text">${iconChar}</span></div>,
-                                iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
+                    results.data.forEach(row => {
+                        let lat = parseFloat(row.latitud  row.Latitud  row.lat);
+                        let lon = parseFloat(row.longitud  row.Longitud  row.lon);
+
+                        if(!isNaN(lat) && !isNaN(lon)) {
+                            let status = (row['Licencia Act. Ec.']  row['Estado']  "").toUpperCase();
+                            let esVencida = status.includes("VENCIDA");
+                            let colorClass = esVencida ? "vencida" : "vigente";
+                            let iconChar = esVencida ? "!" : "✓";
+                            
+                            if(esVencida) vencidas++; else vigentes++;
+
+                            // Crear el Pin Elaborado
+                            let customIcon = L.divIcon({
+                                className: 'custom-icon',
+                                html: <div class="google-pin ${colorClass}"><span class="pin-icon">${iconChar}</span></div>,
+                                iconSize: [30, 30],
+                                iconAnchor: [15, 30],
+                                popupAnchor: [0, -30]
                             });
 
-                            L.marker([lat, lon], { icon: myIcon })
-                             .bindPopup(<b>${row.Nombre}</b><br>RIF: ${row.RIF}<br>Estatus: ${estado})
-                             .addTo(censo);
+                            L.marker([lat, lon], { icon: customIcon })
+                             .bindPopup(
+                                <div style="min-width:150px">
+                                    <h3 style="margin:0; color:#4285F4;">${row.Nombre || 'Comercio'}</h3>
+                                    <hr>
+                                    <b>RIF:</b> ${row.RIF || 'N/A'}<br>
+                                    <b>Estado:</b> <span style="color:${esVencida?'red':'green'}">${status}</span>
+                                </div>
+                             )
+                             .addTo(markersGroup);
                         }
                     });
-                    document.getElementById('msg').innerText = "Mapa sincronizado.";
-                    // Ajustar vista automáticamente
-                    if(censo.getLayers().length > 0) {
-                        map.fitBounds(L.featureGroup(censo.getLayers()).getBounds());
+
+                    document.getElementById('stats').innerHTML = 
+                        <b>Resultados:</b><br>
+                        ✅ Vigentes: ${vigentes} <br>
+                        ❌ Vencidas: ${vencidas}
+                    ;
+                    
+                    if(markersGroup.getLayers().length > 0) {
+                        map.fitBounds(L.featureGroup(markersGroup.getLayers()).getBounds());
                     }
                 }
             });
-        }
-
-        // TRUCO PARA QUE NO SALGA NEGRO: Forzar refresco al cargar
+        }// SOLUCIÓN AL CUADRO NEGRO: Forzar el tamaño al cargar
         window.onload = function() {
             setTimeout(function() {
                 map.invalidateSize();
-            }, 500);
+            }, 600);
         };
     </script>
 </body>
