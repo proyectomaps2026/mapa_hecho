@@ -3,130 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visor Fiscal San Cristóbal - CSV Edition</title>
+    <title>Mapa Fiscal Directo - Alcaldía SC</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        #map { height: 100vh; width: 100%; z-index: 1; }
-        
-        /* Panel de Control Estilo My Maps */
-        #control-panel {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 280px;
+        body { margin: 0; padding: 0; }
+        #map { height: 100vh; width: 100%; }
+        /* Panel para pegar el link del Sheets como en My Maps */
+        #import-panel {
+            position: absolute; top: 15px; left: 15px; z-index: 1000;
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 300px;
         }
-        input { width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #218838; }
-
-        /* Estilo de la Ficha (Popup) */
-        .ficha-img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: #eee; }
-        .popup-title { font-size: 16px; font-weight: bold; margin: 0; color: #333; }
-        .popup-info { font-size: 13px; color: #666; margin: 4px 0; }
-        .btn-ruta { display: block; text-align: center; background: #4285F4; color: white !important; 
-                    padding: 8px; border-radius: 5px; text-decoration: none; margin-top: 10px; font-weight: bold; font-size: 12px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0F9D58; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .ficha-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
     </style>
 </head>
 <body>
 
-    <div id="control-panel">
-        <h4 style="margin-top:0">Importar Capa de Datos (CSV)</h4>
-        <input type="text" id="url-input" placeholder="Pega la URL RAW del archivo CSV...">
-        <button onclick="cargarDatosCSV()">Actualizar Mapa</button>
-        <p style="font-size: 10px; color: #666; margin-top: 8px;">* Se actualiza al pegar el link RAW de GitHub.</p>
+    <div id="import-panel">
+        <h3 style="margin:0; color:#444;">Importar de Google Sheets</h3>
+        <p style="font-size:12px; color:#777;">Pega el link de "Publicar en la web" (CSV):</p>
+        <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/...">
+        <button onclick="importarDeGoogle()">Cargar Capa</button>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 1. SEGURIDAD MULTI-URL (Whitelist para tus 3 URLs de Softr)
-        const urlsAutorizadas = [
-            "softr-usuario1.softr.app",
-            "softr-usuario2.softr.app",
-            "softr-usuario3.softr.app"
-        ];
-
-        const procedencia = document.referrer;
-        const accesoPrevio = localStorage.getItem("fiscal_auth");
-
-        if (!urlsAutorizadas.some(url => procedencia.includes(url)) && accesoPrevio !== "active") {
-            let pass = prompt("Acceso Restringido. Ingrese Clave de Fiscal:");
-            if (pass === "Tachira2026") {
-                localStorage.setItem("fiscal_auth", "active");
-            } else {
-                document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px;'>No autorizado</h2>";
-            }
-        }
-
-        // 2. INICIALIZAR EL MAPA (Fondo de Google Maps)
+        // 1. Iniciar Mapa (Google Maps Style)
         var map = L.map('map').setView([7.766, -72.225], 14);
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'],
-            attribution: 'Alcaldía de San Cristóbal'
+            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
         }).addTo(map);
 
-        var capaMarcadores = L.layerGroup().addTo(map);
+        var marcadores = L.layerGroup().addTo(map);
 
-        // 3. FUNCIÓN PARA CARGAR EL CSV
-        function cargarDatosCSV() {
-            const url = document.getElementById('url-input').value;
-            if (!url) return alert("Pega una URL válida de GitHub (RAW)");
+        // 2. Función de Importación "Tipo My Maps"
+        function importarDeGoogle() {
+            const url = document.getElementById('sheet-url').value;
+            if(!url.includes("docs.google.com")) return alert("Link de Google Sheets inválido");
 
-            capaMarcadores.clearLayers();
+            marcadores.clearLayers();
 
             Papa.parse(url, {
                 download: true,
                 header: true,
-                skipEmptyLines: true,complete: function(results) {
-                    const datos = results.data;
-                    
-                    datos.forEach(row => {
-                        // Detectar latitud y longitud sin importar el nombre de la columna
-                        let lat = row.latitud  row.Latitude  row.lat;
-                        let lon = row.longitud  row.Longitude  row.lng;
-                        
-                        if (lat && lon) {
-                            // Limpieza de links de Cloudinary (quita los corchetes [])
-                            let fotoUrl = row.Imagen ? row.Imagen.replace(/[\[\]]/g, "") : "";
+                complete: function(results) {
+                    results.data.forEach(row => {
+                        // Buscamos latitud y longitud (flexibles)
+                        let lat = row.latitud  row.Latitud  row.lat;
+                        let lon = row.longitud  row.Longitud  row.lng;
+
+                        if(lat && lon) {
+                            // Limpieza de fotos de Cloudinary
+                            let foto = row.Imagen ? row.Imagen.replace(/[\[\]]/g, "") : "";
                             
                             let marker = L.marker([lat, lon]);
-                            
                             marker.bindPopup(
-                                <div style="width:220px">
-                                    ${fotoUrl ? <img src="${fotoUrl}" class="ficha-img"> : '<div style="height:100px; background:#ddd; display:flex; align-items:center; justify-content:center; border-radius:8px">Sin Foto</div>'}
-                                    <p class="popup-title">${row.Nombre_Comercio || row.Nombre || 'Negocio'}</p>
-                                    <p class="popup-info"><b>RIF:</b> ${row.RIF || 'N/A'}</p>
-                                    <p class="popup-info"><b>Estatus:</b> ${row.Estatus || 'Censado'}</p>
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" class="btn-ruta">TRAZAR RUTA EN GOOGLE MAPS</a>
+                                <div style="width:230px">
+                                    ${foto ? <img src="${foto}" class="ficha-img">` : ''}
+                                    <h4 style="margin:8px 0">${row.Nombre_Comercio || 'Local'}</h4>
+                                    <p style="font-size:13px"><b>RIF:</b> ${row.RIF || 'N/A'}<br>
+                                    <b>Estatus:</b> ${row.Estatus || 'Censado'}</p>
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" 
+                                       style="display:block; text-align:center; background:#4285F4; color:white; padding:8px; border-radius:5px; text-decoration:none;">
+                                       ¿Cómo llegar?</a>
                                 </div>
-                            );
-                            capaMarcadores.addLayer(marker);
+                            `);
+                            marcadores.addLayer(marker);
                         }
                     });
-
-                    // Auto-zoom para ver todos los puntos cargados
-                    if (capaMarcadores.getLayers().length > 0) {
-                        const bounds = L.featureGroup(capaMarcadores.getLayers()).getBounds();
-                        map.fitBounds(bounds);
-                        localStorage.setItem("ultima_url_csv", url);
+                    
+                    // Zoom automático
+                    if (marcadores.getLayers().length > 0) {
+                        map.fitBounds(L.featureGroup(marcadores.getLayers()).getBounds());
+                        localStorage.setItem("ultima_hoja", url);
                     }
-                },
-                error: function() {
-                    alert("Error al leer el CSV. Asegúrate de que el link sea RAW.");
                 }
             });
         }
 
-        // Cargar automáticamente la última URL usada
+        // Carga automática si ya lo usaste antes
         window.onload = () => {
-            const savedUrl = localStorage.getItem("ultima_url_csv");
-            if (savedUrl) {
-                document.getElementById('url-input').value = savedUrl;
-                cargarDatosCSV();
+            const lastUrl = localStorage.getItem("ultima_hoja");
+            if(lastUrl) {
+                document.getElementById('sheet-url').value = lastUrl;
+                importarDeGoogle();
             }
         };
     </script>
