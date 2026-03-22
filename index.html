@@ -3,29 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Fiscal - Municipio Ayacucho</title>
+    <title>Mapa Fiscal Ayacucho - Estilo My Maps</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }
-        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; z-index: 1; cursor: grab; }
+        /* Pantalla completa */
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #f1f3f4; }
+        
+        /* El mapa con el cursor de 'mano' de Google Maps */
+        #map { 
+            position: absolute; top: 0; bottom: 0; right: 0; left: 0; 
+            z-index: 1; 
+            cursor: grab;
+        }
         #map:active { cursor: grabbing; }
 
-        /* Interfaz estilo My Maps */
+        /* Barra Lateral idéntica a My Maps */
         .sidebar {
-            position: absolute; top: 10px; left: 10px; bottom: 10px;
-            width: 310px; background: white; z-index: 1000;
-            border-radius: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            position: absolute; top: 12px; left: 12px; bottom: 12px;
+            width: 320px; background: white; z-index: 1000;
+            border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
             display: flex; flex-direction: column; font-family: 'Roboto', Arial, sans-serif;
+            overflow: hidden;
         }
-        .sidebar-header { background: #4285F4; color: white; padding: 15px; }
+
+        .sidebar-header { background: #4285F4; color: white; padding: 18px; }
         .sidebar-header h2 { margin: 0; font-size: 18px; font-weight: 400; }
-        .content { padding: 15px; background: #fff; flex-grow: 1; overflow-y: auto; }
-        .import-box { background: #f8f9fa; padding: 15px; border: 1px dashed #4285F4; border-radius: 4px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #4285F4; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 2px; }
-        button:hover { background: #3367d6; }
-        .popup-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; }
+        .sidebar-header p { margin: 4px 0 0; font-size: 12px; opacity: 0.9; }
+
+        .content { padding: 20px; background: #fff; flex-grow: 1; overflow-y: auto; }
+        .layer-box { display: flex; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #eee; margin-bottom: 15px; }
+        .layer-box input { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; }
+
+        .import-area { background: #f8f9fa; border: 2px dashed #4285F4; padding: 15px; border-radius: 6px; text-align: center; }
+        .import-area input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .btn-import { width: 100%; padding: 12px; background: #4285F4; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-import:hover { background: #3367d6; }
+
+        /* Popups (Fichas de negocios) */
+        .popup-img { width: 100%; height: 130px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
+        .popup-content { font-size: 13px; line-height: 1.4; }
+        .popup-content h4 { margin: 0 0 5px 0; color: #333; }
+        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -34,100 +54,113 @@
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Censo Fiscal - Ayacucho</h2>
-            <p style="margin:0; font-size:11px; opacity:0.8;">Estado Táchira</p>
+            <h2>Ayacucho - Censo Fiscal</h2>
+            <p>Municipio Ayacucho, San Juan de Colón</p>
         </div>
         <div class="content">
-            <div style="margin-bottom:15px; font-size:14px; color:#555;">
-                <input type="checkbox" checked id="layerToggle"> <b>Capa de Comercios</b>
+            <div class="layer-box">
+                <input type="checkbox" checked id="checkLayer">
+                <span style="font-weight: bold; color: #5f6368;">Capa de Comercios</span>
             </div>
-            <div class="import-box" id="panel-import">
-                <input type="text" id="url-input" placeholder="Pega el link de Google Sheets (CSV)...">
-                <button onclick="cargarDatos()">CARGAR DATOS</button>
+
+            <div class="import-area" id="box-import">
+                <p style="font-size: 13px; color: #666; margin-top: 0;">Pegar link de Google Sheets (CSV):</p>
+                <input type="text" id="url-input" placeholder="https://docs.google.com/spreadsheets/...">
+                <button class="btn-import" onclick="procesar()">IMPORTAR DATOS</button>
             </div>
-            <p id="msg" style="font-size:11px; color:#666; margin-top:10px;"></p>
+            <p id="status-msg" style="font-size: 11px; color: #888; margin-top: 12px;"></p>
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
-    <script>
-        // 1. Centrar en Municipio Ayacucho (San Juan de Colón)
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script><script>
+        // 1. INICIALIZAR EL MAPA (Centro exacto en San Juan de Colón)
         var map = L.map('map', { 
             zoomControl: false,
-            scrollWheelZoom: true, // Activa zoom con rueda
-            dragging: true,        // Activa arrastrar con la mano
-            doubleClickZoom: true
-        }).setView([8.035, -72.260], 14); 
+            dragging: true,
+            scrollWheelZoom: true
+        }).setView([8.0381, -72.2619], 15);
 
-        // 2. Capa Satelital Híbrida de Google (Fotos + Calles)
-        var googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        // 2. CAPA DE SATÉLITE HÍBRIDO (Google Satélite + Calles)
+        // Esto es lo que hace que no se vea negro y tenga la mejor resolución
+        L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20,
-            subdomains:['mt0','mt1','mt2','mt3']
+            subdomains: ['mt0','mt1','mt2','mt3'],
+            attribution: '© Google Maps'
         }).addTo(map);
 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var markersGroup = L.layerGroup().addTo(map);
+        var layerGroup = L.layerGroup().addTo(map);
 
-        function cargarDatos() {
+        function procesar() {
             const url = document.getElementById('url-input').value;
-            if(!url.includes("output=csv")) return alert("Error: Usa el link de 'Publicar en la web' como CSV");
+            if(!url.includes("output=csv")) {
+                alert("Error: Asegúrate de usar el link de 'Publicar en la Web' con formato CSV.");
+                return;
+            }
+
+            document.getElementById('status-msg').innerText = "Cargando comercios...";
 
             Papa.parse(url, {
                 download: true,
                 header: true,
+                skipEmptyLines: true,
                 complete: function(results) {
-                    markersGroup.clearLayers();
+                    layerGroup.clearLayers();
                     let count = 0;
 
                     results.data.forEach(row => {
                         let lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        let lon = parseFloat(row.longitud  row.Longitud  row.lng);if(!isNaN(lat) && !isNaN(lon)) {
+                        let lon = parseFloat(row.longitud  row.Longitud  row.lng);
+
+                        if(!isNaN(lat) && !isNaN(lon)) {
                             count++;
-                            let lic = row['Licencia Act. Ec.'] || "";
-                            let color = lic.includes("VENCIDA") ? "#ff0000" : "#00ff00";
+                            let lic = row['Licencia Act. Ec.'] || "SIN DATOS";
+                            let color = lic.includes("VENCIDA") ? "#ea4335" : "#34a853";
                             let foto = row.Imagen ? row.Imagen.replace(/[\[\]]/g, "") : "";
 
                             let marker = L.circleMarker([lat, lon], {
-                                radius: 9, fillColor: color, color: "white", weight: 2, fillOpacity: 1
+                                radius: 8, fillColor: color, color: "#fff", weight: 2, fillOpacity: 1
                             });
 
                             marker.bindPopup(
-                                <div style="width:200px">
+                                <div class="popup-content">
                                     ${foto ? <img src="${foto}" class="popup-img"> : ''}
-                                    <h4 style="margin:5px 0">${row.Nombre || 'Local'}</h4>
-                                    <p style="font-size:12px; margin:0"><b>RIF:</b> ${row.RIF || 'N/A'}</p>
-                                    <p style="font-size:12px; color:${color}; font-weight:bold;">${lic}</p>
-                                    <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" style="display:block; text-align:center; margin-top:10px; color:#4285F4; font-weight:bold; text-decoration:none;">NAVEGAR</a>
+                                    <h4>${row.Nombre || 'Comercio'}</h4>
+                                    <b>RIF:</b> ${row.RIF || 'N/A'}<br>
+                                    <span class="tag" style="background:${color}22; color:${color}">${lic}</span>
+                                    <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" style="color:#4285F4; text-decoration:none; font-weight:bold;">📍 CÓMO LLEGAR</a>
                                 </div>
                             );
-                            markersGroup.addLayer(marker);
+                            layerGroup.addLayer(marker);
                         }
                     });
 
                     if(count > 0) {
-                        map.fitBounds(L.featureGroup(markersGroup.getLayers()).getBounds());
-                        document.getElementById('panel-import').style.display = 'none';
-                        document.getElementById('msg').innerText = count + " puntos cargados en Ayacucho.";
-                        localStorage.setItem("cache_url", url);
+                        map.fitBounds(L.featureGroup(layerGroup.getLayers()).getBounds());
+                        document.getElementById('status-msg').innerText = "Éxito: " + count + " locales cargados.";
+                        document.getElementById('box-import').style.display = 'none'; // Ocultar tras éxito
+                        localStorage.setItem("ultima_url_ayacucho", url);
+                    } else {
+                        document.getElementById('status-msg').innerText = "No se encontraron coordenadas.";
                     }
                 }
             });
         }
 
+        // Recuperar datos guardados
         window.onload = () => {
-            const saved = localStorage.getItem("cache_url");
+            const saved = localStorage.getItem("ultima_url_ayacucho");
             if(saved) {
                 document.getElementById('url-input').value = saved;
-                cargarDatos();
+                procesar();
             }
-        };
-
-        document.getElementById('layerToggle').addEventListener('change', function(e) {
-            if(e.target.checked) map.addLayer(markersGroup);
-            else map.removeLayer(markersGroup);
+        };// Toggle de capa
+        document.getElementById('checkLayer').addEventListener('change', function(e) {
+            if(e.target.checked) map.addLayer(layerGroup);
+            else map.removeLayer(layerGroup);
         });
     </script>
 </body>
