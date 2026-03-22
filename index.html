@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visor Fiscal Pro - Alcaldía</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+        
+        /* Panel de Carga (Tipo My Maps) */
+        #control-panel {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); width: 280px;
+        }
+        .input-group { margin-bottom: 10px; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+
+        /* Estilo de la Ficha */
+        .ficha-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; }
+        .btn-ruta { display: block; text-align: center; background: #4285F4; color: white !important; 
+                    padding: 8px; border-radius: 4px; text-decoration: none; margin-top: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="control-panel">
+        <h4 style="margin-top:0">Cargar Capa de Datos</h4>
+        <div class="input-group">
+            <input type="text" id="url-input" placeholder="Pegar URL RAW de GitHub (JSON)...">
+        </div>
+        <button onclick="cargarDatos()">Actualizar Mapa</button>
+        <p style="font-size: 10px; color: #666; margin-top: 8px;">* Los datos se cargan en tiempo real desde el repositorio.</p>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. SEGURIDAD MULTI-URL (Lista Blanca)
+        const urlsAutorizadas = [
+            "softr-usuario1.softr.app",
+            "softr-usuario2.softr.app",
+            "softr-usuario3.softr.app",
+            "tu-dominio-principal.com"
+        ];
+
+        const procedencia = document.referrer;
+        const esValido = urlsAutorizadas.some(url => procedencia.includes(url));
+
+        if (!esValido && localStorage.getItem("fiscal_session") !== "active") {
+            let pass = prompt("Acceso Restringido - Ingrese Clave Municipal:");
+            if (pass === "Tachira2026") {
+                localStorage.setItem("fiscal_session", "active");
+            } else {
+                document.body.innerHTML = "<h2 style='padding:20px'>No autorizado. Acceda desde el portal oficial.</h2>";
+            }
+        }
+
+        // 2. INICIALIZAR EL MAPA
+        var map = L.map('map').setView([7.766, -72.225], 14);
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
+        }).addTo(map);
+
+        var capaMarcadores = L.layerGroup().addTo(map);
+
+        // 3. FUNCIÓN DE CARGA (La "Facilidad My Maps")
+        function cargarDatos() {
+            const url = document.getElementById('url-input').value;
+            if (!url) return alert("Por favor, pega una URL válida.");
+
+            // Limpiamos el mapa antes de cargar nuevos datos
+            capaMarcadores.clearLayers();
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(item => {
+                        if (item.latitud && item.longitud) {
+                            // Limpieza automática de links de Cloudinary
+                            let foto = item.Imagen ? item.Imagen.replace(/[\[\]]/g, "") : "";let marker = L.marker([item.latitud, item.longitud]);
+                            
+                            marker.bindPopup(
+                                <div style="width:200px">
+                                    ${foto ? <img src="${foto}" class="ficha-img"> : ''}
+                                    <h3 style="margin:5px 0; font-size:16px;">${item.Nombre_Comercio || 'Negocio'}</h3>
+                                    <p style="font-size:12px; margin:0"><b>RIF:</b> ${item.RIF}</p>
+                                    <p style="font-size:12px; margin:0"><b>Estatus:</b> ${item.Estatus || 'Censado'}</p>
+                                    <a href="https://www.google.com/maps?q=${item.latitud},${item.longitud}" target="_blank" class="btn-ruta">VER RUTA</a>
+                                </div>
+                            );
+                            capaMarcadores.addLayer(marker);
+                        }
+                    });
+                    // Ajustar zoom automáticamente a los nuevos puntos
+                    const bounds = L.featureGroup(capaMarcadores.getLayers()).getBounds();
+                    if (bounds.isValid()) map.fitBounds(bounds);
+                })
+                .catch(err => alert("Error al cargar el archivo. Verifica que la URL sea RAW y el formato JSON sea correcto."));
+        }
+
+        // Carga automática inicial si guardas la URL en el navegador
+        const ultimaUrl = localStorage.getItem("ultima_capa");
+        if (ultimaUrl) {
+            document.getElementById('url-input').value = ultimaUrl;
+            cargarDatos();
+        }
+    </script>
+</body>
+</html>
