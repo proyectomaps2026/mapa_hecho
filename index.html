@@ -8,14 +8,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        /* Esto obliga al mapa a llenar toda la pantalla */
         html, body, #map { height: 100%; margin: 0; padding: 0; background: #222; }
-        
-        /* Cursor de mano estilo Google Maps */
         .leaflet-container { cursor: grab !important; }
         .leaflet-container:active { cursor: grabbing !important; }
 
-        /* Barra lateral estilo My Maps */
         .sidebar {
             position: absolute; top: 10px; left: 10px; z-index: 1000;
             width: 300px; background: white; padding: 15px;
@@ -23,8 +19,15 @@
             font-family: Arial, sans-serif;
         }
         .header { background: #4285F4; color: white; margin: -15px -15px 15px -15px; padding: 15px; border-radius: 8px 8px 0 0; }
-        input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; box-sizing: border-box; }
-        button { width: 100%; background: #4285F4; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; box-sizing: border-box; border-radius: 4px; }
+        button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        
+        /* Pincheta Azul Estilo My Maps */
+        .pin {
+            width: 22px; height: 22px; background: #4285F4;
+            border: 2px solid white; border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
     </style>
 </head>
 <body>
@@ -34,10 +37,9 @@
             <h3 style="margin:0">Ayacucho - Censo</h3>
             <small>San Juan de Colón</small>
         </div>
-        <label><input type="checkbox" checked> Capa de Comercios</label>
-        <input type="text" id="url-csv" placeholder="Pega el link de Google Sheets...">
+        <input type="text" id="url-csv" placeholder="Pega el link del CSV aquí...">
         <button onclick="cargar()">CARGAR DATOS</button>
-        <p id="status" style="font-size:11px; color:gray;"></p>
+        <p id="status" style="font-size:11px; color:gray; margin-top:10px; text-align:center;"></p>
     </div>
 
     <div id="map"></div>
@@ -46,10 +48,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <script>
-        // 1. Iniciamos el mapa centrado en San Juan de Colón
+        // 1. Mapa centrado en Colón
         var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
 
-        // 2. Capa de Satélite de Google (Híbrida: fotos + nombres)
+        // 2. Capa Híbrida (La que te gusta: Satélite + Calles)
         L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
         }).addTo(map);
@@ -60,27 +62,53 @@
 
         function cargar() {
             var url = document.getElementById('url-csv').value;
-            if(!url.includes("output=csv")) return alert("El link debe terminar en output=csv");
+            if(!url) return alert("Por favor pega el enlace");
+
+            document.getElementById('status').innerText = "Procesando...";
 
             Papa.parse(url, {
                 download: true,
                 header: true,
+                skipEmptyLines: true,
                 complete: function(res) {
                     markers.clearLayers();
+                    var listaPuntos = [];
+
                     res.data.forEach(row => {
-                        var lat = parseFloat(row.latitud || row.Latitud);
-                        var lon = parseFloat(row.longitud || row.Longitud);
-                        if(!isNaN(lat)) {
-                            var color = (row['Licencia Act. Ec.'] || "").includes("VENCIDA") ? "red" : "green";
-                            L.circleMarker([lat, lon], { radius: 8, fillColor: color, color: "white", weight: 2, fillOpacity: 0.9 })
-                             .bindPopup("<b>"+row.Nombre+"</b><br>Estado: "+row['Licencia Act. Ec.'])
-                             .addTo(markers);
+                        // Busca latitud y longitud sin importar si es mayúscula o minúscula
+                        var lat = parseFloat(row.latitud  row.Latitud  row.lat || row.LAT);
+                        var lon = parseFloat(row.longitud  row.Longitud  row.lon  row.long  row.LON);
+                        
+                        if(!isNaN(lat) && !isNaN(lon)) {
+                            var icon = L.divIcon({
+                                className: 'custom-pin',
+                                html: '<div class="pin"></div>',
+                                iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -22]
+                            });// Crea el popup con toda la información de la fila
+                            var popupContenido = "<div>";
+                            for(var clave in row) {
+                                popupContenido += "<b>" + clave + ":</b> " + row[clave] + "<br>";
+                            }
+                            popupContenido += "</div>";
+
+                            var m = L.marker([lat, lon], {icon: icon}).bindPopup(popupContenido);
+                            m.addTo(markers);
+                            listaPuntos.push([lat, lon]);
                         }
                     });
-                    document.getElementById('status').innerText = "Datos cargados.";
+
+                    if(listaPuntos.length > 0) {
+                        document.getElementById('status').innerText = "Cargados " + listaPuntos.length + " locales.";
+                        map.fitBounds(listaPuntos); // Esto hace que el mapa salte a donde están los puntos
+                    } else {
+                        document.getElementById('status').innerText = "Error: No se detectaron coordenadas.";
+                    }
                 }
             });
         }
+
+        // Corrección de tamaño al cargar
+        window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 500); };
     </script>
 </body>
 </html>
