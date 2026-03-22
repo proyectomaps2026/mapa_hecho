@@ -1,113 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Censo Ayacucho - Sistema Estable</title>
-    
+    <title>Sistema de Catastro Ayacucho</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #eee; }
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        #wrapper { display: flex; height: 100vh; width: 100vw; }
         
-        /* Panel de control */
-        .sidebar {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
-            width: 280px; background: white; padding: 15px;
-            border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            font-family: Arial, sans-serif;
+        /* Panel Lateral estilo My Maps */
+        #sidebar { 
+            width: 320px; background: white; display: flex; flex-direction: column; 
+            border-right: 1px solid #ddd; z-index: 1001; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
         }
-        .header { background: #4285F4; color: white; margin: -15px -15px 15px -15px; padding: 15px; border-radius: 8px 8px 0 0; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        .header { background: #4285F4; color: white; padding: 20px; }
+        .search-box { padding: 10px; border-bottom: 1px solid #eee; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         
-        /* Pincheta Azul */
+        /* Lista de Locales */
+        #list-container { flex-grow: 1; overflow-y: auto; }
+        .item-local { 
+            padding: 12px 20px; border-bottom: 1px solid #eee; cursor: pointer; 
+            transition: 0.2s; font-size: 14px;
+        }
+        .item-local:hover { background: #f1f3f4; }
+        .item-local b { color: #1a73e8; display: block; }
+        
+        /* Mapa */
+        #map { flex-grow: 1; position: relative; }
+        
+        /* Pincheta My Maps */
         .pin {
-            width: 22px; height: 22px; background: #4285F4;
+            width: 20px; height: 20px; background: #4285F4;
             border: 2px solid white; border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
-
-        /* Selector de capas */
-        .leaflet-control-layers { border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
+<div id="wrapper">
+    <div id="sidebar">
         <div class="header">
-            <h3 style="margin:0">Ayacucho - Censo</h3>
+            <h2 style="margin:0; font-size: 18px;">Censo Ayacucho</h2>
             <small>San Juan de Colón</small>
         </div>
-        <input type="text" id="url-csv" placeholder="Link de Google Sheets (CSV)...">
-        <button onclick="cargar()">SINCRONIZAR DATOS</button>
-        <p id="status" style="font-size:11px; color:gray; margin-top:10px; text-align:center;"></p>
+        
+        <div class="search-box">
+            <input type="text" id="url-csv" placeholder="1. Pega el link CSV aquí..." style="margin-bottom:8px;">
+            <button onclick="cargarTodo()" style="width:100%; background:#34a853; color:white; border:none; padding:8px; cursor:pointer; font-weight:bold; border-radius:4px;">SINCRONIZAR</button>
+            <input type="text" id="buscador" placeholder="2. Buscar local o RIF..." style="margin-top:10px;">
+        </div>
+
+        <div id="list-container">
+            <p style="padding:20px; color:gray; text-align:center;">Carga los datos para ver la lista de comercios...</p>
+        </div>
     </div>
 
     <div id="map"></div>
+</div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
-    <script>
-        // 1. Capas Base (Las dos opciones)
-        var mapaCalles = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 });
-        var mapaHibrido = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
+<script>
+    var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
+    var hibrido = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }).addTo(map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // 2. Inicializar mapa con la de calles (es la más rápida)
-        var map = L.map('map', { zoomControl: false, layers: [mapaCalles] }).setView([8.038, -72.261], 15);
+    var markersLayer = L.layerGroup().addTo(map);
+    var todosLosDatos = [];
 
-        // 3. Control de Capas (El cuadrito para cambiar de vista)
-        var baseMaps = {
-            "🗺️ Mapa Simple": mapaCalles,
-            "🛰️ Satélite": mapaHibrido
-        };
-        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
+    function cargarTodo() {
+        var url = document.getElementById('url-csv').value;
+        Papa.parse(url, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: function(res) {
+                todosLosDatos = res.data;
+                renderizar(todosLosDatos);
+            }
+        });
+    }
 
-        var markers = L.layerGroup().addTo(map);
+    function renderizar(data) {
+        markersLayer.clearLayers();
+        var listaHtml = "";
+        var bounds = [];
 
-        function cargar() {
-            var url = document.getElementById('url-csv').value;
-            if(!url) return alert("Pega el enlace del CSV");
+        data.forEach((row, index) => {
+            var lat = parseFloat(row.latitud  row.Latitud  row.lat);
+            var lon = parseFloat(row.longitud  row.Longitud  row.lon);
 
-            document.getElementById('status').innerText = "Cargando datos...";
+            if(!isNaN(lat)) {// Crear Marcador
+                var icon = L.divIcon({ className: 'p', html: '<div class="pin"></div>', iconSize: [20, 20], iconAnchor: [10, 20] });
+                var popup = "<b>" + (row.Nombre || "Local") + "</b><hr>";
+                for(var key in row) { popup += "<b>"+key+":</b> "+row[key]+"<br>"; }
+                
+                var m = L.marker([lat, lon], {icon: icon}).bindPopup(popup);
+                m.id_local = index;
+                m.addTo(markersLayer);
+                bounds.push([lat, lon]);
 
-            Papa.parse(url, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(res) {
-                    markers.clearLayers();
-                    var list = [];
+                // Crear Item en Lista
+                listaHtml += <div class="item-local" onclick="irAlLocal(${lat}, ${lon}, ${index})">
+                                <b>${row.Nombre || 'Sin Nombre'}</b>
+                                <small>${row.RIF || row.rif || ''}</small>
+                              </div>;
+            }
+        });
 
-                    res.data.forEach(row => {
-                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);
-                        
-                        if(!isNaN(lat)) {var icon = L.divIcon({
-                                className: 'custom-pin',
-                                html: '<div class="pin"></div>',
-                                iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -22]
-                            });
+        document.getElementById('list-container').innerHTML = listaHtml;
+        if(bounds.length > 0) map.fitBounds(bounds);
+    }
 
-                            // Esta es la función que NO se pierde: Muestra TODOS tus datos
-                            var info = "<div>";
-                            for(var k in row) { info += "<b>"+k+":</b> "+row[k]+"<br>"; }
-                            
-                            L.marker([lat, lon], {icon: icon}).bindPopup(info+"</div>").addTo(markers);
-                            list.push([lat, lon]);
-                        }
-                    });
+    function irAlLocal(lat, lon, id) {
+        map.flyTo([lat, lon], 18);
+        markersLayer.eachLayer(function(layer) {
+            if(layer.id_local === id) layer.openPopup();
+        });
+    }
 
-                    if(list.length > 0) {
-                        document.getElementById('status').innerText = list.length + " locales cargados.";
-                        map.fitBounds(list);
-                    }
-                }
-            });
-        }
-        window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 500); };
-    </script>
+    // Buscador en tiempo real
+    document.getElementById('buscador').addEventListener('input', function(e) {
+        var termino = e.target.value.toLowerCase();
+        var filtrados = todosLosDatos.filter(row => {
+            return JSON.stringify(row).toLowerCase().includes(termino);
+        });
+        renderizar(filtrados);
+    });
+
+    window.onload = function() { setTimeout(() => map.invalidateSize(), 500); };
+</script>
+
 </body>
 </html>
