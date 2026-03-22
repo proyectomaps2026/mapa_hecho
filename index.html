@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Fiscal Ayacucho</title>
+    <title>Mapa Fiscal Pro</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,88 +13,96 @@
         html, body, #map { height: 100%; margin: 0; padding: 0; background: #e5e3df; }
         
         .sidebar {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            position: absolute; top: 12px; left: 12px; z-index: 1000;
             width: 280px; background: white; border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3); font-family: sans-serif;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-family: Arial, sans-serif;
         }
         .header { background: #4285F4; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
+        .header h3 { margin: 0; font-size: 16px; font-weight: normal; }
         .content { padding: 15px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; padding: 10px; background: #34a853; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* PINCHETAS AZULES MY MAPS */
-        .my-pin {
-            width: 22px; height: 22px; background: #4285F4;
+        /* Pincheta Azul Estilo My Maps */
+        .pin {
+            width: 24px; height: 24px; background: #4285F4;
             border: 2px solid white; border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.4);
         }
 
-        .leaflet-control-layers { border: none !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; border-radius: 8px !important; }
+        .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
         .leaflet-container { cursor: grab !important; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header"><h3 style="margin:0">Mis Capas</h3></div>
+        <div class="header"><h3>Censo Ayacucho</h3></div>
         <div class="content">
-            <input type="text" id="url-csv" placeholder="Enlace CSV de Google Sheets...">
-            <button onclick="cargar()">CARGAR DATOS</button>
-            <p id="st" style="font-size:11px; color:gray; margin-top:10px;"></p>
+            <input type="text" id="csv-url" placeholder="Enlace CSV (Publicar en la web)...">
+            <button onclick="cargarCapa()">SINCRONIZAR</button>
+            <p id="msg" style="font-size:11px; color:gray; margin-top:10px;"></p>
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // Configuración de Servidores de Google (Modo alternativo para evitar gris)
+        // Capas Satelitales de Google
         var sPuro = L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
         var sCalle = L.tileLayer('https://mt{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
         var sPOI = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
 
-        var map = L.map('map', { 
-            zoomControl: false, 
-            layers: [sPOI] 
-        }).setView([8.038, -72.261], 15);
+        // Inicializar Mapa
+        var map = L.map('map', { zoomControl: false, layers: [sPOI] }).setView([8.038, -72.261], 15);
 
-        var bases = { "Satélite": sPuro, "Calles": sCalle, "Híbrido (POI)": sPOI };
-        L.control.layers(bases, null, { position: 'bottomleft', collapsed: false }).addTo(map);
+        // Control de Capas
+        var baseMaps = { 
+            "Satélite Puro": sPuro, 
+            "Satélite + Calles": sCalle, 
+            "Satélite + POI": sPOI 
+        };
+        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var markers = L.layerGroup().addTo(map);
+        var capaPuntos = L.layerGroup().addTo(map);
 
-        function cargar() {
-            var url = document.getElementById('url-csv').value;
+        function cargarCapa() {
+            var url = document.getElementById('csv-url').value;
+            if(!url) return;
+
             Papa.parse(url, {
                 download: true,
                 header: true,
+                skipEmptyLines: true,
                 complete: function(res) {
-                    markers.clearLayers();
-                    res.data.forEach(row => {
+                    capaPuntos.clearLayers();
+                    res.data.forEach(function(row) {
                         var lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);
-                        if(!isNaN(lat)) {
+                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);if(!isNaN(lat) && !isNaN(lon)) {
                             var icon = L.divIcon({
                                 className: 'div-pin',
-                                html: '<div class="my-pin"></div>',
-                                iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -22]});
-                            var txt = "<div>";
-                            for(var k in row){ txt += "<b>"+k+":</b> "+row[k]+"<br>"; }
-                            L.marker([lat, lon], {icon: icon}).bindPopup(txt+"</div>").addTo(markers);
+                                html: '<div class="pin"></div>',
+                                iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -24]
+                            });
+
+                            var popupHtml = "<div>";
+                            for(var key in row) { popupHtml += "<b>" + key + ":</b> " + row[key] + "<br>"; }
+                            popupHtml += "</div>";
+
+                            L.marker([lat, lon], {icon: icon}).bindPopup(popupHtml).addTo(capaPuntos);
                         }
                     });
-                    document.getElementById('st').innerText = "Cargado.";
-                    if(markers.getLayers().length > 0) map.fitBounds(L.featureGroup(markers.getLayers()).getBounds());
+                    document.getElementById('msg').innerText = "Capa sincronizada.";
+                    if(capaPuntos.getLayers().length > 0) map.fitBounds(L.featureGroup(capaPuntos.getLayers()).getBounds());
                 }
             });
         }
 
-        // Forzar renderizado para evitar gris
-        window.addEventListener('load', function() {
-            setTimeout(function() { 
-                map.invalidateSize(true); 
-            }, 500);
-        });
+        // Forzar renderizado correcto
+        window.onload = function() {
+            setTimeout(function() { map.invalidateSize(); }, 500);
+        };
     </script>
 </body>
 </html>
