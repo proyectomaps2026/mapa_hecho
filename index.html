@@ -2,100 +2,148 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa Fiscal Directo - Alcaldía SC</title>
-    
+    <title>Google My Maps - Personalizado</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
     <style>
-        body { margin: 0; padding: 0; }
-        #map { height: 100vh; width: 100%; }
-        /* Panel para pegar el link del Sheets como en My Maps */
-        #import-panel {
-            position: absolute; top: 15px; left: 15px; z-index: 1000;
-            background: white; padding: 20px; border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); width: 300px;
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Roboto', Arial, sans-serif; }
+        #map { height: 100vh; width: 100%; z-index: 1; }
+
+        /* Barra Lateral Izquierda estilo My Maps */
+        .sidebar {
+            position: absolute; top: 12px; left: 12px; bottom: 12px;
+            width: 320px; background: white; z-index: 1000;
+            border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden;
         }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #0F9D58; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .ficha-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; }
+
+        .sidebar-header { background: #4285F4; color: white; padding: 20px 16px; position: relative; }
+        .sidebar-header h2 { margin: 0; font-size: 18px; font-weight: 400; }
+        .sidebar-header p { margin: 4px 0 0; font-size: 12px; opacity: 0.9; }
+
+        .layer-section { padding: 16px; flex-grow: 1; overflow-y: auto; background: #f9f9f9; }
+        .layer-item { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+        .layer-title { font-size: 14px; font-weight: bold; color: #3c4043; display: flex; align-items: center; }
+        .layer-title input { margin-right: 8px; }
+
+        .import-box { margin-top: 15px; }
+        .import-box input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        .btn-import { 
+            margin-top: 8px; width: 100%; background: #fff; border: 1px solid #dadce0; 
+            padding: 8px; border-radius: 4px; color: #1a73e8; cursor: pointer; font-weight: 500;
+        }
+        .btn-import:hover { background: #f1f3f4; }
+
+        /* Estilo del Popup (Ficha) */
+        .leaflet-popup-content-wrapper { border-radius: 8px; padding: 0; overflow: hidden; }
+        .popup-header { background: #4285F4; color: white; padding: 10px; font-weight: bold; }
+        .popup-body { padding: 10px; }
+        .popup-img { width: 100%; height: 150px; object-fit: cover; border-top-left-radius: 8px; border-top-right-radius: 8px; }
     </style>
 </head>
 <body>
 
-    <div id="import-panel">
-        <h3 style="margin:0; color:#444;">Importar de Google Sheets</h3>
-        <p style="font-size:12px; color:#777;">Pega el link de "Publicar en la web" (CSV):</p>
-        <input type="text" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/...">
-        <button onclick="importarDeGoogle()">Cargar Capa</button>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Mapa de Censo Fiscal</h2>
+            <p>Alcaldía de San Cristóbal</p>
+        </div>
+        
+        <div class="layer-section">
+            <div class="layer-item">
+                <div class="layer-title">
+                    <input type="checkbox" checked id="layerToggle">
+                    <span>Capa sin nombre</span>
+                </div>
+                
+                <div class="import-box" id="importArea">
+                    <input type="text" id="sheetUrl" placeholder="Pega el link de Google Sheets (CSV)...">
+                    <button class="btn-import" onclick="importarDatos()">Importar</button>
+                </div>
+                <p id="status" style="font-size: 11px; color: #666; margin-top: 10px;">Haz clic en importar para cargar el archivo.</p>
+            </div>
+        </div>
     </div>
 
     <div id="map"></div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <script>
-        // 1. Iniciar Mapa (Google Maps Style)
-        var map = L.map('map').setView([7.766, -72.225], 14);
+        // Inicializar el mapa con fondo de Google
+        var map = L.map('map', { zoomControl: false }).setView([7.766, -72.225], 14);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
             maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
         }).addTo(map);
 
-        var marcadores = L.layerGroup().addTo(map);
+        var layerGroup = L.layerGroup().addTo(map);
 
-        // 2. Función de Importación "Tipo My Maps"
-        function importarDeGoogle() {
-            const url = document.getElementById('sheet-url').value;
-            if(!url.includes("docs.google.com")) return alert("Link de Google Sheets inválido");
+        function importarDatos() {
+            const url = document.getElementById('sheetUrl').value;
+            const status = document.getElementById('status');
 
-            marcadores.clearLayers();
-
-            Papa.parse(url, {
+            if (!url) return alert("Por favor pega el enlace");
+            status.innerText = "Cargando datos...";Papa.parse(url, {
                 download: true,
                 header: true,
+                skipEmptyLines: true,
                 complete: function(results) {
-                    results.data.forEach(row => {
-                        // Buscamos latitud y longitud (flexibles)
-                        let lat = row.latitud  row.Latitud  row.lat;
-                        let lon = row.longitud  row.Longitud  row.lng;
+                    layerGroup.clearLayers();
+                    let count = 0;
 
-                        if(lat && lon) {
-                            // Limpieza de fotos de Cloudinary
+                    results.data.forEach(row => {
+                        // Búsqueda inteligente de columnas (latitud/longitud)
+                        let latKey = Object.keys(row).find(k => k.toLowerCase().includes('lat'));
+                        let lonKey = Object.keys(row).find(k => k.toLowerCase().includes('lon') || k.toLowerCase().includes('lng'));
+                        
+                        let lat = parseFloat(row[latKey]);
+                        let lon = parseFloat(row[lonKey]);
+
+                        if (!isNaN(lat) && !isNaN(lon)) {
+                            count++;
+                            // Lógica de color según estatus
+                            let licencia = row['Licencia Act. Ec.'] || "";
+                            let color = licencia.includes("VENCIDA") ? "#ea4335" : "#34a853";
                             let foto = row.Imagen ? row.Imagen.replace(/[\[\]]/g, "") : "";
-                            
-                            let marker = L.marker([lat, lon]);
+
+                            let marker = L.circleMarker([lat, lon], {
+                                radius: 8, fillColor: color, color: "white", weight: 2, fillOpacity: 0.9
+                            });
+
                             marker.bindPopup(
-                                <div style="width:230px">
-                                    ${foto ? <img src="${foto}" class="ficha-img">` : ''}
-                                    <h4 style="margin:8px 0">${row.Nombre_Comercio || 'Local'}</h4>
-                                    <p style="font-size:13px"><b>RIF:</b> ${row.RIF || 'N/A'}<br>
-                                    <b>Estatus:</b> ${row.Estatus || 'Censado'}</p>
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" 
-                                       style="display:block; text-align:center; background:#4285F4; color:white; padding:8px; border-radius:5px; text-decoration:none;">
-                                       ¿Cómo llegar?</a>
+                                ${foto ? <img src="${foto}" class="popup-img"> : ''}
+                                <div class="popup-body">
+                                    <div style="font-size:16px; font-weight:bold;">${row.Nombre || 'Comercio'}</div>
+                                    <div style="font-size:12px; color:#666; margin-top:4px;">RIF: ${row.RIF || 'N/A'}</div>
+                                    <div style="font-size:12px; color:${color}; font-weight:bold;">${licencia}</div>
                                 </div>
-                            `);
-                            marcadores.addLayer(marker);
+                            , { padding: [0, 0] });
+                            
+                            layerGroup.addLayer(marker);
                         }
                     });
-                    
-                    // Zoom automático
-                    if (marcadores.getLayers().length > 0) {
-                        map.fitBounds(L.featureGroup(marcadores.getLayers()).getBounds());
-                        localStorage.setItem("ultima_hoja", url);
+
+                    if (count > 0) {
+                        map.fitBounds(L.featureGroup(layerGroup.getLayers()).getBounds());
+                        status.innerText = "Se cargaron " + count + " puntos correctamente.";
+                        document.getElementById('importArea').style.display = 'none'; // Oculta el input tras cargar como en My Maps
+                    } else {
+                        status.innerText = "Error: No se encontraron coordenadas.";
                     }
+                },
+                error: function() {
+                    status.innerText = "Error al conectar con Google Sheets.";
                 }
             });
         }
 
-        // Carga automática si ya lo usaste antes
-        window.onload = () => {
-            const lastUrl = localStorage.getItem("ultima_hoja");
-            if(lastUrl) {
-                document.getElementById('sheet-url').value = lastUrl;
-                importarDeGoogle();
-            }
-        };
+        // Toggle de capa
+        document.getElementById('layerToggle').addEventListener('change', function(e) {
+            if (e.target.checked) map.addLayer(layerGroup);
+            else map.removeLayer(layerGroup);
+        });
     </script>
 </body>
 </html>
