@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Ayacucho - Institucional</title>
+    <title>Censo Ayacucho - Estable</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -28,7 +28,7 @@
             transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
 
-        .leaflet-control-layers { border: none !important; border-radius: 8px !important; }
+        .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
         .leaflet-container { cursor: grab !important; }
     </style>
 </head>
@@ -37,7 +37,7 @@
     <div class="sidebar">
         <div class="header"><h3 style="margin:0">Censo Ayacucho</h3></div>
         <div class="content">
-            <input type="text" id="url-csv" placeholder="Link CSV (Publicar en la web)...">
+            <input type="text" id="url-csv" placeholder="Pega el link CSV aquí...">
             <button onclick="cargar()">SINCRONIZAR</button>
             <p id="st" style="font-size:11px; color:gray; margin-top:10px; text-align:center;"></p>
         </div>
@@ -46,21 +46,19 @@
     <div id="map"></div>
 
     <script>
-        // Capa 1: Satélite Puro (Sin nada de texto)
-        var satPuro = L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
-        
-        // Capa 2: Híbrido Institucional (Satélite + Calles + Lugares Públicos, SIN negocios)
-        // El parámetro lyrs=y incluye etiquetas, pero Google las filtra automáticamente mejor que la capa 'h'
-        var hibridoInst = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
+        // Capas optimizadas para evitar el bloqueo (Gris)
+        var mapaCalles = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
+        var mapaSat = L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
 
+        // Inicializamos con Calles (que es la más ligera para interactuar)
         var map = L.map('map', { 
             zoomControl: false, 
-            layers: [hibridoInst] 
+            layers: [mapaCalles] 
         }).setView([8.038, -72.261], 15);
 
         var baseMaps = { 
-            "Satélite (Limpio)": satPuro, 
-            "Mapa Institucional (Calles/Plazas)": hibridoInst 
+            "📍 Mapa de Calles": mapaCalles, 
+            "🛰️ Satélite Real": mapaSat 
         };
         
         L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
@@ -99,7 +97,7 @@
         }
 
         window.onload = function() {
-            setTimeout(function() { map.invalidateSize(); }, 500);
+            setTimeout(function() { map.invalidateSize(); }, 600);
         };
     </script>
 </body>
