@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Censo Ayacucho - Estable</title>
+    <title>Censo Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11,7 +11,6 @@
 
     <style>
         html, body, #map { height: 100%; margin: 0; padding: 0; background: #e5e3df; }
-        
         .sidebar {
             position: absolute; top: 10px; left: 10px; z-index: 1000;
             width: 280px; background: white; border-radius: 8px;
@@ -27,78 +26,53 @@
             border: 2px solid white; border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
-
-        .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
-        .leaflet-container { cursor: grab !important; }
+        .leaflet-control-layers { border-radius: 8px !important; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header"><h3 style="margin:0">Censo Ayacucho</h3></div>
+        <div class="header"><h3 style="margin:0">Censo Fiscal</h3></div>
         <div class="content">
-            <input type="text" id="url-csv" placeholder="Pega el link CSV aquí...">
-            <button onclick="cargar()">SINCRONIZAR</button>
-            <p id="st" style="font-size:11px; color:gray; margin-top:10px; text-align:center;"></p>
+            <input type="text" id="url" placeholder="Pega el link CSV aquí...">
+            <button onclick="cargar()">CARGAR</button>
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // Capas optimizadas para evitar el bloqueo (Gris)
-        var mapaCalles = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
-        var mapaSat = L.tileLayer('https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { subdomains: '0123', maxZoom: 20 });
-
-        // Inicializamos con Calles (que es la más ligera para interactuar)
-        var map = L.map('map', { 
-            zoomControl: false, 
-            layers: [mapaCalles] 
-        }).setView([8.038, -72.261], 15);
-
-        var baseMaps = { 
-            "📍 Mapa de Calles": mapaCalles, 
-            "🛰️ Satélite Real": mapaSat 
+        // Capas básicas de Google: m = Mapa, s = Satélite
+        var capas = {
+            "Mapa": L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}'),
+            "Satélite": L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}')
         };
-        
-        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
+
+        var map = L.map('map', { zoomControl: false, layers: [capas["Mapa"]] }).setView([8.038, -72.261], 15);
+        L.control.layers(capas, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        var markers = L.layerGroup().addTo(map);
+        var group = L.layerGroup().addTo(map);
 
         function cargar() {
-            var url = document.getElementById('url-csv').value;
-            if(!url) return;
-
-            Papa.parse(url, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
+            Papa.parse(document.getElementById('url').value, {
+                download: true, header: true,
                 complete: function(res) {
-                    markers.clearLayers();
+                    group.clearLayers();
                     res.data.forEach(row => {
                         var lat = parseFloat(row.latitud  row.Latitud  row.lat);
                         var lon = parseFloat(row.longitud  row.Longitud  row.lon);
-                        
                         if(!isNaN(lat)) {
-                            var icon = L.divIcon({
-                                className: 'div-pin',
-                                html: '<div class="my-pin"></div>',
-                                iconSize: [22, 22], iconAnchor: [11, 22], popupAnchor: [0, -22]
-                            });var info = "<div>";
-                            for(var k in row){ info += "<b>"+k+":</b> "+row[k]+"<br>"; }
-                            L.marker([lat, lon], {icon: icon}).bindPopup(info+"</div>").addTo(markers);
+                            var icon = L.divIcon({ className: 'div-pin', html: '<div class="my-pin"></div>', iconSize: [22, 22], iconAnchor: [11, 22] });
+                            var t = ""; for(var k in row){ t += "<b>"+k+":</b> "+row[k]+"<br>"; }
+                            L.marker([lat, lon], {icon: icon}).bindPopup(t).addTo(group);
                         }
                     });
-                    document.getElementById('st').innerText = "Capa sincronizada.";
-                    if(markers.getLayers().length > 0) map.fitBounds(L.featureGroup(markers.getLayers()).getBounds());
+                    if(group.getLayers().length > 0) map.fitBounds(L.featureGroup(group.getLayers()).getBounds());
                 }
             });
         }
-
-        window.onload = function() {
-            setTimeout(function() { map.invalidateSize(); }, 600);
-        };
+        window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 500); };
     </script>
 </body>
 </html>
