@@ -3,63 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Sistema de Gestión Fiscal - Ayacucho</title>
+    <title>Visor de Mapas - Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        html, body, #map { height: 100%; margin: 0; padding: 0; background: #202124; }
-        
-        /* Interacción: Cursor de Google Maps */
-        .leaflet-container { cursor: grab !important; font-family: 'Roboto', Arial, sans-serif; }
+        html, body, #map { height: 100%; margin: 0; padding: 0; background: #000; }
+        .leaflet-container { cursor: grab !important; }
         .leaflet-container:active { cursor: grabbing !important; }
 
-        /* Panel Lateral estilo My Maps */
+        /* Panel Lateral */
         .sidebar {
             position: absolute; top: 12px; left: 12px; z-index: 1000;
-            width: 320px; background: white; border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3); overflow: hidden;
+            width: 300px; background: white; border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-family: Arial, sans-serif;
         }
-        .header { background: #4285F4; color: white; padding: 18px; }
-        .header h2 { margin: 0; font-size: 18px; font-weight: 400; }
-        
-        .content { padding: 15px; max-height: 80vh; overflow-y: auto; }
-        input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #34a853; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; transition: 0.3s; }
-        button:hover { background: #2d9249; }
+        .header { background: #4285F4; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
+        .content { padding: 15px; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #34a853; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
 
-        /* Estilo de los Pines Elaborados */
-        .google-pin {
-            width: 30px; height: 30px;
+        /* PIN ESTILO MY MAPS (Azul clásico) */
+        .my-maps-pin {
+            width: 24px; height: 24px;
+            background: #4285F4; border: 2px solid white;
             border-radius: 50% 50% 50% 0;
-            position: absolute; transform: rotate(-45deg);
-            border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            display: flex; align-items: center; justify-content: center;
+            transform: rotate(-45deg);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-        .pin-icon { transform: rotate(45deg); color: white; font-weight: bold; font-size: 14px; }
-        .vencida { background: #ea4335; }
-        .vigente { background: #34a853; }
 
-        /* Controles de Capas (Esquina inferior izquierda) */
-        .leaflet-control-layers { 
-            border: none !important; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; 
-            border-radius: 8px !important; 
-            padding: 10px !important;
-        }
+        .leaflet-control-layers { border-radius: 8px !important; padding: 10px !important; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <div class="header">
-            <h2>Censo Fiscal Ayacucho</h2>
-            <p style="margin:4px 0 0; font-size:12px; opacity:0.9;">Control de Licencias Económicas</p>
-        </div>
+        <div class="header"><h3 style="margin:0">Mis Capas</h3></div>
         <div class="content">
-            <p style="font-size: 13px; color: #666;">Pega el enlace CSV de Google Sheets para ver los comercios en el mapa.</p>
-            <input type="text" id="csv-url" placeholder="Enlace de Publicar en la Web (CSV)...">
-            <button onclick="sincronizar()">SINCRONIZAR DATOS</button>
-            <div id="stats" style="margin-top:15px; font-size:12px; color:#555;"></div>
+            <input type="text" id="url-csv" placeholder="Pega el link CSV aquí...">
+            <button onclick="cargar()">CARGAR DATOS</button>
+            <p id="info" style="font-size:11px; color:gray; margin-top:10px;"></p>
         </div>
     </div>
 
@@ -69,111 +51,56 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <script>
-        // 1. DEFINICIÓN DE CAPAS BASE (LOS 3 SATÉLITES)
-        var satPuro = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Satélite'
-        });
-        
-        var satCallejero = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', {
-            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Calles'
-        });
-        
-        var satPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-            maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: 'Google Híbrido + POI'
-        });// 2. INICIALIZAR EL MAPA
-        var map = L.map('map', { 
-            zoomControl: false, 
-            layers: [satPOI] // Capa inicial con POI
-        }).setView([8.038, -72.261], 16);
+        // 1. CAPAS SATELITALES (Las 3 que pediste)
+        var satLimpio = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
+        var satCallejero = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
+        var satPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
 
-        // 3. SECTOR DE CAPAS (Aquí puedes añadir hasta 11 si quieres)
+        // 2. INICIAR MAPA
+        var map = L.map('map', { zoomControl: false, layers: [satPOI] }).setView([8.038, -72.261], 15);
+
         var baseLayers = {
-            "🛰️ Satélite Puro": satPuro,
+            "🛰️ Satélite Puro": satLimpio,
             "🛣️ Satélite + Calles": satCallejero,
-            "🏛️ Satélite + POI (Puntos de Interés)": satPOI
+            "🏛️ Satélite + POI": satPOI
         };
-
-        var overlayLayers = {}; // Aquí se guardarán las capas de datos (Comercios, etc.)
-        
-        var layerControl = L.control.layers(baseLayers, overlayLayers, { 
-            position: 'bottomleft', 
-            collapsed: false 
-        }).addTo(map);
-
+        L.control.layers(baseLayers, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        // Grupo de marcadores
         var markersGroup = L.layerGroup().addTo(map);
-        layerControl.addOverlay(markersGroup, "<b>Mis Comercios (Censo)</b>");
 
-        // 4. FUNCIÓN DE CARGA
-        function sincronizar() {
-            var url = document.getElementById('csv-url').value;
-            if(!url.includes("output=csv")) {
-                alert("Error: Asegúrate de usar el link de 'Publicar en la Web' en formato CSV.");
-                return;
-            }
-
+        function cargar() {
+            var url = document.getElementById('url-csv').value;
             Papa.parse(url, {
                 download: true,
                 header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
+                complete: function(res) {
                     markersGroup.clearLayers();
-                    let vigentes = 0;
-                    let vencidas = 0;
-
-                    results.data.forEach(row => {
-                        let lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        let lon = parseFloat(row.longitud  row.Longitud  row.lon);
-
-                        if(!isNaN(lat) && !isNaN(lon)) {
-                            let status = (row['Licencia Act. Ec.']  row['Estado']  "").toUpperCase();
-                            let esVencida = status.includes("VENCIDA");
-                            let colorClass = esVencida ? "vencida" : "vigente";
-                            let iconChar = esVencida ? "!" : "✓";
-                            
-                            if(esVencida) vencidas++; else vigentes++;
-
-                            // Crear el Pin Elaborado
-                            let customIcon = L.divIcon({
-                                className: 'custom-icon',
-                                html: <div class="google-pin ${colorClass}"><span class="pin-icon">${iconChar}</span></div>,
-                                iconSize: [30, 30],
-                                iconAnchor: [15, 30],
-                                popupAnchor: [0, -30]
+                    res.data.forEach(row => {
+                        var lat = parseFloat(row.latitud  row.Latitud  row.lat);
+                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);if(!isNaN(lat)) {
+                            var icon = L.divIcon({
+                                className: 'custom-div',
+                                html: <div class="my-maps-pin"></div>,
+                                iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -24]
                             });
 
-                            L.marker([lat, lon], { icon: customIcon })
-                             .bindPopup(
-                                <div style="min-width:150px">
-                                    <h3 style="margin:0; color:#4285F4;">${row.Nombre || 'Comercio'}</h3>
-                                    <hr>
-                                    <b>RIF:</b> ${row.RIF || 'N/A'}<br>
-                                    <b>Estado:</b> <span style="color:${esVencida?'red':'green'}">${status}</span>
-                                </div>
-                             )
+                            // El popup muestra TODA la información de la fila
+                            var info = "";
+                            for (var key in row) { info += <b>${key}:</b> ${row[key]}<br>; }
+
+                            L.marker([lat, lon], { icon: icon })
+                             .bindPopup(<div style="max-height:200px; overflow-y:auto;">${info}</div>)
                              .addTo(markersGroup);
                         }
                     });
-
-                    document.getElementById('stats').innerHTML = 
-                        <b>Resultados:</b><br>
-                        ✅ Vigentes: ${vigentes} <br>
-                        ❌ Vencidas: ${vencidas}
-                    ;
-                    
-                    if(markersGroup.getLayers().length > 0) {
-                        map.fitBounds(L.featureGroup(markersGroup.getLayers()).getBounds());
-                    }
+                    document.getElementById('info').innerText = "Datos cargados correctamente.";
+                    if(markersGroup.getLayers().length > 0) map.fitBounds(L.featureGroup(markersGroup.getLayers()).getBounds());
                 }
             });
-        }// SOLUCIÓN AL CUADRO NEGRO: Forzar el tamaño al cargar
-        window.onload = function() {
-            setTimeout(function() {
-                map.invalidateSize();
-            }, 600);
-        };
+        }
+
+        window.onload = function() { setTimeout(function(){ map.invalidateSize(); }, 600); };
     </script>
 </body>
 </html>
