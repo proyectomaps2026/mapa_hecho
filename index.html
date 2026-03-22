@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Ayacucho Pro</title>
+    <title>Censo Fiscal Ayacucho - Pro</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -12,27 +12,28 @@
     <style>
         html, body, #map { height: 100%; margin: 0; padding: 0; background: #202124; }
         
-        /* Panel My Maps */
+        /* Panel Lateral estilo Google My Maps */
         .sidebar {
-            position: absolute; top: 12px; left: 12px; z-index: 1000;
-            width: 280px; background: white; border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3); font-family: Arial, sans-serif;
+            position: absolute; top: 15px; left: 15px; z-index: 1000;
+            width: 300px; background: white; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .header { background: #4285F4; color: white; padding: 15px; border-radius: 8px 8px 0 0; }
-        .header h3 { margin: 0; font-size: 16px; font-weight: normal; }
+        .header h3 { margin: 0; font-size: 18px; font-weight: 500; }
         .content { padding: 15px; }
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #34a853; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        input { width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #34a853; color: white; border: none; font-weight: bold; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        button:hover { background: #2d9249; }
 
-        /* Pincheta My Maps */
-        .pin {
-            width: 24px; height: 24px; background: #4285F4;
+        /* Estilo de Pincheta My Maps */
+        .my-pin {
+            width: 26px; height: 26px; background: #4285F4;
             border: 2px solid white; border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            transform: rotate(-45deg); box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         /* Selector de capas profesional */
-        .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important; padding: 10px !important; }
+        .leaflet-control-layers { border: none !important; border-radius: 8px !important; box-shadow: 0 2px 15px rgba(0,0,0,0.2) !important; padding: 10px !important; }
         .leaflet-container { cursor: grab !important; }
         .leaflet-container:active { cursor: grabbing !important; }
     </style>
@@ -43,58 +44,74 @@
         <div class="header"><h3>Censo Ayacucho</h3></div>
         <div class="content">
             <input type="text" id="csv-url" placeholder="Enlace CSV (Publicar en la web)...">
-            <button onclick="cargarCapa()">SINCRONIZAR</button>
-            <p id="msg" style="font-size:11px; color:gray; margin-top:10px;"></p>
+            <button onclick="cargarCapa()">SINCRONIZAR DATOS</button>
+            <p id="msg" style="font-size:11px; color:#666; margin-top:10px; text-align: center;"></p>
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // Capas de Google
-        var sPuro = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
-        var sCalle = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
-        var sPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{maxZoom:20,subdomains:['mt0','mt1','mt2','mt3']});
+        // Capas de Satélite de Google (Híbrido, Satélite y Calles)
+        var sPuro = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0','mt1','mt2','mt3'] });
+        var sCalle = L.tileLayer('https://{s}.google.com/vt/lyrs=h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0','mt1','mt2','mt3'] });
+        var sPOI = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0','mt1','mt2','mt3'] });
 
-        // Inicializar mapa
-        var map = L.map('map', { zoomControl: false, layers: [sPOI] }).setView([8.038, -72.261], 15);
+        // Inicialización del Mapa
+        var map = L.map('map', { 
+            zoomControl: false, 
+            layers: [sPOI] 
+        }).setView([8.038, -72.261], 15);
 
-        // Controles
-        var base { "Satélite Puro": sPuro, "Satélite + Calles": sCalle, "Satélite + POI": sPOI };
-        L.control.layers(base, null, { position: 'bottomleft', collapsed: false }).addTo(map);
+        // Control de Capas (3 Tipos de Satélite)
+        var baseMaps = {
+            "🛰️ Satélite Puro": sPuro,
+            "🛣️ Solo Calles": sCalle,
+            "🏥 Satélite + POI": sPOI
+        };
+        L.control.layers(baseMaps, null, { position: 'bottomleft', collapsed: false }).addTo(map);
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         var capaPuntos = L.layerGroup().addTo(map);
 
         function cargarCapa() {
             var url = document.getElementById('csv-url').value;
-            Papa.parse(url, {
-                download: true,
+            if(!url) return;
+
+            Papa.parse(url, {download: true,
                 header: true,
+                skipEmptyLines: true,
                 complete: function(res) {
                     capaPuntos.clearLayers();
                     res.data.forEach(function(row) {
                         var lat = parseFloat(row.latitud  row.Latitud  row.lat);
-                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);if(!isNaN(lat)) {
+                        var lon = parseFloat(row.longitud  row.Longitud  row.lon);
+                        
+                        if(!isNaN(lat) && !isNaN(lon)) {
                             var icon = L.divIcon({
-                                className: 'div-pin',
-                                html: '<div class="pin"></div>',
-                                iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -24]
+                                className: 'custom-div-pin',
+                                html: '<div class="my-pin"></div>',
+                                iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -26]
                             });
-                            var html = "<div>";
-                            for(var k in row){ html += "<b>"+k+":</b> "+row[k]+"<br>"; }
-                            L.marker([lat, lon], {icon: icon}).bindPopup(html+"</div>").addTo(capaPuntos);
+
+                            var info = "<div style='font-family: Arial;'>";
+                            for(var k in row){ info += "<b>"+k+":</b> "+row[k]+"<br>"; }
+                            info += "</div>";
+
+                            L.marker([lat, lon], {icon: icon}).bindPopup(info).addTo(capaPuntos);
                         }
                     });
-                    document.getElementById('msg').innerText = "Capa actualizada.";
-                    if(capaPuntos.getLayers().length > 0) map.fitBounds(L.featureGroup(capaPuntos.getLayers()).getBounds());
+                    document.getElementById('msg').innerText = "Capa sincronizada con éxito.";
+                    if(capaPuntos.getLayers().length > 0) {
+                        map.fitBounds(L.featureGroup(capaPuntos.getLayers()).getBounds());
+                    }
                 }
             });
         }
 
-        // Corrección de renderizado
+        // Corrección automática de tamaño para evitar pantalla negra
         window.addEventListener('load', function() {
-            setTimeout(function() { map.invalidateSize(); }, 500);
+            setTimeout(function() { map.invalidateSize(); }, 400);
         });
     </script>
 </body>
