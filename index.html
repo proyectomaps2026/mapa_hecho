@@ -3,35 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>My Maps Satelital - SC</title>
+    <title>Mapa Fiscal - Municipio Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
     <style>
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; font-family: 'Roboto', Arial, sans-serif; }
-        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; z-index: 1; background: #000; }
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #000; }
+        #map { position: absolute; top: 0; bottom: 0; right: 0; left: 0; z-index: 1; cursor: grab; }
+        #map:active { cursor: grabbing; }
 
-        /* Barra Lateral My Maps */
+        /* Interfaz estilo My Maps */
         .sidebar {
             position: absolute; top: 10px; left: 10px; bottom: 10px;
             width: 310px; background: white; z-index: 1000;
             border-radius: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; font-family: 'Roboto', Arial, sans-serif;
         }
-
         .sidebar-header { background: #4285F4; color: white; padding: 15px; }
         .sidebar-header h2 { margin: 0; font-size: 18px; font-weight: 400; }
-        
         .content { padding: 15px; background: #fff; flex-grow: 1; overflow-y: auto; }
-        .layer-item { display: flex; align-items: center; margin-bottom: 20px; font-size: 14px; color: #555; }
-        
         .import-box { background: #f8f9fa; padding: 15px; border: 1px dashed #4285F4; border-radius: 4px; }
         input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #4285F4; color: white; border: none; cursor: pointer; font-weight: bold; }
-
-        /* Ficha de información */
+        button { width: 100%; padding: 12px; background: #4285F4; color: white; border: none; cursor: pointer; font-weight: bold; border-radius: 2px; }
+        button:hover { background: #3367d6; }
         .popup-img { width: 100%; height: 140px; object-fit: cover; border-radius: 4px; }
     </style>
 </head>
@@ -41,16 +34,13 @@
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>Censo Fiscal - Satelital</h2>
-            <p style="margin:0; font-size:11px; opacity:0.8;">San Cristóbal, Táchira</p>
+            <h2>Censo Fiscal - Ayacucho</h2>
+            <p style="margin:0; font-size:11px; opacity:0.8;">Estado Táchira</p>
         </div>
-        
         <div class="content">
-            <div class="layer-item">
-                <input type="checkbox" checked id="toggleLayer"> 
-                <span style="margin-left:10px; font-weight:bold;">Capa de Comercios</span>
+            <div style="margin-bottom:15px; font-size:14px; color:#555;">
+                <input type="checkbox" checked id="layerToggle"> <b>Capa de Comercios</b>
             </div>
-
             <div class="import-box" id="panel-import">
                 <input type="text" id="url-input" placeholder="Pega el link de Google Sheets (CSV)...">
                 <button onclick="cargarDatos()">CARGAR DATOS</button>
@@ -59,15 +49,19 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <script>
-        // 1. Configurar el mapa con ZOOM habilitado (rueda y doble clic)
+        // 1. Centrar en Municipio Ayacucho (San Juan de Colón)
         var map = L.map('map', { 
             zoomControl: false,
-            scrollWheelZoom: true,
-            dragging: true 
-        }).setView([7.766, -72.225], 14);
+            scrollWheelZoom: true, // Activa zoom con rueda
+            dragging: true,        // Activa arrastrar con la mano
+            doubleClickZoom: true
+        }).setView([8.035, -72.260], 14); 
 
-        // 2. CAPA SATELITAL HÍBRIDA (Google Satélite + Etiquetas)
+        // 2. Capa Satelital Híbrida de Google (Fotos + Calles)
         var googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             maxZoom: 20,
             subdomains:['mt0','mt1','mt2','mt3']
@@ -79,7 +73,7 @@
 
         function cargarDatos() {
             const url = document.getElementById('url-input').value;
-            if(!url.includes("output=csv")) return alert("Usa el link de 'Publicar en la web' (.csv)");
+            if(!url.includes("output=csv")) return alert("Error: Usa el link de 'Publicar en la web' como CSV");
 
             Papa.parse(url, {
                 download: true,
@@ -93,7 +87,6 @@
                         let lon = parseFloat(row.longitud  row.Longitud  row.lng);if(!isNaN(lat) && !isNaN(lon)) {
                             count++;
                             let lic = row['Licencia Act. Ec.'] || "";
-                            // Rojo para Vencida, Verde para Vigente
                             let color = lic.includes("VENCIDA") ? "#ff0000" : "#00ff00";
                             let foto = row.Imagen ? row.Imagen.replace(/[\[\]]/g, "") : "";
 
@@ -104,10 +97,10 @@
                             marker.bindPopup(
                                 <div style="width:200px">
                                     ${foto ? <img src="${foto}" class="popup-img"> : ''}
-                                    <h4 style="margin:5px 0">${row.Nombre || 'Comercio'}</h4>
+                                    <h4 style="margin:5px 0">${row.Nombre || 'Local'}</h4>
                                     <p style="font-size:12px; margin:0"><b>RIF:</b> ${row.RIF || 'N/A'}</p>
                                     <p style="font-size:12px; color:${color}; font-weight:bold;">${lic}</p>
-                                    <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}" target="_blank" style="display:block; text-align:center; margin-top:10px; color:#4285F4; font-weight:bold; text-decoration:none;">IR CON GPS</a>
+                                    <a href="https://www.google.com/maps?q=${lat},${lon}" target="_blank" style="display:block; text-align:center; margin-top:10px; color:#4285F4; font-weight:bold; text-decoration:none;">NAVEGAR</a>
                                 </div>
                             );
                             markersGroup.addLayer(marker);
@@ -117,24 +110,22 @@
                     if(count > 0) {
                         map.fitBounds(L.featureGroup(markersGroup.getLayers()).getBounds());
                         document.getElementById('panel-import').style.display = 'none';
-                        document.getElementById('msg').innerText = count + " comercios cargados en el mapa satelital.";
-                        localStorage.setItem("url_guardada", url);
+                        document.getElementById('msg').innerText = count + " puntos cargados en Ayacucho.";
+                        localStorage.setItem("cache_url", url);
                     }
                 }
             });
         }
 
-        // Recuperar última sesión automáticamente
         window.onload = () => {
-            const saved = localStorage.getItem("url_guardada");
+            const saved = localStorage.getItem("cache_url");
             if(saved) {
                 document.getElementById('url-input').value = saved;
                 cargarDatos();
             }
         };
 
-        // Encender/Apagar capa
-        document.getElementById('toggleLayer').addEventListener('change', function(e) {
+        document.getElementById('layerToggle').addEventListener('change', function(e) {
             if(e.target.checked) map.addLayer(markersGroup);
             else map.removeLayer(markersGroup);
         });
