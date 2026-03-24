@@ -2,35 +2,48 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF | Inteligencia Fiscal Ayacucho</title>
+    <title>SGF | Panel Master - Edición de Lujo</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --bg: #0f172a; --panel: rgba(255,255,255,0.85); --accent: #3b82f6; --text: #1e293b; --success: #22c55e; --danger: #ef4444; }
+        :root { --bg: #0f172a; --panel: rgba(255,255,255,0.9); --accent: #3b82f6; --text: #1e293b; --success: #22c55e; --danger: #ef4444; }
         body, html { height: 100%; margin: 0; font-family: 'Poppins', sans-serif; overflow: hidden; background: var(--bg); }
         
-        /* EL MAPA (FONDO) */
+        /* EL MAPA (Fondo) */
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* --- INTERFAZ JEFA (FLOTANTE) --- */
-        
-        /* Barra de Herramientas Izquierda */
-        #toolbar {
-            position: absolute; top: 20px; left: 20px; z-index: 100;
-            background: var(--panel); backdrop-filter: blur(10px);
-            padding: 10px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; gap: 10px;
+        /* --- SGF BUILDER PRO (TU PANEL DE EDITOR MASTER) --- */
+        #builder-panel {
+            position: absolute; top: 20px; left: -450px; bottom: 20px; width: 420px; z-index: 10000;
+            background: var(--panel); backdrop-filter: blur(15px);
+            border-radius: 20px; box-shadow: 10px 0 30px rgba(0,0,0,0.15);
+            transition: 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            overflow-y: auto; display: flex; flex-direction: column; color: var(--text);
         }
-        .tool-btn {
-            width: 45px; height: 45px; border-radius: 12px; border: none; background: none;
-            color: var(--text); font-size: 18px; cursor: pointer; transition: 0.3s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .tool-btn:hover { background: rgba(0,0,0,0.05); color: var(--accent); }
-        .tool-btn.active { background: var(--accent); color: white; }
+        .builder-content { padding: 30px; }
+        .builder-header { border-bottom: 1px solid #ddd; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .builder-header h2 { margin: 0; font-weight: 600; font-size: 20px; color: var(--text); }
+        .close-builder { background: none; border: none; font-size: 24px; color: #999; cursor: pointer; }
 
-        /* Panel Lateral Redondeado (Ficha del Local) */
+        .group { margin-bottom: 25px; }
+        .group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555; }
+        input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; background: white; color: var(--text); box-sizing: border-box; }
+        input[type="color"] { padding: 0; height: 40px; cursor: pointer; background: none; border: none; }
+        .btn-action { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 20px; }
+        .btn-action:hover { background: #2563eb; transform: translateY(-2px); }
+
+        /* Tabla de Colores Dinámicos */
+        #color-rules-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #color-rules-table td, #color-rules-table th { padding: 8px 5px; text-align: left; }
+        #color-rules-table th { font-size: 11px; text-transform: uppercase; color: #777; }
+        .color-preview { width: 25px; height: 25px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* Controles de Rango (Tamaño/Opacidad) */
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 5px; background: #ddd; border-radius: 5px; outline: none; padding: 0; border: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: 0.3s; }
+
+        /* --- INTERFAZ JEFA (Flotante) --- */
         #side-panel {
             position: absolute; top: 20px; right: -420px; bottom: 20px; width: 380px; z-index: 1000;
             background: var(--panel); backdrop-filter: blur(15px);
@@ -41,47 +54,22 @@
         .panel-content { padding: 30px; }
         .foto-header { width: 100%; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin-bottom: 25px; object-fit: cover; height: 200px; }
         .status-badge { display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        
-        /* Controles de Zoom Modernos */
-        .leaflet-control-zoom { border: none !important; margin: 20px !important; }
-        .leaflet-control-zoom-in, .leaflet-control-zoom-out { 
-            background: var(--panel) !important; color: var(--text) !important; 
-            border: none !important; border-radius: 10px !important; margin-bottom: 5px; box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important; 
-        }
 
-        /* --- INTERFAZ AURA MASTER (OCULTA) --- */
-        
-        /* El "Puntito" Invisible de Entrada */
+        /* MODO LOGIN */
         #admin-trigger { position: fixed; bottom: 5px; left: 5px; z-index: 9999; width: 10px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 50%; cursor: pointer; }
-
-        /* Modal Glassmorphism */
-        #admin-modal { 
+        #login-modal { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(10px);
             z-index: 10000; color: white; justify-content: center; align-items: center; 
         }
-        .admin-box { 
-            width: 380px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-            padding: 35px; border-radius: 25px; box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-            text-align: center;
+        .login-box { 
+            width: 320px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            padding: 35px; border-radius: 25px; text-align: center;
         }
-        .admin-box h3 { margin-top: 0; color: white; }
-        .input-group { margin-bottom: 18px; text-align: left; }
-        .input-group label { display: block; font-size: 12px; margin-bottom: 5px; opacity: 0.8; }
-        input { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white; box-sizing: border-box; }
-        input[type="color"] { padding: 0; height: 40px; cursor: pointer; background: none; border: none; }
-        .btn-save { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 15px; }
-        .btn-save:hover { background: #2563eb; transform: translateY(-2px); }
 
     </style>
 </head>
 <body>
-
-<div id="toolbar">
-    <button class="tool-btn active" title="Mapa de Recaudación"><i class="fas fa-map-marked-alt"></i></button>
-    <button class="tool-btn" title="Buscar Comercio"><i class="fas fa-search"></i></button>
-    <button class="tool-btn" title="Resumen Gerencial"><i class="fas fa-chart-pie"></i></button>
-</div>
 
 <div id="map"></div>
 
@@ -95,35 +83,58 @@
     </div>
 </div>
 
+<div id="builder-panel">
+    <div class="builder-content">
+        <div class="builder-header">
+            <h2><i class="fas fa-magic" style="color:var(--accent);"></i> SGF Builder Pro</h2>
+            <button class="close-builder" onclick="cerrarBuilder()">&times;</button>
+        </div>
+
+        <div class="group">
+            <label>Link del CSV (Google Sheets):</label>
+            <input type="text" id="cfg-csv" placeholder="Paste export?format=csv link">
+        </div>
+
+        <div class="group">
+            <label>Editor de Colores por Estado:</label>
+            <p style="font-size:11px; color:#777; margin:0 0 10px 0;">Define el color para cada palabra clave que salga en tu CSV.</p>
+            <table id="color-rules-table">
+                <thead>
+                    <tr><th>Color</th><th>Palabra Clave</th><th>Acción</th></tr>
+                </thead>
+                <tbody id="color-rules-body">
+                    </tbody>
+            </table>
+            <button onclick="addRuleRow()" style="background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; margin-top:10px; padding:0;">+ Añadir Regla</button>
+        </div>
+
+        <div style="display:flex; gap:15px;" class="group">
+            <div style="flex:1;">
+                <label>Radio Punto:</label>
+                <input type="range" id="cfg-radius" min="5" max="25" value="11" oninput="document.getElementById('val-radius').innerText = this.value">
+                <span id="val-radius" style="font-size:11px; color:#777;">11</span> px
+            </div>
+            <div style="flex:1;">
+                <label>Opacidad Punto:</label>
+                <input type="range" id="cfg-opacity" min="0.1" max="1" step="0.1" value="0.95" oninput="document.getElementById('val-opacity').innerText = this.value">
+                <span id="val-opacity" style="font-size:11px; color:#777;">0.95</span>
+            </div>
+        </div>
+
+        <button class="btn-action" onclick="guardarCambiosMaster()">Aplicar y Reiniciar</button>
+        <p style="text-align:center; font-size:10px; color:#aaa; margin-top:15px;">Aura Master Suite v1.0 | Colón 2026</p>
+    </div>
+</div>
+
 <div id="admin-trigger" onclick="abrirLogin()"></div>
 
-<div id="admin-modal">
-    <div id="login-screen" class="admin-box">
-        <i class="fas fa-lock" style="font-size: 40px; color: var(--accent); margin-bottom: 20px;"></i>
-        <h3>Panel Aura Master</h3>
-        <input type="text" id="user-in" placeholder="Usuario">
-        <input type="password" id="pass-in" placeholder="Contraseña" style="margin-top:10px;">
-        <button class="btn-save" onclick="validarAcceso()">Entrar</button>
+<div id="login-modal">
+    <div class="login-box">
+        <i class="fas fa-lock" style="font-size: 30px; color: var(--accent); margin-bottom: 15px;"></i>
+        <h3 style="margin:0; color:white;">Acceso Master</h3>
+        <input type="password" id="pass-in" placeholder="Contraseña Master" style="margin-top:15px; border-radius:12px;">
+        <button class="btn-save" onclick="validarAcceso()" style="width:100%; padding:15px; background:var(--accent); color:white; border:none; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:15px;">Entrar</button>
         <button onclick="cerrarAdmin()" style="background:none; border:none; color:rgba(255,255,255,0.5); margin-top:20px; cursor:pointer;">Cancelar</button>
-    </div>
-
-    <div id="editor-screen" class="admin-box" style="display:none; text-align: left;">
-        <h3 style="text-align:center;">⚙️ Configuración Maestra</h3>
-        <div class="input-group">
-            <label>Link del CSV (Google Sheets):</label>
-            <input type="text" id="cfg-csv" placeholder="URL export?format=csv">
-        </div>
-        <div style="display:flex; gap:15px; margin-bottom:18px;">
-            <div class="input-group" style="flex:1;">
-                <label>Color Solvente:</label>
-                <input type="color" id="cfg-col1" value="#22c55e">
-            </div>
-            <div class="input-group" style="flex:1;">
-                <label>Color Mora:</label>
-                <input type="color" id="cfg-col2" value="#ef4444">
-            </div>
-        </div>
-        <button class="btn-save" onclick="guardarCambios()">Guardar y Reiniciar</button>
     </div>
 </div>
 
@@ -131,41 +142,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
 <script>
-    // CONFIGURACIÓN POR DEFECTO
-    let config = {
-        user: "AuraMaster",
-        pass: "Colón2026",
-        csv: "TU_LINK_AQUÍ", // Pon tu link aquí para la prueba
-        col1: "#22c55e",
-        col2: "#ef4444"
+    // CONFIGURACIÓN POR DEFECTO MAESTRA
+    let configMaster = {
+        passMaster: "Colón2026",
+        csv: "TU_LINK_AQUÍ", // Pon tu link aquí
+        pointRadius: 11,
+        pointOpacity: 0.95,
+        colorRules: [
+            { key: "solvente", color: "#22c55e" },
+            { key: "mora", color: "#ef4444" },
+            { key: "proceso", color: "#f59e0b" }
+        ]
     };
 
     var map, markersLayer;
 
     window.onload = function() {
-        const saved = localStorage.getItem('sgf_config_v5');
-        if(saved) config = JSON.parse(saved);
+        const saved = localStorage.getItem('sgf_config_builder_v1');
+        if(saved) configMaster = JSON.parse(saved);
         initApp();
     };
 
     function initApp() {
         if(map) map.remove();
-        // Zoom Control TRUE pero elegante
-        map = L.map('map', { zoomControl: true }).setView([8.038, -72.261], 15);
         
-        // Satélite Híbrido Google
+        // --- ELIMINAR ATTRIBUTION (BORRAR AL UCRANIANO) ---
+        // Al crear el mapa, pasamos attributionControl: false
+        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([8.038, -72.261], 15);
+        
+        // Satélite Híbrido Google (Sin Attribution)
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
         
         markersLayer = L.layerGroup().addTo(map);
         cargarCSV();
-        
-        // Mover controles de zoom a abajo a la derecha
-        map.zoomControl.setPosition('bottomright');
+    }
+
+    // Función para asignar color dinámico
+    function getColor(est) {
+        let finalColor = "#666666"; // Color por defecto si no hay regla
+        configMaster.colorRules.forEach(rule => {
+            if(est.includes(rule.key.toLowerCase())) {
+                finalColor = rule.color;
+            }
+        });
+        return finalColor;
     }
 
     function cargarCSV() {
-        if(!config.csv || config.csv === "TU_LINK_AQUÍ") return;
-        Papa.parse(config.csv, {
+        if(!configMaster.csv || configMaster.csv === "TU_LINK_AQUÍ") return;
+        Papa.parse(configMaster.csv, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(res) {
                 res.data.forEach(row => {
@@ -173,9 +198,17 @@
                     if(gps && gps.includes(",")) {
                         const [lat, lon] = gps.split(",").map(c => parseFloat(c.trim()));
                         let est = (row["Estado"] || "").toLowerCase();
-                        let color = est.includes("solvente") ? config.col1 : config.col2;
                         
-                        L.circleMarker([lat, lon], { radius: 11, fillColor: color, color: "white", weight: 3, fillOpacity: 0.95, className: 'marker-shadow' })
+                        // Usamos la función getColor con tu tabla de reglas
+                        let color = getColor(est);
+                        
+                        L.circleMarker([lat, lon], { 
+                            radius: configMaster.pointRadius, 
+                            fillColor: color, 
+                            color: "white", 
+                            weight: 3, 
+                            fillOpacity: configMaster.pointOpacity
+                        })
                         .on('click', () => abrirPanel(row, est))
                         .addTo(markersLayer);
                     }
@@ -184,53 +217,110 @@
         });
     }
 
+    // Funciones del Panel Lateral (Jefa)
     function abrirPanel(data, est) {
-        document.getElementById("side-panel").style.right = "20px"; // Entra suave
+        document.getElementById("side-panel").style.right = "20px";
         document.getElementById("view-nombre").innerText = data.Nombre;
         document.getElementById("view-foto").src = data.Foto || "https://via.placeholder.com/400x200?text=Sin+Foto";
         
-        let colorBadg = est.includes("solvente") ? config.col1 : config.col2;
-        document.getElementById("view-status").innerHTML = `<span class="status-badge" style="background:${colorBadg}20; color:${colorBadg};">${est.toUpperCase()}</span>`;
+        // Color dinámico para el Badge
+        let colBadge = getColor(est);
+        document.getElementById("view-status").innerHTML = `<span class="status-badge" style="background:${colBadge}20; color:${colBadge};">${est.toUpperCase()}</span>`;
         
         document.getElementById("view-detalles").innerHTML = `
             <p><i class="fas fa-id-card" style="width:20px;"></i> <b>RIF:</b> ${data.RIF}</p>
             <p><i class="fas fa-map-marker-alt" style="width:20px;"></i> <b>Dirección:</b> ${data.Dirección || 'S/D'}</p>
-            <p><i class="fas fa-calendar-check" style="width:20px;"></i> <b>Última Inspección:</b> ${data.Fecha || 'N/P'}</p>
         `;
-        map.flyTo([parseFloat(data["Coordenadas GPS (Oficina)"].split(",")[0]), parseFloat(data["Coordenadas GPS (Oficina)"].split(",")[1])], 19, { duration: 1 });
+        map.flyTo([parseFloat(data["Coordenadas GPS (Oficina)"].split(",")[0]), parseFloat(data["Coordenadas GPS (Oficina)"].split(",")[1])], 19);
     }
-
     function cerrarPanel() { document.getElementById("side-panel").style.right = "-420px"; }
 
-    // FUNCIONES ADMIN (AURA MASTER)
+    // --- FUNCIONES DEL SGF BUILDER PRO (TÚ) ---
+
+    // Login y Apertura
     function abrirLogin() { 
-        document.getElementById("admin-modal").style.display = "flex"; 
-        document.getElementById("login-screen").style.display = "block";
-        document.getElementById("editor-screen").style.display = "none";
+        document.getElementById("login-modal").style.display = "flex"; 
+        document.getElementById("pass-in").focus();
     }
-    function cerrarAdmin() { document.getElementById("admin-modal").style.display = "none"; }
+    function cerrarAdmin() { document.getElementById("login-modal").style.display = "none"; }
 
     function validarAcceso() {
-        const u = document.getElementById("user-in").value;
         const p = document.getElementById("pass-in").value;
-        if(u === config.user && p === config.pass) {
-            document.getElementById("login-screen").style.display = "none";
-            document.getElementById("editor-screen").style.display = "block";
-            // Cargar valores actuales
-            document.getElementById("cfg-csv").value = config.csv;
-            document.getElementById("cfg-col1").value = config.col1;
-            document.getElementById("cfg-col2").value = config.col2;
+        if(p === configMaster.passMaster) {
+            cerrarAdmin();
+            abrirBuilder();
         } else {
-            alert("Acceso denegado, Aura.");
+            alert("Contraseña denegada, Aura Master.");
         }
     }
 
-    function guardarCambios() {
-        config.csv = document.getElementById("cfg-csv").value;
-        config.col1 = document.getElementById("cfg-col1").value;
-        config.col2 = document.getElementById("cfg-col2").value;
-        localStorage.setItem('sgf_config_v5', JSON.stringify(config));
-        alert("Configuración Master guardada. Reiniciando...");
+    function abrirBuilder() {
+        document.getElementById("builder-panel").style.left = "20px";
+        cargarDatosAlBuilder();
+    }
+    function cerrarBuilder() { document.getElementById("builder-panel").style.left = "-450px"; }
+
+    // Cargar datos actuales a la interfaz de edición
+    function cargarDatosAlBuilder() {
+        document.getElementById("cfg-csv").value = configMaster.csv;
+        document.getElementById("cfg-radius").value = configMaster.pointRadius;
+        document.getElementById("val-radius").innerText = configMaster.pointRadius;
+        document.getElementById("cfg-opacity").value = configMaster.pointOpacity;
+        document.getElementById("val-opacity").innerText = configMaster.pointOpacity;
+
+        // Cargar Tabla de Colores Dinámica
+        const body = document.getElementById("color-rules-body");
+        body.innerHTML = ''; // Limpiar
+        configMaster.colorRules.forEach((rule, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="color" value="${rule.color}" class="rule-color"></td>
+                <td><input type="text" value="${rule.key}" class="rule-key" placeholder="Ej: mora"></td>
+                <td><button onclick="removeRuleRow(${index})" style="background:none; border:none; color:#f44; cursor:pointer; padding:0;">&times;</button></td>
+            `;
+            body.appendChild(row);
+        });
+    }
+
+    // Funciones de la Tabla Dinámica
+    function addRuleRow() {
+        const body = document.getElementById("color-rules-body");
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="color" value="#666666" class="rule-color"></td>
+            <td><input type="text" value="" class="rule-key" placeholder="Ej: cerrado"></td>
+            <td><button onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:#f44; cursor:pointer; padding:0;">&times;</button></td>
+        `;
+        body.appendChild(row);
+    }
+    function removeRuleRow(index) {
+        configMaster.colorRules.splice(index, 1);
+        cargarDatosAlBuilder(); // Recargar tabla
+    }
+
+    // GUARDAR CAMBIOS MASTER
+    function guardarCambiosMaster() {
+        // Recopilar Data Source
+        configMaster.csv = document.getElementById("cfg-csv").value;
+        // Recopilar Puntos
+        configMaster.pointRadius = parseInt(document.getElementById("cfg-radius").value);
+        configMaster.pointOpacity = parseFloat(document.getElementById("cfg-opacity").value);
+
+        // Recopilar Tabla de Colores
+        const rules = [];
+        const bodyRows = document.getElementById("color-rules-body").rows;
+        for (let i = 0; i < bodyRows.length; i++) {
+            const color = bodyRows[i].querySelector('.rule-color').value;
+            const key = bodyRows[i].querySelector('.rule-key').value;
+            if(key.trim() !== '') {
+                rules.push({ key: key.trim(), color: color });
+            }
+        }
+        configMaster.colorRules = rules;
+
+        // Guardar en LocalStorage
+        localStorage.setItem('sgf_config_builder_v1', JSON.stringify(configMaster));
+        alert("¡Configuración Master Guardada! El mapa se reiniciará con tus nuevos ajustes.");
         location.reload();
     }
 </script>
