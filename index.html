@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auditoría Ayacucho - Mapa Limpio</title>
+    <title>Censo Ayacucho - Calles Definidas</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -30,7 +30,6 @@
 
         #map { flex-grow: 1; background: #000; }
         
-        /* Pincheta estilizada */
         .pin { 
             width: 18px; height: 18px; background: #ea4335; 
             border: 2px solid white; border-radius: 50% 50% 50% 0; 
@@ -59,16 +58,22 @@
 <script>
     var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 16);
     
-    // 1. SATÉLITE LIMPIO (Sin etiquetas de Google)
+    // 1. SATÉLITE LIMPIO (Fondo)
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19
     }).addTo(map);
 
-    // 2. CAPA DE ETIQUETAS SELECTIVAS (Solo calles principales y puntos de interés)
-    // Esta capa de CartoDB es mucho más limpia y no satura el mapa
+    // 2. CAPA DE VÍAS (Delineado de calles pintadas)
+    // Esto dibuja las líneas de las carreteras y avenidas sin nombres de negocios
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        opacity: 0.3, // Ajusta esto para que las líneas se vean más o menos fuertes
+        pane: 'tilePane'
+    }).addTo(map);
+
+    // 3. ETIQUETAS SELECTIVAS (Nombres de calles y plazas)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        pane: 'markerPane', // Esto hace que las letras queden por ENCIMA de todo
-        opacity: 0.8
+        pane: 'markerPane',
+        opacity: 0.9
     }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
