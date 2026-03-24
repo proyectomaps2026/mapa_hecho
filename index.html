@@ -2,101 +2,176 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Censo Ayacucho - Mapa Final Limpio</title>
+    <title>SGF | Gestión Fiscal Ayacucho</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body, html { height: 100%; margin: 0; font-family: sans-serif; overflow: hidden; }
-        #contenedor { display: flex; height: 100vh; }
-        #sidebar { width: 320px; background: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 1001; }
-        .header { background: #1a73e8; color: white; padding: 15px; text-align: center; }
-        .controles { padding: 15px; border-bottom: 1px solid #eee; background: #f9f9f9; }
-        input { width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; }
-        #lista { flex-grow: 1; overflow-y: auto; }
-        .item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; }
-        .item:hover { background: #f0f7ff; }
-        .item b { color: #1a73e8; display: block; text-transform: uppercase; font-size: 13px; }
-        #map { flex-grow: 1; background: #000; }
-        .pin { width: 18px; height: 18px; background: #ea4335; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        :root { --primary: #0f172a; --accent: #3b82f6; --success: #22c55e; --danger: #ef4444; }
+        body, html { height: 100%; margin: 0; font-family: 'Inter', sans-serif; overflow: hidden; background: #000; }
+        
+        #layout { display: flex; height: 100vh; }
+        #map { flex-grow: 1; z-index: 1; }
+
+        /* PANEL LATERAL PROFESIONAL (VISTA JEFA) */
+        #side-panel { width: 0; transition: 0.5s ease; background: white; z-index: 1000; box-shadow: -5px 0 20px rgba(0,0,0,0.3); overflow-y: auto; display: flex; flex-direction: column; }
+        .p-20 { padding: 25px; }
+        .foto-header { width: 100%; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; object-fit: cover; height: 200px; }
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 15px; }
+        
+        /* BOTÓN ENGRANE INVISIBLE (TU ENTRADA) */
+        #admin-trigger { position: fixed; bottom: 15px; left: 15px; z-index: 9999; opacity: 0.1; cursor: pointer; transition: 0.3s; font-size: 24px; color: white; }
+        #admin-trigger:hover { opacity: 0.8; }
+
+        /* PANEL DE EDICIÓN (MODAL) */
+        #admin-modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.95); z-index: 10000; color: white; justify-content: center; align-items: center; 
+        }
+        .admin-box { width: 400px; background: #1e293b; padding: 30px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .input-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; box-sizing: border-box; }
+        .btn-save { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+        /* LOGIN */
+        #login-screen { text-align: center; }
     </style>
 </head>
 <body>
-<div id="contenedor">
-    <div id="sidebar">
-        <div class="header"><h3 style="margin:0">Censo Fiscal</h3><small>San Juan de Colón</small></div>
-        <div class="controles">
-            <input type="text" id="csv-url" placeholder="Link CSV de Google Sheets...">
-            <button onclick="sincronizar()">Sincronizar Datos</button>
-            <input type="text" id="buscador" placeholder="🔎 Buscar local..." style="margin-top:10px;">
-        </div>
-        <div id="lista"></div>
-    </div>
+
+<div id="layout">
     <div id="map"></div>
+    <div id="side-panel">
+        <div class="p-20" id="panel-data">
+            <h2 id="view-nombre">Cargando...</h2>
+            <div id="view-status"></div>
+            <img id="view-foto" src="" class="foto-header">
+            <div id="view-detalles" style="font-size: 14px; line-height: 1.6; color: #444;"></div>
+            <button onclick="cerrarPanel()" style="width:100%; margin-top:30px; padding:10px; border:none; border-radius:8px; cursor:pointer;">Regresar al Mapa</button>
+        </div>
+    </div>
 </div>
+
+<div id="admin-trigger" onclick="abrirLogin()">⚙️</div>
+
+<div id="admin-modal">
+    <div id="login-screen" class="admin-box">
+        <h3>Acceso Restringido</h3>
+        <input type="text" id="user-in" placeholder="Usuario">
+        <input type="password" id="pass-in" placeholder="Contraseña">
+        <button class="btn-save" onclick="validarAcceso()" style="margin-top:10px;">Entrar</button>
+        <button onclick="cerrarAdmin()" style="background:none; border:none; color:gray; margin-top:15px; cursor:pointer;">Cancelar</button>
+    </div>
+
+    <div id="editor-screen" class="admin-box" style="display:none;">
+        <h3>Configuración Maestra</h3>
+        <div class="input-group">
+            <label>Link del CSV (Sheets):</label>
+            <input type="text" id="cfg-csv" placeholder="URL export?format=csv">
+        </div>
+        <div class="input-group">
+            <label>Color Solvente:</label>
+            <input type="color" id="cfg-col1" value="#22c55e">
+        </div>
+        <div class="input-group">
+            <label>Color Mora:</label>
+            <input type="color" id="cfg-col2" value="#ef4444">
+        </div>
+        <button class="btn-save" onclick="guardarCambios()">Guardar y Reiniciar</button>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
 <script>
-    var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 16);
-    
-    // CAPA HÍBRIDA LIMPIA: Satélite + Calles (Sin el basurero de etiquetas)
-    // El parámetro 'lyrs=y' es el más completo y nítido
-    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        opacity: 1
-    }).addTo(map);
+    // CONFIGURACIÓN POR DEFECTO
+    let config = {
+        user: "AuraMaster",
+        pass: "Colón2026", // Cámbiala aquí
+        csv: "TU_LINK_AQUÍ",
+        col1: "#22c55e",
+        col2: "#ef4444"
+    };
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-    var markersLayer = L.layerGroup().addTo(map);
-    var datosGlobal = [];
+    var map, markersLayer;
 
-    function sincronizar() {
-        var url = document.getElementById('csv-url').value;
-        Papa.parse(url, {
+    window.onload = function() {
+        const saved = localStorage.getItem('sgf_config_v4');
+        if(saved) config = JSON.parse(saved);
+        initApp();
+    };
+
+    function initApp() {
+        if(map) map.remove();
+        map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
+        markersLayer = L.layerGroup().addTo(map);
+        cargarCSV();
+    }
+
+    function cargarCSV() {
+        if(!config.csv || config.csv === "TU_LINK_AQUÍ") return;
+        Papa.parse(config.csv, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(res) {
-                datosGlobal = res.data;
-                dibujar(datosGlobal);
+                res.data.forEach(row => {
+                    const gps = row["Coordenadas GPS (Oficina)"];
+                    if(gps && gps.includes(",")) {
+                        const [lat, lon] = gps.split(",").map(c => parseFloat(c.trim()));
+                        let est = (row["Estado"] || "").toLowerCase();
+                        let color = est.includes("solvente") ? config.col1 : config.col2;
+                        
+                        L.circleMarker([lat, lon], { radius: 10, fillColor: color, color: "white", weight: 2, fillOpacity: 0.9 })
+                        .on('click', () => abrirPanel(row, est))
+                        .addTo(markersLayer);
+                    }
+                });
             }
         });
     }
 
-    function dibujar(data) {
-        markersLayer.clearLayers();
-        var html = "";
-        var bounds = [];
-        data.forEach((row, i) => {
-            var coords = row["Coordenadas GPS (Oficina)"];
-            if(coords && coords.includes(",")) {
-                var partes = coords.split(",");
-                var lat = parseFloat(partes[0].trim());
-                var lon = parseFloat(partes[1].trim());
-                if(!isNaN(lat)) {
-                    var icon = L.divIcon({ className: 'p', html: '<div class="pin"></div>', iconSize: [18, 18], iconAnchor: [9, 18] });
-                    var popup = `<b>${row.Nombre || 'Local'}</b><hr>`;
-                    for(var k in row) { popup += `<small><b>${k}:</b> ${row[k]}</small><br>`; }
-                    var m = L.marker([lat, lon], {icon: icon}).bindPopup(popup);
-                    m.id_ref = i;
-                    m.addTo(markersLayer);
-                    bounds.push([lat, lon]);
-                    html += `<div class="item" onclick="irA(${lat}, ${lon}, ${id=i})"><b>${row.Nombre || 'Comercio'}</b><small>RIF: ${row.RIF || 'N/P'}</small></div>`;
-                }
-            }
-        });
-        document.getElementById('lista').innerHTML = html;
-        if(bounds.length > 0) map.fitBounds(bounds);
+    function abrirPanel(data, est) {
+        document.getElementById("side-panel").style.width = "400px";
+        document.getElementById("view-nombre").innerText = data.Nombre;
+        document.getElementById("view-foto").src = data.Foto || "https://via.placeholder.com/400x200?text=Sin+Foto+Cargada";
+        document.getElementById("view-status").innerHTML = `<span class="status-badge" style="background:#eee; color:#333;">${est.toUpperCase()}</span>`;
+        document.getElementById("view-detalles").innerHTML = `
+            <p><b>RIF:</b> ${data.RIF}</p>
+            <p><b>Dirección:</b> ${data.Dirección || 'S/D'}</p>
+            <p><b>Última Inspección:</b> ${data.Fecha || 'N/P'}</p>
+        `;
+        map.flyTo([parseFloat(data["Coordenadas GPS (Oficina)"].split(",")[0]), parseFloat(data["Coordenadas GPS (Oficina)"].split(",")[1])], 18);
     }
 
-    function irA(lat, lon, id) {
-        map.flyTo([lat, lon], 19);
-        markersLayer.eachLayer(l => { if(l.id_ref === id) l.openPopup(); });
+    function cerrarPanel() { document.getElementById("side-panel").style.width = "0"; }
+
+    // FUNCIONES ADMIN
+    function abrirLogin() { document.getElementById("admin-modal").style.display = "flex"; }
+    function cerrarAdmin() { document.getElementById("admin-modal").style.display = "none"; }
+
+    function validarAcceso() {
+        const u = document.getElementById("user-in").value;
+        const p = document.getElementById("pass-in").value;
+        if(u === config.user && p === config.pass) {
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("editor-screen").style.display = "block";
+            // Cargar valores actuales en los inputs
+            document.getElementById("cfg-csv").value = config.csv;
+            document.getElementById("cfg-col1").value = config.col1;
+            document.getElementById("cfg-col2").value = config.col2;
+        } else {
+            alert("Acceso denegado");
+        }
     }
 
-    document.getElementById('buscador').oninput = function(e) {
-        var b = e.target.value.toLowerCase();
-        var filtrados = datosGlobal.filter(r => JSON.stringify(r).toLowerCase().includes(b));
-        dibujar(filtrados);
-    };
+    function guardarCambios() {
+        config.csv = document.getElementById("cfg-csv").value;
+        config.col1 = document.getElementById("cfg-col1").value;
+        config.col2 = document.getElementById("cfg-col2").value;
+        localStorage.setItem('sgf_config_v4', JSON.stringify(config));
+        alert("Configuración guardada. Reiniciando mapa...");
+        location.reload();
+    }
 </script>
 </body>
 </html>
