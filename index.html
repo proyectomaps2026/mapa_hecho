@@ -3,161 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catastro Ayacucho - Estilo My Maps</title>
+    <title>Censo Ayacucho - Sistema Estable</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body, html { height: 100%; margin: 0; font-family: 'Roboto', Arial, sans-serif; overflow: hidden; }
-        #contenedor-principal { display: flex; height: 100vh; width: 100vw; }
+        body, html { height: 100%; margin: 0; font-family: sans-serif; overflow: hidden; }
+        #wrapper { display: flex; height: 100vh; }
         
-        /* Panel Lateral idéntico a My Maps */
-        #panel-lateral { 
-            width: 320px; background: white; display: flex; flex-direction: column; 
-            border-right: 1px solid #ddd; z-index: 1001; box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+        /* Panel Lateral */
+        #sidebar { 
+            width: 300px; background: white; display: flex; flex-direction: column; 
+            border-right: 1px solid #ddd; z-index: 1001; 
         }
-        .encabezado-azul { background: #4285F4; color: white; padding: 15px; }
-        .area-controles { padding: 12px; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        .header { background: #4285F4; color: white; padding: 15px; }
+        .controls { padding: 10px; border-bottom: 1px solid #eee; background: #f8f9fa; }
         
-        input { width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
-        .btn-sincronizar { width: 100%; background: #34a853; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; border-radius: 4px; }
+        input { width: 100%; padding: 8px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background: #34a853; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; border-radius: 4px; }
         
-        /* Lista de locales con scroll */
-        #lista-comercios { flex-grow: 1; overflow-y: auto; }
-        .tarjeta-local { 
-            padding: 12px 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; 
-            transition: 0.2s; font-size: 13px;
-        }
-        .tarjeta-local:hover { background: #e8f0fe; }
-        .tarjeta-local b { color: #1a73e8; display: block; text-transform: uppercase; }
-        .tarjeta-local span { color: #666; font-size: 11px; }
+        #list { flex-grow: 1; overflow-y: auto; }
+        .item { padding: 10px 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; }
+        .item:hover { background: #e8f0fe; }
+        .item b { color: #1a73e8; display: block; }
 
-        /* Mapa que ocupa el resto del espacio */
-        #mapa { flex-grow: 1; position: relative; background: #e5e3df; }
+        /* Mapa */
+        #map { flex-grow: 1; background: #222; }
         
-        /* La pincheta azul clásica */
-        .pin-azul {
-            width: 20px; height: 20px; background: #4285F4;
-            border: 2px solid white; border-radius: 50% 50% 50% 0;
-            transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
+        /* Pincheta */
+        .pin { width: 18px; height: 18px; background: #4285F4; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
     </style>
 </head>
 <body>
 
-<div id="contenedor-principal">
-    <div id="panel-lateral">
-        <div class="encabezado-azul">
-            <h2 style="margin:0; font-size: 16px;">Censo Ayacucho</h2>
-            <small>San Juan de Colón, Táchira</small>
+<div id="wrapper">
+    <div id="sidebar">
+        <div class="header"><h3 style="margin:0">Censo Ayacucho</h3></div>
+        <div class="controls">
+            <input type="text" id="url" placeholder="Enlace CSV (Publicar en la web)">
+            <button onclick="cargar()">CARGAR DATOS</button>
         </div>
-        
-        <div class="area-controles">
-            <input type="text" id="input-url" placeholder="Pega el enlace CSV de Sheets aquí...">
-            <button class="btn-sincronizar" onclick="iniciarCarga()">SINCRONIZAR DATOS</button>
-            <input type="text" id="caja-busqueda" placeholder="Buscar por nombre o RIF..." style="margin-top:10px;">
-        </div>
-
-        <div id="lista-comercios">
-            <p style="padding:30px; color:#999; text-align:center; font-size: 12px;">
-                Ingresa el link y presiona sincronizar para ver la lista de comercios.
-            </p>
-        </div>
+        <div id="list"></div>
     </div>
-
-    <div id="mapa"></div>
+    <div id="map"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
 <script>
-    // Inicializar el mapa con vista satelital híbrida (fotos + calles)
-    var map = L.map('mapa', { zoomControl: false }).setView([8.0382, -72.2612], 15);
+    // USAMOS SATÉLITE DE ESRI: No se bloquea, es gratis y muy nítido
+    var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
     
-    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        attribution: 'Google Satellite'
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri World Imagery'
     }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
+    var markers = L.layerGroup().addTo(map);
+    var rawData = [];
 
-    var capaMarcadores = L.layerGroup().addTo(map);
-    var baseDeDatosLocal = [];
-
-    function iniciarCarga() {
-        var url = document.getElementById('input-url').value;
-        if(!url) return alert("Por favor, pega el link del CSV");Papa.parse(url, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(resultados) {
-                baseDeDatosLocal = resultados.data;
-                actualizarInterfaz(baseDeDatosLocal);
+    function cargar() {
+        var url = document.getElementById('url').value;
+        Papa.parse(url, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: function(res) {
+                rawData = res.data;
+                render(rawData);
             }
         });
     }
 
-    function actualizarInterfaz(datos) {
-        capaMarcadores.clearLayers();
-        var htmlLista = "";
-        var puntosParaEncuadre = [];
+    function render(data) {
+        markers.clearLayers();
+        var html = "";
+        var points = [];
 
-        datos.forEach((fila, id) => {
-            var lat = parseFloat(fila.latitud  fila.Latitud  fila.lat);
-            var lon = parseFloat(fila.longitud  fila.Longitud  fila.lon);
+        data.forEach((row, i) => {
+            var lat = parseFloat(row.latitud || row.Latitud || row.lat);
+            var lon = parseFloat(row.longitud || row.Longitud || row.lon);
 
-            if(!isNaN(lat) && !isNaN(lon)) {
-                // 1. Crear el marcador en el mapa
-                var icono = L.divIcon({ 
-                    className: 'p', 
-                    html: '<div class="pin-azul"></div>', 
-                    iconSize: [20, 20], 
-                    iconAnchor: [10, 20] 
-                });
-
-                var contenidoPopup = "<b>" + (fila.Nombre || "Local sin nombre") + "</b><br><hr>";
-                for(var llave in fila) {
-                    contenidoPopup += "<b>" + llave + ":</b> " + fila[llave] + "<br>";
-                }
+            if(!isNaN(lat)) {
+                var icon = L.divIcon({ className: 'p', html: '<div class="pin"></div>', iconSize: [18, 18], iconAnchor: [9, 18] });
+                var popup = "<b>DATOS:</b><br>";
+                for(var k in row){ popup += "<b>"+k+":</b> "+row[k]+"<br>"; }
                 
-                var marcador = L.marker([lat, lon], {icon: icono}).bindPopup(contenidoPopup);
-                marcador.id_referencia = id;
-                marcador.addTo(capaMarcadores);
-                puntosParaEncuadre.push([lat, lon]);
+                var m = L.marker([lat, lon], {icon: icon}).bindPopup(popup);
+                m.id = i;
+                m.addTo(markers);
+                points.push([lat, lon]);
 
-                // 2. Crear el elemento en la lista lateral
-                htmlLista += 
-                    <div class="tarjeta-local" onclick="enfocarLocal(${lat}, ${lon}, ${id})">
-                        <b>${fila.Nombre || 'COMERCIO DESCONOCIDO'}</b>
-                        <span>RIF: ${fila.RIF || fila.rif || 'N/P'}</span>
-                    </div>;
+                html += `<div class="item" onclick="go(${lat}, ${lon}, ${i})">
+                            <b>${row.Nombre || row.nombre || 'Sin Nombre'}</b>
+                            <span>${row.RIF || row.rif || ''}</span>
+                         </div>`;
             }
         });
 
-        document.getElementById('lista-comercios').innerHTML = htmlLista || "<p style='padding:20px;'>No se hallaron datos.</p>";
-        if(puntosParaEncuadre.length > 0) map.fitBounds(puntosParaEncuadre);
+        document.getElementById('list').innerHTML = html;
+        if(points.length > 0) map.fitBounds(points);
     }
 
-    function enfocarLocal(lat, lon, id) {
-        map.flyTo([lat, lon], 18, { duration: 1.5 });
-        capaMarcadores.eachLayer(function(layer) {
-            if(layer.id_referencia === id) layer.openPopup();
-        });
+    function go(lat, lon, id) {
+        map.flyTo([lat, lon], 18);
+        markers.eachLayer(layer => { if(layer.id === id) layer.openPopup(); });
     }
 
-    // Buscador en tiempo real (Filtra mapa y lista al mismo tiempo)
-    document.getElementById('caja-busqueda').addEventListener('input', function(e) {
-        var busqueda = e.target.value.toLowerCase();
-        var filtrados = baseDeDatosLocal.filter(f => {
-            return JSON.stringify(f).toLowerCase().includes(busqueda);
-        });
-        actualizarInterfaz(filtrados);
-    });
-
-    // Ajuste de tamaño automático
-    window.onload = function() { setTimeout(() => map.invalidateSize(), 400); };
+    window.onload = function() { setTimeout(() => map.invalidateSize(), 500); };
 </script>
-
 </body>
 </html>
