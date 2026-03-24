@@ -3,36 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Censo Fiscal Ayacucho - Híbrido</title>
+    <title>Censo Fiscal Ayacucho - Sistema Unificado</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
     <style>
-        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
-        #wrapper { display: flex; height: 100vh; }
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+        #contenedor { display: flex; height: 100vh; width: 100vw; }
         
-        /* Panel Lateral */
+        /* Panel Lateral estilo My Maps */
         #sidebar { 
             width: 320px; background: white; display: flex; flex-direction: column; 
-            border-right: 1px solid #ddd; z-index: 1001; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            border-right: 1px solid #ccc; z-index: 1001; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
         }
-        .header { background: #4285F4; color: white; padding: 15px; text-align: center; }
-        .controls { padding: 15px; border-bottom: 1px solid #eee; background: #f8f9fa; }
+        .header { background: #4285F4; color: white; padding: 15px; border-bottom: 2px solid #3367d6; }
+        .controles { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
         
-        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #bbb; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
         button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; text-transform: uppercase; }
         button:hover { background: #2d8e47; }
         
-        #list { flex-grow: 1; overflow-y: auto; background: #fff; }
+        /* Lista de Comercios */
+        #lista { flex-grow: 1; overflow-y: auto; background: #fff; }
         .item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; }
         .item:hover { background: #e8f0fe; }
         .item b { color: #1a73e8; display: block; font-size: 14px; text-transform: uppercase; }
-        .item span { font-size: 12px; color: #666; }
+        .item span { font-size: 12px; color: #555; }
 
         /* Mapa */
         #map { flex-grow: 1; background: #222; }
         
-        /* Pincheta Estilo My Maps */
+        /* Pincheta Azul */
         .pin { 
             width: 20px; height: 20px; background: #4285F4; 
             border: 2px solid white; border-radius: 50% 50% 50% 0; 
@@ -42,105 +45,99 @@
 </head>
 <body>
 
-<div id="wrapper">
+<div id="contenedor">
     <div id="sidebar">
         <div class="header">
             <h3 style="margin:0">Censo Ayacucho</h3>
-            <small>Alcaldía de Ayacucho</small>
+            <small>San Juan de Colón</small>
         </div>
-        <div class="controls">
-            <input type="text" id="url" placeholder="Enlace CSV (Publicar en la web)">
-            <button onclick="cargar()">Sincronizar Datos</button>
+        <div class="controles">
+            <input type="text" id="csv-url" placeholder="Pega el link CSV de Google Sheets aquí...">
+            <button onclick="sincronizar()">Sincronizar Mapa</button>
+            <input type="text" id="buscador" placeholder="Buscar por nombre..." style="margin-top:10px;">
         </div>
-        <div id="list">
-            <p style="text-align:center; color:#999; margin-top:20px; font-size:13px;">Pega el enlace arriba para listar los locales.</p>
+        <div id="lista">
+            <p style="padding:20px; color:#888; text-align:center;">Esperando datos...</p>
         </div>
     </div>
     <div id="map"></div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
 <script>
-    // 1. Configuramos el mapa centrado en Colón
+    // 1. Iniciar el mapa
     var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 15);
     
-    // 2. Capa de Satélite (Fotos)
-    var satelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
-    }).addTo(map);
-
-    // 3. CAPA DE CALLES Y ETIQUETAS (Nombres de avenidas, comercios, etc.)
-    // Esta capa es transparente y solo dibuja las letras y líneas encima del satélite
-    L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-labels/{z}/{x}/{y}{r}.png', {
-        opacity: 0.7,
-        maxZoom: 19
-    }).addTo(map);
-    
-    // Opcional: Capa de referencia de límites
-    L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/toner-lines/{z}/{x}/{y}{r}.png', {
-        opacity: 0.3,
-        maxZoom: 19
-    }).addTo(map);
+    // 2. CAPAS DE CALLES Y SATÉLITE (Híbrido que no se bloquea)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { opacity: 0.8 }).addTo(map);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { opacity: 0.5 }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    var markers = L.layerGroup().addTo(map);
-    var rawData = [];
+    var markersLayer = L.layerGroup().addTo(map);
+    var datosOriginales = [];
 
-    function cargar() {
-        var url = document.getElementById('url').value;
-        if(!url) return alert("Pega el link del CSV primero");
-        
+    function sincronizar() {
+        var url = document.getElementById('csv-url').value;
+        if(!url) return alert("Pega el enlace CSV");
+
         Papa.parse(url, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(res) {
-                rawData = res.data;
-                render(rawData);
+                datosOriginales = res.data;
+                dibujar(datosOriginales);
             }
         });
     }
 
-    function render(data) {
-        markers.clearLayers();
-        var html = "";
-        var points = [];
+    function dibujar(data) {
+        markersLayer.clearLayers();
+        var listHtml = "";
+        var bounds = [];
 
         data.forEach((row, i) => {
-            var lat = parseFloat(row.latitud || row.Latitud || row.lat || row.LAT);
-            var lon = parseFloat(row.longitud || row.Longitud || row.lon || row.LON);
+            // LEER COLUMNA ESPECÍFICA: Coordenadas GPS (Oficina)
+            var coords = row["Coordenadas GPS (Oficina)"];
+            
+            if(coords && coords.includes(",")) {
+                var partes = coords.split(",");
+                var lat = parseFloat(partes[0].trim());
+                var lon = parseFloat(partes[1].trim());
 
-            if(!isNaN(lat) && !isNaN(lon)) {
-                var icon = L.divIcon({ 
-                    className: 'p', 
-                    html: '<div class="pin"></div>', 
-                    iconSize: [20, 20], 
-                    iconAnchor: [10, 20] 
-                });
+                if(!isNaN(lat) && !isNaN(lon)) {
+                    // Marcador
+                    var icon = L.divIcon({ className: 'p', html: '<div class="pin"></div>', iconSize: [20, 20], iconAnchor: [10, 20] });
+                    var info = "<b>DETALLES:</b><br><hr>";
+                    for(var k in row){ info += "<b>"+k+":</b> "+row[k]+"<br>"; }
+                    
+                    var m = L.marker([lat, lon], {icon: icon}).bindPopup(info);
+                    m.id_ref = i;
+                    m.addTo(markersLayer);
+                    bounds.push([lat, lon]);
 
-                var popup = "<b>DETALLES DEL LOCAL:</b><br><hr>";
-                for(var k in row){ popup += "<b>"+k+":</b> "+row[k]+"<br>"; }
-                
-                var m = L.marker([lat, lon], {icon: icon}).bindPopup(popup);
-                m.id = i;
-                m.addTo(markers);
-                points.push([lat, lon]);
-
-                html += `<div class="item" onclick="go(${lat}, ${lon}, ${id=i})">
-                            <b>${row.Nombre || row.nombre || 'COMERCIO'}</b>
-                            <span>RIF: ${row.RIF || row.rif || 'N/P'}</span>
-                         </div>`;
+                    // Lista lateral
+                    listHtml += `<div class="item" onclick="irA(${lat}, ${lon}, ${i})">
+                                    <b>${row.Nombre || 'Comercio'}</b>
+                                    <span>RIF: ${row.RIF || 'N/P'}</span>
+                                 </div>`;
+                }
             }
         });
 
-        document.getElementById('list').innerHTML = html || "<p style='padding:15px;'>No se encontraron coordenadas.</p>";
-        if(points.length > 0) map.fitBounds(points);
+        document.getElementById('lista').innerHTML = listHtml || "<p style='padding:15px;'>Sin coordenadas válidas.</p>";
+        if(bounds.length > 0) map.fitBounds(bounds);
     }
 
-    function go(lat, lon, id) {
-        map.flyTo([lat, lon], 18, { duration: 1.5 });
-        markers.eachLayer(layer => { if(layer.id === id) layer.openPopup(); });
+    function irA(lat, lon, id) {
+        map.flyTo([lat, lon], 18);
+        markersLayer.eachLayer(l => { if(l.id_ref === id) l.openPopup(); });
     }
+
+    // Buscador
+    document.getElementById('buscador').oninput = function(e) {
+        var busq = e.target.value.toLowerCase();
+        var filtrados = datosOriginales.filter(r => JSON.stringify(r).toLowerCase().includes(busq));
+        dibujar(filtrados);
+    };
 
     window.onload = function() { setTimeout(() => map.invalidateSize(), 500); };
 </script>
