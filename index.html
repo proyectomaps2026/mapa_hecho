@@ -3,48 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Censo Ayacucho - Calles Definidas</title>
-    
+    <title>Censo Ayacucho - Mapa Final Limpio</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-
     <style>
-        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        body, html { height: 100%; margin: 0; font-family: sans-serif; overflow: hidden; }
         #contenedor { display: flex; height: 100vh; }
-        
-        #sidebar { 
-            width: 320px; background: white; display: flex; flex-direction: column; 
-            box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 1001;
-        }
+        #sidebar { width: 320px; background: white; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 1001; }
         .header { background: #1a73e8; color: white; padding: 15px; text-align: center; }
         .controles { padding: 15px; border-bottom: 1px solid #eee; background: #f9f9f9; }
-        
         input { width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; }
-        
         #lista { flex-grow: 1; overflow-y: auto; }
         .item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; }
         .item:hover { background: #f0f7ff; }
         .item b { color: #1a73e8; display: block; text-transform: uppercase; font-size: 13px; }
-
         #map { flex-grow: 1; background: #000; }
-        
-        .pin { 
-            width: 18px; height: 18px; background: #ea4335; 
-            border: 2px solid white; border-radius: 50% 50% 50% 0; 
-            transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
+        .pin { width: 18px; height: 18px; background: #ea4335; border: 2px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
-
 <div id="contenedor">
     <div id="sidebar">
-        <div class="header">
-            <h3 style="margin:0">Censo Fiscal</h3>
-            <small>San Juan de Colón</small>
-        </div>
+        <div class="header"><h3 style="margin:0">Censo Fiscal</h3><small>San Juan de Colón</small></div>
         <div class="controles">
             <input type="text" id="csv-url" placeholder="Link CSV de Google Sheets...">
             <button onclick="sincronizar()">Sincronizar Datos</button>
@@ -54,26 +36,14 @@
     </div>
     <div id="map"></div>
 </div>
-
 <script>
     var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 16);
     
-    // 1. SATÉLITE LIMPIO (Fondo)
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxZoom: 19
-    }).addTo(map);
-
-    // 2. CAPA DE VÍAS (Delineado de calles pintadas)
-    // Esto dibuja las líneas de las carreteras y avenidas sin nombres de negocios
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        opacity: 0.3, // Ajusta esto para que las líneas se vean más o menos fuertes
-        pane: 'tilePane'
-    }).addTo(map);
-
-    // 3. ETIQUETAS SELECTIVAS (Nombres de calles y plazas)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
-        pane: 'markerPane',
-        opacity: 0.9
+    // CAPA HÍBRIDA LIMPIA: Satélite + Calles (Sin el basurero de etiquetas)
+    // El parámetro 'lyrs=y' es el más completo y nítido
+    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        opacity: 1
     }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -95,32 +65,24 @@
         markersLayer.clearLayers();
         var html = "";
         var bounds = [];
-
         data.forEach((row, i) => {
             var coords = row["Coordenadas GPS (Oficina)"];
             if(coords && coords.includes(",")) {
                 var partes = coords.split(",");
                 var lat = parseFloat(partes[0].trim());
                 var lon = parseFloat(partes[1].trim());
-
                 if(!isNaN(lat)) {
                     var icon = L.divIcon({ className: 'p', html: '<div class="pin"></div>', iconSize: [18, 18], iconAnchor: [9, 18] });
                     var popup = `<b>${row.Nombre || 'Local'}</b><hr>`;
                     for(var k in row) { popup += `<small><b>${k}:</b> ${row[k]}</small><br>`; }
-                    
                     var m = L.marker([lat, lon], {icon: icon}).bindPopup(popup);
                     m.id_ref = i;
                     m.addTo(markersLayer);
                     bounds.push([lat, lon]);
-
-                    html += `<div class="item" onclick="irA(${lat}, ${lon}, ${i})">
-                                <b>${row.Nombre || 'Comercio'}</b>
-                                <small>RIF: ${row.RIF || 'N/P'}</small>
-                             </div>`;
+                    html += `<div class="item" onclick="irA(${lat}, ${lon}, ${id=i})"><b>${row.Nombre || 'Comercio'}</b><small>RIF: ${row.RIF || 'N/P'}</small></div>`;
                 }
             }
         });
-
         document.getElementById('lista').innerHTML = html;
         if(bounds.length > 0) map.fitBounds(bounds);
     }
