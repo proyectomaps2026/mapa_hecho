@@ -3,42 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Censo Ayacucho - Alta Definición</title>
+    <title>Auditoría Ayacucho - Mapa Limpio</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
     <style>
-        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; background: #1a1a1a; }
+        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         #contenedor { display: flex; height: 100vh; }
         
-        /* Panel Lateral Moderno */
         #sidebar { 
-            width: 340px; background: #ffffff; display: flex; flex-direction: column; 
-            box-shadow: 5px 0 15px rgba(0,0,0,0.3); z-index: 1001;
+            width: 320px; background: white; display: flex; flex-direction: column; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2); z-index: 1001;
         }
-        .header { background: #1a73e8; color: white; padding: 20px; text-align: center; }
-        .controles { padding: 15px; border-bottom: 1px solid #eee; background: #fcfcfc; }
+        .header { background: #1a73e8; color: white; padding: 15px; text-align: center; }
+        .controles { padding: 15px; border-bottom: 1px solid #eee; background: #f9f9f9; }
         
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; background: #28a745; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s; }
-        button:hover { background: #218838; }
+        input { width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background: #34a853; color: white; border: none; padding: 12px; cursor: pointer; font-weight: bold; border-radius: 4px; }
         
         #lista { flex-grow: 1; overflow-y: auto; }
-        .item { padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
-        .item:hover { background: #f8fbff; border-left: 4px solid #1a73e8; }
-        .item b { color: #1a73e8; font-size: 14px; display: block; }
-        .item span { font-size: 11px; color: #777; font-weight: bold; }
+        .item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .item:hover { background: #f0f7ff; }
+        .item b { color: #1a73e8; display: block; text-transform: uppercase; font-size: 13px; }
 
-        /* Mapa */
-        #map { flex-grow: 1; }
+        #map { flex-grow: 1; background: #000; }
         
-        /* Pincheta Estilo Google */
+        /* Pincheta estilizada */
         .pin { 
-            width: 22px; height: 22px; background: #ea4335; 
+            width: 18px; height: 18px; background: #ea4335; 
             border: 2px solid white; border-radius: 50% 50% 50% 0; 
-            transform: rotate(-45deg); box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            transform: rotate(-45deg); box-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
     </style>
 </head>
@@ -47,17 +43,15 @@
 <div id="contenedor">
     <div id="sidebar">
         <div class="header">
-            <h2 style="margin:0; font-size:20px;">Auditoría Fiscal</h2>
-            <small>Municipio Ayacucho</small>
+            <h3 style="margin:0">Censo Fiscal</h3>
+            <small>San Juan de Colón</small>
         </div>
         <div class="controles">
-            <input type="text" id="csv-url" placeholder="Enlace CSV de Google Sheets...">
-            <button onclick="sincronizar()">Actualizar Mapa</button>
-            <input type="text" id="buscador" placeholder="🔎 Buscar por nombre o RIF..." style="margin-top:10px;">
+            <input type="text" id="csv-url" placeholder="Link CSV de Google Sheets...">
+            <button onclick="sincronizar()">Sincronizar Datos</button>
+            <input type="text" id="buscador" placeholder="🔎 Buscar local..." style="margin-top:10px;">
         </div>
-        <div id="lista">
-            <p style="text-align:center; color:#bbb; padding-top:40px;">Carga el enlace para ver los locales.</p>
-        </div>
+        <div id="lista"></div>
     </div>
     <div id="map"></div>
 </div>
@@ -65,33 +59,36 @@
 <script>
     var map = L.map('map', { zoomControl: false }).setView([8.038, -72.261], 16);
     
-    // CAPA SATÉLITE ACTUALIZADA (Google Hybrid estable)
-    // Esta usa los servidores de Google pero con un método más "limpio" para evitar el gris
-    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 22,
-        attribution: 'Google Hybrid'
+    // 1. SATÉLITE LIMPIO (Sin etiquetas de Google)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19
+    }).addTo(map);
+
+    // 2. CAPA DE ETIQUETAS SELECTIVAS (Solo calles principales y puntos de interés)
+    // Esta capa de CartoDB es mucho más limpia y no satura el mapa
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        pane: 'markerPane', // Esto hace que las letras queden por ENCIMA de todo
+        opacity: 0.8
     }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
     var markersLayer = L.layerGroup().addTo(map);
-    var datosFull = [];
+    var datosGlobal = [];
 
     function sincronizar() {
         var url = document.getElementById('csv-url').value;
-        if(!url) return alert("Pega el enlace CSV");
-
         Papa.parse(url, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(res) {
-                datosFull = res.data;
-                dibujar(datosFull);
+                datosGlobal = res.data;
+                dibujar(datosGlobal);
             }
         });
     }
 
     function dibujar(data) {
         markersLayer.clearLayers();
-        var listHtml = "";
+        var html = "";
         var bounds = [];
 
         data.forEach((row, i) => {
@@ -101,47 +98,38 @@
                 var lat = parseFloat(partes[0].trim());
                 var lon = parseFloat(partes[1].trim());
 
-                if(!isNaN(lat) && !isNaN(lon)) {
-                    var icon = L.divIcon({ 
-                        className: 'p', 
-                        html: '<div class="pin"></div>', 
-                        iconSize: [22, 22], iconAnchor: [11, 22] 
-                    });
-
-                    var popupHtml = `<div style="font-family:sans-serif; min-width:150px;">
-                                        <b style="color:#1a73e8; font-size:14px;">${row.Nombre || 'Comercio'}</b><hr>`;
-                    for(var k in row){ popupHtml += `<div style="font-size:11px;"><b>${k}:</b> ${row[k]}</div>`; }
-                    popupHtml += `</div>`;
+                if(!isNaN(lat)) {
+                    var icon = L.divIcon({ className: 'p', html: '<div class="pin"></div>', iconSize: [18, 18], iconAnchor: [9, 18] });
+                    var popup = `<b>${row.Nombre || 'Local'}</b><hr>`;
+                    for(var k in row) { popup += `<small><b>${k}:</b> ${row[k]}</small><br>`; }
                     
-                    var m = L.marker([lat, lon], {icon: icon}).bindPopup(popupHtml);
+                    var m = L.marker([lat, lon], {icon: icon}).bindPopup(popup);
                     m.id_ref = i;
                     m.addTo(markersLayer);
                     bounds.push([lat, lon]);
 
-                    listHtml += `<div class="item" onclick="irA(${lat}, ${lon}, ${i})">
-                                    <b>${row.Nombre || 'Comercio'}</b>
-                                    <span>RIF: ${row.RIF || 'S/I'}</span>
-                                 </div>`;
+                    html += `<div class="item" onclick="irA(${lat}, ${lon}, ${i})">
+                                <b>${row.Nombre || 'Comercio'}</b>
+                                <small>RIF: ${row.RIF || 'N/P'}</small>
+                             </div>`;
                 }
             }
         });
 
-        document.getElementById('lista').innerHTML = listHtml || "<p style='padding:15px;'>Sin datos.</p>";
+        document.getElementById('lista').innerHTML = html;
         if(bounds.length > 0) map.fitBounds(bounds);
     }
 
     function irA(lat, lon, id) {
-        map.flyTo([lat, lon], 19, { duration: 1.2 });
+        map.flyTo([lat, lon], 19);
         markersLayer.eachLayer(l => { if(l.id_ref === id) l.openPopup(); });
     }
 
     document.getElementById('buscador').oninput = function(e) {
         var b = e.target.value.toLowerCase();
-        var filtrados = datosFull.filter(r => JSON.stringify(r).toLowerCase().includes(b));
+        var filtrados = datosGlobal.filter(r => JSON.stringify(r).toLowerCase().includes(b));
         dibujar(filtrados);
     };
-
-    window.onload = function() { setTimeout(() => map.invalidateSize(), 500); };
 </script>
 </body>
 </html>
