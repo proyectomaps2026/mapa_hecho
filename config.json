@@ -1,0 +1,12 @@
+{
+  "sheets_link": "TU_LINK_DE_GOOGLE_SHEETS_AQUÍ",
+  "punto_radio": 12,
+  "columna_nombre": "Nombre",
+  "columna_estado": "Estado",
+  "reglas_colores": [
+    { "clave": "solvente", "color": "#22c55e", "icono": "fa-check-circle" },
+    { "clave": "mora", "color": "#ef4444", "icono": "fa-exclamation-triangle" },
+    { "clave": "proceso", "color": "#f59e0b", "icono": "fa-spinner" }
+  ],
+  "columnas_visibles": ["RIF", "Dirección", "Teléfono"]
+}
