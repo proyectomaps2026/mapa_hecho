@@ -1,12 +1,16 @@
 {
-  "sheets_link": "TU_LINK_DE_GOOGLE_SHEETS_AQUÍ",
-  "punto_radio": 12,
-  "columna_nombre": "Nombre",
+  "sheets_link": "",
   "columna_estado": "Estado",
-  "reglas_colores": [
-    { "clave": "solvente", "color": "#22c55e", "icono": "fa-check-circle" },
-    { "clave": "mora", "color": "#ef4444", "icono": "fa-exclamation-triangle" },
-    { "clave": "proceso", "color": "#f59e0b", "icono": "fa-spinner" }
-  ],
+  "columna_nombre": "Nombre",
+  "colores": {
+    "Solvente": "#22c55e",
+    "Mora": "#ef4444",
+    "Proceso": "#f59e0b"
+  },
+  "iconos": {
+    "Solvente": "fa-check-circle",
+    "Mora": "fa-exclamation-triangle",
+    "Proceso": "fa-clock"
+  },
   "columnas_visibles": ["RIF", "Dirección", "Teléfono"]
 }
