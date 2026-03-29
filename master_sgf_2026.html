@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER - HACIENDA AYACUCHO (SISTEMA INTEGRAL)</title>
+    <title>SGF MASTER v2.0 - HACIENDA AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -13,57 +13,52 @@
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #000; color: white; overflow: hidden; }
         #map { flex: 1; z-index: 1; background: #000; }
 
-        /* 1. INTERFAZ INSTITUCIONAL (Foto 1) */
+        /* HEADER Y BUSCADOR (Recopilado de Fotos 1, 6, 9) */
         .brand-header { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.9); padding: 15px 25px; border-radius: 10px;
+            background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 10px;
             border-left: 6px solid var(--amarillo); backdrop-filter: blur(10px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
-        /* 2. BUSCADOR (Foto 6) */
         .top-search-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 400px; }
         .top-search { width: 100%; padding: 14px 20px; border-radius: 25px; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.5); outline: none; }
 
-        /* 3. BARRA DE HERRAMIENTAS DE TRAZADO (Foto 20/21) */
+        /* BARRA DE HERRAMIENTAS (Foto 7, 8, 9) */
         .drawing-toolbar {
             position: absolute; top: 85px; left: 50%; transform: translateX(-50%); z-index: 1000;
             background: white; display: flex; padding: 6px; border-radius: 6px; box-shadow: 0 2px 15px rgba(0,0,0,0.3);
         }
         .tool-btn { padding: 8px 15px; color: #333; cursor: pointer; border-right: 1px solid #ddd; font-size: 13px; font-weight: 600; transition: 0.2s; }
         .tool-btn:hover { background: #f0f4f8; color: var(--azul); }
+        .active-tool { background: #e2e8f0; color: var(--azul); }
 
-        /* ESTILO DE TRAZADO NEGRO/BLANCO (Foto 21) */
+        /* ESTILO DE TRAZADO NEGRO/BLANCO (Foto 8) */
         .leaflet-draw-draw-polygon { stroke: #000 !important; stroke-width: 5px !important; stroke-opacity: 1 !important; }
         .leaflet-draw-guide-marker { background: #fff !important; border: 2px solid #000 !important; border-radius: 50% !important; width: 12px !important; height: 12px !important; }
 
-        /* 4. SIDEBAR DE GESTIÓN DINÁMICA (Foto 3/19) */
-        #sidebar { width: 420px; background: var(--fondo); border-left: 1px solid #334155; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
+        /* SIDEBAR DE GESTIÓN (Foto 5, 9) */
+        #sidebar { width: 420px; background: var(--fondo); border-left: 1px solid #334155; display: flex; flex-direction: column; }
         .side-title { padding: 30px; text-align: center; border-bottom: 5px solid var(--amarillo); background: var(--card); }
         .side-content { flex: 1; overflow-y: auto; padding: 20px; }
 
-        .layer-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .layer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .layer-name { font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; color: #fff; }
+        .layer-card { 
+            background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; 
+            border: 2px solid transparent; transition: 0.3s; cursor: pointer;
+        }
+        .layer-card.active { border-color: var(--amarillo); background: #2d3748; }
+        .layer-header { display: flex; justify-content: space-between; align-items: center; }
+        .layer-stats { font-size: 11px; color: var(--amarillo); margin-top: 5px; font-weight: 800; }
         
-        .btn-main { width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 800; transition: 0.3s; margin-top: 10px; }
+        .btn-main { width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 10px; }
         .btn-create { background: transparent; color: var(--azul); border: 2px dashed var(--azul); }
-        .btn-create:hover { background: var(--azul); color: white; }
 
-        /* 5. MODAL DE IMPORTACIÓN Y CREACIÓN (Foto 18/19) */
+        /* MODAL (Foto 4) */
         #layer-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             z-index: 2000; background: white; color: #333; width: 380px; padding: 30px;
             border-radius: 15px; display: none; box-shadow: 0 25px 70px rgba(0,0,0,0.9);
         }
-        .modal-input { width: 100%; padding: 12px; margin: 10px 0 20px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-        
-        /* FICHA TÉCNICA POPUP (Foto 16) */
-        .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; overflow: hidden; }
-        .ficha-header { background: #f1f5f9; padding: 15px; border-bottom: 4px solid var(--amarillo); font-weight: 800; color: #1e293b; font-size: 16px; }
-        .ficha-body { padding: 15px; background: white; color: #333; }
-        .ficha-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; }
-        .ficha-row b { color: #64748b; }
+        .modal-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -71,120 +66,159 @@
 <div id="map"></div>
 
 <div class="brand-header">
-    <b style="color:white; font-size:18px;">HACIENDA AYACUCHO</b>
-    <span style="color:var(--amarillo); font-size:10px; font-weight:800; display:block; letter-spacing:1px;">SGF MASTER - CONTROL FISCAL</span>
+    <b>HACIENDA AYACUCHO</b>
+    <span style="color:var(--amarillo); font-size:10px; font-weight:800; display:block;">SGF MASTER - CONTROL FISCAL</span>
 </div>
 
 <div class="top-search-container">
-    <input type="text" class="top-search" placeholder="🔍 Buscar contribuyente o zona...">
+    <input type="text" class="top-search" placeholder="🔍 Buscar RIF o Censo...">
 </div>
 
 <div class="drawing-toolbar">
-    <div class="tool-btn" id="draw-poly">📐 Trazar Bloque</div>
-    <div class="tool-btn" id="draw-point">📍 Punto Censo</div>
-    <div class="tool-btn" onclick="alert('Capa guardada en base de datos local')">💾 Guardar Cambios</div>
+    <div class="tool-btn" id="btn-poly">📐 Trazar Bloque</div>
+    <div class="tool-btn" id="btn-marker">📍 Punto Censo</div>
+    <div class="tool-btn" onclick="exportData()">💾 Exportar Todo</div>
 </div>
 
 <div id="layer-modal">
-    <b style="font-size: 20px; display:block; margin-bottom:5px;">Configurar Nueva Capa</b>
-    <span style="font-size: 12px; color: #666;">Ingrese el nombre y la fuente de datos (CSV/URL)</span>
-    <hr style="margin: 15px 0; opacity: 0.2;">
-    
-    <label style="font-size: 12px; font-weight: bold;">Nombre de la Capa:</label>
-    <input type="text" id="layer-name-in" class="modal-input" placeholder="Ej: Lotes Sector Centro">
-    
-    <label style="font-size: 12px; font-weight: bold;">URL de Datos (CSV / Google Sheets):</label>
-    <input type="text" id="layer-url-in" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/...">
-    
+    <b style="font-size: 18px;">Configurar Nueva Capa</b>
+    <input type="text" id="layer-name-in" class="modal-input" placeholder="Nombre de la capa">
+    <input type="text" id="layer-url-in" class="modal-input" placeholder="URL CSV de Google Sheets">
     <div style="display:flex; gap:10px;">
-        <button onclick="closeModal()" style="flex:1; padding:12px; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Cancelar</button>
-        <button onclick="createLayer()" style="flex:1; padding:12px; background:var(--azul); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">CREAR E IMPORTAR</button>
+        <button onclick="closeModal()" style="flex:1; padding:10px;">Cancelar</button>
+        <button onclick="createNewLayer()" style="flex:1; padding:10px; background:var(--azul); color:white; border:none; border-radius:6px; font-weight:bold;">CREAR E IMPORTAR</button>
     </div>
 </div>
 
 <aside id="sidebar">
     <div class="side-title">
-        <h2 style="margin:0; color:white; font-size:24px;">SGF MASTER</h2>
-        <small style="color:var(--amarillo); font-weight:800;">GESTOR DE CAPAS DINÁMICAS</small>
+        <h2 style="margin:0; color:white;">SGF MASTER</h2>
+        <small style="color:var(--amarillo); font-weight:800;">GESTIÓN DE CAPAS DINÁMICAS</small>
     </div>
     <div class="side-content">
-        <div id="dynamic-layers">
-            </div>
+        <div id="dynamic-layers"></div>
         <button class="btn-main btn-create" onclick="openModal()">✚ AÑADIR NUEVA CAPA</button>
     </div>
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    // INICIO MAPA SATELITAL (Limpio de logos y banderas)
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
 
-    const featureGroup = new L.FeatureGroup().addTo(map);
+    let capasDB = {}; // Almacena { id: { name: str, group: L.FeatureGroup, url: str } }
+    let capaActivaId = null;
 
-    // LÓGICA DE TRAZADO (Foto 21 - Línea negra, puntos blancos)
-    const polyDrawer = new L.Draw.Polygon(map, {
-        shapeOptions: { color: '#000', weight: 5, fillOpacity: 0.3 }
-    });
+    // LÓGICA DE DIBUJO
+    const polyDrawer = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 5, fillOpacity: 0.3 } });
     const markerDrawer = new L.Draw.Marker(map);
 
-    document.getElementById('draw-poly').onclick = () => polyDrawer.enable();
-    document.getElementById('draw-point').onclick = () => markerDrawer.enable();
+    document.getElementById('btn-poly').onclick = () => { if(validaCapa()) polyDrawer.enable(); };
+    document.getElementById('btn-marker').onclick = () => { if(validaCapa()) markerDrawer.enable(); };
+
+    function validaCapa() {
+        if(!capaActivaId) { alert("¡Error! Seleccione una capa en el sidebar antes de dibujar."); return false; }
+        return true;
+    }
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const layer = e.layer;
-        const info = prompt("Identificación del elemento (Censo/Nombre):");
-        if(info) {
-            layer.bindPopup(`
-                <div class="ficha-header">${info}</div>
-                <div class="ficha-body">
-                    <div class="ficha-row"><b>Registro:</b> <span>2026-03-29</span></div>
-                    <div class="ficha-row"><b>Estado:</b> <span style="color:var(--azul)">MANUAL</span></div>
-                </div>
-            `);
-            featureGroup.addLayer(layer);
+        const nombre = prompt("Nombre/Censo del elemento:");
+        if(nombre) {
+            layer.bindPopup(`<b>${nombre}</b><br>Capa: ${capasDB[capaActivaId].name}`);
+            capasDB[capaActivaId].group.addLayer(layer);
+            updateStats(capaActivaId);
         }
     });
 
-    // SISTEMA DE CAPAS DINÁMICAS (Recopilado y Sumado)
+    // GESTIÓN DE CAPAS
     function openModal() { document.getElementById('layer-modal').style.display = 'block'; }
     function closeModal() { document.getElementById('layer-modal').style.display = 'none'; }
 
-    function createLayer() {
+    function createNewLayer() {
         const name = document.getElementById('layer-name-in').value;
         const url = document.getElementById('layer-url-in').value;
+        if(!name) return;
 
-        if(!name) { alert("Debe asignar un nombre a la capa"); return; }
-
-        const layerId = 'L' + Date.now();
-        const card = `
-            <div class="layer-card" id="${layerId}">
-                <div class="layer-header">
-                    <span class="layer-name"><input type="checkbox" checked> ${name}</span>
-                    <span style="cursor:pointer; color:var(--rojo);" onclick="removeLayer('${layerId}')">🗑️</span>
-                </div>
-                <div style="font-size:10px; color:var(--azul); border-top:1px solid rgba(255,255,255,0.1); padding-top:8px; margin-top:8px;">
-                    <b>URL/CSV:</b> ${url ? url.substring(0, 40) + '...' : 'Trazado Manual'}
-                </div>
-            </div>
-        `;
+        const id = 'layer_' + Date.now();
+        const group = new L.FeatureGroup().addTo(map);
         
-        document.getElementById('dynamic-layers').insertAdjacentHTML('beforeend', card);
+        capasDB[id] = { name: name, url: url, group: group };
         
-        // Simulación de carga CSV si hay URL
-        if(url) { console.log("Iniciando importación desde: " + url); }
+        renderLayerCard(id);
+        selectLayer(id);
+        
+        if(url) importCSV(id, url);
         
         closeModal();
         document.getElementById('layer-name-in').value = "";
         document.getElementById('layer-url-in').value = "";
     }
 
-    function removeLayer(id) {
-        if(confirm("¿Seguro que desea eliminar esta capa y sus datos?")) {
-            document.getElementById(id).remove();
+    function renderLayerCard(id) {
+        const html = `
+            <div class="layer-card" id="card-${id}" onclick="selectLayer('${id}')">
+                <div class="layer-header">
+                    <span class="layer-name">📁 ${capasDB[id].name}</span>
+                    <span style="color:var(--rojo)" onclick="deleteLayer(event, '${id}')">🗑️</span>
+                </div>
+                <div class="layer-stats" id="stats-${id}">Elementos: 0</div>
+            </div>`;
+        document.getElementById('dynamic-layers').insertAdjacentHTML('beforeend', html);
+    }
+
+    function selectLayer(id) {
+        capaActivaId = id;
+        document.querySelectorAll('.layer-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('card-' + id).classList.add('active');
+    }
+
+    function updateStats(id) {
+        const count = capasDB[id].group.getLayers().length;
+        document.getElementById('stats-' + id).innerText = `Elementos: ${count}`;
+    }
+
+    function deleteLayer(e, id) {
+        e.stopPropagation();
+        if(confirm("¿Eliminar capa y todos sus bloques/puntos?")) {
+            map.removeLayer(capasDB[id].group);
+            delete capasDB[id];
+            document.getElementById('card-' + id).remove();
+            if(capaActivaId === id) capaActivaId = null;
         }
+    }
+
+    // MOTOR DE IMPORTACIÓN CSV (Procesa la URL)
+    function importCSV(id, url) {
+        // Ajuste para Google Sheets directo
+        if(url.includes('docs.google.com')) url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=');
+        
+        Papa.parse(url, {
+            download: true,
+            header: true,
+            complete: function(results) {
+                results.data.forEach(row => {
+                    const lat = parseFloat(row.Latitud || row.lat || row.latitude);
+                    const lon = parseFloat(row.Longitud || row.lng || row.longitude);
+                    if(!isNaN(lat) && !isNaN(lon)) {
+                        const m = L.marker([lat, lon]);
+                        m.bindPopup(`<b>${row.Nombre || 'Punto CSV'}</b><br>Censo: ${row.Censo || 'N/A'}`);
+                        capasDB[id].group.addLayer(m);
+                    }
+                });
+                updateStats(id);
+                alert(`Capa "${capasDB[id].name}" importada: ${results.data.length} filas procesadas.`);
+            },
+            error: function() { alert("Error al leer el CSV. Verifique que la URL sea pública."); }
+        });
+    }
+
+    function exportData() {
+        alert("Función para exportar GeoJSON de todas las capas activada.");
+        // Aquí iría la lógica de JSON.stringify de los FeatureGroups
     }
 </script>
 </body>
