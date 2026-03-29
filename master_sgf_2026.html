@@ -3,22 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF Master - Municipio Ayacucho</title>
+    <title>SGF Master - Hacienda Ayacucho</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; --success: #10b981; }
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Inter', sans-serif; background: var(--dark); color: white; overflow: hidden; }
-        #map { flex: 1; z-index: 1; }
-        #sidebar { width: 380px; background: var(--panel); border-left: 1px solid #334155; display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.3); z-index: 10; }
-        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: bold; border-bottom: 3px solid #3b82f6; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--dark); color: white; overflow: hidden; }
+        #map { flex: 1; z-index: 1; background: #000; }
+        #sidebar { width: 360px; background: var(--panel); border-left: 2px solid #334155; display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.5); z-index: 10; }
+        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: bold; border-bottom: 4px solid #3b82f6; text-transform: uppercase; letter-spacing: 1px; }
         .content { padding: 20px; flex: 1; overflow-y: auto; }
         .card { background: #334155; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #475569; }
-        .card h3 { margin: 0 0 10px 0; font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; }
+        .card h3 { margin: 0 0 10px 0; font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; }
         input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
         .btn-sync { background: #f59e0b; color: #1e293b; }
-        .btn-save { background: var(--success); color: white; }
-        #log { margin-top: 8px; font-size: 11px; color: #94a3b8; font-family: monospace; }
+        .btn-sync:hover { background: #fbbf24; transform: scale(1.02); }
+        #log { margin-top: 10px; font-size: 11px; color: #94a3b8; font-family: monospace; text-align: center; }
+        /* Estilo para los créditos personalizados */
+        .leaflet-control-attribution { background: rgba(15, 23, 42, 0.8) !important; color: #94a3b8 !important; font-size: 11px !important; }
     </style>
 </head>
 <body>
@@ -29,71 +31,86 @@
     <div class="header">SGF MASTER: AYACUCHO</div>
     <div class="content">
         <div class="card">
-            <h3>Centro de Sincronización</h3>
-            <button class="btn btn-sync" onclick="triggerBridge()">⚡ ACTUALIZAR DESDE AIRTABLE</button>
-            <div id="log">SGF: Esperando orden...</div>
+            <h3>Sincronización de Datos</h3>
+            <button class="btn btn-sync" onclick="triggerBridge()">⚡ ACTUALIZAR AIRTABLE</button>
+            <div id="log">SISTEMA LISTO PARA OPERAR</div>
         </div>
 
         <div class="card">
-            <h3>Seguridad y Red</h3>
-            <label style="font-size: 12px;">GitHub Token:</label>
+            <h3>Seguridad de Acceso</h3>
+            <label style="font-size: 12px;">Token GitHub Personal:</label>
             <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-            <button class="btn btn-save" onclick="saveSettings()">GUARDAR CONFIGURACIÓN</button>
         </div>
 
-        <div class="card" id="census-list">
-            <h3>Comercios en Colón</h3>
-            <p style="font-size: 12px; color: #94a3b8;">Mapa listo para el despliegue.</p>
+        <div class="card">
+            <h3>Resumen Operativo</h3>
+            <p style="font-size: 12px; color: #cbd5e1;">Municipio: Ayacucho<br>Estado: Táchira<br>Módulo: Fiscalización Real-Time</p>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- MOTOR HÍBRIDO GEM PARA AYACUCHO ---
+    // --- CAPAS HÍBRIDAS PROFESIONALES ---
+    const satelliteImg = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+    const streetLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}');
     
-    // Satélite con nombres (Google)
-    const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        subdomains:['mt0','mt1','mt2','mt3'],
-        attribution: 'Google Hybrid'
-    });
+    // Combinación de foto + nombres
+    const hybridLayer = L.layerGroup([satelliteImg, streetLabels]);
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
 
-    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-
-    // Coordenadas exactas de San Juan de Colón
+    // --- INICIALIZACIÓN CON IDENTIDAD ---
     const map = L.map('map', {
-        center: [8.0381, -72.2619], 
-        zoom: 15,
-        layers: [googleHybrid]
+        center: [8.0378, -72.2647], // San Juan de Colón
+        zoom: 16,
+        layers: [hybridLayer],
+        attributionControl: false // AQUÍ BORRAMOS LA BANDERA DE UCRANIA
     });
 
-    const baseMaps = { "Satélite + Calles": googleHybrid, "Mapa Plano": streets };
+    // Añadimos créditos de Hacienda Ayacucho
+    L.control.attribution({
+        prefix: '<b>Municipio Ayacucho</b>'
+    }).addAttribution('Hacienda Ayacucho | SGF 2026').addTo(map);
+
+    const baseMaps = {
+        "Vista Satelital": hybridLayer,
+        "Mapa de Calles": streetLayer
+    };
     L.control.layers(baseMaps).addTo(map);
 
-    // --- FUNCIONALIDAD ---
+    // --- FUNCIÓN DE ACTIVACIÓN DEL PUENTE ---
     async function triggerBridge() {
         const token = document.getElementById('ghToken').value;
         const log = document.getElementById('log');
-        if(!token) return alert("Gem necesita el Token.");
-
-        log.innerText = "Contactando repositorio puente...";
         
+        if(!token) {
+            alert("Gem requiere el Token de GitHub para autorizar la descarga.");
+            return;
+        }
+
+        log.innerText = "CONTACTANDO SERVIDOR...";
+        log.style.color = "#f59e0b";
+
         try {
             const res = await fetch('https://api.github.com/repos/proyectomaps2026/mapa-censo/actions/workflows/actualizar.yml/dispatches', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/vnd.github.v3+json' 
+                },
                 body: JSON.stringify({ ref: 'main' })
             });
-            if(res.ok) {
-                log.innerText = "¡Orden recibida! Sincronizando...";
-                log.style.color = "#10b981";
-            } else { log.innerText = "Fallo: Revisa Token."; log.style.color = "#fb7185"; }
-        } catch (e) { log.innerText = "Error de red."; }
-    }
 
-    function saveSettings() {
-        alert("Configuración de Gem guardada localmente.");
+            if(res.ok) {
+                log.innerText = "¡ÉXITO! DATA EN CAMINO";
+                log.style.color = "#10b981";
+            } else {
+                log.innerText = "ERROR DE AUTORIZACIÓN";
+                log.style.color = "#ef4444";
+            }
+        } catch (e) {
+            log.innerText = "FALLO DE CONEXIÓN";
+        }
     }
 </script>
 </body>
