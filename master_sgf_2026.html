@@ -2,127 +2,55 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HACIENDA MUNICIPAL AYACUCHO</title>
-    
+    <title>SGF HACIENDA AYACUCHO</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
-    
     <style>
-        :root { 
-            --amarillo: #ffcc00; --rojo: #e60000; --verde: #007a33;
-            --dark: #020617; --panel: #0f172a; --accent: #fbbf24;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--dark); color: #fff; height: 100vh; overflow: hidden; }
-
-        .layout { display: flex; height: 100vh; width: 100vw; position: relative; }
-        #map { flex: 1; z-index: 1; background: #000; }
-
+        :root { --am: #ffcc00; --rj: #e60000; --vd: #007a33; --dk: #0f172a; }
+        body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; background: #020617; color: white; }
+        #map { flex: 1; z-index: 1; }
         .leaflet-control-attribution { display: none !important; }
 
-        /* IDENTIDAD INSTITUCIONAL CORREGIDA */
-        .brand-box { 
-            position: absolute; top: 20px; right: 20px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .brand-box b { font-size: 16px; color: var(--amarillo); font-weight: 900; letter-spacing: 0.5px; }
-
-        .search-bar { 
-            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; 
-            width: 450px; background: #fff; border-radius: 50px; padding: 12px 25px;
-            display: flex; align-items: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-        }
-        .search-bar input { border: none; outline: none; flex: 1; font-weight: 700; color: #0f172a; font-size: 15px; }
-
-        #sidebar { 
-            width: 440px; background: var(--panel); border-left: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column; z-index: 100;
+        /* REPARO IDENTIDAD */
+        .brand { 
+            position: absolute; top: 15px; right: 60px; z-index: 1000; 
+            background: rgba(15,23,42,0.9); padding: 12px 20px; border-radius: 5px;
+            border-right: 5px solid var(--am); color: var(--am); font-weight: 900;
         }
 
-        .sidebar-header { 
-            padding: 40px 30px; text-align: center; position: relative;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-        }
-        /* TRICOLOR MUNICIPAL */
-        .sidebar-header::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 5px;
-            background: linear-gradient(to right, var(--amarillo) 33.3%, var(--rojo) 33.3% 66.6%, var(--verde) 66.6%);
-        }
+        /* SIDEBAR CON TRICOLOR */
+        #sidebar { width: 420px; background: var(--dk); display: flex; flex-direction: column; border-left: 1px solid #334155; }
+        .header { padding: 30px; text-align: center; border-bottom: 5px solid; border-image: linear-gradient(to right, var(--am) 33%, var(--rj) 33% 66%, var(--vd) 66%) 1; }
+        .content { flex: 1; overflow-y: auto; padding: 20px; }
 
-        .scroll-area { flex: 1; overflow-y: auto; padding: 25px; }
-
-        .btn { 
-            width: 100%; padding: 18px; border-radius: 12px; border: none; cursor: pointer;
-            font-weight: 900; font-size: 12px; text-transform: uppercase; margin-bottom: 25px;
-        }
-        .btn-gold { background: var(--accent); color: #000; }
-
-        /* CAPAS SELECCIONABLES */
-        .layer-card { background: #1e293b; border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        .layer-head { padding: 12px 20px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
-        .layer-head span { font-weight: 800; color: var(--accent); font-size: 13px; }
+        .layer-card { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 20px; border: 1px solid #334155; }
+        .cloud-input { width: 100%; padding: 10px; background: #020617; border: 1px solid #475569; color: white; border-radius: 5px; margin: 10px 0; font-size: 11px; }
         
-        .layer-body { padding: 15px; }
-        .cloud-input { width: 100%; padding: 12px; background: #020617; border: 1px solid #334155; color: #fff; border-radius: 8px; margin-bottom: 10px; font-size: 11px; }
-        
-        .grid-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn-sm { padding: 10px; font-size: 10px; background: #334155; color: #fff; border-radius: 6px; font-weight: 700; border: none; cursor: pointer; }
-        .btn-draw { grid-column: span 2; border: 1px solid var(--accent); color: var(--accent); background: transparent; }
-        .btn-draw.active { background: var(--rojo); color: #fff; border-color: #fff; }
+        .btn { cursor: pointer; border: none; font-weight: bold; border-radius: 5px; padding: 10px; }
+        .btn-main { width: 100%; background: var(--am); color: black; margin-bottom: 15px; }
+        .btn-tool { background: #334155; color: white; font-size: 10px; width: 48%; }
+        .btn-draw { width: 100%; margin-top: 10px; border: 1px solid var(--am); background: transparent; color: var(--am); }
+        .btn-draw.active { background: var(--rj); color: white; }
 
-        /* SECTORES EN LISTA */
-        .sector-item { padding: 10px 20px; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; font-size: 11px; background: #020617; cursor: pointer; }
-
-        /* MODALES */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; display: none; backdrop-filter: blur(5px); }
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); width: 400px; padding: 30px; border-radius: 20px; z-index: 1000; border: 1px solid var(--accent); display: none; }
-        .field-opt { display: flex; align-items: center; padding: 10px; background: #020617; margin-bottom: 5px; border-radius: 8px; font-size: 12px; }
-        .field-opt input { margin-right: 12px; }
-
-        /* POPUP */
-        .pop-c { width: 280px; color: #000; font-family: sans-serif; }
-        .pop-h { background: #f1f5f9; padding: 10px; font-weight: 800; border-bottom: 3px solid var(--verde); }
-        .pop-b { padding: 10px; font-size: 12px; }
-        .pop-r { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #eee; }
-        .pop-r b { color: #64748b; font-size: 9px; text-transform: uppercase; }
+        .pop-h { background: #f1f5f9; padding: 8px; font-weight: bold; border-bottom: 3px solid var(--vd); color: black; }
+        .pop-b { padding: 8px; color: black; font-size: 11px; }
     </style>
 </head>
 <body>
 
-<div class="layout">
-    <div id="map"></div>
+<div id="map"></div>
+<div class="brand">HACIENDA MUNICIPAL AYACUCHO</div>
 
-    <div class="brand-box">
-        <b>HACIENDA MUNICIPAL AYACUCHO</b>
+<aside id="sidebar">
+    <div class="header">
+        <h2 style="margin:0; font-size:18px">GESTIÓN FISCAL MASTER</h2>
+        <small style="color:var(--am)">ADMINISTRACIÓN DE CAPAS</small>
     </div>
-
-    <div class="search-bar">
-        <input type="text" id="omni-search" placeholder="Buscar en todas las capas..." onkeyup="runGlobalSearch()">
+    <div class="content">
+        <button class="btn btn-main" onclick="addLayer()">+ VINCULAR GOOGLE SHEETS</button>
+        <div id="layers"></div>
     </div>
-
-    <aside id="sidebar">
-        <header class="sidebar-header">
-            <h1 style="font-weight:900; font-size:22px">GESTIÓN FISCAL MASTER</h1>
-            <p style="font-size:10px; color:var(--accent); letter-spacing:2px">SGF AYACUCHO</p>
-        </header>
-        <div class="scroll-area">
-            <button class="btn btn-gold" onclick="addNewLayer()">+ NUEVA CAPA GOOGLE SHEETS</button>
-            <div id="layer-stack"></div>
-        </div>
-    </aside>
-</div>
-
-<div class="overlay" id="overlay" onclick="closeModals()"></div>
-<div class="modal" id="modal-ficha">
-    <h3 style="color:var(--accent); margin-bottom:15px">Configurar Ficha</h3>
-    <div id="fields-list" style="max-height:250px; overflow-y:auto"></div>
-    <button class="btn btn-gold" style="margin-top:20px" onclick="saveFicha()">APLICAR</button>
-</div>
+</aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
@@ -130,165 +58,83 @@
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    let STORE = {};
-    let ACTIVE_ID = null;
-    let DRAW_CTRL = null;
+    let DB = {}; let DRAW_TOOL = null; let ACTIVE_LID = null;
 
-    // FIX MAPAS: URLs CORRECTAS PARA GOOGLE
-    const satLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
-    });
-    const streetLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-        maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
-    });
+    // MAPAS REPARADOS (ACCESO DIRECTO)
+    const sat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
+    const str = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 });
 
-    const map = L.map('map', { 
-        center: [8.03317, -72.25693], 
-        zoom: 16, 
-        layers: [satLayer],
-        zoomControl: false 
-    });
+    const map = L.map('map', { center: [8.033, -72.256], zoom: 15, layers: [sat], zoomControl: false });
+    L.control.layers({ "Satélite": sat, "Calles": str }, null, { position: 'topright' }).addTo(map);
 
-    L.control.layers({ "Satélite": satLayer, "Calles": streetLayer }, null, { position: 'topright' }).addTo(map);
-
-    function addNewLayer() {
-        const name = prompt("Nombre de la Capa:");
-        if(!name) return;
-        const id = 'L' + Date.now();
-        STORE[id] = { name: name, group: L.featureGroup().addTo(map), url: '', config: [], data: [], drawing: false, visible: true };
-        renderUI();
+    function addLayer() {
+        const n = prompt("Nombre:"); if(!n) return;
+        const id = 'L'+Date.now();
+        DB[id] = { name: n, group: L.featureGroup().addTo(map), url: '', data: [], drawing: false };
+        render();
     }
 
-    function renderUI() {
-        const container = document.getElementById('layer-stack');
-        container.innerHTML = "";
-        Object.keys(STORE).forEach(id => {
-            const l = STORE[id];
-            let sectorsHtml = "";
-            l.group.eachLayer(ly => {
-                if(ly instanceof L.Polygon) {
-                    sectorsHtml += `<div class="sector-item" onclick="focusEntity('${id}','${L.Util.stamp(ly)}')">
-                        <b>Sector: ${ly.options.name}</b><span>📍</span>
-                    </div>`;
-                }
-            });
-
-            container.innerHTML += `
-                <div class="layer-card">
-                    <div class="layer-head">
-                        <span>${l.name}</span>
-                        <b onclick="removeLayer('${id}')" style="color:var(--rojo); cursor:pointer">✕</b>
-                    </div>
-                    <div class="layer-body">
-                        <input type="text" class="cloud-input" placeholder="Pegar Link de Google Sheets..." 
-                               onchange="updateLayerUrl('${id}', this.value)" value="${l.url}">
-                        <div class="grid-tools">
-                            <button class="btn-sm" onclick="syncData('${id}')">🔄 CARGAR</button>
-                            <button class="btn-sm" onclick="openFicha('${id}')">📋 FICHA</button>
-                            <button class="btn-sm btn-draw ${l.drawing?'active':''}" onclick="toggleDraw('${id}')">
-                                ${l.drawing ? 'LISTO' : '✏️ DIBUJAR'}
-                            </button>
-                        </div>
-                    </div>
-                    <div>${sectorsHtml}</div>
-                </div>`;
+    function render() {
+        const div = document.getElementById('layers'); div.innerHTML = "";
+        Object.keys(DB).forEach(id => {
+            const l = DB[id];
+            div.innerHTML += `<div class="layer-card">
+                <div style="display:flex; justify-content:space-between"><b>${l.name}</b><i onclick="del('${id}')" style="cursor:pointer">✕</i></div>
+                <input type="text" class="cloud-input" placeholder="Pegar URL..." onchange="updUrl('${id}', this.value)" value="${l.url}">
+                <div style="display:flex; justify-content:space-between">
+                    <button class="btn btn-tool" onclick="load('${id}')">CARGAR</button>
+                    <button class="btn btn-tool" onclick="alert('Config Ficha Proximamente')">FICHA</button>
+                </div>
+                <button class="btn btn-draw ${l.drawing?'active':''}" onclick="draw('${id}')">${l.drawing?'LISTO':'DIBUJAR SECTOR'}</button>
+            </div>`;
         });
     }
 
-    function updateLayerUrl(id, url) {
-        if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
-        STORE[id].url = url;
+    function updUrl(id, u) { if(u.includes('/edit')) u = u.split('/edit')[0]+'/export?format=csv'; DB[id].url = u; }
+
+    function load(id) {
+        Papa.parse(DB[id].url, { download: true, header: true, complete: r => {
+            DB[id].data = r.data; plot(id);
+        }});
     }
 
-    function syncData(id) {
-        if(!STORE[id].url) return alert("Falta el Link.");
-        Papa.parse(STORE[id].url, {
-            download: true, header: true, skipEmptyLines: true,
-            complete: r => {
-                STORE[id].data = r.data;
-                STORE[id].config = Object.keys(r.data[0]).map(k => ({ n: k, v: true }));
-                plotMarkers(id);
-                renderUI();
+    function plot(id) {
+        const l = DB[id]; l.group.clearLayers();
+        l.data.forEach(row => {
+            const lat = parseFloat(row.Latitud || row.lat);
+            const lon = parseFloat(row.Longitud || row.lon);
+            if(!isNaN(lat)) {
+                const c = (row.Estatus||"").toUpperCase().includes("MORA") ? "#e60000" : "#007a33";
+                const p = L.circleMarker([lat, lon], { radius: 6, color: '#fff', weight: 1, fillColor: c, fillOpacity: 0.9 });
+                p.bindPopup(`<div class="pop-h">${row.Nombre||'Local'}</div><div class="pop-b">RIF: ${row.RIF||'N/A'}<br>Estado: ${row.Estatus||'S/D'}</div>`);
+                l.group.addLayer(p);
             }
         });
     }
 
-    function plotMarkers(id) {
-        const l = STORE[id];
-        l.group.eachLayer(ly => { if(ly instanceof L.CircleMarker) l.group.removeLayer(ly); });
-
-        l.data.forEach(row => {
-            const lat = parseFloat(row.Latitud || row.lat);
-            const lon = parseFloat(row.Longitud || row.lon);
-            if(isNaN(lat) || isNaN(lon)) return;
-
-            let color = "#3b82f6";
-            const s = (row.Estatus || row.Estado || "").toUpperCase();
-            if(s.includes("PAGO") || s.includes("AL DIA")) color = "#10b981";
-            else if(s.includes("MORA")) color = "#ef4444";
-
-            const p = L.circleMarker([lat, lon], { radius: 7, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 });
-            let h = `<div class="pop-c"><div class="pop-h">${row.Nombre || 'Comercio'}</div><div class="pop-b">`;
-            l.config.forEach(c => { if(c.v && row[c.n]) h += `<div class="pop-r"><b>${c.n}</b><span>${row[c.n]}</span></div>`; });
-            p.bindPopup(h + `</div></div>`);
-            l.group.addLayer(p);
-        });
-    }
-
-    function toggleDraw(id) {
-        if(STORE[id].drawing) { map.removeControl(DRAW_CTRL); STORE[id].drawing = false; }
-        else {
-            ACTIVE_ID = id; STORE[id].drawing = true;
-            DRAW_CTRL = new L.Control.Draw({ draw: { polygon: true, rectangle: true, circle: false, marker: false, polyline: false } });
-            map.addControl(DRAW_CTRL);
+    function draw(id) {
+        if(DB[id].drawing) { map.removeControl(DRAW_TOOL); DB[id].drawing = false; }
+        else { 
+            ACTIVE_LID = id; DB[id].drawing = true;
+            DRAW_TOOL = new L.Control.Draw({ draw: { polyline: false, circle: false, marker: false, circlemarker: false } });
+            map.addControl(DRAW_TOOL);
         }
-        renderUI();
+        render();
     }
 
     map.on(L.Draw.Event.CREATED, e => {
-        const n = prompt("Nombre Sector:");
-        if(!n) return;
-        const ly = e.layer; ly.options.name = n; ly.options.color = '#ffcc00';
-        STORE[ACTIVE_ID].group.addLayer(ly);
-        
-        const g = ly.toGeoJSON();
-        let c = 0;
-        Object.keys(STORE).forEach(id => {
-            STORE[id].group.eachLayer(m => { if(m instanceof L.CircleMarker && turf.booleanPointInPolygon(m.toGeoJSON(), g)) c++; });
+        const n = prompt("Nombre Sector:"); if(!n) return;
+        const ly = e.layer; ly.options.name = n; ly.options.color = "#ffcc00";
+        DB[ACTIVE_LID].group.addLayer(ly);
+        const poly = ly.toGeoJSON(); let count = 0;
+        Object.keys(DB).forEach(id => {
+            DB[id].group.eachLayer(m => { if(m instanceof L.CircleMarker && turf.booleanPointInPolygon(m.toGeoJSON(), poly)) count++; });
         });
-        ly.bindPopup(`<b>${n}</b><br>Censo: ${c}`);
-        toggleDraw(ACTIVE_ID);
+        ly.bindPopup("<b>"+n+"</b><br>Censo: "+count);
+        draw(ACTIVE_LID);
     });
 
-    function openFicha(id) {
-        ACTIVE_ID = id;
-        const box = document.getElementById('fields-list'); box.innerHTML = "";
-        STORE[id].config.forEach((c, i) => {
-            box.innerHTML += `<div class="field-opt"><input type="checkbox" id="f-${i}" ${c.v?'checked':''}>${c.n}</div>`;
-        });
-        document.getElementById('overlay').style.display = "block";
-        document.getElementById('modal-ficha').style.display = "block";
-    }
-
-    function saveFicha() {
-        STORE[ACTIVE_ID].config.forEach((c, i) => { c.v = document.getElementById(`f-${i}`).checked; });
-        plotMarkers(ACTIVE_ID); closeModals();
-    }
-
-    function removeLayer(id) { if(confirm("¿Eliminar?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderUI(); } }
-    function closeModals() { document.getElementById('overlay').style.display = "none"; document.getElementById('modal-ficha').style.display = "none"; }
-    function focusEntity(id, eid) { const ly = STORE[id].group.getLayer(eid); map.fitBounds(ly.getBounds()); }
-    function runGlobalSearch() {
-        const q = document.getElementById('omni-search').value.toLowerCase();
-        Object.keys(STORE).forEach(id => {
-            STORE[id].group.eachLayer(l => {
-                if(l instanceof L.CircleMarker) {
-                    const t = JSON.stringify(l.getPopup().getContent()).toLowerCase();
-                    l.setStyle({ opacity: t.includes(q)?1:0.1, fillOpacity: t.includes(q)?1:0.1 });
-                }
-            });
-        });
-    }
+    function del(id) { map.removeLayer(DB[id].group); delete DB[id]; render(); }
 </script>
 </body>
 </html>
