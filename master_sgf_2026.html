@@ -3,260 +3,303 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF - HACIENDA MUNICIPAL AYACUCHO (MASTER)</title>
+    <title>SGF - HACIENDA MUNICIPAL AYACUCHO (MASTER TOTAL 2026)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
         :root { 
-            --amarillo: #ffcc00; 
-            --rojo: #e60000; 
-            --verde: #007a33; 
-            --fondo: #0f172a; 
-            --card: #1e293b; 
+            --amarillo: #ffcc00; --rojo: #e60000; --verde: #22c55e; --azul: #3b82f6;
+            --fondo: #0f172a; --card: #1e293b; --texto-sec: #cbd5e1;
         }
 
-        body { margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; display: flex; height: 100vh; background: #000; color: white; overflow: hidden; }
-        
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; background: #000; color: white; overflow: hidden; }
         #map { flex: 1; z-index: 1; background: #000; }
-        .leaflet-control-attribution { display: none !important; }
 
-        /* 1. IDENTIDAD INSTITUCIONAL (Foto 1-3) */
-        .brand-box { 
+        /* 1. HEADER INSTITUCIONAL (Foto 1) */
+        .brand-header { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.9); padding: 15px 25px; border-radius: 10px;
-            border-left: 6px solid var(--amarillo); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 10px;
+            border-left: 6px solid var(--amarillo); backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .brand-box b { display: block; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
-        .brand-box span { font-size: 11px; color: var(--amarillo); font-weight: 800; }
+        .brand-header b { display: block; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
+        .brand-header span { font-size: 11px; color: var(--amarillo); font-weight: 800; letter-spacing: 2px; }
 
-        /* 2. BUSCADOR GLOBAL (Foto 11) */
-        .search-bar { 
-            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; 
-            width: 450px; background: white; border-radius: 50px; padding: 12px 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4); display: flex; align-items: center;
+        /* 2. BUSCADOR SUPERIOR (Foto 6/11) */
+        .top-search-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 450px; }
+        .top-search { 
+            width: 100%; padding: 14px 25px; border-radius: 30px; border: none; 
+            background: white; color: #333; font-weight: 700; font-size: 14px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.4); outline: none;
         }
-        .search-bar input { border: none; outline: none; width: 100%; font-size: 15px; font-weight: 700; color: #0f172a; }
 
-        /* 3. SIDEBAR CON TRICOLOR (Foto 2, 6, 9) */
-        #sidebar { width: 440px; background: var(--fondo); display: flex; flex-direction: column; border-left: 1px solid #334155; }
+        /* 3. BARRA DE HERRAMIENTAS DE DIBUJO (Foto 20) */
+        .drawing-toolbar {
+            position: absolute; top: 85px; left: 50%; transform: translateX(-50%); z-index: 1000;
+            background: white; display: flex; padding: 6px; border-radius: 6px; box-shadow: 0 2px 15px rgba(0,0,0,0.3);
+        }
+        .tool-btn { 
+            padding: 8px 15px; color: #444; cursor: pointer; border-right: 1px solid #eee; 
+            display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; transition: 0.2s;
+        }
+        .tool-btn:hover { background: #f1f5f9; color: var(--azul); }
+        .tool-btn:last-child { border: none; }
+
+        /* ESTILO "BONITO" DEL TRAZADO (Foto 21) */
+        .leaflet-draw-draw-polygon { stroke: #000000 !important; stroke-width: 4px !important; stroke-opacity: 1 !important; }
+        .leaflet-draw-guide-marker { 
+            background: #ffffff !important; border: 2px solid #000000 !important; 
+            border-radius: 50% !important; width: 12px !important; height: 12px !important; 
+            box-shadow: 0 0 8px rgba(0,0,0,0.5) !important;
+        }
+
+        /* 4. SIDEBAR MAESTRO (Foto 3/5/19) */
+        #sidebar { width: 420px; background: var(--fondo); border-left: 1px solid #334155; display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
+        .side-title { padding: 35px 25px; text-align: center; border-bottom: 5px solid var(--amarillo); background: var(--card); }
+        .side-content { flex: 1; overflow-y: auto; padding: 25px; scrollbar-width: thin; scrollbar-color: var(--amarillo) transparent; }
         
-        .side-header { 
-            padding: 40px 20px; text-align: center; position: relative;
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-        }
-        /* El Tricolor Municipal */
-        .side-header::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 6px;
-            background: linear-gradient(to right, var(--amarillo) 33.3%, var(--rojo) 33.3% 66.6%, var(--verde) 66.6%);
-        }
+        /* Capas Estilo My Maps */
+        .layer-box { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 25px; position: relative; }
+        .layer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .layer-title { font-weight: 800; font-size: 15px; color: white; display: flex; align-items: center; gap: 10px; }
+        .layer-options { color: var(--azul); font-size: 11px; font-weight: 800; margin-left: 28px; cursor: pointer; text-transform: uppercase; margin-bottom: 15px; }
 
-        .side-content { flex: 1; overflow-y: auto; padding: 25px; }
+        /* Semáforo Dinámico */
+        .semaphore-legend { padding: 0; list-style: none; margin-left: 25px; }
+        .semaphore-legend li { 
+            display: flex; align-items: center; gap: 12px; padding: 10px; 
+            border-radius: 8px; cursor: pointer; position: relative; font-size: 13px; color: var(--texto-sec); transition: 0.2s;
+        }
+        .semaphore-legend li:hover { background: rgba(255,255,255,0.08); color: white; }
+        .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+        .rect-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid white; }
+        .edit-tool { position: absolute; right: 12px; opacity: 0; transition: 0.2s; font-size: 14px; }
+        li:hover .edit-tool { opacity: 1; }
+
+        /* 5. EDITOR DE ATRIBUTOS Y ESTILOS (Foto 18/19) */
+        #style-editor {
+            position: absolute; top: 80px; left: 440px; z-index: 2000;
+            background: white; color: #333; width: 340px; border-radius: 12px; padding: 25px; display: none;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.7); max-height: 85vh; overflow-y: auto;
+        }
+        .editor-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        .section-title { font-size: 11px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
+        .field-list { background: #f8fafc; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
+        .field-item { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 8px 0; border-bottom: 1px solid #edf2f7; }
+        .field-item:last-child { border: none; }
+        .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px; }
+        .color-circle { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .color-circle:hover { transform: scale(1.1); }
+
+        /* 6. FICHA TÉCNICA / POPUP (Foto 16/17) */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .leaflet-popup-content { margin: 0; width: 320px !important; }
+        .ficha-header { background: #f1f5f9; padding: 18px; border-bottom: 4px solid var(--verde); color: #1e293b; }
+        .ficha-header b { font-size: 19px; display: block; }
+        .ficha-header span { font-size: 12px; color: #64748b; font-weight: 600; }
+        .ficha-body { padding: 15px 20px; max-height: 380px; overflow-y: auto; background: white; color: #333; }
+        .ficha-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; }
+        .ficha-row b { color: #64748b; font-weight: 700; width: 45%; }
+        .ficha-row span { width: 55%; text-align: right; font-weight: 500; }
         
-        .btn-main { 
-            width: 100%; padding: 16px; background: var(--amarillo); border: none; 
-            border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 25px; 
-            color: #000; transition: 0.3s;
-        }
-        .btn-main:hover { background: #e6b800; transform: translateY(-2px); }
-
-        /* 4. TARJETAS DE CAPAS (Foto 9-10) */
-        .layer-card { background: var(--card); border-radius: 12px; padding: 18px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
-        .layer-card b { color: var(--amarillo); font-size: 15px; display: block; margin-bottom: 12px; }
-        
-        .input-url { 
-            width: 100%; padding: 10px; background: #020617; border: 1px solid #475569; 
-            color: white; border-radius: 6px; font-size: 11px; margin-bottom: 12px; 
-        }
-
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-tool { padding: 12px; font-size: 11px; border: none; border-radius: 6px; background: #334155; color: white; font-weight: 800; cursor: pointer; }
-        
-        .btn-draw { 
-            grid-column: span 2; border: 1px solid var(--amarillo); background: transparent; 
-            color: var(--amarillo); margin-top: 5px; 
-        }
-        .btn-draw.active { background: var(--rojo); color: white; border-color: white; }
-
-        /* 5. POPUPS Y FICHAS (Foto 15-16) */
-        .p-card { width: 300px; color: #000; }
-        .p-head { background: #f1f5f9; padding: 12px; font-weight: 900; border-bottom: 4px solid var(--verde); border-radius: 5px 5px 0 0; }
-        .p-body { padding: 10px; font-size: 12px; max-height: 250px; overflow-y: auto; background: white; }
-        .p-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
-        .p-row b { color: #64748b; font-size: 10px; text-transform: uppercase; }
+        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-blue { background: var(--azul); color: white; }
+        .btn-blue:hover { background: #2563eb; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="brand-box">
+<div class="brand-header">
     <b>HACIENDA MUNICIPAL AYACUCHO</b>
     <span>SGF - GESTIÓN FISCAL MASTER</span>
 </div>
 
-<div class="search-bar">
-    <input type="text" id="map-search" placeholder="Buscar RIF, Comercio o Estatus..." onkeyup="filterMap()">
+<div class="top-search-container">
+    <input type="text" class="top-search" placeholder="🔍 Buscar RIF, Comercio o N° de Censo..." id="map-search">
+</div>
+
+<div class="drawing-toolbar">
+    <div class="tool-btn">🖐️ Seleccionar</div>
+    <div class="tool-btn" id="draw-marker">📍 Añadir punto</div>
+    <div class="tool-btn" id="draw-polygon" title="Trazar bloque fiscal">📐 Trazar línea de bloque</div>
+    <div class="tool-btn">📏 Medir</div>
+</div>
+
+<div id="style-editor">
+    <div class="editor-header">
+        <b id="ed-title" style="font-size: 16px;">Configurar Capa</b>
+        <span onclick="closeEditor()" style="cursor:pointer; font-size: 24px;">&times;</span>
+    </div>
+    
+    <div class="section-title">Identificación</div>
+    <input type="text" id="ed-name" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:6px; margin-bottom:20px;">
+    
+    <div class="section-title">Color de Representación</div>
+    <div class="color-grid" id="ed-colors"></div>
+
+    <div class="section-title">Atributos Visibles (Ficha Técnica)</div>
+    <div class="field-list" id="ed-fields">
+        <div class="field-item"><input type="checkbox" checked> Correo Electrónico</div>
+        <div class="field-item"><input type="checkbox" checked> Dirección Referencial</div>
+        <div class="field-item"><input type="checkbox" checked> N° de Expediente</div>
+        <div class="field-item"><input type="checkbox" checked> Aseo Urbano</div>
+        <div class="field-item"><input type="checkbox"> Impuesto sobre Inmuebles</div>
+    </div>
+    
+    <button class="btn-action btn-blue" onclick="applySettings()">APLICAR CAMBIOS</button>
 </div>
 
 <aside id="sidebar">
-    <div class="side-header">
-        <h2 style="margin:0; font-size:22px;">GESTIÓN FISCAL</h2>
-        <small style="color:var(--amarillo); font-weight:900;">MUNICIPIO AYACUCHO</small>
+    <div class="side-title">
+        <h2 style="margin:0; color:white; letter-spacing: 1px;">SGF MASTER</h2>
+        <div style="color:var(--amarillo); font-size: 11px; font-weight: 800; margin-top: 5px;">MUNICIPIO AYACUCHO - TÁCHIRA</div>
     </div>
+    
     <div class="side-content">
-        <button class="btn-main" onclick="createNewLayer()">+ VINCULAR CAPA GOOGLE SHEETS</button>
-        <div id="layer-container"></div>
+        <div class="layer-box">
+            <div class="layer-header">
+                <div class="layer-title"><input type="checkbox" checked> Lotes Plan piloto</div>
+                <span style="cursor:pointer">⋮</span>
+            </div>
+            <div class="layer-options">📊 Estilos de bloques</div>
+            <ul class="semaphore-legend">
+                <li><div class="rect-dot" style="background:#a855f7"></div> Bloque 1 - Expansión</li>
+                <li><div class="rect-dot" style="background:#22c55e"></div> Bloque 2 - Control Central</li>
+                <li><div class="rect-dot" style="background:#f97316"></div> Bloque 4 - Auditoría</li>
+            </ul>
+        </div>
+
+        <div class="layer-box">
+            <div class="layer-header">
+                <div class="layer-title"><input type="checkbox" checked> mapa git (Censo 2026)</div>
+                <span style="cursor:pointer">⋮</span>
+            </div>
+            <div class="layer-options" onclick="openEditor('CATEGORÍAS DE LICENCIA', 'map-git')">🖌️ Estilo de Licencia Act. Econ.</div>
+            <ul class="semaphore-legend" id="dynamic-legend">
+                </ul>
+        </div>
     </div>
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    let MAP_LAYERS = {}; 
-    let CURRENT_ID = null;
-    let DRAW_CONTROL = null;
+    // 1. CONFIGURACIÓN DEL MAPA
+    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
+    const satellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
 
-    // INICIALIZACIÓN DE MAPA (Google Satelital)
-    const satLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
-    const map = L.map('map', { 
-        center: [8.033, -72.256], 
-        zoom: 16, 
-        layers: [satLayer],
-        zoomControl: false 
-    });
+    // 2. ESTADO GLOBAL (RECOPILADO)
+    let CATEGORIAS_FISCALES = {
+        'sin': { nombre: 'SIN LICENCIA', color: '#ef4444', count: 1 },
+        'temp': { nombre: 'TEMPORAL', color: '#3b82f6', count: 1 },
+        'venc': { nombre: 'VENCIDA', color: '#eab308', count: 1 },
+        'vig': { nombre: 'VIGENTE', color: '#22c55e', count: 1 }
+    };
+    let editingKey = null;
 
-    // Control de Capas superior derecha
-    L.control.layers({ "Satélite": satLayer, "Calles": L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}') }, null, { position: 'topright' }).addTo(map);
-
-    function createNewLayer() {
-        const name = prompt("Nombre para esta capa:");
-        if(!name) return;
-        const id = 'layer_' + Date.now();
-        MAP_LAYERS[id] = { name: name, group: L.featureGroup().addTo(map), url: '', drawing: false };
-        updateUI();
-    }
-
-    function updateUI() {
-        const container = document.getElementById('layer-container');
+    // 3. RENDERIZADO DE LEYENDA (Foto 5)
+    function refreshLegend() {
+        const container = document.getElementById('dynamic-legend');
         container.innerHTML = "";
-        Object.keys(MAP_LAYERS).forEach(id => {
-            const l = MAP_LAYERS[id];
+        Object.keys(CATEGORIAS_FISCALES).forEach(key => {
+            const item = CATEGORIAS_FISCALES[key];
             container.innerHTML += `
-                <div class="layer-card">
-                    <b>${l.name}</b>
-                    <input type="text" class="input-url" placeholder="Pegar URL /export?format=csv..." 
-                           onchange="saveUrl('${id}', this.value)" value="${l.url}">
-                    <div class="btn-group">
-                        <button class="btn-tool" onclick="syncLayer('${id}')">🔄 SINCRONIZAR</button>
-                        <button class="btn-tool" onclick="alert('Módulo de Ficha Técnica Activo')">📋 FICHA</button>
-                        <button class="btn-tool btn-draw ${l.drawing?'active':''}" onclick="toggleDraw('${id}')">
-                            ${l.drawing ? 'TERMINAR DIBUJO' : '✏️ DIBUJAR SECTOR'}
-                        </button>
-                    </div>
-                </div>`;
+                <li onclick="openEditor('${item.nombre}', '${key}')">
+                    <div class="pin-dot" style="background:${item.color}"></div>
+                    <span>${item.nombre} (${item.count})</span>
+                    <span class="edit-tool">🖌️</span>
+                </li>`;
         });
     }
 
-    function saveUrl(id, url) {
-        if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
-        MAP_LAYERS[id].url = url;
-    }
-
-    function syncLayer(id) {
-        if(!MAP_LAYERS[id].url) return alert("Por favor pegue el enlace de Google Sheets.");
-        
-        Papa.parse(MAP_LAYERS[id].url, {
-            download: true, header: true, skipEmptyLines: true,
-            complete: results => {
-                const group = MAP_LAYERS[id].group;
-                group.eachLayer(layer => { if(layer instanceof L.CircleMarker) group.removeLayer(layer); });
-
-                results.data.forEach(row => {
-                    // EXTRACTOR DE COORDENADAS (Soporta columna 'coordenadas gps (oficina)')
-                    let raw = row['coordenadas gps (oficina)'] || row['Coordenadas'] || "";
-                    if(raw) {
-                        let clean = raw.replace(/[()\[\]]/g, '').split(/[\s,]+/);
-                        let lat = parseFloat(clean[0]);
-                        let lon = parseFloat(clean[1]);
-
-                        if(!isNaN(lat) && !isNaN(lon)) {
-                            let estatus = (row.Estatus || row.Estado || "").toUpperCase();
-                            let color = estatus.includes("MORA") ? "#ef4444" : "#10b981";
-                            
-                            const marker = L.circleMarker([lat, lon], { 
-                                radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 
-                            });
-
-                            // FICHA DE POPUP COMPLETA
-                            let popupHtml = `<div class="p-card"><div class="p-head">${row.Nombre || 'SIN NOMBRE'}</div><div class="p-body">`;
-                            Object.keys(row).forEach(key => { 
-                                if(row[key]) popupHtml += `<div class="p-row"><b>${key}</b><span>${row[key]}</span></div>`; 
-                            });
-                            marker.bindPopup(popupHtml + `</div></div>`);
-                            group.addLayer(marker);
-                        }
-                    }
-                });
-                if(group.getLayers().length > 0) map.fitBounds(group.getBounds());
-                alert("Capa sincronizada. Comercios cargados: " + group.getLayers().length);
-            }
-        });
-    }
-
-    function toggleDraw(id) {
-        if(MAP_LAYERS[id].drawing) {
-            map.removeControl(DRAW_CONTROL);
-            MAP_LAYERS[id].drawing = false;
-        } else {
-            CURRENT_ID = id;
-            MAP_LAYERS[id].drawing = true;
-            DRAW_CONTROL = new L.Control.Draw({
-                draw: { polyline: false, circle: false, marker: false, circlemarker: false, rectangle: true, polygon: true }
-            });
-            map.addControl(DRAW_CONTROL);
+    // 4. MOTOR DE DIBUJO (Foto 20/21)
+    const drawnFeatures = new L.FeatureGroup().addTo(map);
+    const drawOptions = {
+        draw: {
+            polygon: { 
+                allowIntersection: false, 
+                shapeOptions: { 
+                    color: '#000000', // Borde negro nítido (Foto 21)
+                    weight: 5, 
+                    fillOpacity: 0.3 
+                } 
+            },
+            marker: true, polyline: false, circle: false, rectangle: true
         }
-        updateUI();
-    }
+    };
 
-    map.on(L.Draw.Event.CREATED, function (e) {
-        const sectorName = prompt("Nombre del Sector Dibujado:");
-        if(!sectorName) return;
-        
+    document.getElementById('draw-polygon').onclick = () => {
+        new L.Draw.Polygon(map, drawOptions.draw.polygon).enable();
+    };
+
+    map.on(L.Draw.Event.CREATED, (e) => {
         const layer = e.layer;
-        layer.options.color = '#ffcc00';
-        MAP_LAYERS[CURRENT_ID].group.addLayer(layer);
-        
-        // CENSO ESPACIAL AUTOMÁTICO
-        let censo = 0;
-        const polygonGeo = layer.toGeoJSON();
-        Object.keys(MAP_LAYERS).forEach(id => {
-            MAP_LAYERS[id].group.eachLayer(m => {
-                if(m instanceof L.CircleMarker && turf.booleanPointInPolygon(m.toGeoJSON(), polygonGeo)) censo++;
-            });
-        });
-
-        layer.bindPopup(`<b>SECTOR: ${sectorName}</b><br>Censo Fiscal: ${censo} comercios`);
-        toggleDraw(CURRENT_ID);
+        const nombreZona = prompt("Defina el nombre del Bloque o Zona:", "Bloque Nuevo");
+        if(nombreZona) {
+            const randomCol = '#' + Math.floor(Math.random()*16777215).toString(16);
+            layer.setStyle({ color: '#000', fillColor: randomCol, fillOpacity: 0.4 });
+            layer.bindPopup(`<b>ZONA FISCAL: ${nombreZona}</b><br>Creada el 29 de Marzo de 2026`);
+            drawnFeatures.addLayer(layer);
+        }
     });
 
-    function filterMap() {
-        const query = document.getElementById('map-search').value.toLowerCase();
-        Object.keys(MAP_LAYERS).forEach(id => {
-            MAP_LAYERS[id].group.eachLayer(m => {
-                if(m instanceof L.CircleMarker) {
-                    const dataStr = JSON.stringify(m.getPopup().getContent()).toLowerCase();
-                    const visible = dataStr.includes(query);
-                    m.setStyle({ opacity: visible ? 1 : 0.1, fillOpacity: visible ? 1 : 0.1 });
-                }
-            });
-        });
+    // 5. EDITOR DE ESTILOS (Foto 18/19)
+    function openEditor(title, key) {
+        editingKey = key;
+        const editor = document.getElementById('style-editor');
+        editor.style.display = 'block';
+        document.getElementById('ed-title').innerText = "EDITAR: " + title;
+        document.getElementById('ed-name').value = CATEGORIAS_FISCALES[key] ? CATEGORIAS_FISCALES[key].nombre : title;
     }
+
+    function closeEditor() { document.getElementById('style-editor').style.display = 'none'; }
+
+    function applySettings() {
+        if(CATEGORIAS_FISCALES[editingKey]) {
+            CATEGORIAS_FISCALES[editingKey].nombre = document.getElementById('ed-name').value;
+            refreshLegend();
+        }
+        closeEditor();
+    }
+
+    // Paleta de colores en el editor
+    const palettes = ['#ef4444', '#3b82f6', '#eab308', '#22c55e', '#a855f7', '#f97316', '#06b6d4', '#ec4899', '#64748b', '#000000'];
+    const pContainer = document.getElementById('ed-colors');
+    palettes.forEach(c => {
+        const div = document.createElement('div');
+        div.className = 'color-circle';
+        div.style.background = c;
+        div.onclick = () => { 
+            if(editingKey && CATEGORIAS_FISCALES[editingKey]) CATEGORIAS_FISCALES[editingKey].color = c; 
+        };
+        pContainer.appendChild(div);
+    });
+
+    // 6. FICHA TÉCNICA DE PRUEBA (Foto 16/17)
+    const auris = L.marker([8.02611, -72.25244]).addTo(map);
+    auris.bindPopup(`
+        <div class="ficha-header">
+            <b>Auris</b>
+            <span>San Juan de Colón, Ayacucho</span>
+        </div>
+        <div class="ficha-body">
+            <div class="ficha-row"><b>N° de censo</b><span>65665</span></div>
+            <div class="ficha-row"><b>Fiscal Asignado</b><span>Aura Rodriguez</span></div>
+            <div class="ficha-row"><b>Estatus Licencia</b><span style="color:var(--azul)">TEMPORAL</span></div>
+            <div class="ficha-row"><b>RIF</b><span>V-12345678-0</span></div>
+            <div class="ficha-row"><b>Última Auditoría</b><span>2026-03-29</span></div>
+            <button class="btn-action btn-blue">VER EXPEDIENTE DIGITAL</button>
+        </div>
+    `);
+
+    // Inicialización
+    refreshLegend();
 </script>
 </body>
 </html>
