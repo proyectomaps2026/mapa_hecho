@@ -2,92 +2,80 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGF MASTER PRO - Hacienda Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        :root { 
-            --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; 
-            --accent: #f59e0b; --text: #f8fafc; --success: #22c55e; --danger: #ef4444;
-        }
-
+        :root { --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; --accent: #f59e0b; --text: #f8fafc; --success: #22c55e; --danger: #ef4444; }
         body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- MAPA Y BUSCADOR (Punto 4 y 7) --- */
+        /* Mapa y Buscador Centrado */
         #map { flex: 1; z-index: 1; outline: none; }
+        .search-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 420px; background: white; border-radius: 24px; display: flex; align-items: center; padding: 2px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .search-container input { flex: 1; border: none; padding: 10px; outline: none; font-size: 14px; color: #333; border-radius: 24px; }
 
-        .search-container { 
-            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); 
-            z-index: 1000; width: 450px; background: white; border-radius: 30px;
-            display: flex; align-items: center; padding: 5px 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            border: 1px solid #e2e8f0;
-        }
-        .search-container input { flex: 1; border: none; padding: 12px; outline: none; font-size: 15px; color: #1e293b; font-weight: 500; }
-        .search-container span { color: #64748b; font-size: 18px; }
-
-        /* --- SIDEBAR PROFESIONAL (Punto 1 y 4) --- */
-        #sidebar { width: 420px; background: var(--panel); border-left: 1px solid #334155; display: flex; flex-direction: column; z-index: 2; box-shadow: -10px 0 30px rgba(0,0,0,0.5); }
+        /* Sidebar e Identidad (RECUPERADOS - Foto 1/5) */
+        #sidebar { width: 400px; background: var(--panel); border-left: 1px solid #334155; display: flex; flex-direction: column; z-index: 2; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+        .header-brand { padding: 15px; background: var(--primary); border-bottom: 4px solid #3b82f6; text-align: center; }
         
-        .header-brand { padding: 20px; background: var(--primary); border-bottom: 4px solid #3b82f6; text-align: center; }
-        .header-brand h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
-        .header-brand p { margin: 5px 0 0; font-size: 11px; opacity: 0.9; font-weight: 400; letter-spacing: 2px; }
-
-        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
-
-        /* --- CAPAS Y ELEMENTOS (My Maps Style - Foto a228eaea) --- */
-        .layer-card { background: #1e293b; border-radius: 12px; margin-bottom: 15px; border: 1px solid #475569; overflow: hidden; transition: 0.3s; }
-        .layer-header { padding: 12px 18px; background: #0f172a; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; }
-        .layer-header strong { font-size: 14px; color: var(--accent); }
-
-        .layer-tools { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px; background: #2d3748; }
-        .btn-tool { background: #475569; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
-        .btn-tool:hover { background: #64748b; }
-        .btn-tool.active { background: var(--danger); animation: pulse 1.5s infinite; }
-
-        .elements-list { list-style: none; padding: 0; margin: 0; background: #1e293b; }
-        .group-title { padding: 8px 18px; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; background: #0f172a; border-top: 1px solid #334155; }
-        .element-item { display: flex; align-items: center; padding: 10px 20px; cursor: pointer; transition: 0.2s; border-bottom: 1px solid #2d3748; }
-        .element-item:hover { background: #334155; }
-        .element-color { width: 14px; height: 14px; border-radius: 3px; border: 1px solid white; margin-right: 12px; }
-        .element-name { font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* --- MODALES Y EDITORES (Punto 5 y 6) --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9998; display: none; backdrop-filter: blur(4px); }
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); z-index: 9999; width: 400px; padding: 25px; border-radius: 16px; border: 2px solid var(--accent); display: none; box-shadow: 0 0 50px rgba(0,0,0,1); }
+        /* Título y Créditos Oficiales (Punto 5 y 10) */
+        .header-brand h1 { margin: 0; font-size: 18px; letter-spacing: 1px; color: white; }
+        .header-brand p { margin: 2px 0 0; font-size: 10px; opacity: 0.8; text-transform: uppercase; color: white; }
         
-        .field-row { display: flex; align-items: center; background: #0f172a; padding: 12px; margin-bottom: 8px; border-radius: 8px; cursor: grab; }
-        .style-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px 0; }
-        .color-opt { width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; cursor: pointer; }
+        /* Bandera del Municipio Ayacucho (Recuperada) */
+        .flag-box { display: flex; gap: 4px; height: 12px; justify-content: center; margin-top: 5px; }
+        .flag-stripe { width: 30%; height: 100%; border-radius: 2px; }
+        .stripe-y { background: #ffe600; } /* Amarillo */
+        .stripe-b { background: #004dc9; } /* Azul */
+        .stripe-r { background: #cf0000; } /* Rojo */
 
-        /* --- LIMPIEZA DE CUADROS BLANCOS (Punto 2) --- */
-        .leaflet-editing-icon { 
-            width: 8px !important; height: 8px !important; 
-            margin-left: -4px !important; margin-top: -4px !important; 
-            border-radius: 50% !important; background: var(--accent) !important; 
-            border: 2px solid white !important; box-shadow: 0 0 5px black;
-        }
-        .leaflet-draw-guide-dash { display: none; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 10px; }
+        
+        /* Lista de Capas y Elementos (My Maps Style - Foto image_0.png) */
+        .layer-card { background: #334155; border-radius: 8px; margin-bottom: 15px; border: 1px solid #475569; overflow: hidden; }
+        .layer-head { padding: 10px 15px; background: #1e293b; display: flex; justify-content: space-between; align-items: center; }
+        .layer-tools { padding: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 
-        /* --- POPUPS E IMÁGENES (Punto 8) --- */
-        .pop-card { min-width: 280px; font-family: 'Inter', sans-serif; }
-        .pop-img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px 12px 0 0; }
-        .pop-content { padding: 15px; color: #1e293b; }
-        .pop-title { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 8px; border-bottom: 2px solid var(--accent); padding-bottom: 4px; }
-        .pop-stat { font-size: 12px; margin: 4px 0; display: flex; justify-content: space-between; }
+        /* Categorías y Elementos (My Maps Style) */
+        .group-tag { padding: 6px 15px; font-size: 11px; color: #94a3b8; text-transform: uppercase; background: #0f172a; border-top: 1px solid #334155; }
+        .item-row { padding: 8px 25px; display: flex; align-items: center; gap: 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #2d3748; }
+        .item-row:hover { background: #475569; }
+        .dot { width: 12px; height: 12px; border-radius: 2px; border: 1px solid #fff; }
 
-        .btn-main { width: 100%; padding: 14px; background: var(--accent); color: var(--dark); border: none; border-radius: 8px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        /* Modales (Ficha y Estilo) */
+        #modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 9998; display: none; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); z-index: 9999; width: 380px; padding: 25px; border-radius: 12px; border: 2px solid var(--accent); display: none; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        .field-item { display: flex; align-items: center; background: #0f172a; padding: 10px; margin: 5px 0; border-radius: 6px; cursor: grab; font-size: 13px; }
 
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        /* PALETA DE COLORES MY MAPS PRO (20 Colores - Foto image_2.png) */
+        .paleta-mymaps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px 0; }
+        .color-block { width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; cursor: pointer; transform: scale(1); transition: 0.2s; }
+        .color-block:hover { transform: scale(1.1); box-shadow: 0 0 10px white; }
+        .color-block.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+
+        /* Popups Profesionales */
+        .pop-card { min-width: 260px; color: #333; }
+        .pop-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px 8px 0 0; }
+        .pop-content { padding: 12px; }
+        .pop-title { font-weight: 800; font-size: 16px; margin-bottom: 5px; color: var(--primary); }
+        .pop-stat { font-size: 12px; display: flex; justify-content: space-between; margin: 2px 0; }
+
+        .btn { padding: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 11px; transition: 0.2s; }
+        .btn-accent { background: var(--accent); color: var(--dark); width: 100%; }
+        .btn-draw { width: 100%; grid-column: span 2; font-weight: 800; }
+        .btn-draw-active { background: var(--danger) !important; color: white !important; animation: pulse 1s infinite; }
+        .input-text { width: 100%; padding: 12px; background: #0f172a; border: none; color: white; border-radius: 8px; margin-top: 10px; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="search-container">
-    <input type="text" id="mapSearch" placeholder="Buscar comercios, RIF o Bloques de expansión...">
+    <input type="text" placeholder="Buscar comercios, RIF o Bloques en Hacienda Ayacucho...">
     <span>🔍</span>
 </div>
 
@@ -96,51 +84,41 @@
 <div id="sidebar">
     <div class="header-brand">
         <h1>SGF MASTER PRO</h1>
-        <p>Hacienda Municipal Ayacucho • V. 2026.4</p>
+        <p>HACIENDA MUNICIPAL AYACUCHO • 2026</p>
+        <div class="flag-box">
+            <div class="flag-stripe stripe-y"></div>
+            <div class="flag-stripe stripe-b"></div>
+            <div class="flag-stripe stripe-r"></div>
+        </div>
     </div>
     
     <div class="scroll-area">
-        <button class="btn-main" onclick="createNewLayer()">📂 NUEVA CAPA DE TRABAJO</button>
-        <div id="layers-list" style="margin-top: 20px;"></div>
-
-        <div class="layer-card" style="margin-top: 30px; border-color: var(--success);">
-            <div class="layer-header" style="background: var(--success);">
-                <strong style="color: white;">AIRTABLE BRIDGE</strong>
-            </div>
-            <div style="padding: 15px;">
-                <input type="password" id="ghToken" placeholder="GitHub Personal Token" style="width:100%; background:#0f172a; border:none; color:white; padding:10px; margin-bottom:10px; border-radius:6px;">
-                <button class="btn-main" style="background: var(--success); color: white;" onclick="triggerSync()">SINCRONIZAR SERVIDOR</button>
-            </div>
-        </div>
+        <button class="btn btn-accent" style="margin-bottom:15px;" onclick="createNewLayer()">📂 NUEVA CAPA DE TRABAJO</button>
+        <div id="layers-list"></div>
     </div>
 </div>
 
-<div class="modal-overlay" id="overlay" onclick="closeModals()"></div>
+<div id="modal-overlay" onclick="closeAllModals()"></div>
 
 <div id="ficha-modal" class="modal">
-    <h3 style="margin:0 0 15px 0; color:var(--accent);">Configuración de Ficha</h3>
-    <div id="sortable-fields"></div>
-    <button class="btn-main" style="margin-top:20px" onclick="saveFichaConfig()">GUARDAR CAMBIOS</button>
+    <h3 style="margin-top:0; color:var(--accent);">Configurar Ficha Técnica Master</h3>
+    <div id="fields-container"></div>
+    <button class="btn btn-accent" style="margin-top:20px;" onclick="closeAllModals()">GUARDAR VISTA DE VENTA</button>
 </div>
 
-<div id="element-modal" class="modal">
-    <h3 style="margin:0 0 10px 0; color:var(--accent);">Editar Propiedades</h3>
-    <label style="font-size:12px; color:#94a3b8;">Nombre del Elemento:</label>
-    <input type="text" id="edit-name" style="width:100%; padding:10px; background:#0f172a; border:1px solid #475569; color:white; border-radius:6px; margin:8px 0 15px 0;">
+<div id="estilo-modal" class="modal">
+    <h3 style="margin-top:0; color:var(--accent);">Estilo del Elemento</h3>
+    <label style="font-size: 12px; color: #94a3b8;">Nombre de la Zona/Lote:</label>
+    <input type="text" id="edit-name" class="input-text" style="margin-bottom: 20px;">
     
-    <label style="font-size:12px; color:#94a3b8;">Color de Identidad:</label>
-    <div class="style-picker">
-        <div class="color-opt" style="background:#f59e0b" onclick="setEditColor('#f59e0b')"></div>
-        <div class="color-opt" style="background:#1e40af" onclick="setEditColor('#1e40af')"></div>
-        <div class="color-opt" style="background:#ef4444" onclick="setEditColor('#ef4444')"></div>
-        <div class="color-opt" style="background:#22c55e" onclick="setEditColor('#22c55e')"></div>
-        <div class="color-opt" style="background:#9333ea" onclick="setEditColor('#9333ea')"></div>
-    </div>
+    <label style="font-size: 12px; color: #94a3b8;">Paleta My Maps Profesional (20 Colores):</label>
+    <div class="paleta-mymaps" id="paleta-estilo">
+        </div>
     
-    <label style="font-size:12px; color:#94a3b8;">Opacidad de Relleno:</label>
-    <input type="range" id="edit-opacity" min="0" max="1" step="0.1" style="width:100%; margin:15px 0;">
+    <label style="font-size: 12px; color: #94a3b8;">Opacidad de Relleno:</label>
+    <input type="range" id="edit-opacity" min="0" max="1" step="0.1" value="0.5" style="width:100%; margin: 15px 0;">
     
-    <button class="btn-main" style="margin-top:10px" onclick="applyElementChanges()">APLICAR ESTILO</button>
+    <button class="btn btn-accent" style="margin-top:15px;" onclick="applyElementChanges()">APLICAR Y GUARDAR ESTILO</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -150,175 +128,311 @@
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    // --- NÚCLEO DEL MAPA ---
-    const map = L.map('map', { center: [8.03317, -72.25693], zoom: 16, attributionControl: false });
-    const satLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
-        maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] 
-    }).addTo(map);
+    // --- INICIALIZACIÓN UNIFICADA DE MAPAS BASE (RECUPERADAS - Foto 13/14) ---
+    const satLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] });
+    const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
 
-    let layersData = JSON.parse(localStorage.getItem('sgf_layers')) || {};
+    const map = L.map('map', { 
+        center: [8.03317, -72.25693], 
+        zoom: 16, 
+        attributionControl: false,
+        layers: [satLayer] // Satélite por defecto
+    });
+
+    // Control de Capas Base (RECUPERADO)
+    L.control.layers({ "Vista Satélite": satLayer, "Vista Callejero": streetLayer }, null, { position: 'topright' }).addTo(map);
+
+    // Paleta de Colores My Maps Oficial (20 Colores - Foto image_2.png)
+    const myMapsColors = [
+        "#f59e0b", "#1e40af", "#ef4444", "#22c55e", "#9333ea", // Básicos
+        "#0ea5e9", "#f97316", "#eab308", "#db2777", "#a855f7", // Medios
+        "#fb923c", "#4f46e5", "#c084fc", "#14b8a6", "#be123c", // Claros
+        "#2d3748", "#111827", "#166534", "#991b1b", "#854d0e"  // Oscuros
+    ];
+
+    let layersData = {}; 
     let activeLid = null;
-    let activeEid = null;
-    let selectedColor = '#f59e0b';
+    let activeEid = null; 
+    let tempSelectedColor = '#f59e0b'; // Color de dibujo inicial naranja
 
-    // --- MOTOR DE PERSISTENCIA ---
-    function saveAll() {
-        const exportData = {};
-        Object.keys(layersData).forEach(lid => {
-            const l = layersData[lid];
-            exportData[lid] = {
-                name: l.name,
-                config: l.config,
-                csvData: l.csvData,
-                elements: l.elements.map(e => ({
-                    id: e.id, name: e.name, type: e.type, color: e.color, opacity: e.opacity, 
-                    geojson: layers[lid].group.getLayer(e.leafletId).toGeoJSON()
-                }))
-            };
-        });
-        localStorage.setItem('sgf_layers', JSON.stringify(exportData));
-    }
+    // --- PUNTO CRÍTICO 1: CONTROLADOR DE DIBUJO ÚNICO (SOLUCIÓN BARRAS DUPLICADAS - image_4.png) ---
+    const DrawManager = {
+        control: null,
+        activeLayerId: null,
+        init: function() {
+            // Se configura una sola vez al activarse en una capa
+        },
+        toggle: function(lid) {
+            this.activeLayerId = lid;
+            const btn = document.getElementById(`draw-${lid}`);
+            
+            // Si ya estamos dibujando y es en ESTA capa -> APAGAR
+            if(this.control && layersData[lid].isDrawing) {
+                this.deactivate();
+                layersData[lid].isDrawing = false;
+                btn.classList.remove('btn-draw-active');
+                btn.innerText = "✏️ DIBUJAR";
+                return;
+            }
 
-    // --- GESTIÓN DE CAPAS ---
-    let layers = {};
+            // Si estamos dibujando en OTRA capa -> LIMPIAR LA OTRA PRIMERO
+            if(this.control && this.activeLayerId !== lid) {
+                this.deactivateAll();
+            }
 
+            // ACTIVAR DIBUJO EN CAPA ACTUAL
+            this.activate(lid);
+            layersData[lid].isDrawing = true;
+            btn.classList.add('btn-draw-active');
+            btn.innerText = "FINALIZAR DIBUJO";
+        },
+        activate: function(lid) {
+            const featureGroup = layersData[lid].group;
+            this.control = new L.Control.Draw({
+                edit: { featureGroup: featureGroup, remove: true },
+                draw: { polygon: { shapeOptions: { color: tempSelectedColor, weight: 3, fillOpacity: 0.5 } }, rectangle: { shapeOptions: { color: tempSelectedColor } }, circle:false, marker:false, polyline:false }
+            });
+            map.addControl(this.control);
+
+            // Escuchamos el evento de creación UNA SOLA VEZ
+            map.off(L.Draw.Event.CREATED); 
+            map.on(L.Draw.Event.CREATED, (e) => {
+                const name = prompt("Nombre del Bloque/Lote:", "Zona nueva");
+                if(!name) return this.deactivateAll();
+                
+                const layer = e.layer;
+                layer.options.id = 'el_' + Date.now();
+                layer.options.name = name;
+                layer.options.color = tempSelectedColor;
+                layer.options.opacity = 0.5;
+
+                // Aplicamos el estilo naranja inicial
+                layer.setStyle({ color: tempSelectedColor, fillColor: tempSelectedColor, fillOpacity: 0.5 });
+                
+                // Lo añadimos al mapa
+                layersData[this.activeLayerId].group.addLayer(layer);
+                
+                // Actualizamos el Popup de conteo (Turf.js - Foto 13)
+                updatePolygonAnalytics(this.activeLayerId, layer);
+                
+                this.deactivateAll(); // Auto-parar dibujo
+                renderSidebar();
+            });
+        },
+        deactivate: function() {
+            if(this.control) {
+                map.removeControl(this.control);
+                this.control = null;
+            }
+        },
+        deactivateAll: function() {
+            this.deactivate();
+            Object.keys(layersData).forEach(lid => {
+                layersData[lid].isDrawing = false;
+                const btn = document.getElementById(`draw-${lid}`);
+                if(btn) {
+                    btn.classList.remove('btn-draw-active');
+                    btn.innerText = "✏️ DIBUJAR";
+                }
+            });
+        }
+    };
+
+    // --- GESTIÓN DE CAPAS MY MAPS ---
     function createNewLayer() {
-        const name = prompt("Nombre de la nueva capa (ej: Lotes Plan Piloto):");
-        if (!name) return;
-        const id = 'layer_' + Date.now();
-        layersData[id] = { name, config: [], csvData: [], elements: [] };
-        initLayerObject(id);
+        const name = prompt("Nombre de la capa (ej: Bloque de Expansión 'El Calvario'):");
+        if(!name) return;
+        const id = 'l_' + Date.now();
+        // Estructura de datos unificada
+        layersData[id] = { name, group: L.featureGroup().addTo(map), config: [], csvData: [], isDrawing: false };
         renderSidebar();
     }
 
-    function initLayerObject(id) {
-        layers[id] = { group: L.featureGroup().addTo(map), drawControl: null };
+    // --- PUNTO CRÍTICO 3: BORRADO RECURSIVO Y TOTAL (SOLUCIÓN CAPAS FANTASMA) ---
+    function delLayer(lid) {
+        if(confirm(`¿Deseas eliminar la capa "${layersData[lid].name}" y todo su contenido?`)) {
+            // 1. Limpiar el mapa (Borro físicamente todos los polígonos/puntos de Leaflet)
+            map.removeLayer(layersData[lid].group);
+            
+            // 2. Limpiar la estructura de datos
+            delete layersData[lid];
+            
+            renderSidebar();
+        }
     }
 
+    // --- RENDERIZADO LATERAL (My Maps Style - Foto a228eaea) ---
     function renderSidebar() {
         const container = document.getElementById('layers-list');
         container.innerHTML = "";
 
-        Object.keys(layersData).forEach(id => {
-            const l = layersData[id];
-            
-            // Lógica de Categorización (Punto 7 - Foto 1bf3b621)
-            let statusHTML = "";
+        Object.keys(layersData).forEach(lid => {
+            const l = layersData[lid];
+            let listHTML = "";
+
+            // 1. Grupos por Estatus (Foto 1bf3b621)
             if(l.csvData.length > 0) {
                 const stats = {};
-                l.csvData.forEach(row => {
-                    const st = row['Licencia Act. Econ.'] || "SIN LICENCIA";
+                l.csvData.forEach(r => {
+                    const st = r['Licencia Act. Econ.'] || "SIN ASIGNAR";
                     stats[st] = (stats[st] || 0) + 1;
                 });
-                statusHTML += `<div class="group-title">Estilos por Estatus</div>`;
+                listHTML += `<div class="group-tag">Estilos por Licencia</div>`;
                 Object.keys(stats).forEach(st => {
-                    const color = st.includes("VIGENTE") ? "#22c55e" : (st.includes("VENCIDA") ? "#eab308" : "#3b82f6");
-                    statusHTML += `<div class="element-item"><div class="element-color" style="background:${color}"></div><div class="element-name">${st} (${stats[st]})</div></div>`;
+                    let col = st.includes("VIGENTE") ? "#22c55e" : (st.includes("VENCIDA") ? "#eab308" : "#3b82f6");
+                    listHTML += `<div class="item-row"><div class="dot" style="background:${col}"></div><span>${st} (${stats[st]})</span></div>`;
                 });
             }
 
-            // Lista de Polígonos (Foto a228eaea)
-            let drawHTML = "";
-            if(l.elements.length > 0) {
-                drawHTML += `<div class="group-title">Elementos Dibujados</div>`;
-                l.elements.forEach(e => {
-                    drawHTML += `
-                        <div class="element-item" onclick="openElementEditor('${id}', '${e.id}')">
-                            <div class="element-color" style="background:${e.color}"></div>
-                            <div class="element-name">${e.name}</div>
-                            <span style="font-size:10px; color:#94a3b8;">EDITAR</span>
+            // 2. Lista de Elementos Dibujados (Foto image_0.png)
+            const drawnItems = getDrawnElements(lid);
+            if(drawnItems.length > 0) {
+                listHTML += `<div class="group-tag" style="border-top:1px solid #475569">Zonas y Lotes</div>`;
+                drawnItems.forEach(item => {
+                    listHTML += `
+                        <div class="item-row">
+                            <div class="dot" style="background:${item.color}" onclick="openEstiloModal('${lid}', '${item.leafletId}')"></div>
+                            <span onclick="focusElement('${lid}', ${item.leafletId})">${item.name}</span>
                         </div>`;
                 });
             }
 
             container.innerHTML += `
                 <div class="layer-card">
-                    <div class="layer-header">
-                        <strong>${l.name.toUpperCase()}</strong>
-                        <button onclick="deleteLayer('${id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
+                    <div class="layer-head">
+                        <strong>${l.name}</strong>
+                        <button style="background:none; border:none; color:#ef4444; cursor:pointer;" onclick="delLayer('${lid}')">✕</button>
                     </div>
                     <div class="layer-tools">
-                        <button class="btn-tool" onclick="importCSV('${id}')">📥 CSV</button>
-                        <button class="btn-tool" onclick="openFichaConfig('${id}')">⚙️ FICHA</button>
-                        <button class="btn-tool" id="btn-draw-${id}" onclick="toggleDrawing('${id}')">✏️ DIBUJAR</button>
-                        <button class="btn-tool" onclick="importFromUrl('${id}')">🔗 URL</button>
+                        <button class="btn btn-tool" onclick="importData('${lid}')">📥 IMPORTAR</button>
+                        <button class="btn btn-tool" onclick="openFichaConfig('${lid}')">⚙️ FICHA</button>
+                        <button class="btn btn-tool btn-draw" id="draw-${lid}" onclick="toggleDrawing('${lid}')">✏️ DIBUJAR ZONA</button>
                     </div>
-                    <div class="elements-list">${statusHTML}${drawHTML}</div>
+                    <div id="items-${lid}">${listHTML}</div>
                 </div>`;
         });
     }
 
-    // --- DIBUJO Y MANEJADORES (Punto 2) ---
-    function toggleDrawing(id) {
-        if(layers[id].drawControl) {
-            map.removeControl(layers[id].drawControl);
-            layers[id].drawControl = null;
-            document.getElementById(`btn-draw-${id}`).classList.remove('active');
-            document.getElementById(`btn-draw-${id}`).innerText = "✏️ DIBUJAR";
-        } else {
-            activeLid = id;
-            const drawControl = new L.Control.Draw({
-                draw: {
-                    polygon: { shapeOptions: { color: selectedColor, weight: 3, fillOpacity: 0.4 } },
-                    rectangle: { shapeOptions: { color: selectedColor } },
-                    circle: false, marker: false, polyline: false
-                },
-                edit: { featureGroup: layers[id].group, remove: true }
-            });
-            map.addControl(drawControl);
-            layers[id].drawControl = drawControl;
-            document.getElementById(`btn-draw-${id}`).classList.add('active');
-            document.getElementById(`btn-draw-${id}`).innerText = "PARAR";
+    // --- GESTIÓN DE DIBUJO ---
+    function toggleDrawing(lid) {
+        DrawManager.toggle(lid);
+    }
+
+    // --- PUNTO CRÍTICO 4: EDITOR DE ESTILOS POST-CREACIÓN (PALETA 20 COLORES - Foto image_2.png) ---
+    function openEstiloModal(lid, elId) {
+        activeLid = lid;
+        activeEid = elId; // LeafletID
+        const layer = layersData[lid].group.getLayer(elId);
+        
+        if (!layer) return alert("Error al recuperar el elemento.");
+        
+        // Cargar nombre y opacidad actuales
+        document.getElementById('edit-name').value = layer.options.name;
+        document.getElementById('edit-opacity').value = layer.options.opacity;
+        
+        // Renderizar la paleta profesional My Maps (Punto 4 Corregido)
+        const paleta = document.getElementById('paleta-estilo');
+        paleta.innerHTML = "";
+        myMapsColors.forEach(color => {
+            const isActive = layer.options.color === color;
+            paleta.innerHTML += `
+                <div class="color-block ${isActive ? 'active' : ''}" 
+                     style="background:${color}" 
+                     onclick="selectEstiloColor('${color}', this)">
+                </div>`;
+        });
+
+        // Guardamos el color actual para el editor
+        tempSelectedColor = layer.options.color;
+
+        document.getElementById('modal-overlay').style.display = 'block';
+        document.getElementById('estilo-modal').style.display = 'block';
+    }
+
+    function selectEstiloColor(color, el) {
+        document.querySelectorAll('.color-block').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        tempSelectedColor = color;
+    }
+
+    function applyElementChanges() {
+        const layer = layersData[activeLid].group.getLayer(activeEid);
+        const newName = document.getElementById('edit-name').value;
+        const newOpacity = document.getElementById('edit-opacity').value;
+        
+        if (!newName) return alert("Ingresa un nombre.");
+
+        // Aplicamos los cambios al objeto Leaflet
+        layer.options.name = newName;
+        layer.options.color = tempSelectedColor;
+        layer.options.opacity = newOpacity;
+        
+        layer.setStyle({
+            color: tempSelectedColor,
+            fillColor: tempSelectedColor,
+            fillOpacity: newOpacity
+        });
+
+        // Actualizamos popup analytics
+        updatePolygonAnalytics(activeLid, layer);
+        
+        closeAllModals();
+        renderSidebar(); // Refrescar lista lateral
+    }
+
+    // --- PUNTO CRÍTICO 2: IMPORTACIÓN UNIFICADA URL/LOCAL (SOLUCIÓN IMPORT) ---
+    function importData(lid) {
+        const choice = prompt("Elige método de importación:\n1. URL de Google Sheets (Censo Jefa)\n2. Archivo Local CSV", "1");
+        
+        if(choice === "1") {
+            const url = prompt("Pega la URL de exportación CSV de Google Sheets (Debe ser pública):");
+            if(url) {
+                Papa.parse(url, { download:true, header: true, complete: res => handleCsvResults(lid, res) });
+            }
+        } else if(choice === "2") {
+            const input = document.createElement('input');
+            input.type = 'file'; input.accept = '.csv';
+            input.onchange = e => {
+                Papa.parse(e.target.files[0], { header: true, complete: res => handleCsvResults(lid, res) });
+            };
+            input.click();
         }
     }
 
-    map.on(L.Draw.Event.CREATED, function (e) {
-        const type = e.layerType;
-        const layer = e.layer;
-        const id = 'el_' + Date.now();
-        const name = prompt("Nombre para este elemento:", "Bloque Nuevo");
-        
-        layers[activeLid].group.addLayer(layer);
-        
-        layersData[activeLid].elements.push({
-            id: id,
-            name: name || "Elemento",
-            type: type,
-            color: selectedColor,
-            opacity: 0.4,
-            leafletId: L.Util.stamp(layer)
-        });
-        
-        updatePolygonPopup(activeLid, layer, id);
+    function handleCsvResults(lid, results) {
+        layersData[lid].csvData = results.data;
+        // Configuramos la ficha SortableJS inicial
+        layersData[lid].config = results.meta.fields.map(f => ({id:f, vis:true}));
+        plotMapPoints(lid);
         renderSidebar();
-        saveAll();
-    });
+        alert("Datos importados con éxito a la capa.");
+    }
 
-    // --- ANÁLISIS ESPACIAL (Punto 9 - Foto 13) ---
-    function updatePolygonPopup(lid, layer, eid) {
-        const element = layersData[lid].elements.find(x => x.id === eid);
-        const polyGeo = layer.toGeoJSON();
-        
+    // --- ANALÍTICA DE ZONA (Turf.js - Foto 13) ---
+    function updatePolygonAnalytics(lid, polygon) {
+        const polyGeo = polygon.toGeoJSON();
         let total = 0, vigentes = 0, vencidas = 0;
         
-        layers[lid].group.eachLayer(m => {
-            if(m instanceof L.CircleMarker) {
-                const pt = turf.point([m.getLatLng().lng, m.getLatLng().lat]);
+        // Recorremos los puntos (CircleMarkers) de la misma capa
+        layersData[lid].group.eachLayer(layer => {
+            if(layer instanceof L.CircleMarker) {
+                const pt = turf.point([layer.getLatLng().lng, layer.getLatLng().lat]);
                 if(turf.booleanPointInPolygon(pt, polyGeo)) {
                     total++;
-                    const st = m.options.status || "";
+                    const st = layer.options.status || "";
                     if(st.includes("VIGENTE")) vigentes++;
                     if(st.includes("VENCIDA")) vencidas++;
                 }
             }
         });
 
-        const area = (turf.area(polyGeo) / 10000).toFixed(2);
+        const area = (turf.area(polyGeo) / 10000).toFixed(2); // ha
         
-        layer.bindPopup(`
+        // Popup dinámico profesional (Foto 13)
+        polygon.bindPopup(`
             <div class="pop-card">
                 <div class="pop-content">
-                    <div class="pop-title">${element.name}</div>
+                    <div class="pop-title">${polygon.options.name || 'Zona dibujada'}</div>
                     <div class="pop-stat"><strong>Área Estimada:</strong> <span>${area} ha</span></div>
                     <hr>
                     <div class="pop-stat"><strong>Total Comercios:</strong> <span>${total}</span></div>
@@ -329,134 +443,88 @@
         `);
     }
 
-    // --- CARGA DE DATOS Y FICHA (Punto 6 y 8) ---
-    function importCSV(id) {
-        const input = document.createElement('input');
-        input.type = 'file'; input.accept = '.csv';
-        input.onchange = e => {
-            Papa.parse(e.target.files[0], { header: true, complete: results => {
-                layersData[id].csvData = results.data;
-                layersData[id].config = results.meta.fields.map(f => ({ id: f, vis: true }));
-                processPoints(id);
-                renderSidebar();
-            }});
-        };
-        input.click();
-    }
-
-    function processPoints(id) {
-        const l = layersData[id];
-        layers[id].group.eachLayer(layer => { if(layer instanceof L.CircleMarker) layers[id].group.removeLayer(layer); });
-
+    // --- PUNTOS CSV (RECUPERADO + Cloudinary image_8.png) ---
+    function plotMapPoints(lid) {
+        const l = layersData[lid];
+        // Solo limpiamos los puntos CircleMarkers, mantenemos los polígonos
+        l.group.eachLayer(layer => { if(layer instanceof L.CircleMarker) l.group.removeLayer(layer); });
+        
         l.csvData.forEach(row => {
             const lat = row.Latitud || row.lat; const lon = row.Longitud || row.lon;
             if(lat && lon) {
-                const est = (row['Licencia Act. Econ.'] || "").toUpperCase();
-                let color = est.includes("VIGENTE") ? "#22c55e" : (est.includes("VENCIDA") ? "#eab308" : "#3b82f6");
-                
-                const marker = L.circleMarker([lat, lon], { radius: 7, fillColor: color, color: "#fff", weight: 2, fillOpacity: 0.9, status: est });
+                let col = row['Licencia Act. Econ.']?.includes("VIGENTE") ? "#22c55e" : (row['Licencia Act. Econ.']?.includes("VENCIDA") ? "#eab308" : "#3b82f6");
+                const marker = L.circleMarker([lat, lon], { radius: 7, fillColor: col, color: "#fff", weight: 2, fillOpacity: 0.9, status: row['Licencia Act. Econ.'] || "SIN LICENCIA" });
                 
                 let html = `<div class="pop-card">`;
+                // Inyección de imagen de Cloudinary (Foto image_8.png)
                 if(row.Imagen) html += `<img src="${row.Imagen}" class="pop-img">`;
-                html += `<div class="pop-content"><div class="pop-title">${row.Nombre || row['Razón Social']}</div>`;
+                
+                html += `<div class="pop-content"><strong>${row.Nombre || row['Razón Social'] || 'Comercio'}</strong><hr>`;
+                // Ficha ordenada según configuración Master (SortableJS - Foto 11)
                 l.config.forEach(f => {
                     if(f.vis && row[f.id]) html += `<div class="pop-stat"><b>${f.id}:</b> <span>${row[f.id]}</span></div>`;
                 });
-                html += `</div></div>`;
-                marker.bindPopup(html, { padding: [0,0] });
-                layers[id].group.addLayer(marker);
+                m.bindPopup(html + `</div>`, { padding: [0,0] });
+                l.group.addLayer(marker);
             }
         });
     }
 
-    // --- EDICIÓN POST-CREACIÓN (Punto 5) ---
-    function openElementEditor(lid, eid) {
-        activeLid = lid; activeEid = eid;
-        const e = layersData[lid].elements.find(x => x.id === eid);
-        document.getElementById('edit-name').value = e.name;
-        document.getElementById('edit-opacity').value = e.opacity;
-        document.getElementById('overlay').style.display = 'block';
-        document.getElementById('element-modal').style.display = 'block';
-    }
-
-    function setEditColor(c) { selectedColor = c; }
-
-    function applyElementChanges() {
-        const e = layersData[activeLid].elements.find(x => x.id === activeEid);
-        e.name = document.getElementById('edit-name').value;
-        e.color = selectedColor;
-        e.opacity = document.getElementById('edit-opacity').value;
-        
-        const layer = layers[activeLid].group.getLayer(e.leafletId);
-        layer.setStyle({ color: e.color, fillColor: e.color, fillOpacity: e.opacity });
-        
-        updatePolygonPopup(activeLid, layer, activeEid);
-        closeModals();
-        renderSidebar();
-        saveAll();
-    }
-
     // --- UTILIDADES ---
-    function closeModals() { 
-        document.getElementById('overlay').style.display = 'none';
-        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    function closeAllModals() { document.getElementById('modal-overlay').style.display='none'; document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+    function focusElement(lid, id) { const l = layersData[lid].group.getLayer(id); if(l) map.fitBounds(l.getBounds()); }
+    
+    // Obtener polígonos para listarlos (Foto a228eaea)
+    function getDrawnElements(lid) {
+        const elements = [];
+        layersData[lid].group.eachLayer(layer => {
+            if(layer instanceof L.Polygon) {
+                elements.push({
+                    leafletId: L.Util.stamp(layer),
+                    name: layer.options.name,
+                    color: layer.options.color
+                });
+            }
+        });
+        return elements;
     }
 
-    function openFichaConfig(id) {
-        activeLid = id;
-        const container = document.getElementById('sortable-fields');
+    // --- FICHA ORDENADA (SortableJS - Foto 11 - Recuperada) ---
+    function openFichaConfig(lid) {
+        if(layersData[lid].config.length === 0) return alert("Carga datos primero.");
+        currentLid = lid;
+        const container = document.getElementById('fields-container');
         container.innerHTML = "";
-        layersData[id].config.forEach(f => {
+        layersData[lid].config.forEach(f => {
             container.innerHTML += `
-                <div class="field-row" data-id="${f.id}">
-                    <input type="checkbox" ${f.vis ? 'checked' : ''}>
-                    <span style="flex:1; margin-left:15px; color:white; font-size:13px;">${f.id}</span>
+                <div class="field-item" data-id="${f.id}">
+                    <input type="checkbox" ${f.vis ? 'checked' : ''} onchange="updateVis('${lid}','${f.id}', this.checked)">
+                    <span style="flex:1; margin-left:10px;">${f.id}</span>
                     <span style="color:#64748b">☰</span>
                 </div>`;
         });
-        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('modal-overlay').style.display = 'block';
         document.getElementById('ficha-modal').style.display = 'block';
-        new Sortable(container, { animation: 150 });
+        new Sortable(container, { animation: 150, onEnd: saveFieldOrder });
     }
 
-    function saveFichaConfig() {
-        const rows = document.querySelectorAll('.field-row');
-        const newConf = [];
+    function saveFieldOrder() {
+        const rows = document.querySelectorAll('.field-item');
+        const newOrder = [];
         rows.forEach(r => {
-            newConf.push({ id: r.dataset.id, vis: r.querySelector('input').checked });
+            const id = r.getAttribute('data-id');
+            const vis = r.querySelector('input').checked;
+            newOrder.push({ id, vis });
         });
-        layersData[activeLid].config = newConf;
-        processPoints(activeLid);
-        closeModals();
-        saveAll();
+        layersData[currentLid].config = newOrder;
+        plotMapPoints(currentLid); // Refrescar popups con nuevo orden
     }
 
-    function deleteLayer(id) {
-        if(confirm("¿Seguro que deseas eliminar esta capa y todo su contenido?")) {
-            map.removeLayer(layers[id].group);
-            delete layersData[id];
-            delete layers[id];
-            renderSidebar();
-            saveAll();
-        }
+    function updateVis(lid, fid, val) { 
+        const f = layersData[lid].config.find(x => x.id === fid); 
+        if(f) f.vis = val; 
+        plotMapPoints(lid); // Refrescar popups
     }
-
-    async function triggerSync() {
-        const token = document.getElementById('ghToken').value;
-        if(!token) return alert("Ingresa tu Token de GitHub");
-        alert("Iniciando Bridge con Servidor Hacienda...");
-    }
-
-    // --- RECONSTRUCCIÓN AL CARGAR ---
-    window.onload = () => {
-        Object.keys(layersData).forEach(lid => {
-            initLayerObject(lid);
-            // Re-dibujar elementos GeoJSON si existen... (Opcional para persistencia completa)
-            processPoints(lid);
-        });
-        renderSidebar();
-    };
-
 </script>
 </body>
 </html>
