@@ -2,55 +2,85 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF - AYACUCHO</title>
+    <title>SGF - HACIENDA MUNICIPAL AYACUCHO</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <style>
-        :root { --am: #ffcc00; --rj: #e60000; --vd: #007a33; --dk: #0f172a; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #000; overflow: hidden; }
+        :root { --am: #ffcc00; --rj: #e60000; --vd: #007a33; --dk: #0f172a; --panel: #1e293b; }
+        body { margin: 0; font-family: 'Inter', 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #000; overflow: hidden; color: white; }
+        
         #map { flex: 1; z-index: 1; background: #000; }
         .leaflet-control-attribution { display: none !important; }
 
-        /* IDENTIDAD IZQUIERDA */
-        .brand { 
+        /* IDENTIDAD (FOTO 1) */
+        .brand-header { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(15,23,42,0.9); padding: 15px; border-radius: 8px;
-            border-left: 5px solid var(--am); border: 1px solid rgba(255,255,255,0.1);
-            color: white; backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 10px;
+            border-left: 6px solid var(--am); border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(12px); box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+        .brand-header b { display: block; font-size: 18px; letter-spacing: 1px; color: #fff; text-transform: uppercase; }
+        .brand-header span { font-size: 11px; color: var(--am); font-weight: 900; }
+
+        /* BUSCADOR (FOTO 11) */
+        .search-container { 
+            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; 
+            width: 450px; background: white; border-radius: 50px; padding: 12px 30px;
+            box-shadow: 0 15px 45px rgba(0,0,0,0.4); display: flex; align-items: center;
+        }
+        .search-container input { border: none; outline: none; width: 100%; font-size: 15px; font-weight: 700; color: #0f172a; }
+
+        /* SIDEBAR PROFESIONAL */
+        #sidebar { width: 440px; background: var(--dk); display: flex; flex-direction: column; border-left: 1px solid #334155; }
+        .side-title { padding: 40px 20px; text-align: center; position: relative; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); }
+        
+        /* TRICOLOR MUNICIPAL (FOTO 2) */
+        .side-title::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 6px;
+            background: linear-gradient(to right, var(--am) 33.3%, var(--rj) 33.3% 66.6%, var(--vd) 66.6%);
         }
 
-        /* SIDEBAR DERECHA */
-        #sidebar { width: 400px; background: var(--dk); border-left: 1px solid #334155; display: flex; flex-direction: column; }
-        .side-header { padding: 30px 20px; text-align: center; position: relative; background: #1e293b; }
-        .side-header::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 5px;
-            background: linear-gradient(to right, var(--am) 33%, var(--rj) 33% 66%, var(--vd) 66%);
-        }
-        
-        .side-content { flex: 1; overflow-y: auto; padding: 20px; }
-        .btn-add { width: 100%; padding: 15px; background: var(--am); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 20px; }
+        .side-body { flex: 1; overflow-y: auto; padding: 25px; }
+        .btn-main { width: 100%; padding: 16px; background: var(--am); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 25px; color: #000; }
 
-        .layer-box { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
-        .url-in { width: 100%; padding: 8px; background: #020617; border: 1px solid #475569; color: white; border-radius: 4px; font-size: 11px; margin: 10px 0; }
+        /* TARJETAS DE CAPA */
+        .layer-card { background: var(--panel); border-radius: 12px; padding: 18px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .layer-card b { color: var(--am); font-size: 15px; display: block; margin-bottom: 10px; }
+        .url-box { width: 100%; padding: 10px; background: #020617; border: 1px solid #475569; color: white; border-radius: 6px; font-size: 11px; margin-bottom: 12px; }
         
-        .btn-s { padding: 10px; border: none; border-radius: 4px; background: #334155; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 5px; }
-        .btn-draw { background: transparent; border: 1px solid var(--am); color: var(--am); }
-        .btn-draw.active { background: var(--rj); color: white; }
+        .grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-action { padding: 12px; font-size: 11px; border: none; border-radius: 6px; background: #334155; color: white; font-weight: 800; cursor: pointer; }
+        .btn-draw { grid-column: span 2; border: 1px solid var(--am); background: transparent; color: var(--am); }
+        .btn-draw.active { background: var(--rj); color: white; border-color: white; }
 
-        /* POPUP */
-        .p-h { background: #f8fafc; padding: 8px; font-weight: bold; border-bottom: 2px solid var(--vd); color: #000; }
-        .p-b { padding: 8px; color: #000; font-size: 11px; }
+        /* POPUPS */
+        .p-card { width: 300px; color: #000; font-family: sans-serif; }
+        .p-head { background: #f1f5f9; padding: 12px; font-weight: 900; border-bottom: 4px solid var(--vd); }
+        .p-body { padding: 10px; font-size: 12px; max-height: 250px; overflow-y: auto; }
+        .p-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .p-row b { color: #64748b; font-size: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div class="brand"><b>HACIENDA MUNICIPAL AYACUCHO</b><br><small style="color:var(--am)">SGF MASTER</small></div>
+
+<div class="brand-header">
+    <b>HACIENDA MUNICIPAL AYACUCHO</b>
+    <span>SGF - GESTIÓN FISCAL MASTER</span>
+</div>
+
+<div class="search-container">
+    <input type="text" id="master-search" placeholder="Buscar RIF, Nombre o Estatus..." onkeyup="globalFilter()">
+</div>
 
 <aside id="sidebar">
-    <div class="side-header"><h3 style="margin:0; color:white;">GESTIÓN FISCAL</h3></div>
-    <div class="side-content">
-        <button class="btn-add" onclick="createLayer()">+ NUEVA CAPA GOOGLE</button>
+    <div class="side-title">
+        <h2 style="margin:0; font-size:22px; letter-spacing:1px">SISTEMA DE GESTIÓN</h2>
+        <small style="color:var(--am); font-weight:900">TÁCHIRA - VENEZUELA</small>
+    </div>
+    <div class="side-body">
+        <button class="btn-main" onclick="addLayer()">+ VINCULAR CAPA GOOGLE SHEETS</button>
         <div id="layer-list"></div>
     </div>
 </aside>
@@ -61,83 +91,130 @@
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    let LAYERS = {}; let DRAW_TOOL = null; let ACTIVE_ID = null;
+    let STORE = {}; let DRAW_TOOL = null; let ACTIVE_ID = null;
 
-    // GOOGLE MAPS SATELITAL DIRECTO
-    const sat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
-    const map = L.map('map', { center: [8.033, -72.256], zoom: 16, layers: [sat], zoomControl: false });
+    // MAPAS DE GOOGLE (PROBADO)
+    const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 22 });
+    const googleMap = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 22 });
 
-    function createLayer() {
-        const n = prompt("Nombre Capa:"); if(!n) return;
-        const id = 'L'+Date.now();
-        LAYERS[id] = { name: n, group: L.featureGroup().addTo(map), url: '', drawing: false };
-        render();
+    const map = L.map('map', { 
+        center: [8.03317, -72.25693], 
+        zoom: 16, 
+        layers: [googleSat],
+        zoomControl: false 
+    });
+
+    L.control.layers({ "Satélite": googleSat, "Calles": googleMap }, null, { position: 'topright' }).addTo(map);
+
+    function addLayer() {
+        const n = prompt("Nombre de la Nueva Capa:");
+        if(!n) return;
+        const id = 'ID' + Date.now();
+        STORE[id] = { name: n, group: L.featureGroup().addTo(map), url: '', drawing: false };
+        renderUI();
     }
 
-    function render() {
-        const list = document.getElementById('layer-list'); list.innerHTML = "";
-        Object.keys(LAYERS).forEach(id => {
-            const l = LAYERS[id];
-            list.innerHTML += `<div class="layer-box">
-                <b style="color:var(--am)">${l.name}</b>
-                <input type="text" class="url-in" placeholder="URL Google Sheets..." onchange="updUrl('${id}', this.value)" value="${l.url}">
-                <button class="btn-s" onclick="sync('${id}')">🔄 CARGAR PINCHETAS</button>
-                <button class="btn-s btn-draw ${l.drawing?'active':''}" onclick="startDraw('${id}')">${l.drawing?'LISTO':'✏️ DIBUJAR'}</button>
-            </div>`;
+    function renderUI() {
+        const container = document.getElementById('layer-list');
+        container.innerHTML = "";
+        Object.keys(STORE).forEach(id => {
+            const l = STORE[id];
+            container.innerHTML += `
+                <div class="layer-card">
+                    <b>${l.name}</b>
+                    <input type="text" class="url-box" placeholder="Pegar URL de Google Sheets..." 
+                           onchange="processUrl('${id}', this.value)" value="${l.url}">
+                    <div class="grid-actions">
+                        <button class="btn-action" onclick="syncData('${id}')">🔄 SINCRONIZAR</button>
+                        <button class="btn-action" onclick="alert('Ficha automática lista')">📋 FICHA</button>
+                        <button class="btn-action btn-draw ${l.drawing?'active':''}" onclick="toggleDrawing('${id}')">
+                            ${l.drawing ? 'GUARDAR SECTOR' : '✏️ DIBUJAR SECTOR'}
+                        </button>
+                    </div>
+                </div>`;
         });
     }
 
-    function updUrl(id, u) { if(u.includes('/edit')) u = u.split('/edit')[0] + '/export?format=csv'; LAYERS[id].url = u; }
+    function processUrl(id, url) {
+        if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
+        STORE[id].url = url;
+    }
 
-    function sync(id) {
-        if(!LAYERS[id].url) return alert("Pega el link.");
-        Papa.parse(LAYERS[id].url, {
+    function syncData(id) {
+        if(!STORE[id].url) return alert("Falta el enlace CSV.");
+        Papa.parse(STORE[id].url, {
             download: true, header: true, skipEmptyLines: true,
             complete: r => {
-                const group = LAYERS[id].group; group.clearLayers();
-                let cargados = 0;
+                const group = STORE[id].group;
+                group.eachLayer(ly => { if(ly instanceof L.CircleMarker) group.removeLayer(ly); });
 
                 r.data.forEach(row => {
-                    // BUSCADOR DE COORDENADAS MULTI-FORMATO
-                    let raw = row['coordenadas gps (oficina)'] || row['Coordenadas'] || "";
-                    if(raw) {
-                        // Limpieza: quita paréntesis y separa por coma o espacio
-                        let clean = raw.replace(/[()]/g, '').split(/[\s,]+/);
+                    // EXTRACTOR INTELIGENTE: Busca la columna específica del Ingeniero
+                    let rawCoords = row['coordenadas gps (oficina)'] || row['Coordenadas'] || "";
+                    if(rawCoords) {
+                        let clean = rawCoords.replace(/[()]/g, '').split(/[\s,]+/);
                         let lat = parseFloat(clean[0]);
                         let lon = parseFloat(clean[1]);
 
                         if(!isNaN(lat) && !isNaN(lon)) {
-                            let color = (row.Estatus||"").toUpperCase().includes("MORA") ? "#ef4444" : "#10b981";
+                            let estatus = (row.Estatus || row.Estado || "").toUpperCase();
+                            let color = estatus.includes("MORA") ? "#ef4444" : "#10b981";
+                            
                             const m = L.circleMarker([lat, lon], { radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 });
-                            m.bindPopup(`<div class="p-h">${row.Nombre||'Comercio'}</div><div class="pop-body">RIF: ${row.RIF||'S/D'}</div>`);
+                            
+                            // FICHA DINÁMICA (FOTO 18)
+                            let h = `<div class="p-card"><div class="p-head">${row.Nombre || row.RAZON_SOCIAL || 'Comercio'}</div><div class="p-body">`;
+                            Object.keys(row).forEach(k => { if(row[k]) h += `<div class="p-row"><b>${k}</b><span>${row[k]}</span></div>`; });
+                            m.bindPopup(h + `</div></div>`);
                             group.addLayer(m);
-                            cargados++;
                         }
                     }
                 });
-                // REPARO: Centrar mapa en los nuevos puntos automáticamente
-                if(cargados > 0) map.fitBounds(group.getBounds());
-                alert("Éxito: " + cargados + " pinchetas visibles.");
+                if(group.getLayers().length > 0) map.fitBounds(group.getBounds());
+                alert("Capa '" + STORE[id].name + "' cargada con " + group.getLayers().length + " comercios.");
             }
         });
     }
 
-    function startDraw(id) {
-        if(LAYERS[id].drawing) { map.removeControl(DRAW_TOOL); LAYERS[id].drawing = false; }
-        else {
-            ACTIVE_ID = id; LAYERS[id].drawing = true;
+    function toggleDrawing(id) {
+        if(STORE[id].drawing) {
+            map.removeControl(DRAW_TOOL); STORE[id].drawing = false;
+        } else {
+            ACTIVE_ID = id; STORE[id].drawing = true;
             DRAW_TOOL = new L.Control.Draw({ draw: { polyline: false, circle: false, marker: false, circlemarker: false } });
             map.addControl(DRAW_TOOL);
         }
-        render();
+        renderUI();
     }
 
     map.on(L.Draw.Event.CREATED, e => {
-        const n = prompt("Sector:"); if(!n) return;
-        const ly = e.layer; ly.options.color = '#ffcc00';
-        LAYERS[ACTIVE_ID].group.addLayer(ly);
-        startDraw(ACTIVE_ID);
+        const name = prompt("Nombre del Sector:");
+        if(!name) return;
+        const ly = e.layer; ly.options.name = name; ly.options.color = '#ffcc00';
+        STORE[ACTIVE_ID].group.addLayer(ly);
+        
+        // CENSO AUTOMÁTICO (FOTO 17)
+        const geo = ly.toGeoJSON(); let count = 0;
+        Object.keys(STORE).forEach(id => {
+            STORE[id].group.eachLayer(m => {
+                if(m instanceof L.CircleMarker && turf.booleanPointInPolygon(m.toGeoJSON(), geo)) count++;
+            });
+        });
+        ly.bindPopup(`<b style="font-size:14px">${name}</b><hr>Censo: ${count} comercios detectados.`);
+        toggleDrawing(ACTIVE_ID);
     });
+
+    function globalFilter() {
+        const q = document.getElementById('master-search').value.toLowerCase();
+        Object.keys(STORE).forEach(id => {
+            STORE[id].group.eachLayer(m => {
+                if(m instanceof L.CircleMarker) {
+                    const content = JSON.stringify(m.getPopup().getContent()).toLowerCase();
+                    m.setStyle({ opacity: content.includes(q)?1:0.1, fillOpacity: content.includes(q)?1:0.1 });
+                }
+            });
+        });
+    }
 </script>
 </body>
 </html>
