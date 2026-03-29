@@ -3,83 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER v2.3 - HACIENDA AYACUCHO</title>
+    <title>SGF MASTER v3.0 - HACIENDA AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        :root { --azul-google: #1a73e8; --gris-borde: #dadce0; --amarillo: #ffcc00; }
-        body { margin: 0; padding: 0; font-family: 'Roboto', Arial, sans-serif; overflow: hidden; height: 100vh; background: #e8eaed; }
+        :root { --google-blue: #1a73e8; --border: #dadce0; --text: #3c4043; --amarillo: #fbbc04; }
+        body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; height: 100vh; background: #f1f3f4; overflow: hidden; }
 
-        /* MAPA FONDO TOTAL */
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* BUSCADOR FLOTANTE (ESTILO MY MAPS) */
-        .top-ui-container { position: absolute; top: 12px; left: 12px; z-index: 1000; width: 390px; }
-        .search-box { 
-            background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-            display: flex; align-items: center; padding: 0 15px; height: 48px; 
+        /* BUSCADOR SUPERIOR */
+        .search-container { position: absolute; top: 12px; left: 12px; z-index: 1000; width: 390px; }
+        .search-bar { 
+            background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); 
+            display: flex; align-items: center; padding: 0 15px; height: 48px; border: 1px solid transparent;
         }
-        .search-box input { flex: 1; border: none; outline: none; font-size: 16px; color: #3c4043; }
+        .search-bar input { flex: 1; border: none; outline: none; font-size: 16px; color: var(--text); }
 
-        /* SIDEBAR FLOTANTE (REDONDEADO Y LIMPIO) */
-        #sidebar-floating { 
-            position: absolute; top: 72px; left: 12px; bottom: 30px; z-index: 1000; 
-            width: 390px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        .sidebar-header { 
-            padding: 20px; border-bottom: 1px solid var(--gris-borde); background: #f8f9fa; 
-            border-top: 5px solid var(--amarillo);
-        }
-        .sidebar-header h1 { margin: 0; font-size: 18px; color: #202124; font-weight: 500; }
-        .sidebar-header p { margin: 4px 0 0; font-size: 12px; color: #70757a; font-weight: bold; }
-
-        .side-content { flex: 1; overflow-y: auto; padding: 10px; }
-
-        /* HERRAMIENTAS DE DIBUJO (BOTONES LIMPIOS) */
-        .drawing-tools { 
-            display: flex; justify-content: center; gap: 10px; padding: 10px; background: white; 
-            border-bottom: 1px solid var(--gris-borde);
+        /* TOOLBAR DIBUJO FLOTANTE */
+        .draw-tools { 
+            position: absolute; top: 12px; left: 420px; z-index: 1000; 
+            background: white; display: flex; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); padding: 5px;
         }
         .tool-btn { 
-            cursor: pointer; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--gris-borde);
-            background: white; font-size: 13px; color: #5f6368; transition: 0.2s;
+            padding: 10px 15px; cursor: pointer; border-radius: 4px; border: none; 
+            background: white; color: #5f6368; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;
         }
-        .tool-btn:hover { background: #f1f3f4; border-color: var(--azul-google); color: var(--azul-google); }
+        .tool-btn:hover { background: #f8f9fa; color: var(--google-blue); }
+        .tool-sep { width: 1px; background: var(--border); margin: 5px 10px; }
 
-        /* TARJETAS DE CAPAS (ESTILO MY MAPS) */
-        .layer-item { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
-        .layer-header-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; }
-        .layer-header-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
-        .layer-title { font-weight: 500; font-size: 14px; color: #3c4043; flex: 1; }
-        
-        .item-list { list-style: none; padding: 0 0 0 32px; margin: 0; }
-        .feature-row { 
-            display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; 
-            color: #5f6368; cursor: pointer; border-radius: 4px; 
+        /* SIDEBAR FLOTANTE */
+        #sidebar { 
+            position: absolute; top: 72px; left: 12px; bottom: 20px; z-index: 1000; 
+            width: 390px; background: white; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden;
         }
-        .feature-row:hover { background: #f1f3f4; color: #202124; }
-        .item-icon { width: 12px; height: 12px; border-radius: 2px; }
+        .side-header { padding: 20px; border-bottom: 1px solid var(--border); background: #fff; border-top: 6px solid var(--amarillo); }
+        .side-header h1 { margin: 0; font-size: 18px; color: #202124; }
+        .side-header p { margin: 5px 0 0; font-size: 12px; color: var(--google-blue); font-weight: 700; text-transform: uppercase; }
 
-        .btn-add-layer { 
-            width: 100%; padding: 10px; background: white; border: 1px dashed var(--azul-google); 
-            color: var(--azul-google); font-weight: 500; cursor: pointer; border-radius: 4px; margin-top: 10px;
+        .side-content { flex: 1; overflow-y: auto; padding: 15px; }
+
+        /* CAPAS Y LISTAS */
+        .layer-box { margin-bottom: 20px; border-bottom: 1px solid #f1f3f4; padding-bottom: 15px; }
+        .layer-row { display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; border-radius: 6px; }
+        .layer-row:hover { background: #f8f9fa; }
+        .layer-row.active { background: #e8f0fe; color: var(--google-blue); }
+        .layer-title { font-weight: 500; font-size: 14px; flex: 1; }
+
+        .feature-list { list-style: none; padding: 0 0 0 35px; margin: 5px 0; display: none; }
+        .layer-box.open .feature-list { display: block; }
+        .feature-item { 
+            display: flex; align-items: center; gap: 10px; padding: 6px 8px; 
+            font-size: 13px; color: #5f6368; cursor: pointer; border-radius: 4px;
+        }
+        .feature-item:hover { background: #f1f3f4; color: #202124; }
+
+        .btn-main { 
+            width: 100%; padding: 12px; background: white; border: 1px dashed var(--google-blue); 
+            color: var(--google-blue); font-weight: 500; cursor: pointer; border-radius: 6px; margin-top: 10px;
         }
 
-        /* MODALES PEQUEÑOS Y CON SCROLL */
+        /* MODAL MAPEO (SUBIR Y BAJAR) */
         .modal { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            z-index: 2000; background: white; width: 400px; max-height: 80vh;
-            padding: 24px; border-radius: 8px; box-shadow: 0 24px 38px rgba(0,0,0,0.14);
-            display: none; overflow-y: auto;
+            z-index: 2000; background: white; width: 400px; padding: 25px; border-radius: 12px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4); display: none;
         }
-        .modal h2 { margin-top: 0; font-size: 18px; }
-        .input-google { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--gris-borde); border-radius: 4px; box-sizing: border-box; }
-        .scroll-list { max-height: 150px; overflow-y: scroll; border: 1px solid #eee; padding: 10px; margin: 10px 0; }
-        
-        /* ESTILO DIBUJO NEGRO/BLANCO */
+        .modal h2 { margin-top: 0; font-size: 18px; color: var(--text); }
+        .scroll-area { max-height: 180px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 6px; margin: 10px 0; background: #f8f9fa; }
+        .opt-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+
+        /* DIBUJO NEGRO/BLANCO */
         .leaflet-draw-draw-polygon { stroke: #000 !important; stroke-width: 4px !important; }
         .leaflet-draw-guide-marker { background: #fff !important; border: 2px solid #000 !important; }
     </style>
@@ -88,53 +86,49 @@
 
 <div id="map"></div>
 
-<div class="top-ui-container">
-    <div class="search-box">
+<div class="search-container">
+    <div class="search-bar">
         <input type="text" placeholder="Buscar en Hacienda Ayacucho...">
-        <span style="color: #5f6368;">🔍</span>
+        <span style="opacity: 0.5;">🔍</span>
     </div>
 </div>
 
-<div id="sidebar-floating">
-    <div class="sidebar-header">
+<div class="draw-tools">
+    <button class="tool-btn" id="btn-poly">📐 Polígono</button>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" id="btn-marker">📍 Marcador</button>
+</div>
+
+<aside id="sidebar">
+    <div class="side-header">
         <h1>SGF MASTER - Ayacucho</h1>
-        <p>CONTROL FISCAL MUNICIPAL</p>
+        <p>Sistema de Gestión Fiscal</p>
     </div>
-    
-    <div class="drawing-tools">
-        <div class="tool-btn" id="btn-poly">📐 Polígono</div>
-        <div class="tool-btn" id="btn-marker">📍 Marcador</div>
-        <div class="tool-btn" onclick="location.reload()">🔄 Limpiar</div>
-    </div>
-
     <div class="side-content">
-        <div id="layers-container">
-            </div>
-        <button class="btn-add-layer" onclick="showModal('create-modal')">+ Importar o Crear Capa</button>
+        <div id="layer-list"></div>
+        <button class="btn-main" onclick="openM('modal-add')">+ Añadir Capa (CSV/Manual)</button>
+    </div>
+</aside>
+
+<div id="modal-add" class="modal">
+    <h2>Nueva Capa</h2>
+    <input type="text" id="in-name" class="btn-main" style="border: 1px solid #ddd; color: #333; text-align: left;" placeholder="Nombre de la capa (Ej: Sector 1)">
+    <input type="text" id="in-url" class="btn-main" style="border: 1px solid #ddd; color: #333; text-align: left; margin-top:10px;" placeholder="Pegar URL de Google Sheets CSV">
+    <div style="margin-top:20px; text-align:right;">
+        <button onclick="closeM('modal-add')" style="background:none; border:none; color:#666; cursor:pointer;">Cancelar</button>
+        <button onclick="startImport()" style="background:var(--google-blue); color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; margin-left:10px;">Continuar</button>
     </div>
 </div>
 
-<div id="create-modal" class="modal">
-    <h2>Nueva capa</h2>
-    <input type="text" id="layer-name-in" class="input-google" placeholder="Nombre de la capa">
-    <input type="text" id="layer-url-in" class="input-google" placeholder="URL CSV (Google Sheets)">
-    <div style="text-align: right; margin-top: 20px;">
-        <button onclick="hideModal('create-modal')" style="background:none; border:none; color:#5f6368; cursor:pointer;">Cancelar</button>
-        <button onclick="handleLayerCreation()" style="background:var(--azul-google); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; margin-left:10px;">Continuar</button>
-    </div>
-</div>
-
-<div id="mapeo-modal" class="modal">
-    <h2>Configurar columnas</h2>
-    <p style="font-size: 13px;">Selecciona columnas de Latitud y Longitud:</p>
-    <div class="scroll-list" id="coord-fields"></div>
+<div id="modal-map" class="modal">
+    <h2>Mapear Datos</h2>
+    <p style="font-size: 12px; color: #666;">Selecciona la columna que tiene las Coordenadas:</p>
+    <div class="scroll-area" id="list-coords"></div>
     
-    <p style="font-size: 13px;">Selecciona columna de Título:</p>
-    <div class="scroll-list" id="title-fields"></div>
+    <p style="font-size: 12px; color: #666; margin-top:15px;">Selecciona la columna del Título:</p>
+    <div class="scroll-area" id="list-title"></div>
     
-    <div style="text-align: right; margin-top: 20px;">
-        <button onclick="finalizeImport()" style="background:var(--azul-google); color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Finalizar Importación</button>
-    </div>
+    <button onclick="processCSV()" style="width:100%; background:var(--google-blue); color:white; border:none; padding:12px; border-radius:6px; cursor:pointer; font-weight:bold;">Finalizar Importación</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -142,142 +136,127 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    // INICIALIZACIÓN
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
 
-    let capasDB = {};
-    let activeCapaId = null;
-    let rawCSV = null;
-    let tempLayerName = null;
+    let db = {}; 
+    let activeId = null;
+    let tempCSV = null;
+    let tempName = "";
 
-    // HERRAMIENTAS
-    const polyDrawer = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 4, fillOpacity: 0.3 } });
-    const markerDrawer = new L.Draw.Marker(map);
-
-    document.getElementById('btn-poly').onclick = () => { if(activeCapaId) polyDrawer.enable(); else alert("Selecciona una capa"); };
-    document.getElementById('btn-marker').onclick = () => { if(activeCapaId) markerDrawer.enable(); else alert("Selecciona una capa"); };
+    // DIBUJO
+    const drawPoly = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 4, fillOpacity: 0.3 } });
+    const drawMarker = new L.Draw.Marker(map);
+    document.getElementById('btn-poly').onclick = () => { if(activeId) drawPoly.enable(); else alert("Selecciona una capa"); };
+    document.getElementById('btn-marker').onclick = () => { if(activeId) drawMarker.enable(); else alert("Selecciona una capa"); };
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const layer = e.layer;
-        const nombre = prompt("Nombre:");
-        if(!nombre) return;
-
+        const name = prompt("Nombre del elemento:");
+        if(!name) return;
         const color = '#' + Math.floor(Math.random()*16777215).toString(16);
         if(layer instanceof L.Polygon) layer.setStyle({ fillColor: color });
-
-        const leafletId = capasDB[activeCapaId].group.addLayer(layer)._leaflet_id;
-        capasDB[activeCapaId].items.push({ id: leafletId, name: nombre, color: color, type: layer instanceof L.Polygon ? 'poly' : 'marker' });
-        
-        renderItems(activeCapaId);
+        const lid = db[activeId].group.addLayer(layer)._leaflet_id;
+        db[activeId].items.push({ id: lid, name: name, type: layer instanceof L.Polygon ? 'poly' : 'marker', color: color });
+        renderSide(activeId);
     });
 
-    // GESTIÓN DE MODALES
-    function showModal(id) { document.getElementById(id).style.display = 'block'; }
-    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
+    function openM(id) { document.getElementById(id).style.display = 'block'; }
+    function closeM(id) { document.getElementById(id).style.display = 'none'; }
 
-    function handleLayerCreation() {
-        tempLayerName = document.getElementById('layer-name-in').value;
-        const url = document.getElementById('layer-url-in').value;
-        if(!tempLayerName) return;
+    function startImport() {
+        tempName = document.getElementById('in-name').value;
+        let url = document.getElementById('in-url').value;
+        if(!tempName) return alert("Falta nombre");
+        if(!url) { createL(tempName); closeM('modal-add'); return; }
 
-        if(!url) { createLayerRecord(tempLayerName); hideModal('create-modal'); }
-        else { 
-            let csvUrl = url.includes('docs.google.com') ? url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=') : url;
-            Papa.parse(csvUrl, {
-                download: true, header: true,
-                complete: (results) => {
-                    rawCSV = results.data;
-                    const headers = results.meta.fields;
-                    fillMapeo(headers);
-                    hideModal('create-modal');
-                    showModal('mapeo-modal');
-                }
-            });
-        }
+        url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=');
+        Papa.parse(url, {
+            download: true, header: true,
+            complete: (r) => {
+                tempCSV = r.data;
+                const h = r.meta.fields;
+                let html = "";
+                h.forEach(f => html += `<div class="opt-row"><input type="radio" name="c-coord" value="${f}"> ${f}</div>`);
+                document.getElementById('list-coords').innerHTML = html;
+                html = "";
+                h.forEach(f => html += `<div class="opt-row"><input type="radio" name="c-title" value="${f}"> ${f}</div>`);
+                document.getElementById('list-title').innerHTML = html;
+                closeM('modal-add');
+                openM('modal-map');
+            }
+        });
     }
 
-    function fillMapeo(headers) {
-        let hCoord = '<b>Latitud:</b><br>';
-        headers.forEach(h => hCoord += `<label><input type="radio" name="lat" value="${h}"> ${h}</label><br>`);
-        hCoord += '<br><b>Longitud:</b><br>';
-        headers.forEach(h => hCoord += `<label><input type="radio" name="lon" value="${h}"> ${h}</label><br>`);
-        
-        let hTitle = '';
-        headers.forEach(h => hTitle += `<label><input type="radio" name="title" value="${h}"> ${h}</label><br>`);
-
-        document.getElementById('coord-fields').innerHTML = hCoord;
-        document.getElementById('title-fields').innerHTML = hTitle;
-    }
-
-    function finalizeImport() {
-        const latC = document.querySelector('input[name="lat"]:checked')?.value;
-        const lonC = document.querySelector('input[name="lon"]:checked')?.value;
-        const titC = document.querySelector('input[name="title"]:checked')?.value;
+    // PROCESAR CSV (SOLUCIÓN COORDINADAS 1 COLUMNA)
+    function processCSV() {
+        const colC = document.querySelector('input[name="c-coord"]:checked')?.value;
+        const colT = document.querySelector('input[name="c-title"]:checked')?.value;
+        if(!colC || !colT) return alert("Selecciona las columnas");
 
         const group = new L.FeatureGroup().addTo(map);
         const items = [];
 
-        rawCSV.forEach(row => {
-            let lat = parseFloat(row[latC]), lon = parseFloat(row[lonC]);
-            if(row[latC]?.includes('(')) {
-                let c = row[latC].replace(/[()]/g, '').split(/[\s,]+/);
-                lat = parseFloat(c[0]); lon = parseFloat(c[1]);
+        tempCSV.forEach(row => {
+            let lat, lon;
+            let val = row[colC];
+            if(val && val.includes(',')) {
+                let parts = val.replace(/[()]/g, '').split(',');
+                lat = parseFloat(parts[0].trim());
+                lon = parseFloat(parts[1].trim());
             }
-            if(!isNaN(lat)) {
-                const m = L.marker([lat, lon]).bindPopup(`<b>${row[titC]}</b>`);
+
+            if(!isNaN(lat) && !isNaN(lon)) {
+                const m = L.marker([lat, lon]).bindPopup(`<b>${row[colT]}</b>`);
                 const id = group.addLayer(m)._leaflet_id;
-                items.push({ id: id, name: row[titC] || 'Punto', type: 'marker' });
+                items.push({ id: id, name: row[colT] || "Sin nombre", type: 'marker' });
             }
         });
 
-        createLayerRecord(tempLayerName, group, items);
-        hideModal('mapeo-modal');
+        createL(tempName, group, items);
+        closeM('modal-map');
     }
 
-    function createLayerRecord(name, group = null, items = []) {
-        const id = 'l_' + Date.now();
-        capasDB[id] = { name: name, group: group || new L.FeatureGroup().addTo(map), items: items, visible: true };
+    function createL(name, group = null, items = []) {
+        const id = 'l' + Date.now();
+        db[id] = { name: name, group: group || new L.FeatureGroup().addTo(map), items: items };
         
         const html = `
-            <div class="layer-item" id="cont-${id}">
-                <div class="layer-header-row" onclick="setActive('${id}')">
-                    <input type="checkbox" checked onclick="toggleVis(event, '${id}')">
+            <div class="layer-box open" id="box-${id}">
+                <div class="layer-row" onclick="setActive('${id}')">
+                    <input type="checkbox" checked onclick="toggleV(event, '${id}')">
                     <span class="layer-title">📁 ${name}</span>
                 </div>
-                <ul class="item-list" id="list-${id}"></ul>
+                <ul class="feature-list" id="list-${id}"></ul>
             </div>`;
-        document.getElementById('layers-container').insertAdjacentHTML('beforeend', html);
+        document.getElementById('layer-list').insertAdjacentHTML('beforeend', html);
         setActive(id);
-        renderItems(id);
+        renderSide(id);
     }
 
-    function renderItems(lid) {
-        const list = document.getElementById('list-' + lid);
-        list.innerHTML = '';
-        capasDB[lid].items.forEach(item => {
-            const icon = item.type === 'poly' ? `<div class="item-icon" style="background:${item.color}"></div>` : '📍';
-            list.insertAdjacentHTML('beforeend', `
-                <li class="feature-row" onclick="focusItem('${lid}', ${item.id})">
-                    ${icon} <span>${item.name}</span>
-                </li>`);
+    function renderSide(lid) {
+        const ul = document.getElementById('list-' + lid);
+        ul.innerHTML = "";
+        db[lid].items.forEach(i => {
+            const icon = i.type === 'poly' ? `<div style="width:10px;height:10px;background:${i.color};border-radius:2px;"></div>` : '📍';
+            ul.insertAdjacentHTML('beforeend', `<li class="feature-item" onclick="go('${lid}', ${i.id})">${icon} ${i.name}</li>`);
         });
     }
 
     function setActive(id) {
-        activeCapaId = id;
-        document.querySelectorAll('.layer-item').forEach(el => el.style.background = 'none');
-        document.getElementById('cont-' + id).style.background = '#f1f3f4';
+        activeId = id;
+        document.querySelectorAll('.layer-row').forEach(r => r.classList.remove('active'));
+        document.querySelector(`#box-${id} .layer-row`).classList.add('active');
     }
 
-    function toggleVis(e, id) {
+    function toggleV(e, id) {
         e.stopPropagation();
-        if(e.target.checked) map.addLayer(capasDB[id].group);
-        else map.removeLayer(capasDB[id].group);
+        if(e.target.checked) map.addLayer(db[id].group);
+        else map.removeLayer(db[id].group);
     }
 
-    function focusItem(lid, iid) {
-        const l = capasDB[lid].group.getLayer(iid);
+    function go(lid, iid) {
+        const l = db[lid].group.getLayer(iid);
         if(l) {
             map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 18);
             l.openPopup();
