@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER V12 | HACIENDA AYACUCHO</title>
+    <title>SGF HACIENDA MUNICIPAL AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
@@ -21,23 +21,28 @@
         .layout { display: flex; height: 100vh; width: 100vw; position: relative; }
         #map { flex: 1; z-index: 1; background: #000; }
 
-        /* CUADRO IDENTIDAD - RESTAURADO SEGÚN FOTOS */
+        /* ELIMINAR ATRIBUCIÓN LEAFLET */
+        .leaflet-control-attribution { display: none !important; }
+
+        /* IDENTIDAD INSTITUCIONAL (FOTOS 1-3) */
         .brand-box { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
             background: rgba(15, 23, 42, 0.95); padding: 18px 25px; border-radius: 10px;
             border-left: 6px solid var(--amarillo); border: 1px solid rgba(255,255,255,0.1);
             backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
-        .brand-box b { font-size: 20px; display: block; letter-spacing: 1px; }
+        .brand-box b { font-size: 18px; display: block; letter-spacing: 0.5px; color: #fff; }
         .brand-box span { font-size: 11px; color: var(--accent); font-weight: 800; text-transform: uppercase; }
 
-        .search-bar { 
+        /* BUSCADOR OMNI (FOTOS 11-12) */
+        .search-container { 
             position: absolute; top: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; 
-            width: 450px; background: #fff; border-radius: 50px; padding: 12px 25px;
+            width: 480px; background: #fff; border-radius: 50px; padding: 12px 25px;
             display: flex; align-items: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4);
         }
-        .search-bar input { border: none; outline: none; flex: 1; font-weight: 700; color: #0f172a; font-size: 15px; }
+        .search-container input { border: none; outline: none; flex: 1; font-weight: 700; color: #0f172a; font-size: 15px; }
 
+        /* SIDEBAR (FOTOS 6-10) */
         #sidebar { 
             width: 440px; background: var(--panel); border-left: 1px solid rgba(255,255,255,0.1);
             display: flex; flex-direction: column; z-index: 100;
@@ -53,35 +58,41 @@
         .btn { 
             width: 100%; padding: 18px; border-radius: 12px; border: none; cursor: pointer;
             font-weight: 900; font-size: 12px; text-transform: uppercase; margin-bottom: 25px;
+            transition: 0.2s;
         }
         .btn-gold { background: var(--accent); color: #000; }
+        .btn-gold:hover { background: #fff; }
 
+        /* MULTICAPAS SELECCIONABLES (FOTO 9) */
         .layer-card { background: #1e293b; border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-        .layer-head { padding: 18px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; font-weight: 800; color: var(--accent); }
+        .layer-head { padding: 15px 20px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
+        .layer-head span { font-weight: 800; color: var(--accent); }
+        .toggle-switch { width: 40px; height: 20px; background: #475569; border-radius: 20px; position: relative; cursor: pointer; }
+        .toggle-switch.on { background: var(--verde); }
+        .toggle-switch::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
+        .toggle-switch.on::after { left: 22px; }
+
         .layer-grid { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-tool { padding: 12px; font-size: 10px; background: #334155; color: #fff; border-radius: 8px; font-weight: 700; }
-        
-        .btn-draw { grid-column: span 2; border: 2px solid var(--accent); background: transparent; color: var(--accent); }
-        .btn-draw.active { background: var(--rojo); color: #fff; }
+        .btn-tool { padding: 10px; font-size: 10px; background: #334155; color: #fff; border-radius: 8px; font-weight: 700; border: none; cursor: pointer; }
+        .btn-draw-tool { grid-column: span 2; border: 2px solid var(--accent); background: transparent; color: var(--accent); }
+        .btn-draw-tool.active { background: var(--rojo); color: #fff; border-color: #fff; }
 
-        .sector-item { padding: 12px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; background: #020617; font-size: 13px; }
-
-        /* MODALES RESTAURADOS */
+        /* MODALES (FOTOS 15-16) */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; display: none; backdrop-filter: blur(10px); }
         .modal { 
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             background: var(--panel); width: 480px; padding: 40px; border-radius: 25px; 
             z-index: 1000; border: 1px solid var(--accent); display: none;
         }
-        .ficha-item { display: flex; align-items: center; background: #020617; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; }
-        .ficha-item input { margin-right: 15px; width: 18px; height: 18px; }
+        .field-row { display: flex; align-items: center; background: #020617; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #334155; }
+        .field-row input { margin-right: 15px; width: 18px; height: 18px; }
 
-        /* POPUP RESTAURADO */
-        .pop-box { width: 300px; color: #000; }
-        .pop-h { background: #f8fafc; padding: 15px; font-weight: 900; font-size: 16px; border-bottom: 4px solid var(--verde); }
-        .pop-b { padding: 15px; font-size: 13px; }
-        .pop-r { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
-        .pop-r b { color: #94a3b8; font-size: 10px; text-transform: uppercase; }
+        /* POPUPS (FOTOS 17-18) */
+        .pop-card { width: 300px; color: #000; }
+        .pop-header { background: #f8fafc; padding: 15px; font-weight: 900; font-size: 16px; border-bottom: 4px solid var(--verde); }
+        .pop-body { padding: 15px; font-size: 13px; }
+        .pop-line { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .pop-line b { color: #94a3b8; font-size: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -90,22 +101,22 @@
     <div id="map"></div>
 
     <div class="brand-box">
-        <b>SGF HACIENDA AYACUCHO</b>
-        <span>MONITOREO TRIBUTARIO</span>
+        <b>HACIENDA MUNICIPAL AYACUCHO</b>
+        <span>SGF - GESTIÓN FISCAL MASTER</span>
     </div>
 
-    <div class="search-bar">
+    <div class="search-container">
         <span style="margin-right:15px">🔍</span>
-        <input type="text" id="omni-search" placeholder="RIF, Comercio o Estatus..." onkeyup="runSearch()">
+        <input type="text" id="omni-search" placeholder="Buscar RIF, Nombre o Estatus..." onkeyup="globalSearch()">
     </div>
 
     <aside id="sidebar">
         <header class="sidebar-header">
-            <h1 style="font-weight:900; font-size:26px">SGF MASTER</h1>
-            <p style="font-size:11px; color:var(--accent); letter-spacing:3px">ESTADO TÁCHIRA</p>
+            <h1 style="font-weight:900; font-size:24px">SGF MASTER</h1>
+            <p style="font-size:10px; color:var(--accent); letter-spacing:2px">NUCLEO TÁCHIRA</p>
         </header>
         <div class="scroll-area">
-            <button class="btn btn-gold" onclick="newLayer()">+ REGISTRAR CAPA DESDE GOOGLE</button>
+            <button class="btn btn-gold" onclick="createNewLayer()">+ VINCULAR HOJA GOOGLE SHEETS</button>
             <div id="layer-list"></div>
         </div>
     </aside>
@@ -113,9 +124,10 @@
 
 <div class="overlay" id="overlay" onclick="closeModals()"></div>
 <div class="modal" id="modal-ficha">
-    <h3 style="color:var(--accent); margin-bottom:15px">Campos de la Ficha</h3>
-    <div id="ficha-list" style="max-height:350px; overflow-y:auto"></div>
-    <button class="btn btn-gold" style="margin-top:25px" onclick="saveFicha()">APLICAR CAMBIOS</button>
+    <h3 style="color:var(--accent); margin-bottom:10px">Configuración de Ficha</h3>
+    <button class="btn-tool" onclick="toggleAllFields(true)" style="margin-bottom:10px">Seleccionar Todo</button>
+    <div id="ficha-fields" style="max-height:300px; overflow-y:auto"></div>
+    <button class="btn btn-gold" style="margin-top:20px" onclick="applyFicha()">GUARDAR CAMBIOS</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -125,73 +137,76 @@
 
 <script>
     let STORE = {};
-    let ACTIVE = { lid: null, drawCtrl: null };
+    let ACTIVE_LID = null;
+    let DRAW_CONTROL = null;
 
-    const map = L.map('map', { center: [8.03317, -72.25693], zoom: 16, zoomControl: false });
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
+    // 1. INICIALIZAR MAPA Y CAPAS BASE (FOTOS 4-5)
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 22 });
+    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 22 });
 
-    function newLayer() {
-        const name = prompt("Nombre de la Capa:");
+    const map = L.map('map', { 
+        center: [8.03317, -72.25693], 
+        zoom: 16, 
+        layers: [googleSat],
+        zoomControl: false 
+    });
+
+    L.control.layers({ "Vista Satelital": googleSat, "Vista Calles": googleStreets }, null, { position: 'topright' }).addTo(map);
+
+    function createNewLayer() {
+        const name = prompt("Nombre de la Capa (Ej: Licorerías):");
         if(!name) return;
-        const id = 'L' + Date.now();
-        STORE[id] = { name: name, group: L.featureGroup().addTo(map), url: '', config: [], data: [], drawing: false };
-        renderUI();
+        const id = 'ID' + Date.now();
+        STORE[id] = { name: name, group: L.featureGroup().addTo(map), url: '', config: [], data: [], visible: true, drawing: false };
+        renderSidebar();
     }
 
-    function renderUI() {
-        const box = document.getElementById('layer-list');
-        box.innerHTML = "";
+    function renderSidebar() {
+        const container = document.getElementById('layer-list');
+        container.innerHTML = "";
         Object.keys(STORE).forEach(id => {
             const l = STORE[id];
-            let secs = "";
-            l.group.eachLayer(layer => {
-                if(layer instanceof L.Polygon) {
-                    secs += `<div class="sector-item" onclick="zoomTo('${id}','${L.Util.stamp(layer)}')">
-                        <b>Sector: ${layer.options.name}</b>
-                        <span>📍</span>
-                    </div>`;
-                }
-            });
-
-            box.innerHTML += `
+            container.innerHTML += `
                 <div class="layer-card">
-                    <div class="layer-head"><span>${l.name}</span><b onclick="deleteLayer('${id}')" style="cursor:pointer">✕</b></div>
+                    <div class="layer-head">
+                        <span>${l.name}</span>
+                        <div class="toggle-switch ${l.visible?'on':''}" onclick="toggleVisibility('${id}')"></div>
+                    </div>
                     <div style="padding:15px">
-                        <input type="text" class="cloud-input" placeholder="URL de Google Sheets..." 
-                               onchange="updateUrl('${id}', this.value)" value="${l.url}">
+                        <input type="text" class="cloud-input" placeholder="Pegar URL de Google Sheets..." 
+                               onchange="processUrl('${id}', this.value)" value="${l.url}">
                         <div class="layer-grid">
-                            <button class="btn-tool" onclick="syncData('${id}')">🔄 SINCRONIZAR</button>
-                            <button class="btn-tool" onclick="openFicha('${id}')">📋 CONFIG. FICHA</button>
-                            <button class="btn-tool btn-draw ${l.drawing?'active':''}" onclick="toggleDraw('${id}')">
-                                ${l.drawing ? 'FINALIZAR' : '✏️ DIBUJAR SECTOR'}
+                            <button class="btn-tool" onclick="syncLayer('${id}')">🔄 SINCRONIZAR</button>
+                            <button class="btn-tool" onclick="openFichaConfig('${id}')">📋 FICHA TÉCNICA</button>
+                            <button class="btn-tool btn-draw-tool ${l.drawing?'active':''}" onclick="startDrawing('${id}')">
+                                ${l.drawing ? 'FINALIZAR DIBUJO' : '✏️ DIBUJAR SECTOR'}
                             </button>
                         </div>
                     </div>
-                    <div>${secs}</div>
                 </div>`;
         });
     }
 
-    function updateUrl(id, url) {
+    function processUrl(id, url) {
         if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
         STORE[id].url = url;
     }
 
-    function syncData(id) {
-        if(!STORE[id].url) return alert("Ingrese el URL.");
+    function syncLayer(id) {
+        if(!STORE[id].url) return alert("Pegue el URL primero.");
         Papa.parse(STORE[id].url, {
             download: true, header: true, skipEmptyLines: true,
             complete: r => {
                 STORE[id].data = r.data;
-                const cols = Object.keys(r.data[0]).filter(k => k.trim() !== "");
-                STORE[id].config = cols.map(c => ({ id: c, on: true }));
-                plotPoints(id);
-                renderUI();
+                const cols = Object.keys(r.data[0]).filter(c => c.trim() !== "");
+                STORE[id].config = cols.map(c => ({ name: c, active: true }));
+                plotData(id);
+                alert("Capa Sincronizada con Google Cloud");
             }
         });
     }
 
-    function plotPoints(id) {
+    function plotData(id) {
         const l = STORE[id];
         l.group.eachLayer(layer => { if(layer instanceof L.CircleMarker) l.group.removeLayer(layer); });
 
@@ -200,34 +215,34 @@
             const lon = parseFloat(row.Longitud || row.lon);
             if(isNaN(lat) || isNaN(lon)) return;
 
-            let col = "#3b82f6";
+            let color = "#3b82f6";
             const s = (row.Estatus || row.Estado || "").toUpperCase();
-            if(s.includes("PAGO") || s.includes("AL DIA")) col = "#10b981";
-            else if(s.includes("MORA") || s.includes("DEUDA")) col = "#ef4444";
+            if(s.includes("PAGO") || s.includes("AL DIA")) color = "#10b981";
+            else if(s.includes("MORA") || s.includes("DEUDA")) color = "#ef4444";
 
-            const p = L.circleMarker([lat, lon], { radius: 8, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 });
+            const p = L.circleMarker([lat, lon], { radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 });
             
-            let html = `<div class="pop-box"><div class="pop-h">${row.Nombre || 'Registro'}</div><div class="pop-b">`;
+            let html = `<div class="pop-card"><div class="pop-header">${row.Nombre || 'Local'}</div><div class="pop-body">`;
             l.config.forEach(c => {
-                if(c.on && row[c.id]) html += `<div class="pop-r"><b>${c.id}</b><span>${row[c.id]}</span></div>`;
+                if(c.active && row[c.name]) html += `<div class="pop-line"><b>${c.name}</b><span>${row[c.name]}</span></div>`;
             });
-            p.bindPopup(html + `</div></div>`);
+            p.bindPopup(html + `</div></div>`, { maxWidth: 320 });
             l.group.addLayer(p);
         });
     }
 
-    function toggleDraw(id) {
+    function startDrawing(id) {
         if(STORE[id].drawing) {
-            map.removeControl(ACTIVE.drawCtrl);
+            map.removeControl(DRAW_CONTROL);
             STORE[id].drawing = false;
         } else {
-            ACTIVE.lid = id; STORE[id].drawing = true;
-            ACTIVE.drawCtrl = new L.Control.Draw({
-                draw: { polygon: true, rectangle: true, circle: false, marker: false, polyline: false }
+            ACTIVE_LID = id; STORE[id].drawing = true;
+            DRAW_CONTROL = new L.Control.Draw({
+                draw: { polygon: { shapeOptions: { color: '#fbbf24' } }, rectangle: true, circle: false, marker: false, polyline: false }
             });
-            map.addControl(ACTIVE.drawCtrl);
+            map.addControl(DRAW_CONTROL);
         }
-        renderUI();
+        renderSidebar();
     }
 
     map.on(L.Draw.Event.CREATED, e => {
@@ -236,57 +251,69 @@
         const layer = e.layer;
         layer.options.name = name;
         layer.options.color = '#fbbf24';
-        STORE[ACTIVE.lid].group.addLayer(layer);
-        
+        STORE[ACTIVE_LID].group.addLayer(layer);
+
+        // CENSO MULTICAPA (FOTOS 13-14)
         const poly = layer.toGeoJSON();
-        let count = 0;
-        STORE[ACTIVE.lid].group.eachLayer(l => {
-            if(l instanceof L.CircleMarker && turf.booleanPointInPolygon(l.toGeoJSON(), poly)) count++;
+        let totalCenso = 0;
+        Object.keys(STORE).forEach(lid => {
+            if(STORE[lid].visible) {
+                STORE[lid].group.eachLayer(p => {
+                    if(p instanceof L.CircleMarker && turf.booleanPointInPolygon(p.toGeoJSON(), poly)) totalCenso++;
+                });
+            }
         });
-        layer.bindPopup(`<b>${name}</b><br>Comercios: ${count}`);
-        toggleDraw(ACTIVE.lid);
+
+        layer.bindPopup(`<div style="text-align:center"><b>${name}</b><br><small>Censo Visible:</small><br><span style="font-size:22px; color:var(--verde); font-weight:900">${totalCenso}</span></div>`);
+        startDrawing(ACTIVE_LID);
     });
 
-    function openFicha(id) {
-        ACTIVE.lid = id;
-        const list = document.getElementById('ficha-list');
-        list.innerHTML = "";
+    function openFichaConfig(id) {
+        ACTIVE_LID = id;
+        const box = document.getElementById('ficha-fields');
+        box.innerHTML = "";
         STORE[id].config.forEach((c, i) => {
-            list.innerHTML += `<div class="ficha-item"><input type="checkbox" id="f-${i}" ${c.on?'checked':''}><span>${c.id}</span></div>`;
+            box.innerHTML += `<div class="field-row"><input type="checkbox" id="field-${i}" ${c.active?'checked':''}><span>${c.name}</span></div>`;
         });
         document.getElementById('overlay').style.display = "block";
         document.getElementById('modal-ficha').style.display = "block";
     }
 
-    function saveFicha() {
-        STORE[ACTIVE.lid].config.forEach((c, i) => { c.on = document.getElementById(`f-${i}`).checked; });
-        plotPoints(ACTIVE.lid);
+    function applyFicha() {
+        STORE[ACTIVE_LID].config.forEach((c, i) => {
+            c.active = document.getElementById(`field-${i}`).checked;
+        });
+        plotData(ACTIVE_LID);
         closeModals();
+    }
+
+    function toggleVisibility(id) {
+        STORE[id].visible = !STORE[id].visible;
+        if(STORE[id].visible) map.addLayer(STORE[id].group);
+        else map.removeLayer(STORE[id].group);
+        renderSidebar();
+    }
+
+    function toggleAllFields(state) {
+        document.querySelectorAll('#ficha-fields input').forEach(i => i.checked = state);
     }
 
     function closeModals() {
         document.getElementById('overlay').style.display = "none";
-        document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
+        document.getElementById('modal-ficha').style.display = "none";
     }
 
-    function runSearch() {
+    function globalSearch() {
         const q = document.getElementById('omni-search').value.toLowerCase();
         Object.keys(STORE).forEach(id => {
             STORE[id].group.eachLayer(l => {
                 if(l instanceof L.CircleMarker) {
-                    const txt = JSON.stringify(l.getPopup().getContent()).toLowerCase();
-                    l.setStyle({ opacity: txt.includes(q)?1:0.1, fillOpacity: txt.includes(q)?1:0.1 });
+                    const content = JSON.stringify(l.getPopup().getContent()).toLowerCase();
+                    l.setStyle({ opacity: content.includes(q)?1:0.1, fillOpacity: content.includes(q)?1:0.1 });
                 }
             });
         });
     }
-
-    function zoomTo(lid, eid) {
-        const l = STORE[lid].group.getLayer(eid);
-        map.fitBounds(l.getBounds());
-    }
-
-    function deleteLayer(id) { if(confirm("¿Eliminar?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderUI(); } }
 </script>
 </body>
 </html>
