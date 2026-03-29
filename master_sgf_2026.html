@@ -3,125 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER v4.0 - RECOPILACIÓN TOTAL</title>
+    <title>SGF MASTER - HACIENDA AYACUCHO (SISTEMA INTEGRAL)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --google-blue: #1a73e8; --border: #dadce0; --text: #3c4043; --amarillo: #fbbc04; --bg-sidebar: #ffffff; }
-        body { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; height: 100vh; background: #f1f3f4; overflow: hidden; }
-
-        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #aad3df; }
-
-        /* UI FLOTANTE (FOTOS 1, 6) */
-        .top-interface { position: absolute; top: 12px; left: 12px; z-index: 1000; width: 390px; display: flex; flex-direction: column; gap: 10px; }
-        .search-card { 
-            background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-            display: flex; align-items: center; padding: 0 15px; height: 48px;
+        :root { 
+            --google-blue: #1a73e8; 
+            --google-red: #d93025;
+            --google-yellow: #fbbc04;
+            --sidebar-width: 390px;
+            --border-color: #dadce0;
         }
-        .search-card input { flex: 1; border: none; outline: none; font-size: 16px; color: var(--text); }
 
-        /* BARRA DE HERRAMIENTAS (FOTOS 7, 8) */
-        .draw-panel { 
-            position: absolute; top: 12px; left: 415px; z-index: 1000; 
-            background: white; display: flex; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); padding: 4px;
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Roboto', sans-serif; background: #f1f3f4; overflow: hidden; }
+
+        /* INTERFAZ DE MAPA */
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
+
+        /* PANEL SUPERIOR (Buscador y Herramientas) */
+        .top-container { position: absolute; top: 12px; left: 12px; z-index: 1000; display: flex; gap: 10px; pointer-events: none; }
+        .top-container > * { pointer-events: auto; }
+
+        .search-bar { 
+            background: white; width: var(--sidebar-width); height: 48px; border-radius: 8px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3); display: flex; align-items: center; padding: 0 15px;
         }
-        .draw-btn { padding: 8px 12px; cursor: pointer; border-radius: 4px; border: none; background: white; color: #5f6368; font-size: 13px; font-weight: 500; }
-        .draw-btn:hover { background: #f1f3f4; color: var(--google-blue); }
+        .search-bar input { flex: 1; border: none; outline: none; font-size: 16px; color: #3c4043; }
 
-        /* SIDEBAR MY MAPS (FOTOS 4, 10) */
-        #sidebar-google { 
+        .draw-tools { 
+            background: white; height: 48px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3); 
+            display: flex; align-items: center; padding: 0 5px;
+        }
+        .tool-btn { 
+            border: none; background: none; width: 40px; height: 40px; border-radius: 4px; 
+            cursor: pointer; color: #5f6368; font-size: 18px; transition: 0.2s;
+        }
+        .tool-btn:hover { background: #f1f3f4; color: var(--google-blue); }
+        .tool-btn.active { color: var(--google-blue); background: #e8f0fe; }
+
+        /* SIDEBAR (Foto 4 y 10) */
+        #sidebar { 
             position: absolute; top: 72px; left: 12px; bottom: 25px; z-index: 1000; 
-            width: 390px; background: var(--bg-sidebar); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            display: flex; flex-direction: column; overflow: hidden;
+            width: var(--sidebar-width); background: white; border-radius: 8px; 
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3); display: flex; flex-direction: column;
         }
-        .side-header { padding: 15px 20px; border-bottom: 1px solid var(--border); border-top: 6px solid var(--amarillo); }
-        .side-header h2 { margin: 0; font-size: 18px; color: #202124; font-weight: 400; }
-        .side-header small { color: var(--google-blue); font-weight: 700; font-size: 11px; }
+        .sidebar-header { padding: 15px 20px; border-top: 6px solid var(--google-yellow); border-bottom: 1px solid var(--border-color); }
+        .sidebar-header h1 { margin: 0; font-size: 18px; font-weight: 500; color: #202124; }
+        .sidebar-header p { margin: 2px 0 0; font-size: 11px; color: var(--google-blue); font-weight: 700; text-transform: uppercase; }
 
-        .side-scroll { flex: 1; overflow-y: auto; padding: 10px 0; }
+        .sidebar-scroll { flex: 1; overflow-y: auto; padding-top: 10px; }
+
+        /* CAPAS Y ELEMENTOS */
+        .layer-box { border-bottom: 1px solid #f1f3f4; margin-bottom: 10px; }
+        .layer-row { display: flex; align-items: center; padding: 10px 20px; cursor: pointer; }
+        .layer-row:hover { background: #f8f9fa; }
+        .layer-row.selected { background: #e8f0fe; border-left: 4px solid var(--google-blue); }
+        .layer-title { flex: 1; font-size: 14px; font-weight: 500; }
+
+        .item-list { list-style: none; padding: 0 0 0 55px; margin: 0; }
+        .item-row { 
+            display: flex; align-items: center; gap: 12px; padding: 8px 15px; 
+            font-size: 13px; color: #5f6368; cursor: pointer; border-radius: 4px; margin-right: 15px;
+        }
+        .item-row:hover { background: #f1f3f4; }
+        .item-row:hover .item-actions { display: flex; }
+        .item-actions { display: none; gap: 8px; margin-left: auto; }
+        .icon-btn { opacity: 0.5; font-size: 12px; transition: 0.2s; }
+        .icon-btn:hover { opacity: 1; color: var(--google-blue); }
+
+        /* MODALES PROFESIONALES */
+        .overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); z-index: 2000; display: none; align-items: center; justify-content: center;
+        }
+        .modal { background: white; width: 450px; border-radius: 8px; box-shadow: 0 12px 24px rgba(0,0,0,0.25); overflow: hidden; }
+        .modal-header { padding: 20px; font-size: 18px; font-weight: 500; border-bottom: 1px solid #eee; }
+        .modal-body { padding: 20px; }
+        .modal-footer { padding: 15px 20px; background: #f8f9fa; text-align: right; display: flex; justify-content: flex-end; gap: 10px; }
         
-        /* ESTILO DE CAPAS Y ELEMENTOS (FOTO 4) */
-        .layer-group { margin-bottom: 5px; }
-        .layer-head { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; transition: 0.2s; }
-        .layer-head:hover { background: #f1f3f4; }
-        .layer-head.active { background: #e8f0fe; }
-        .layer-title { font-size: 14px; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .item-list { list-style: none; padding: 0 0 0 52px; margin: 0; display: block; }
-        .item-row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; font-size: 13px; color: #5f6368; cursor: pointer; border-radius: 4px; margin-right: 10px; }
-        .item-row:hover { background: #f1f3f4; color: #202124; }
-        .dot { width: 12px; height: 12px; border-radius: 2px; }
-
-        /* BOTÓN ACCIÓN */
-        .btn-add { margin: 10px 20px; padding: 12px; border: 1px dashed var(--google-blue); color: var(--google-blue); background: none; border-radius: 4px; font-weight: 500; cursor: pointer; }
-
-        /* MODALES (FOTOS 8, 9) */
-        .modal-google { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            z-index: 2000; background: white; width: 420px; padding: 25px; border-radius: 8px; 
-            box-shadow: 0 12px 40px rgba(0,0,0,0.3); display: none;
+        input, select, textarea { 
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color); 
+            border-radius: 4px; box-sizing: border-box; font-family: inherit; font-size: 14px;
         }
-        .modal-google h3 { margin-top: 0; font-size: 18px; font-weight: 500; }
-        .scroll-select { max-height: 160px; overflow-y: auto; border: 1px solid #eee; padding: 8px; margin: 10px 0; border-radius: 4px; background: #f8f9fa; }
-        .opt { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #f1f1f1; font-size: 13px; }
 
-        /* FICHA TÉCNICA (FOTO 16) */
-        .ficha-pop { min-width: 250px; }
-        .ficha-top { background: #f8f9fa; padding: 12px; border-bottom: 3px solid var(--amarillo); font-weight: 700; font-size: 15px; }
-        .ficha-mid { padding: 12px; font-size: 13px; color: #333; line-height: 1.5; }
+        .btn { padding: 10px 20px; border-radius: 4px; border: none; cursor: pointer; font-weight: 500; font-size: 14px; }
+        .btn-blue { background: var(--google-blue); color: white; }
+        .btn-flat { background: transparent; color: #666; }
 
-        /* DIBUJO NEGRO/BLANCO ALTO CONTRASTE */
-        .leaflet-draw-draw-polygon { stroke: #000 !important; stroke-width: 4px !important; }
-        .leaflet-draw-guide-marker { background: #fff !important; border: 2px solid #000 !important; border-radius: 50% !important; }
+        /* FICHA TÉCNICA (Foto 16) */
+        .ficha-header { background: #f8f9fa; margin: -14px -14px 10px -14px; padding: 12px; border-bottom: 3px solid var(--google-yellow); font-weight: bold; }
+        .ficha-content { font-size: 13px; color: #333; line-height: 1.5; }
+
+        /* ICON PICKER */
+        .icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; max-height: 200px; overflow-y: auto; padding: 10px; border: 1px solid #eee; }
+        .icon-opt { text-align: center; padding: 10px; border: 1px solid #eee; cursor: pointer; border-radius: 4px; }
+        .icon-opt:hover { background: #e8f0fe; border-color: var(--google-blue); }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="top-interface">
-    <div class="search-card">
-        <input type="text" id="main-search" placeholder="Buscar en este mapa..." oninput="filtrarSidebar()">
-        <span style="opacity:0.4">🔍</span>
+<div class="top-container">
+    <div class="search-bar">
+        <i class="fas fa-search" style="opacity:0.4; margin-right:10px"></i>
+        <input type="text" id="master-search" placeholder="Buscar en Hacienda Ayacucho..." oninput="filtrarTodo()">
+    </div>
+    <div class="draw-tools">
+        <button class="tool-btn" id="btn-draw-marker" title="Marcador"><i class="fas fa-map-marker-alt"></i></button>
+        <button class="tool-btn" id="btn-draw-poly" title="Polígono"><i class="fas fa-draw-polygon"></i></button>
+        <button class="tool-btn" id="btn-draw-line" title="Ruta/Línea"><i class="fas fa-route"></i></button>
+        <div style="width:1px; background:#ddd; height:24px; margin:0 5px"></div>
+        <button class="tool-btn" onclick="exportarProyecto()" title="Exportar Todo"><i class="fas fa-download"></i></button>
     </div>
 </div>
 
-<div class="draw-panel">
-    <button class="draw-btn" id="btn-poly">📐 Polígono</button>
-    <div style="width:1px; background:#ddd; margin:5px 8px;"></div>
-    <button class="draw-btn" id="btn-marker">📍 Marcador</button>
-</div>
-
-<aside id="sidebar-google">
-    <div class="side-header">
-        <h2>SGF MASTER - AYACUCHO</h2>
-        <small>RECOPILACIÓN FOTOS 1-16</small>
+<aside id="sidebar">
+    <div class="sidebar-header">
+        <h1>HACIENDA AYACUCHO</h1>
+        <p>SGF - Control Fiscal Territorial</p>
     </div>
-    <div class="side-scroll" id="container-capas">
-        </div>
-    <button class="btn-add" onclick="abrirModal('m-import')">+ Importar datos de Google Sheets</button>
+    <div class="sidebar-scroll" id="layers-container"></div>
+    <div style="padding:15px; border-top: 1px solid #eee">
+        <button class="btn btn-blue" style="width:100%" onclick="abrirModal('modal-import')">+ AÑADIR CAPA (CSV / SHEETS)</button>
+    </div>
 </aside>
 
-<div id="m-import" class="modal-google">
-    <h3>Importar Capa</h3>
-    <input type="text" id="n-capa" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd;" placeholder="Nombre de la capa (Ej: Sector Centro)">
-    <input type="text" id="u-capa" style="width:100%; padding:10px; border:1px solid #ddd;" placeholder="Pegar URL del CSV">
-    <div style="margin-top:20px; text-align:right;">
-        <button onclick="cerrarModal('m-import')" style="background:none; border:none; color:#666; cursor:pointer;">Cancelar</button>
-        <button onclick="validarURL()" style="background:var(--google-blue); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; margin-left:10px;">Continuar</button>
+<div id="modal-import" class="overlay">
+    <div class="modal">
+        <div class="modal-header">Importar desde Google Sheets</div>
+        <div class="modal-body">
+            <input type="text" id="imp-name" placeholder="Nombre de la capa (Ej: Sector San Juan)">
+            <input type="text" id="imp-url" placeholder="Pegar URL del CSV">
+            <p style="font-size:11px; color:#666">Asegúrese de que el enlace termine en /export?format=csv</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-flat" onclick="cerrarModal('modal-import')">Cancelar</button>
+            <button class="btn btn-blue" onclick="analizarCSV()">Siguiente</button>
+        </div>
     </div>
 </div>
 
-<div id="m-mapeo" class="modal-google">
-    <h3>Configurar columnas</h3>
-    <p style="font-size:12px; color:#666;">Selecciona la columna que tiene las Coordenadas (Lat, Lon):</p>
-    <div class="scroll-select" id="sel-coords"></div>
-    <p style="font-size:12px; color:#666; margin-top:10px;">Selecciona la columna para el Título:</p>
-    <div class="scroll-select" id="sel-titles"></div>
-    <button onclick="ejecutarImportacion()" style="width:100%; background:var(--google-blue); color:white; border:none; padding:12px; border-radius:4px; cursor:pointer; font-weight:bold;">Finalizar</button>
+<div id="modal-mapping" class="overlay">
+    <div class="modal">
+        <div class="modal-header">Configuración de Columnas</div>
+        <div class="modal-body">
+            <label style="font-size:12px">Columna de Coordenadas (Lat, Lon):</label>
+            <select id="sel-col-coords"></select>
+            <label style="font-size:12px">Columna de Nombre/Local:</label>
+            <select id="sel-col-name"></select>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-blue" onclick="procesarCSVFinal()">Finalizar Importación</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-edit" class="overlay">
+    <div class="modal" style="width: 500px;">
+        <div class="modal-header">Editar Elemento</div>
+        <div class="modal-body">
+            <input type="text" id="edit-name" placeholder="Nombre">
+            <textarea id="edit-desc" placeholder="Descripción / Notas fiscales" rows="3"></textarea>
+            
+            <div style="display:flex; gap:15px; align-items:center; margin-bottom:15px">
+                <div style="flex:1">
+                    <label style="font-size:12px">Color:</label>
+                    <input type="color" id="edit-color" style="height:40px; padding:2px">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:12px">Icono:</label>
+                    <div id="current-icon-display" style="font-size:24px; text-align:center; padding:5px; border:1px solid #ddd; border-radius:4px">📍</div>
+                </div>
+            </div>
+
+            <div class="icon-grid">
+                <div class="icon-opt" onclick="setIcon('fas fa-map-marker-alt')"><i class="fas fa-map-marker-alt"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-store')"><i class="fas fa-store"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-industry')"><i class="fas fa-industry"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-home')"><i class="fas fa-home"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-utensils')"><i class="fas fa-utensils"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-gas-pump')"><i class="fas fa-gas-pump"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-hospital')"><i class="fas fa-hospital"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-shopping-cart')"><i class="fas fa-shopping-cart"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-warning')"><i class="fas fa-warning"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-landmark')"><i class="fas fa-landmark"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-briefcase')"><i class="fas fa-briefcase"></i></div>
+                <div class="icon-opt" onclick="setIcon('fas fa-dollar-sign')"><i class="fas fa-dollar-sign"></i></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-flat" onclick="cerrarModal('modal-edit')">Descartar</button>
+            <button class="btn btn-blue" onclick="guardarEdicion()">Guardar Cambios</button>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -129,145 +208,239 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    // 1. INICIO MAPA (FOTO 3)
+    // 1. INICIALIZACIÓN DEL MAPA
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
-    L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
+    const satellite = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
 
-    let dataMap = {}; 
+    let appData = {}; 
     let activeLayerId = null;
     let tempCSV = null;
-    let tempName = "";
+    let selectedIcon = 'fas fa-map-marker-alt';
+    let editingItem = { lid: null, iid: null };
 
-    // 2. DIBUJO (FOTOS 7, 8)
-    const drawP = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 4, fillOpacity: 0.4 } });
-    const drawM = new L.Draw.Marker(map);
-    document.getElementById('btn-poly').onclick = () => { if(activeLayerId) drawP.enable(); else alert("Selecciona una capa"); };
-    document.getElementById('btn-marker').onclick = () => { if(activeLayerId) drawM.enable(); else alert("Selecciona una capa"); };
+    // 2. HERRAMIENTAS DE DIBUJO (Foto 7)
+    const drawControl = new L.FeatureGroup();
+    map.addLayer(drawControl);
+
+    const drawers = {
+        marker: new L.Draw.Marker(map),
+        poly: new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 3, fillOpacity: 0.2 } }),
+        line: new L.Draw.Polyline(map, { shapeOptions: { color: '#1a73e8', weight: 4 } })
+    };
+
+    document.getElementById('btn-draw-marker').onclick = () => { if(activeLayerId) drawers.marker.enable(); else alert("Selecciona una capa"); };
+    document.getElementById('btn-draw-poly').onclick = () => { if(activeLayerId) drawers.poly.enable(); else alert("Selecciona una capa"); };
+    document.getElementById('btn-draw-line').onclick = () => { if(activeLayerId) drawers.line.enable(); else alert("Selecciona una capa"); };
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const layer = e.layer;
-        const nombre = prompt("Nombre del elemento:");
+        const nombre = prompt("Nombre del nuevo elemento:");
         if(!nombre) return;
-        const color = '#' + Math.floor(Math.random()*16777215).toString(16);
-        if(layer instanceof L.Polygon) layer.setStyle({ fillColor: color });
+
+        const color = "#1a73e8";
+        const idInterno = appData[activeLayerId].group.addLayer(layer)._leaflet_id;
         
-        const leafId = dataMap[activeLayerId].group.addLayer(layer)._leaflet_id;
-        dataMap[activeLayerId].items.push({ id: leafId, name: nombre, type: layer instanceof L.Polygon ? 'poly' : 'pin', color: color });
-        actualizarSidebar(activeLayerId);
+        appData[activeLayerId].items.push({
+            id: idInterno,
+            name: nombre,
+            desc: "Creado manualmente",
+            type: e.layerType,
+            color: color,
+            icon: 'fas fa-map-marker-alt'
+        });
+
+        actualizarVisual(activeLayerId, idInterno);
+        renderSidebar();
     });
 
-    // 3. IMPORTACIÓN (CORRECCIÓN COLUMNA ÚNICA)
-    function abrirModal(id) { document.getElementById(id).style.display = 'block'; }
+    // 3. LOGICA DE IMPORTACIÓN Y MAPEADO (Foto 9)
+    function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
     function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    function validarURL() {
-        tempName = document.getElementById('n-capa').value;
-        let url = document.getElementById('u-capa').value;
-        if(!tempName) return;
-        if(!url) { crearCapa(tempName); cerrarModal('m-import'); return; }
+    function analizarCSV() {
+        const nombre = document.getElementById('imp-name').value;
+        let url = document.getElementById('imp-url').value;
+        if(!nombre || !url) return alert("Complete los campos");
 
         url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=');
+        
         Papa.parse(url, {
-            download: true, header: true,
-            complete: (r) => {
-                tempCSV = r.data;
-                const headers = r.meta.fields;
-                let html = "";
-                headers.forEach(h => html += `<div class="opt"><input type="radio" name="r-coord" value="${h}"> ${h}</div>`);
-                document.getElementById('sel-coords').innerHTML = html;
-                html = "";
-                headers.forEach(h => html += `<div class="opt"><input type="radio" name="r-title" value="${h}"> ${h}</div>`);
-                document.getElementById('sel-titles').innerHTML = html;
-                cerrarModal('m-import');
-                abrirModal('m-mapeo');
+            download: true, header: true, skipEmptyLines: true,
+            complete: (results) => {
+                tempCSV = results.data;
+                const h = results.meta.fields;
+                let opts = ""; h.forEach(f => opts += `<option value="${f}">${f}</option>`);
+                document.getElementById('sel-col-coords').innerHTML = opts;
+                document.getElementById('sel-col-name').innerHTML = opts;
+                cerrarModal('modal-import');
+                abrirModal('modal-mapping');
             }
         });
     }
 
-    function ejecutarImportacion() {
-        const colC = document.querySelector('input[name="r-coord"]:checked')?.value;
-        const colT = document.querySelector('input[name="r-title"]:checked')?.value;
-        if(!colC || !colT) return alert("Falta mapear");
-
+    function procesarCSVFinal() {
+        const colC = document.getElementById('sel-col-coords').value;
+        const colN = document.getElementById('sel-col-name').value;
         const group = new L.FeatureGroup().addTo(map);
         const items = [];
 
         tempCSV.forEach(row => {
             let val = row[colC];
-            if(val && val.includes(',')) {
-                let parts = val.replace(/[()]/g, '').split(',');
-                let lat = parseFloat(parts[0].trim());
-                let lon = parseFloat(parts[1].trim());
-                if(!isNaN(lat)) {
+            if(val) {
+                // Limpieza de coordenadas (Elimina paréntesis, comas, espacios extras)
+                let clean = val.replace(/[()]/g, '').replace(/,/g, ' ').split(/\s+/);
+                let lat = parseFloat(clean[0]), lon = parseFloat(clean[1]);
+                
+                if(!isNaN(lat) && !isNaN(lon)) {
                     const m = L.marker([lat, lon]);
-                    const titulo = row[colT] || "Sin nombre";
-                    m.bindPopup(`<div class="ficha-pop"><div class="ficha-top">${titulo}</div><div class="ficha-mid">Censo: ${row['N° de censo'] || 'N/A'}<br>Ubicación: ${val}</div></div>`);
                     const lid = group.addLayer(m)._leaflet_id;
-                    items.push({ id: lid, name: titulo, type: 'pin' });
+                    items.push({
+                        id: lid, name: row[colN] || "Sin nombre", 
+                        desc: `Coordenadas: ${val}`, type: 'marker',
+                        color: '#d93025', icon: 'fas fa-map-marker-alt'
+                    });
+                    actualizarPopup(m, row[colN], row);
                 }
             }
         });
 
-        crearCapa(tempName, group, items);
-        cerrarModal('m-mapeo');
-    }
-
-    // 4. GESTIÓN SIDEBAR (FOTO 4)
-    function crearCapa(nombre, grupo = null, elementos = []) {
-        const id = 'c' + Date.now();
-        dataMap[id] = { name: nombre, group: grupo || new L.FeatureGroup().addTo(map), items: elementos, visible: true };
-        
-        const html = `
-            <div class="layer-group" id="group-${id}">
-                <div class="layer-head" onclick="seleccionarCapa('${id}')">
-                    <input type="checkbox" checked onclick="toggleCapa(event, '${id}')">
-                    <span class="layer-title">📁 ${nombre}</span>
-                </div>
-                <ul class="item-list" id="list-${id}"></ul>
-            </div>`;
-        document.getElementById('container-capas').insertAdjacentHTML('beforeend', html);
-        seleccionarCapa(id);
-        actualizarSidebar(id);
-    }
-
-    function actualizarSidebar(id) {
-        const ul = document.getElementById('list-' + id);
-        ul.innerHTML = "";
-        dataMap[id].items.forEach(item => {
-            const icon = item.type === 'poly' ? `<div class="dot" style="background:${item.color}; border:1px solid #fff"></div>` : '📍';
-            ul.insertAdjacentHTML('beforeend', `
-                <li class="item-row" onclick="enfocar('${id}', ${item.id})">
-                    ${icon} <span>${item.name}</span>
-                </li>`);
-        });
-    }
-
-    function seleccionarCapa(id) {
+        const id = 'l' + Date.now();
+        appData[id] = { name: document.getElementById('imp-name').value, group, items, visible: true };
         activeLayerId = id;
-        document.querySelectorAll('.layer-head').forEach(el => el.classList.remove('active'));
-        document.querySelector(`#group-${id} .layer-head`).classList.add('active');
+        renderSidebar();
+        cerrarModal('modal-mapping');
     }
 
-    function toggleCapa(e, id) {
+    // 4. GESTIÓN DE SIDEBAR Y EDICIÓN (Fotos 4, 10, 16)
+    function renderSidebar() {
+        const cont = document.getElementById('layers-container');
+        cont.innerHTML = "";
+        for(let id in appData) {
+            const sel = id === activeLayerId ? 'selected' : '';
+            let html = `
+                <div class="layer-box">
+                    <div class="layer-row ${sel}" onclick="setActiveLayer('${id}')">
+                        <input type="checkbox" ${appData[id].visible ? 'checked' : ''} onclick="toggleLayer(event, '${id}')">
+                        <span class="layer-title">📁 ${appData[id].name}</span>
+                        <i class="fas fa-trash icon-btn" onclick="borrarCapa(event, '${id}')"></i>
+                    </div>
+                    <ul class="item-list">`;
+            
+            appData[id].items.forEach(item => {
+                html += `
+                    <li class="item-row" onclick="enfocar('${id}', ${item.id})">
+                        <i class="${item.icon}" style="color:${item.color}"></i>
+                        <span style="flex:1">${item.name}</span>
+                        <div class="item-actions">
+                            <i class="fas fa-edit icon-btn" onclick="abrirEditor(event, '${id}', ${item.id})"></i>
+                            <i class="fas fa-trash-alt icon-btn" onclick="borrarItem(event, '${id}', ${item.id})"></i>
+                        </div>
+                    </li>`;
+            });
+            html += `</ul></div>`;
+            cont.insertAdjacentHTML('beforeend', html);
+        }
+    }
+
+    function abrirEditor(e, lid, iid) {
         e.stopPropagation();
-        if(e.target.checked) map.addLayer(dataMap[id].group);
-        else map.removeLayer(dataMap[id].group);
+        editingItem = { lid, iid };
+        const item = appData[lid].items.find(x => x.id === iid);
+        document.getElementById('edit-name').value = item.name;
+        document.getElementById('edit-desc').value = item.desc;
+        document.getElementById('edit-color').value = item.color;
+        selectedIcon = item.icon;
+        document.getElementById('current-icon-display').innerHTML = `<i class="${selectedIcon}"></i>`;
+        abrirModal('modal-edit');
+    }
+
+    function setIcon(iconClass) {
+        selectedIcon = iconClass;
+        document.getElementById('current-icon-display').innerHTML = `<i class="${selectedIcon}"></i>`;
+    }
+
+    function guardarEdicion() {
+        const { lid, iid } = editingItem;
+        const item = appData[lid].items.find(x => x.id === iid);
+        
+        item.name = document.getElementById('edit-name').value;
+        item.desc = document.getElementById('edit-desc').value;
+        item.color = document.getElementById('edit-color').value;
+        item.icon = selectedIcon;
+
+        actualizarVisual(lid, iid);
+        renderSidebar();
+        cerrarModal('modal-edit');
+    }
+
+    function actualizarVisual(lid, iid) {
+        const item = appData[lid].items.find(x => x.id === iid);
+        const layer = appData[lid].group.getLayer(iid);
+
+        if(layer instanceof L.Marker) {
+            layer.setIcon(L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="color:${item.color}; font-size:24px; text-shadow: 0 0 3px #fff"><i class="${item.icon}"></i></div>`,
+                iconSize: [24, 24], iconAnchor: [12, 24]
+            }));
+        } else if(layer.setStyle) {
+            layer.setStyle({ color: item.color, fillColor: item.color });
+        }
+        
+        layer.bindPopup(`<div class="ficha-header">${item.name}</div><div class="ficha-content">${item.desc}</div>`);
+    }
+
+    function setActiveLayer(id) { activeLayerId = id; renderSidebar(); }
+
+    function toggleLayer(e, id) {
+        e.stopPropagation();
+        appData[id].visible = e.target.checked;
+        if(appData[id].visible) map.addLayer(appData[id].group);
+        else map.removeLayer(appData[id].group);
     }
 
     function enfocar(lid, iid) {
-        const l = dataMap[lid].group.getLayer(iid);
+        const l = appData[lid].group.getLayer(iid);
         if(l) {
             map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 18);
             l.openPopup();
         }
     }
 
-    function filtrarSidebar() {
-        const txt = document.getElementById('main-search').value.toLowerCase();
-        document.querySelectorAll('.item-row').forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(txt) ? 'flex' : 'none';
+    function borrarItem(e, lid, iid) {
+        e.stopPropagation();
+        if(!confirm("¿Eliminar elemento?")) return;
+        appData[lid].group.removeLayer(iid);
+        appData[lid].items = appData[lid].items.filter(x => x.id !== iid);
+        renderSidebar();
+    }
+
+    function filtrarTodo() {
+        const q = document.getElementById('master-search').value.toLowerCase();
+        document.querySelectorAll('.item-row').forEach(el => {
+            el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
         });
     }
+
+    function exportarProyecto() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "Proyecto_Hacienda_Ayacucho.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function actualizarPopup(marker, titulo, row) {
+        let tabla = `<div class="ficha-header">${titulo}</div><div class="ficha-content">`;
+        for(let key in row) {
+            tabla += `<b>${key}:</b> ${row[key]}<br>`;
+        }
+        tabla += `</div>`;
+        marker.bindPopup(tabla);
+    }
 </script>
+
 </body>
 </html>
