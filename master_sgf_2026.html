@@ -4,18 +4,41 @@
     <meta charset="UTF-8">
     <title>SGF Master - Hacienda Ayacucho</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
-        :root { --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; }
-        body { margin: 0; display: flex; height: 100vh; font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
+        :root { --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; --accent: #f59e0b; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; overflow: hidden; }
         #map { flex: 1; background: #000; }
-        #sidebar { width: 350px; background: var(--panel); border-left: 2px solid #334155; display: flex; flex-direction: column; }
-        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: bold; border-bottom: 4px solid #3b82f6; }
-        .card { background: #334155; padding: 15px; margin: 15px; border-radius: 10px; border: 1px solid #475569; }
-        input { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: none; background: #1e293b; color: white; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; background: #f59e0b; color: #1e293b; }
+        
+        /* Sidebar mejorado para el Editor Master */
+        #sidebar { width: 380px; background: var(--panel); border-left: 2px solid #334155; display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
+        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: bold; border-bottom: 4px solid #3b82f6; letter-spacing: 1px; }
+        
+        .content { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .card { background: #334155; padding: 15px; margin: 12px; border-radius: 10px; border: 1px solid #475569; }
+        h3 { margin-top: 0; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+        
+        /* Estilos del Editor de Renglones (Foto 11) */
+        #fields-list { list-style: none; padding: 0; margin: 10px 0; }
+        .field-item { 
+            background: #1e293b; margin-bottom: 5px; padding: 10px; border-radius: 6px; 
+            display: flex; align-items: center; cursor: grab; border: 1px solid transparent;
+            transition: 0.2s; font-size: 13px;
+        }
+        .field-item:hover { border-color: var(--accent); }
+        .field-item input[type="checkbox"] { width: auto; margin-right: 10px; cursor: pointer; }
+        .field-item .handle { margin-left: auto; color: #64748b; cursor: grab; }
+
+        /* Estilo del Popup con Imagen (Cloudinary) */
+        .popup-container { color: #333; min-width: 220px; }
+        .popup-img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; background: #eee; }
+        .popup-data { font-size: 12px; line-height: 1.4; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; color: white; font-weight: bold; font-size: 10px; margin-bottom: 5px; }
+
+        input[type="password"], input[type="text"] { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: none; background: #0f172a; color: white; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; background: var(--accent); color: #1e293b; transition: 0.3s; }
+        .btn:hover { background: #d97706; transform: translateY(-2px); }
         #log { margin-top: 10px; font-size: 11px; color: #94a3b8; text-align: center; }
-        /* Estilo para que los créditos se vean profesionales */
-        .leaflet-control-attribution { background: rgba(0,0,0,0.7) !important; color: #ccc !important; }
     </style>
 </head>
 <body>
@@ -29,50 +52,155 @@
             <h3>Control de Sincronización</h3>
             <button class="btn" onclick="triggerBridge()">⚡ ACTUALIZAR AIRTABLE</button>
             <div id="log">SISTEMA AYACUCHO LISTO</div>
-        </div>
-        <div class="card">
-            <h3>Seguridad</h3>
             <input type="password" id="ghToken" placeholder="Token de GitHub">
+        </div>
+
+        <div class="card">
+            <h3>Configuración de Ficha (Jefa)</h3>
+            <p style="font-size: 11px; color: #cbd5e1;">Arrastra para ordenar. Marca para mostrar.</p>
+            <ul id="fields-list">
+                </ul>
+            <button class="btn" style="background: #10b981; color: white;" onclick="saveMasterConfig()">💾 GUARDAR VISTA</button>
+        </div>
+
+        <div class="card">
+            <h3>Capas Activas</h3>
+            <label style="display:block; margin-bottom:5px;"><input type="checkbox" checked onchange="toggleLayer('puntos')"> Comercios (Puntos)</label>
+            <label style="display:block;"><input type="checkbox" checked onchange="toggleLayer('poligonos')"> Zonas/Bloques (Áreas)</label>
         </div>
     </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- EL SATÉLITE QUE TE GUSTABA (GOOGLE HYBRID) ---
+    // --- MAPA Y CAPAS ---
     const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 20,
-        subdomains:['mt0','mt1','mt2','mt3']
+        maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
     });
 
-    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-
-    // --- INICIALIZACIÓN LIMPIA (SIN BANDERA) ---
     const map = L.map('map', {
-        center: [8.0378, -72.2647], // San Juan de Colón
+        center: [8.03317, -72.25693],
         zoom: 16,
         layers: [googleHybrid],
-        attributionControl: false // AQUÍ ELIMINAMOS LA BANDERA DE UCRANIA
+        attributionControl: false 
     });
 
-    // --- NUEVOS CRÉDITOS PERSONALIZADOS ---
-    L.control.attribution({
-        prefix: '<b>Hacienda Ayacucho</b>' 
-    }).addAttribution('SGF 2026 | Municipio Ayacucho').addTo(map);
+    const markersLayer = L.layerGroup().addTo(map);
+    const polygonsLayer = L.layerGroup().addTo(map);
 
-    const baseMaps = { "Vista Satelital": googleHybrid, "Mapa Calles": streets };
-    L.control.layers(baseMaps).addTo(map);
+    // --- LÓGICA DE COLORES (Foto 7 y 9) ---
+    function getStatusColor(status) {
+        if (!status) return "#94a3b8";
+        const s = status.toUpperCase();
+        if (s.includes("VIGENTE")) return "#22c55e"; // Verde
+        if (s.includes("VENCIDA")) return "#eab308"; // Amarillo
+        if (s.includes("SIN")) return "#ef4444";     // Rojo
+        return "#3b82f6";                            // Azul (Temporal)
+    }
 
+    // --- CONFIGURACIÓN DE CAMPOS (Tu pedido de la Foto 11) ---
+    // Esto se guarda en localStorage para que tu navegador lo recuerde siempre
+    let masterFields = JSON.parse(localStorage.getItem('sgf_fields_config')) || [
+        { id: 'Nombre', visible: true },
+        { id: 'Fiscal', visible: true },
+        { id: 'Expediente', visible: true },
+        { id: 'Aseo Urbano', visible: true },
+        { id: 'Impuesto Inmuebles', visible: true },
+        { id: 'Licencia Act. Econ.', visible: true }
+    ];
+
+    function initFieldsEditor() {
+        const list = document.getElementById('fields-list');
+        list.innerHTML = "";
+        masterFields.forEach(field => {
+            const li = document.createElement('li');
+            li.className = "field-item";
+            li.setAttribute('data-id', field.id);
+            li.innerHTML = `
+                <input type="checkbox" ${field.visible ? 'checked' : ''} onchange="updateFieldVisibility('${field.id}', this.checked)">
+                <span>${field.id}</span>
+                <span class="handle">☰</span>
+            `;
+            list.appendChild(li);
+        });
+
+        new Sortable(list, {
+            handle: '.handle',
+            animation: 150,
+            onEnd: function() {
+                const newOrder = [];
+                document.querySelectorAll('.field-item').forEach(el => {
+                    const id = el.getAttribute('data-id');
+                    const visible = el.querySelector('input').checked;
+                    newOrder.push({ id, visible });
+                });
+                masterFields = newOrder;
+            }
+        });
+    }
+
+    function updateFieldVisibility(id, isVisible) {
+        const field = masterFields.find(f => f.id === id);
+        if(field) field.visible = isVisible;
+    }
+
+    function saveMasterConfig() {
+        localStorage.setItem('sgf_fields_config', JSON.stringify(masterFields));
+        alert("Configuración de vista guardada. La jefa verá los datos en este orden.");
+    }
+
+    // --- FUNCIÓN PARA EL POPUP CON IMAGEN (Mejora Cloudinary) ---
+    function createPopup(data) {
+        let statusColor = getStatusColor(data['Licencia Act. Econ.']);
+        let html = `<div class="popup-container">`;
+        
+        // Si hay link de imagen en Cloudinary, se carga la foto (Foto 11)
+        if(data.Imagen && data.Imagen.includes('cloudinary')) {
+            html += `<img src="${data.Imagen}" class="popup-img">`;
+        }
+
+        html += `<span class="status-badge" style="background:${statusColor}">${data['Licencia Act. Econ.'] || 'S/D'}</span>`;
+        html += `<div class="popup-data">`;
+        
+        // Aplicamos el orden y visibilidad que tú configuraste
+        masterFields.forEach(field => {
+            if(field.visible && data[field.id]) {
+                html += `<div><strong>${field.id}:</strong> ${data[field.id]}</div>`;
+            }
+        });
+        
+        html += `</div></div>`;
+        return html;
+    }
+
+    // --- CONTROL DE CAPAS (Foto 15) ---
+    function toggleLayer(type) {
+        if(type === 'puntos') {
+            map.hasLayer(markersLayer) ? map.removeLayer(markersLayer) : map.addLayer(markersLayer);
+        } else {
+            map.hasLayer(polygonsLayer) ? map.removeLayer(polygonsLayer) : map.addLayer(polygonsLayer);
+        }
+    }
+
+    // --- INICIO ---
+    initFieldsEditor();
+    
+    // Aquí iría tu función triggerBridge original corregida
     async function triggerBridge() {
         const token = document.getElementById('ghToken').value;
         if(!token) return alert("Falta el Token");
-        document.getElementById('log').innerText = "CONECTANDO...";
-        const res = await fetch('https://api.github.com/repos/proyectomaps2026/mapa-censo/actions/workflows/actualizar.yml/dispatches', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' },
-            body: JSON.stringify({ ref: 'main' })
-        });
-        document.getElementById('log').innerText = res.ok ? "¡ÉXITO!" : "ERROR";
+        document.getElementById('log').innerText = "CONECTANDO CON GITHUB...";
+        
+        try {
+            const res = await fetch('https://api.github.com/repos/proyectomaps2026/mapa-censo/actions/workflows/actualizar.yml/dispatches', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ ref: 'main' })
+            });
+            document.getElementById('log').innerText = res.ok ? "¡ACTUALIZACIÓN LANZADA!" : "ERROR DE CONEXIÓN";
+        } catch(e) {
+            document.getElementById('log').innerText = "ERROR CRÍTICO";
+        }
     }
 </script>
 </body>
