@@ -3,276 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER - ESTILO MY MAPS</title>
+    <title>SGF MASTER v2.3 - HACIENDA AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     
     <style>
-        :root { --amarillo: #ffcc00; --fondo: #0f172a; --card: #1e293b; --azul: #3b82f6; --rojo: #ef4444; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #000; color: white; overflow: hidden; }
-        #map { flex: 1; z-index: 1; background: #000; }
+        :root { --azul-google: #1a73e8; --gris-borde: #dadce0; --amarillo: #ffcc00; }
+        body { margin: 0; padding: 0; font-family: 'Roboto', Arial, sans-serif; overflow: hidden; height: 100vh; background: #e8eaed; }
 
-        /* HEADER Y BUSCADOR */
-        .brand-header { position: absolute; top: 20px; left: 20px; z-index: 1000; background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 10px; border-left: 6px solid var(--amarillo); backdrop-filter: blur(10px); }
-        .top-search-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 400px; }
-        .top-search { width: 100%; padding: 14px 20px; border-radius: 25px; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.5); outline: none; }
+        /* MAPA FONDO TOTAL */
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* BARRA HERRAMIENTAS DIBUJO */
-        .drawing-toolbar { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); z-index: 1000; background: white; display: flex; padding: 6px; border-radius: 6px; box-shadow: 0 2px 15px rgba(0,0,0,0.3); }
-        .tool-btn { padding: 8px 15px; color: #333; cursor: pointer; border-right: 1px solid #ddd; font-size: 13px; font-weight: 600; }
-        .tool-btn:hover { background: #f0f4f8; color: var(--azul); }
+        /* BUSCADOR FLOTANTE (ESTILO MY MAPS) */
+        .top-ui-container { position: absolute; top: 12px; left: 12px; z-index: 1000; width: 390px; }
+        .search-box { 
+            background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); 
+            display: flex; align-items: center; padding: 0 15px; height: 48px; 
+        }
+        .search-box input { flex: 1; border: none; outline: none; font-size: 16px; color: #3c4043; }
 
-        .leaflet-draw-draw-polygon { stroke: #000 !important; stroke-width: 5px !important; stroke-opacity: 1 !important; }
-        .leaflet-draw-guide-marker { background: #fff !important; border: 2px solid #000 !important; border-radius: 50% !important; width: 12px !important; height: 12px !important; }
+        /* SIDEBAR FLOTANTE (REDONDEADO Y LIMPIO) */
+        #sidebar-floating { 
+            position: absolute; top: 72px; left: 12px; bottom: 30px; z-index: 1000; 
+            width: 390px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .sidebar-header { 
+            padding: 20px; border-bottom: 1px solid var(--gris-borde); background: #f8f9fa; 
+            border-top: 5px solid var(--amarillo);
+        }
+        .sidebar-header h1 { margin: 0; font-size: 18px; color: #202124; font-weight: 500; }
+        .sidebar-header p { margin: 4px 0 0; font-size: 12px; color: #70757a; font-weight: bold; }
 
-        /* SIDEBAR ESTILO MY MAPS */
-        #sidebar { width: 420px; background: var(--fondo); border-left: 1px solid #334155; display: flex; flex-direction: column; }
-        .side-title { padding: 30px; text-align: center; border-bottom: 5px solid var(--amarillo); background: var(--card); }
-        .side-content { flex: 1; overflow-y: auto; padding: 20px; scrollbar-width: thin; scrollbar-color: var(--amarillo) transparent;}
+        .side-content { flex: 1; overflow-y: auto; padding: 10px; }
+
+        /* HERRAMIENTAS DE DIBUJO (BOTONES LIMPIOS) */
+        .drawing-tools { 
+            display: flex; justify-content: center; gap: 10px; padding: 10px; background: white; 
+            border-bottom: 1px solid var(--gris-borde);
+        }
+        .tool-btn { 
+            cursor: pointer; padding: 8px 12px; border-radius: 4px; border: 1px solid var(--gris-borde);
+            background: white; font-size: 13px; color: #5f6368; transition: 0.2s;
+        }
+        .tool-btn:hover { background: #f1f3f4; border-color: var(--azul-google); color: var(--azul-google); }
+
+        /* TARJETAS DE CAPAS (ESTILO MY MAPS) */
+        .layer-item { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px; }
+        .layer-header-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; }
+        .layer-header-row input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+        .layer-title { font-weight: 500; font-size: 14px; color: #3c4043; flex: 1; }
         
-        .layer-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 2px solid transparent; cursor: pointer; }
-        .layer-card.active { border-color: var(--amarillo); background: #233149; }
-        .layer-header { display: flex; justify-content: space-between; align-items: center; }
-        .layer-name { font-weight: 800; font-size: 14px; color: white; display: flex; align-items: center; gap: 10px; }
+        .item-list { list-style: none; padding: 0 0 0 32px; margin: 0; }
+        .feature-row { 
+            display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; 
+            color: #5f6368; cursor: pointer; border-radius: 4px; 
+        }
+        .feature-row:hover { background: #f1f3f4; color: #202124; }
+        .item-icon { width: 12px; height: 12px; border-radius: 2px; }
+
+        .btn-add-layer { 
+            width: 100%; padding: 10px; background: white; border: 1px dashed var(--azul-google); 
+            color: var(--azul-google); font-weight: 500; cursor: pointer; border-radius: 4px; margin-top: 10px;
+        }
+
+        /* MODALES PEQUEÑOS Y CON SCROLL */
+        .modal { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            z-index: 2000; background: white; width: 400px; max-height: 80vh;
+            padding: 24px; border-radius: 8px; box-shadow: 0 24px 38px rgba(0,0,0,0.14);
+            display: none; overflow-y: auto;
+        }
+        .modal h2 { margin-top: 0; font-size: 18px; }
+        .input-google { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid var(--gris-borde); border-radius: 4px; box-sizing: border-box; }
+        .scroll-list { max-height: 150px; overflow-y: scroll; border: 1px solid #eee; padding: 10px; margin: 10px 0; }
         
-        .feature-list { list-style: none; padding: 0; margin: 10px 0 0 25px; font-size: 12px; color: #cbd5e1; display: none; max-height: 250px; overflow-y: auto; }
-        .layer-card.active .feature-list { display: block; }
-        .feature-item { padding: 8px 5px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .feature-item:hover { color: var(--amarillo); background: rgba(255,255,255,0.1); }
-
-        .btn-create { background: transparent; color: var(--azul); border: 2px dashed var(--azul); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 10px; }
-
-        /* MODALES COMPACTOS CON SCROLL */
-        .config-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; color: #333; width: 420px; max-height: 80vh; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 25px 70px rgba(0,0,0,0.9); overflow-y: auto; }
-        .modal-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        
-        .field-scroll-container { max-height: 180px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
-        .col-option { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
-
-        /* POPUP */
-        .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; overflow: hidden; }
-        .ficha-header { background: #f1f5f9; padding: 15px; border-bottom: 4px solid var(--amarillo); font-weight: 800; color: #1e293b; font-size: 16px; }
-        .ficha-body { padding: 15px; background: white; color: #333; font-size: 13px; }
+        /* ESTILO DIBUJO NEGRO/BLANCO */
+        .leaflet-draw-draw-polygon { stroke: #000 !important; stroke-width: 4px !important; }
+        .leaflet-draw-guide-marker { background: #fff !important; border: 2px solid #000 !important; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="brand-header">
-    <b>HACIENDA AYACUCHO</b>
-    <span style="color:var(--amarillo); font-size:10px; font-weight:800; display:block;">SGF MASTER - CONTROL FISCAL</span>
-</div>
-
-<div class="top-search-container">
-    <input type="text" class="top-search" placeholder="🔍 Buscar contribuyente o censo...">
-</div>
-
-<div class="drawing-toolbar">
-    <div class="tool-btn" id="btn-poly">📐 Trazar Bloque</div>
-    <div class="tool-btn" id="btn-marker">📍 Punto Censo</div>
-</div>
-
-<div id="create-modal" class="config-modal">
-    <b style="font-size: 18px; display:block; margin-bottom:15px;">Nueva Capa de Datos</b>
-    <input type="text" id="layer-name-in" class="modal-input" placeholder="Nombre (Ej: Sector Centro)">
-    <input type="text" id="layer-url-in" class="modal-input" placeholder="URL de Google Sheets (Opcional)">
-    <div style="display:flex; gap:10px; margin-top:15px;">
-        <button onclick="closeModal('create-modal')" style="flex:1; padding:10px; cursor:pointer; border:1px solid #ccc; border-radius:4px;">Cancelar</button>
-        <button onclick="processLayerRequest()" style="flex:1; padding:10px; background:var(--azul); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Siguiente</button>
+<div class="top-ui-container">
+    <div class="search-box">
+        <input type="text" placeholder="Buscar en Hacienda Ayacucho...">
+        <span style="color: #5f6368;">🔍</span>
     </div>
 </div>
 
-<div id="mapeo-modal" class="config-modal">
-    <b style="font-size: 16px; display:block; margin-bottom:5px;">Elige las columnas de ubicación</b>
-    <div class="field-scroll-container" id="lat-lon-fields"></div>
+<div id="sidebar-floating">
+    <div class="sidebar-header">
+        <h1>SGF MASTER - Ayacucho</h1>
+        <p>CONTROL FISCAL MUNICIPAL</p>
+    </div>
     
-    <b style="font-size: 16px; display:block; margin-top:15px; margin-bottom:5px;">Elige la columna de título</b>
-    <div class="field-scroll-container" id="title-fields"></div>
-    
-    <div style="display:flex; gap:10px; margin-top:20px;">
-        <button onclick="closeModal('mapeo-modal')" style="flex:1; padding:10px; cursor:pointer; border:1px solid #ccc; border-radius:4px;">Cancelar</button>
-        <button id="btn-finalizar" style="flex:1; padding:10px; background:var(--azul); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Importar Datos</button>
+    <div class="drawing-tools">
+        <div class="tool-btn" id="btn-poly">📐 Polígono</div>
+        <div class="tool-btn" id="btn-marker">📍 Marcador</div>
+        <div class="tool-btn" onclick="location.reload()">🔄 Limpiar</div>
     </div>
-</div>
 
-<aside id="sidebar">
-    <div class="side-title">
-        <h2 style="margin:0; color:white; font-size:24px;">SGF MASTER</h2>
-        <small style="color:var(--amarillo); font-weight:800;">GESTIÓN ESTILO MY MAPS</small>
-    </div>
     <div class="side-content">
-        <div id="dynamic-layers"></div>
-        <button class="btn-create" onclick="openModal('create-modal')">✚ AÑADIR CAPA</button>
+        <div id="layers-container">
+            </div>
+        <button class="btn-add-layer" onclick="showModal('create-modal')">+ Importar o Crear Capa</button>
     </div>
-</aside>
+</div>
+
+<div id="create-modal" class="modal">
+    <h2>Nueva capa</h2>
+    <input type="text" id="layer-name-in" class="input-google" placeholder="Nombre de la capa">
+    <input type="text" id="layer-url-in" class="input-google" placeholder="URL CSV (Google Sheets)">
+    <div style="text-align: right; margin-top: 20px;">
+        <button onclick="hideModal('create-modal')" style="background:none; border:none; color:#5f6368; cursor:pointer;">Cancelar</button>
+        <button onclick="handleLayerCreation()" style="background:var(--azul-google); color:white; border:none; padding:8px 16px; border-radius:4px; cursor:pointer; margin-left:10px;">Continuar</button>
+    </div>
+</div>
+
+<div id="mapeo-modal" class="modal">
+    <h2>Configurar columnas</h2>
+    <p style="font-size: 13px;">Selecciona columnas de Latitud y Longitud:</p>
+    <div class="scroll-list" id="coord-fields"></div>
+    
+    <p style="font-size: 13px;">Selecciona columna de Título:</p>
+    <div class="scroll-list" id="title-fields"></div>
+    
+    <div style="text-align: right; margin-top: 20px;">
+        <button onclick="finalizeImport()" style="background:var(--azul-google); color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer;">Finalizar Importación</button>
+    </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
+    // INICIALIZACIÓN
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
 
-    let capasDB = {}; 
-    let capaActivaId = null;
-    let tempRawData = null; 
-    let tempName = null; 
+    let capasDB = {};
+    let activeCapaId = null;
+    let rawCSV = null;
+    let tempLayerName = null;
 
-    const polyDrawer = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 4, fillOpacity: 0.4 } });
+    // HERRAMIENTAS
+    const polyDrawer = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 4, fillOpacity: 0.3 } });
     const markerDrawer = new L.Draw.Marker(map);
-    document.getElementById('btn-poly').onclick = () => { if(capaActivaId) polyDrawer.enable(); else alert("Selecciona una capa primero."); };
-    document.getElementById('btn-marker').onclick = () => { if(capaActivaId) markerDrawer.enable(); else alert("Selecciona una capa primero."); };
+
+    document.getElementById('btn-poly').onclick = () => { if(activeCapaId) polyDrawer.enable(); else alert("Selecciona una capa"); };
+    document.getElementById('btn-marker').onclick = () => { if(activeCapaId) markerDrawer.enable(); else alert("Selecciona una capa"); };
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const layer = e.layer;
-        const nombre = prompt("Nombre del elemento:");
-        if(nombre) {
-            const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-            if(layer instanceof L.Polygon) layer.setStyle({ fillColor: randomColor, color: '#000' });
-            
-            layer.bindPopup(`<b>${nombre}</b><br>Capa: ${capasDB[capaActivaId].name}`);
-            const leafletId = capasDB[capaActivaId].group.addLayer(layer)._leaflet_id;
-            
-            capasDB[capaActivaId].features.push({ leafletId: leafletId, name: nombre, type: layer instanceof L.Polygon ? 'poly' : 'marker', color: randomColor });
-            renderFeatureInSidebar(capaActivaId, capasDB[capaActivaId].features.slice(-1)[0]);
-        }
+        const nombre = prompt("Nombre:");
+        if(!nombre) return;
+
+        const color = '#' + Math.floor(Math.random()*16777215).toString(16);
+        if(layer instanceof L.Polygon) layer.setStyle({ fillColor: color });
+
+        const leafletId = capasDB[activeCapaId].group.addLayer(layer)._leaflet_id;
+        capasDB[activeCapaId].items.push({ id: leafletId, name: nombre, color: color, type: layer instanceof L.Polygon ? 'poly' : 'marker' });
+        
+        renderItems(activeCapaId);
     });
 
-    function openModal(id) { document.getElementById(id).style.display = 'block'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    // GESTIÓN DE MODALES
+    function showModal(id) { document.getElementById(id).style.display = 'block'; }
+    function hideModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    function processLayerRequest() {
-        tempName = document.getElementById('layer-name-in').value;
+    function handleLayerCreation() {
+        tempLayerName = document.getElementById('layer-name-in').value;
         const url = document.getElementById('layer-url-in').value;
-        if(!tempName) return alert("Ponle nombre a la capa.");
-        if(!url) { saveCapaFinal(null); closeModal('create-modal'); } 
-        else { importAndMap(url); }
+        if(!tempLayerName) return;
+
+        if(!url) { createLayerRecord(tempLayerName); hideModal('create-modal'); }
+        else { 
+            let csvUrl = url.includes('docs.google.com') ? url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=') : url;
+            Papa.parse(csvUrl, {
+                download: true, header: true,
+                complete: (results) => {
+                    rawCSV = results.data;
+                    const headers = results.meta.fields;
+                    fillMapeo(headers);
+                    hideModal('create-modal');
+                    showModal('mapeo-modal');
+                }
+            });
+        }
     }
 
-    function importAndMap(url) {
-        if(url.includes('docs.google.com')) url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=');
-        Papa.parse(url, {
-            download: true, header: true,
-            complete: function(results) {
-                if(results.errors.length > 0) return alert("Error leyendo el CSV. ¿Es público?");
-                tempRawData = results.data;
-                const headers = results.meta.fields;
-                
-                let latLonHtml = '<p style="font-size:12px; margin:0 0 5px 0;">LATITUD:</p>';
-                headers.forEach((h, i) => latLonHtml += `<div class="col-option"><input type="radio" name="lat-field" value="${h}" id="lat_${i}"><label for="lat_${i}">${h}</label></div>`);
-                latLonHtml += '<p style="font-size:12px; margin:15px 0 5px 0;">LONGITUD:</p>';
-                headers.forEach((h, i) => latLonHtml += `<div class="col-option"><input type="radio" name="lon-field" value="${h}" id="lon_${i}"><label for="lon_${i}">${h}</label></div>`);
-                
-                let titleHtml = '';
-                headers.forEach((h, i) => titleHtml += `<div class="col-option"><input type="radio" name="title-field" value="${h}" id="title_${i}"><label for="title_${i}">${h}</label></div>`);
+    function fillMapeo(headers) {
+        let hCoord = '<b>Latitud:</b><br>';
+        headers.forEach(h => hCoord += `<label><input type="radio" name="lat" value="${h}"> ${h}</label><br>`);
+        hCoord += '<br><b>Longitud:</b><br>';
+        headers.forEach(h => hCoord += `<label><input type="radio" name="lon" value="${h}"> ${h}</label><br>`);
+        
+        let hTitle = '';
+        headers.forEach(h => hTitle += `<label><input type="radio" name="title" value="${h}"> ${h}</label><br>`);
 
-                document.getElementById('lat-lon-fields').innerHTML = latLonHtml;
-                document.getElementById('title-fields').innerHTML = titleHtml;
-                
-                closeModal('create-modal');
-                openModal('mapeo-modal');
-                document.getElementById('btn-finalizar').onclick = finalizeMapping;
-            }
-        });
+        document.getElementById('coord-fields').innerHTML = hCoord;
+        document.getElementById('title-fields').innerHTML = hTitle;
     }
 
-    function finalizeMapping() {
-        const latCol = document.querySelector('input[name="lat-field"]:checked')?.value;
-        const lonCol = document.querySelector('input[name="lon-field"]:checked')?.value;
-        const titleCol = document.querySelector('input[name="title-field"]:checked')?.value;
-        if(!latCol || !lonCol || !titleCol) return alert("Faltan columnas por seleccionar.");
+    function finalizeImport() {
+        const latC = document.querySelector('input[name="lat"]:checked')?.value;
+        const lonC = document.querySelector('input[name="lon"]:checked')?.value;
+        const titC = document.querySelector('input[name="title"]:checked')?.value;
 
         const group = new L.FeatureGroup().addTo(map);
-        const featureList = [];
+        const items = [];
 
-        tempRawData.forEach(row => {
-            let lat = parseFloat(row[latCol]);
-            let lon = parseFloat(row[lonCol]);
-            if(row[latCol] && row[latCol].includes('(')) {
-                let clean = row[latCol].replace(/[()]/g, '').split(/[\s,]+/);
-                lat = parseFloat(clean[0]); lon = parseFloat(clean[1]);
+        rawCSV.forEach(row => {
+            let lat = parseFloat(row[latC]), lon = parseFloat(row[lonC]);
+            if(row[latC]?.includes('(')) {
+                let c = row[latC].replace(/[()]/g, '').split(/[\s,]+/);
+                lat = parseFloat(c[0]); lon = parseFloat(c[1]);
             }
-            if(!isNaN(lat) && !isNaN(lon)) {
-                const m = L.marker([lat, lon]);
-                const nombre = row[titleCol] || 'Punto';
-                m.bindPopup(`<div class="ficha-header">${nombre}</div><div class="ficha-body">Censo: ${row['N° de censo'] || 'N/A'}</div>`);
-                const leafletId = group.addLayer(m)._leaflet_id;
-                featureList.push({ leafletId: leafletId, name: nombre, type: 'marker' });
+            if(!isNaN(lat)) {
+                const m = L.marker([lat, lon]).bindPopup(`<b>${row[titC]}</b>`);
+                const id = group.addLayer(m)._leaflet_id;
+                items.push({ id: id, name: row[titC] || 'Punto', type: 'marker' });
             }
         });
 
-        saveCapaFinal(group, featureList);
-        closeModal('mapeo-modal');
-        tempRawData = null; 
+        createLayerRecord(tempLayerName, group, items);
+        hideModal('mapeo-modal');
     }
 
-    function saveCapaFinal(featureGroup, featureList) {
-        const id = 'layer_' + Date.now();
-        const group = featureGroup || new L.FeatureGroup().addTo(map);
-        capasDB[id] = { name: tempName, group: group, features: featureList || [], isVisible: true };
+    function createLayerRecord(name, group = null, items = []) {
+        const id = 'l_' + Date.now();
+        capasDB[id] = { name: name, group: group || new L.FeatureGroup().addTo(map), items: items, visible: true };
         
         const html = `
-            <div class="layer-card" id="card-${id}" onclick="selectLayer('${id}')">
-                <div class="layer-header">
-                    <span class="layer-name">
-                        <input type="checkbox" checked onclick="toggleVisibility(event, '${id}')" title="Mostrar/Ocultar">
-                        📁 ${tempName}
-                    </span>
-                    <span style="color:var(--rojo); cursor:pointer;" onclick="deleteLayer(event, '${id}')">🗑️</span>
+            <div class="layer-item" id="cont-${id}">
+                <div class="layer-header-row" onclick="setActive('${id}')">
+                    <input type="checkbox" checked onclick="toggleVis(event, '${id}')">
+                    <span class="layer-title">📁 ${name}</span>
                 </div>
-                <div style="font-size: 11px; color: var(--amarillo); margin-top: 5px;" id="stats-${id}">Elementos: ${group.getLayers().length}</div>
-                <ul class="feature-list" id="features-${id}"></ul>
+                <ul class="item-list" id="list-${id}"></ul>
             </div>`;
-        document.getElementById('dynamic-layers').insertAdjacentHTML('beforeend', html);
-        
-        capasDB[id].features.forEach(f => renderFeatureInSidebar(id, f));
-        selectLayer(id);
-        
-        document.getElementById('layer-name-in').value = "";
-        document.getElementById('layer-url-in').value = "";
+        document.getElementById('layers-container').insertAdjacentHTML('beforeend', html);
+        setActive(id);
+        renderItems(id);
     }
 
-    function renderFeatureInSidebar(layerId, feature) {
-        const list = document.getElementById('features-' + layerId);
-        const icon = feature.type === 'poly' ? `<div style="width:12px;height:12px;background:${feature.color};border:1px solid #fff"></div>` : `📍`;
-        const itemHtml = `<li class="feature-item" onclick="zoomToFeature(event, '${layerId}', ${feature.leafletId})">${icon} <span>${feature.name}</span></li>`;
-        list.insertAdjacentHTML('beforeend', itemHtml);
-        document.getElementById('stats-' + layerId).innerText = `Elementos: ${capasDB[layerId].group.getLayers().length}`;
+    function renderItems(lid) {
+        const list = document.getElementById('list-' + lid);
+        list.innerHTML = '';
+        capasDB[lid].items.forEach(item => {
+            const icon = item.type === 'poly' ? `<div class="item-icon" style="background:${item.color}"></div>` : '📍';
+            list.insertAdjacentHTML('beforeend', `
+                <li class="feature-row" onclick="focusItem('${lid}', ${item.id})">
+                    ${icon} <span>${item.name}</span>
+                </li>`);
+        });
     }
 
-    function toggleVisibility(e, id) {
+    function setActive(id) {
+        activeCapaId = id;
+        document.querySelectorAll('.layer-item').forEach(el => el.style.background = 'none');
+        document.getElementById('cont-' + id).style.background = '#f1f3f4';
+    }
+
+    function toggleVis(e, id) {
         e.stopPropagation();
-        capasDB[id].isVisible = e.target.checked;
-        if(capasDB[id].isVisible) map.addLayer(capasDB[id].group);
+        if(e.target.checked) map.addLayer(capasDB[id].group);
         else map.removeLayer(capasDB[id].group);
     }
 
-    function zoomToFeature(e, layerId, leafletId) {
-        e.stopPropagation(); 
-        const layer = capasDB[layerId].group.getLayer(leafletId);
-        if(layer) {
-            map.setView(layer.getBounds ? layer.getBounds().getCenter() : layer.getLatLng(), 18);
-            layer.openPopup();
+    function focusItem(lid, iid) {
+        const l = capasDB[lid].group.getLayer(iid);
+        if(l) {
+            map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 18);
+            l.openPopup();
         }
-    }
-
-    function selectLayer(id) {
-        capaActivaId = id;
-        document.querySelectorAll('.layer-card').forEach(c => c.classList.remove('active'));
-        document.getElementById('card-' + id).classList.add('active');
-    }
-
-    function deleteLayer(e, id) {
-        e.stopPropagation(); 
-        if(confirm("¿Eliminar capa?")) { 
-            map.removeLayer(capasDB[id].group); 
-            delete capasDB[id]; 
-            document.getElementById('card-' + id).remove(); 
-            if(capaActivaId === id) capaActivaId = null; 
-        } 
     }
 </script>
 </body>
