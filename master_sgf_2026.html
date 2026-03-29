@@ -2,146 +2,259 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF - AYACUCHO FINAL</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGF - HACIENDA MUNICIPAL AYACUCHO (MASTER)</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    
     <style>
-        :root { --am: #ffcc00; --rj: #e60000; --vd: #007a33; --dk: #0f172a; }
-        body { margin: 0; font-family: sans-serif; display: flex; height: 100vh; background: #000; overflow: hidden; }
+        :root { 
+            --amarillo: #ffcc00; 
+            --rojo: #e60000; 
+            --verde: #007a33; 
+            --fondo: #0f172a; 
+            --card: #1e293b; 
+        }
+
+        body { margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; display: flex; height: 100vh; background: #000; color: white; overflow: hidden; }
+        
         #map { flex: 1; z-index: 1; background: #000; }
         .leaflet-control-attribution { display: none !important; }
 
-        .brand-header { 
+        /* 1. IDENTIDAD INSTITUCIONAL (Foto 1-3) */
+        .brand-box { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.95); padding: 15px; border-radius: 8px;
-            border-left: 5px solid var(--am); color: white; backdrop-filter: blur(10px);
+            background: rgba(15, 23, 42, 0.9); padding: 15px 25px; border-radius: 10px;
+            border-left: 6px solid var(--amarillo); border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
+        .brand-box b { display: block; font-size: 18px; letter-spacing: 1px; text-transform: uppercase; }
+        .brand-box span { font-size: 11px; color: var(--amarillo); font-weight: 800; }
 
-        #sidebar { width: 400px; background: var(--dk); border-left: 1px solid #334155; display: flex; flex-direction: column; }
-        .side-header { padding: 30px 20px; text-align: center; position: relative; background: #1e293b; color: white; }
+        /* 2. BUSCADOR GLOBAL (Foto 11) */
+        .search-bar { 
+            position: absolute; top: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; 
+            width: 450px; background: white; border-radius: 50px; padding: 12px 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4); display: flex; align-items: center;
+        }
+        .search-bar input { border: none; outline: none; width: 100%; font-size: 15px; font-weight: 700; color: #0f172a; }
+
+        /* 3. SIDEBAR CON TRICOLOR (Foto 2, 6, 9) */
+        #sidebar { width: 440px; background: var(--fondo); display: flex; flex-direction: column; border-left: 1px solid #334155; }
+        
+        .side-header { 
+            padding: 40px 20px; text-align: center; position: relative;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+        }
+        /* El Tricolor Municipal */
         .side-header::after {
-            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 5px;
-            background: linear-gradient(to right, var(--am) 33.3%, var(--rj) 33.3% 66.6%, var(--vd) 66.6%);
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 6px;
+            background: linear-gradient(to right, var(--amarillo) 33.3%, var(--rojo) 33.3% 66.6%, var(--verde) 66.6%);
         }
-        
-        .side-content { flex: 1; overflow-y: auto; padding: 20px; }
-        .btn-add { width: 100%; padding: 15px; background: var(--am); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 20px; }
 
-        .layer-box { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; color: white; }
-        .url-in { width: 100%; padding: 8px; background: #020617; border: 1px solid #475569; color: white; border-radius: 4px; font-size: 11px; margin: 10px 0; }
+        .side-content { flex: 1; overflow-y: auto; padding: 25px; }
         
-        .btn-s { padding: 10px; border: none; border-radius: 4px; background: #334155; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 5px; }
-        .btn-draw { background: transparent; border: 1px solid var(--am); color: var(--am); }
+        .btn-main { 
+            width: 100%; padding: 16px; background: var(--amarillo); border: none; 
+            border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 25px; 
+            color: #000; transition: 0.3s;
+        }
+        .btn-main:hover { background: #e6b800; transform: translateY(-2px); }
+
+        /* 4. TARJETAS DE CAPAS (Foto 9-10) */
+        .layer-card { background: var(--card); border-radius: 12px; padding: 18px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .layer-card b { color: var(--amarillo); font-size: 15px; display: block; margin-bottom: 12px; }
+        
+        .input-url { 
+            width: 100%; padding: 10px; background: #020617; border: 1px solid #475569; 
+            color: white; border-radius: 6px; font-size: 11px; margin-bottom: 12px; 
+        }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-tool { padding: 12px; font-size: 11px; border: none; border-radius: 6px; background: #334155; color: white; font-weight: 800; cursor: pointer; }
+        
+        .btn-draw { 
+            grid-column: span 2; border: 1px solid var(--amarillo); background: transparent; 
+            color: var(--amarillo); margin-top: 5px; 
+        }
+        .btn-draw.active { background: var(--rojo); color: white; border-color: white; }
+
+        /* 5. POPUPS Y FICHAS (Foto 15-16) */
+        .p-card { width: 300px; color: #000; }
+        .p-head { background: #f1f5f9; padding: 12px; font-weight: 900; border-bottom: 4px solid var(--verde); border-radius: 5px 5px 0 0; }
+        .p-body { padding: 10px; font-size: 12px; max-height: 250px; overflow-y: auto; background: white; }
+        .p-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .p-row b { color: #64748b; font-size: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div class="brand-header"><b>HACIENDA MUNICIPAL AYACUCHO</b><br><small style="color:var(--am)">SGF MASTER - 2026</small></div>
+
+<div class="brand-box">
+    <b>HACIENDA MUNICIPAL AYACUCHO</b>
+    <span>SGF - GESTIÓN FISCAL MASTER</span>
+</div>
+
+<div class="search-bar">
+    <input type="text" id="map-search" placeholder="Buscar RIF, Comercio o Estatus..." onkeyup="filterMap()">
+</div>
 
 <aside id="sidebar">
-    <div class="side-header"><h3 style="margin:0;">GESTIÓN FISCAL</h3></div>
+    <div class="side-header">
+        <h2 style="margin:0; font-size:22px;">GESTIÓN FISCAL</h2>
+        <small style="color:var(--amarillo); font-weight:900;">MUNICIPIO AYACUCHO</small>
+    </div>
     <div class="side-content">
-        <button class="btn-add" onclick="createLayer()">+ VINCULAR HOJA DE CÁLCULO</button>
-        <div id="layer-list"></div>
+        <button class="btn-main" onclick="createNewLayer()">+ VINCULAR CAPA GOOGLE SHEETS</button>
+        <div id="layer-container"></div>
     </div>
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
 <script>
-    let LAYERS = {}; 
+    let MAP_LAYERS = {}; 
+    let CURRENT_ID = null;
+    let DRAW_CONTROL = null;
 
-    const sat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
-    const map = L.map('map', { center: [8.033, -72.256], zoom: 16, layers: [sat], zoomControl: false });
+    // INICIALIZACIÓN DE MAPA (Google Satelital)
+    const satLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
+    const map = L.map('map', { 
+        center: [8.033, -72.256], 
+        zoom: 16, 
+        layers: [satLayer],
+        zoomControl: false 
+    });
 
-    function createLayer() {
-        const n = prompt("Nombre Capa:"); if(!n) return;
-        const id = 'L'+Date.now();
-        LAYERS[id] = { name: n, group: L.featureGroup().addTo(map), url: '' };
-        render();
+    // Control de Capas superior derecha
+    L.control.layers({ "Satélite": satLayer, "Calles": L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}') }, null, { position: 'topright' }).addTo(map);
+
+    function createNewLayer() {
+        const name = prompt("Nombre para esta capa:");
+        if(!name) return;
+        const id = 'layer_' + Date.now();
+        MAP_LAYERS[id] = { name: name, group: L.featureGroup().addTo(map), url: '', drawing: false };
+        updateUI();
     }
 
-    function render() {
-        const list = document.getElementById('layer-list'); list.innerHTML = "";
-        Object.keys(LAYERS).forEach(id => {
-            const l = LAYERS[id];
-            list.innerHTML += `<div class="layer-box">
-                <b>${l.name}</b>
-                <input type="text" class="url-in" placeholder="Link de Google Sheets..." onchange="updUrl('${id}', this.value)" value="${l.url}">
-                <button class="btn-s" onclick="sync('${id}')">🔄 CARGAR COMERCIOS</button>
-            </div>`;
+    function updateUI() {
+        const container = document.getElementById('layer-container');
+        container.innerHTML = "";
+        Object.keys(MAP_LAYERS).forEach(id => {
+            const l = MAP_LAYERS[id];
+            container.innerHTML += `
+                <div class="layer-card">
+                    <b>${l.name}</b>
+                    <input type="text" class="input-url" placeholder="Pegar URL /export?format=csv..." 
+                           onchange="saveUrl('${id}', this.value)" value="${l.url}">
+                    <div class="btn-group">
+                        <button class="btn-tool" onclick="syncLayer('${id}')">🔄 SINCRONIZAR</button>
+                        <button class="btn-tool" onclick="alert('Módulo de Ficha Técnica Activo')">📋 FICHA</button>
+                        <button class="btn-tool btn-draw ${l.drawing?'active':''}" onclick="toggleDraw('${id}')">
+                            ${l.drawing ? 'TERMINAR DIBUJO' : '✏️ DIBUJAR SECTOR'}
+                        </button>
+                    </div>
+                </div>`;
         });
     }
 
-    function updUrl(id, u) { 
-        if(u.includes('/edit')) u = u.split('/edit')[0] + '/export?format=csv'; 
-        LAYERS[id].url = u; 
+    function saveUrl(id, url) {
+        if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
+        MAP_LAYERS[id].url = url;
     }
 
-    function sync(id) {
-        if(!LAYERS[id].url) return alert("Pega el link primero.");
+    function syncLayer(id) {
+        if(!MAP_LAYERS[id].url) return alert("Por favor pegue el enlace de Google Sheets.");
         
-        Papa.parse(LAYERS[id].url, {
-            download: true, 
-            header: true, 
-            skipEmptyLines: true,
-            complete: r => {
-                const group = LAYERS[id].group; 
-                group.clearLayers();
-                let contador = 0;
+        Papa.parse(MAP_LAYERS[id].url, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: results => {
+                const group = MAP_LAYERS[id].group;
+                group.eachLayer(layer => { if(layer instanceof L.CircleMarker) group.removeLayer(layer); });
 
-                r.data.forEach(row => {
-                    // --- MOTOR DE BÚSQUEDA DE COORDINADAS (REPARADO) ---
-                    let raw = "";
-                    
-                    // Buscamos la columna por nombre exacto o parcial (insensible a mayúsculas/minúsculas)
-                    Object.keys(row).forEach(key => {
-                        let k = key.toLowerCase().trim();
-                        if(k.includes('coordenadas') || k.includes('gps')) {
-                            raw = row[key];
-                        }
-                    });
-
+                results.data.forEach(row => {
+                    // EXTRACTOR DE COORDENADAS (Soporta columna 'coordenadas gps (oficina)')
+                    let raw = row['coordenadas gps (oficina)'] || row['Coordenadas'] || "";
                     if(raw) {
-                        // Limpiamos la cadena de paréntesis, corchetes y espacios extra
-                        let limpio = raw.replace(/[()\[\]]/g, '').replace(/\s+/g, ' ').trim();
-                        let partes = limpio.split(/[\s,]+/); 
-                        
-                        let lat = parseFloat(partes[0]);
-                        let lon = parseFloat(partes[1]);
+                        let clean = raw.replace(/[()\[\]]/g, '').split(/[\s,]+/);
+                        let lat = parseFloat(clean[0]);
+                        let lon = parseFloat(clean[1]);
 
                         if(!isNaN(lat) && !isNaN(lon)) {
-                            // Definimos color por estatus
                             let estatus = (row.Estatus || row.Estado || "").toUpperCase();
                             let color = estatus.includes("MORA") ? "#ef4444" : "#10b981";
-
-                            const m = L.circleMarker([lat, lon], { 
+                            
+                            const marker = L.circleMarker([lat, lon], { 
                                 radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 
                             });
 
-                            // Popup automático con todos los datos del Excel
-                            let info = `<div style="color:black"><b>${row.Nombre || 'Comercio'}</b><br>`;
-                            Object.keys(row).forEach(k => { 
-                                if(row[k] && k.length < 25) info += `<small><b>${k}:</b> ${row[k]}</small><br>`; 
+                            // FICHA DE POPUP COMPLETA
+                            let popupHtml = `<div class="p-card"><div class="p-head">${row.Nombre || 'SIN NOMBRE'}</div><div class="p-body">`;
+                            Object.keys(row).forEach(key => { 
+                                if(row[key]) popupHtml += `<div class="p-row"><b>${key}</b><span>${row[key]}</span></div>`; 
                             });
-                            m.bindPopup(info + `</div>`);
-                            
-                            group.addLayer(m);
-                            contador++;
+                            marker.bindPopup(popupHtml + `</div></div>`);
+                            group.addLayer(marker);
                         }
                     }
                 });
-
-                if(contador > 0) {
-                    map.fitBounds(group.getBounds());
-                    alert(`Capa '${LAYERS[id].name}' cargada con ${contador} comercios.`);
-                } else {
-                    alert("Error: No se encontraron coordenadas válidas. Verifique que la columna se llame 'coordenadas gps (oficina)'");
-                }
+                if(group.getLayers().length > 0) map.fitBounds(group.getBounds());
+                alert("Capa sincronizada. Comercios cargados: " + group.getLayers().length);
             }
+        });
+    }
+
+    function toggleDraw(id) {
+        if(MAP_LAYERS[id].drawing) {
+            map.removeControl(DRAW_CONTROL);
+            MAP_LAYERS[id].drawing = false;
+        } else {
+            CURRENT_ID = id;
+            MAP_LAYERS[id].drawing = true;
+            DRAW_CONTROL = new L.Control.Draw({
+                draw: { polyline: false, circle: false, marker: false, circlemarker: false, rectangle: true, polygon: true }
+            });
+            map.addControl(DRAW_CONTROL);
+        }
+        updateUI();
+    }
+
+    map.on(L.Draw.Event.CREATED, function (e) {
+        const sectorName = prompt("Nombre del Sector Dibujado:");
+        if(!sectorName) return;
+        
+        const layer = e.layer;
+        layer.options.color = '#ffcc00';
+        MAP_LAYERS[CURRENT_ID].group.addLayer(layer);
+        
+        // CENSO ESPACIAL AUTOMÁTICO
+        let censo = 0;
+        const polygonGeo = layer.toGeoJSON();
+        Object.keys(MAP_LAYERS).forEach(id => {
+            MAP_LAYERS[id].group.eachLayer(m => {
+                if(m instanceof L.CircleMarker && turf.booleanPointInPolygon(m.toGeoJSON(), polygonGeo)) censo++;
+            });
+        });
+
+        layer.bindPopup(`<b>SECTOR: ${sectorName}</b><br>Censo Fiscal: ${censo} comercios`);
+        toggleDraw(CURRENT_ID);
+    });
+
+    function filterMap() {
+        const query = document.getElementById('map-search').value.toLowerCase();
+        Object.keys(MAP_LAYERS).forEach(id => {
+            MAP_LAYERS[id].group.eachLayer(m => {
+                if(m instanceof L.CircleMarker) {
+                    const dataStr = JSON.stringify(m.getPopup().getContent()).toLowerCase();
+                    const visible = dataStr.includes(query);
+                    m.setStyle({ opacity: visible ? 1 : 0.1, fillOpacity: visible ? 1 : 0.1 });
+                }
+            });
         });
     }
 </script>
