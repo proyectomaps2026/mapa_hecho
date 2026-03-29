@@ -2,205 +2,231 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF Master - Hacienda Ayacucho</title>
+    <title>SGF MASTER INTERNACIONAL - Hacienda Ayacucho</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <style>
-        :root { --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; --accent: #f59e0b; }
-        body { margin: 0; display: flex; height: 100vh; font-family: 'Segoe UI', sans-serif; background: var(--dark); color: white; overflow: hidden; }
-        #map { flex: 1; background: #000; }
+        :root { --primary: #1e40af; --dark: #0f172a; --panel: #1e293b; --accent: #f59e0b; --text: #f8fafc; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); overflow: hidden; }
         
-        /* Sidebar mejorado para el Editor Master */
-        #sidebar { width: 380px; background: var(--panel); border-left: 2px solid #334155; display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.5); }
-        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: bold; border-bottom: 4px solid #3b82f6; letter-spacing: 1px; }
+        /* Contenedor Principal */
+        #map { flex: 1; z-index: 1; }
         
-        .content { flex: 1; overflow-y: auto; padding-bottom: 20px; }
-        .card { background: #334155; padding: 15px; margin: 12px; border-radius: 10px; border: 1px solid #475569; }
-        h3 { margin-top: 0; font-size: 14px; color: var(--accent); text-transform: uppercase; }
+        /* Sidebar Profesional (Foto 10, 12, 14, 15) */
+        #sidebar { width: 420px; background: var(--panel); border-left: 1px solid #334155; display: flex; flex-direction: column; z-index: 2; box-shadow: -10px 0 20px rgba(0,0,0,0.5); }
+        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: 800; font-size: 18px; border-bottom: 4px solid #3b82f6; }
         
-        /* Estilos del Editor de Renglones (Foto 11) */
-        #fields-list { list-style: none; padding: 0; margin: 10px 0; }
-        .field-item { 
-            background: #1e293b; margin-bottom: 5px; padding: 10px; border-radius: 6px; 
-            display: flex; align-items: center; cursor: grab; border: 1px solid transparent;
-            transition: 0.2s; font-size: 13px;
-        }
-        .field-item:hover { border-color: var(--accent); }
-        .field-item input[type="checkbox"] { width: auto; margin-right: 10px; cursor: pointer; }
-        .field-item .handle { margin-left: auto; color: #64748b; cursor: grab; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
+        .card { background: #334155; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #475569; position: relative; }
+        
+        /* Buscador (Foto 3, 5) */
+        .search-box { position: absolute; top: 20px; left: 20px; z-index: 1000; background: white; padding: 5px; border-radius: 8px; display: flex; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .search-box input { border: none; padding: 8px; width: 250px; outline: none; color: #333; }
 
-        /* Estilo del Popup con Imagen (Cloudinary) */
-        .popup-container { color: #333; min-width: 220px; }
-        .popup-img { width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; background: #eee; }
-        .popup-data { font-size: 12px; line-height: 1.4; }
-        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; color: white; font-weight: bold; font-size: 10px; margin-bottom: 5px; }
+        /* Capas y Estilos (Foto 7, 9, 12, 14) */
+        .layer-item { background: #1e293b; border-radius: 8px; margin-bottom: 10px; border-left: 5px solid var(--accent); }
+        .layer-header { padding: 12px; display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+        .layer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 0 10px 10px; }
+        
+        /* Editor de Ficha (Foto 11) */
+        #editor-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--panel); z-index: 9999; width: 350px; padding: 20px; border-radius: 15px; border: 2px solid var(--accent); display: none; }
+        .field-row { display: flex; align-items: center; background: #0f172a; padding: 8px; margin: 4px 0; border-radius: 5px; cursor: move; }
+        
+        /* Estilos de Popups con Imagen (Foto 8, 11) */
+        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
+        .pop-card { width: 260px; color: #333; }
+        .pop-img { width: 100%; height: 160px; object-fit: cover; border-bottom: 3px solid var(--accent); }
+        .pop-body { padding: 12px; font-size: 13px; }
+        .pop-title { font-weight: bold; font-size: 15px; margin-bottom: 5px; color: var(--primary); }
 
-        input[type="password"], input[type="text"] { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; border: none; background: #0f172a; color: white; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; background: var(--accent); color: #1e293b; transition: 0.3s; }
-        .btn:hover { background: #d97706; transform: translateY(-2px); }
-        #log { margin-top: 10px; font-size: 11px; color: #94a3b8; text-align: center; }
+        /* Botones Globales */
+        .btn-action { background: var(--accent); color: var(--dark); border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn-small { padding: 5px; font-size: 11px; background: #475569; color: white; border: none; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
+<div class="search-box">
+    <input type="text" id="mapSearch" placeholder="🔍 Buscar comercio o dirección...">
+</div>
+
 <div id="map"></div>
 
 <div id="sidebar">
-    <div class="header">SGF MASTER: AYACUCHO</div>
-    <div class="content">
+    <div class="header">SGF MASTER v2.0</div>
+    <div class="scroll-area">
         <div class="card">
-            <h3>Control de Sincronización</h3>
-            <button class="btn" onclick="triggerBridge()">⚡ ACTUALIZAR AIRTABLE</button>
-            <div id="log">SISTEMA AYACUCHO LISTO</div>
-            <input type="password" id="ghToken" placeholder="Token de GitHub">
+            <button class="btn-action" onclick="createNewLayer()">📂 CREAR NUEVA CAPA</button>
         </div>
 
-        <div class="card">
-            <h3>Configuración de Ficha (Jefa)</h3>
-            <p style="font-size: 11px; color: #cbd5e1;">Arrastra para ordenar. Marca para mostrar.</p>
-            <ul id="fields-list">
-                </ul>
-            <button class="btn" style="background: #10b981; color: white;" onclick="saveMasterConfig()">💾 GUARDAR VISTA</button>
-        </div>
+        <div id="layers-list"></div>
 
         <div class="card">
-            <h3>Capas Activas</h3>
-            <label style="display:block; margin-bottom:5px;"><input type="checkbox" checked onchange="toggleLayer('puntos')"> Comercios (Puntos)</label>
-            <label style="display:block;"><input type="checkbox" checked onchange="toggleLayer('poligonos')"> Zonas/Bloques (Áreas)</label>
+            <h3>Sincronización Bridge</h3>
+            <input type="password" id="ghToken" placeholder="GitHub Token" style="width:100%; padding:8px; margin:10px 0; border-radius:5px;">
+            <button class="btn-action" style="background:#22c55e; color:white;" onclick="triggerBridge()">🚀 ACTUALIZAR SERVIDOR</button>
         </div>
     </div>
 </div>
 
+<div id="editor-modal">
+    <h3 style="margin-top:0">Configurar Ficha</h3>
+    <div id="sortable-fields"></div>
+    <button class="btn-action" style="margin-top:15px" onclick="closeEditor()">GUARDAR CAMBIOS</button>
+</div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
 <script>
-    // --- MAPA Y CAPAS ---
-    const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3']
-    });
+    // 1. INICIALIZACIÓN (Foto 1, 2)
+    const map = L.map('map', { center: [8.03317, -72.25693], zoom: 16, attributionControl: false });
+    const googleHybrid = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
 
-    const map = L.map('map', {
-        center: [8.03317, -72.25693],
-        zoom: 16,
-        layers: [googleHybrid],
-        attributionControl: false 
-    });
+    let layersData = {}; // Almacén de todo el trabajo
+    let currentActiveLayer = null;
 
-    const markersLayer = L.layerGroup().addTo(map);
-    const polygonsLayer = L.layerGroup().addTo(map);
-
-    // --- LÓGICA DE COLORES (Foto 7 y 9) ---
-    function getStatusColor(status) {
-        if (!status) return "#94a3b8";
-        const s = status.toUpperCase();
-        if (s.includes("VIGENTE")) return "#22c55e"; // Verde
-        if (s.includes("VENCIDA")) return "#eab308"; // Amarillo
-        if (s.includes("SIN")) return "#ef4444";     // Rojo
-        return "#3b82f6";                            // Azul (Temporal)
+    // 2. MOTOR DE CAPAS (Foto 10, 12, 14, 15)
+    function createNewLayer() {
+        const name = prompt("Nombre de la capa (ej: Bloque de Expansión):");
+        if (!name) return;
+        const id = 'layer_' + Date.now();
+        layersData[id] = { name, group: L.featureGroup().addTo(map), data: [], config: [] };
+        renderLayers();
     }
 
-    // --- CONFIGURACIÓN DE CAMPOS (Tu pedido de la Foto 11) ---
-    // Esto se guarda en localStorage para que tu navegador lo recuerde siempre
-    let masterFields = JSON.parse(localStorage.getItem('sgf_fields_config')) || [
-        { id: 'Nombre', visible: true },
-        { id: 'Fiscal', visible: true },
-        { id: 'Expediente', visible: true },
-        { id: 'Aseo Urbano', visible: true },
-        { id: 'Impuesto Inmuebles', visible: true },
-        { id: 'Licencia Act. Econ.', visible: true }
-    ];
-
-    function initFieldsEditor() {
-        const list = document.getElementById('fields-list');
+    function renderLayers() {
+        const list = document.getElementById('layers-list');
         list.innerHTML = "";
-        masterFields.forEach(field => {
-            const li = document.createElement('li');
-            li.className = "field-item";
-            li.setAttribute('data-id', field.id);
-            li.innerHTML = `
-                <input type="checkbox" ${field.visible ? 'checked' : ''} onchange="updateFieldVisibility('${field.id}', this.checked)">
-                <span>${field.id}</span>
-                <span class="handle">☰</span>
-            `;
-            list.appendChild(li);
+        Object.keys(layersData).forEach(id => {
+            const l = layersData[id];
+            list.innerHTML += `
+                <div class="layer-item">
+                    <div class="layer-header">
+                        <label><input type="checkbox" checked onchange="toggleLayer('${id}', this.checked)"> ${l.name}</label>
+                        <button class="btn-small" onclick="deleteLayer('${id}')">🗑️</button>
+                    </div>
+                    <div class="layer-actions">
+                        <button class="btn-small" onclick="importCSV('${id}')">📥 Importar</button>
+                        <button class="btn-small" onclick="openEditor('${id}')">⚙️ Ficha</button>
+                        <button class="btn-small" onclick="enableDraw('${id}')">✏️ Dibujar</button>
+                        <button class="btn-small" onclick="showStats('${id}')">📊 Contar</button>
+                    </div>
+                </div>`;
         });
+    }
 
-        new Sortable(list, {
-            handle: '.handle',
-            animation: 150,
-            onEnd: function() {
-                const newOrder = [];
-                document.querySelectorAll('.field-item').forEach(el => {
-                    const id = el.getAttribute('data-id');
-                    const visible = el.querySelector('input').checked;
-                    newOrder.push({ id, visible });
+    // 3. IMPORTACIÓN Y EDITOR DINÁMICO (Foto 11)
+    function importCSV(id) {
+        currentActiveLayer = id;
+        const input = document.createElement('input');
+        input.type = 'file'; input.accept = '.csv';
+        input.onchange = e => {
+            Papa.parse(e.target.files[0], {
+                header: true,
+                complete: results => {
+                    layersData[id].data = results.data;
+                    layersData[id].config = results.meta.fields.map(f => ({ id: f, visible: true }));
+                    updateLayerVisuals(id);
+                    openEditor(id); // Abre el editor de orden inmediatamente
+                }
+            });
+        };
+        input.click();
+    }
+
+    function openEditor(id) {
+        currentActiveLayer = id;
+        const modal = document.getElementById('editor-modal');
+        const container = document.getElementById('sortable-fields');
+        container.innerHTML = "";
+        layersData[id].config.forEach(field => {
+            container.innerHTML += `
+                <div class="field-row" data-id="${field.id}">
+                    <input type="checkbox" ${field.visible ? 'checked' : ''} onchange="toggleField('${id}','${field.id}')">
+                    <span style="flex:1; margin-left:10px">${field.id}</span>
+                    <span>☰</span>
+                </div>`;
+        });
+        modal.style.display = 'block';
+        new Sortable(container, { animation: 150, onEnd: saveOrder });
+    }
+
+    function saveOrder() {
+        const rows = document.querySelectorAll('.field-row');
+        const newOrder = [];
+        rows.forEach(row => {
+            const fid = row.getAttribute('data-id');
+            const isVisible = row.querySelector('input').checked;
+            newOrder.push({ id: fid, visible: isVisible });
+        });
+        layersData[currentActiveLayer].config = newOrder;
+        updateLayerVisuals(currentActiveLayer);
+    }
+
+    // 4. EL POPUP PROFESIONAL (Foto 8, 11)
+    function updateLayerVisuals(id) {
+        const layer = layersData[id];
+        layer.group.clearLayers();
+        layer.data.forEach(row => {
+            const lat = row.Latitud || row.lat; const lon = row.Longitud || row.lon;
+            if(lat && lon) {
+                // Color por estatus (Foto 7, 9)
+                let color = "#3b82f6";
+                const est = (row['Licencia Act. Econ.'] || "").toUpperCase();
+                if(est.includes("VIGENTE")) color = "#22c55e";
+                if(est.includes("VENCIDA")) color = "#eab308";
+                if(est.includes("SIN")) color = "#ef4444";
+
+                const marker = L.circleMarker([lat, lon], { radius: 7, fillColor: color, color: "#fff", weight: 2, fillOpacity: 0.9 });
+                
+                // Construcción de Ficha Ordenada
+                let html = `<div class="pop-card">`;
+                if(row.Imagen) html += `<img src="${row.Imagen}" class="pop-img">`;
+                html += `<div class="pop-body"><div class="pop-title">${row.Nombre || 'Comercio'}</div>`;
+                layer.config.forEach(f => {
+                    if(f.visible && row[f.id]) html += `<div><strong>${f.id}:</strong> ${row[f.id]}</div>`;
                 });
-                masterFields = newOrder;
+                html += `</div></div>`;
+                
+                marker.bindPopup(html);
+                layer.group.addLayer(marker);
             }
         });
     }
 
-    function updateFieldVisibility(id, isVisible) {
-        const field = masterFields.find(f => f.id === id);
-        if(field) field.visible = isVisible;
+    // 5. CONTEO DE POLÍGONOS (Foto 13)
+    function showStats(id) {
+        const layer = layersData[id];
+        let pols = 0; let markers = layer.group.getLayers().filter(l => l instanceof L.CircleMarker);
+        layer.group.getLayers().forEach(l => { if(l instanceof L.Polygon) pols++; });
+        
+        // Lógica de intersección simple
+        alert(`Capa: ${layer.name}\nComercios detectados: ${markers.length}\nPolígonos de zona: ${pols}\n\n*El sistema master está listo para cruzar estos datos en el Bridge.`);
     }
 
-    function saveMasterConfig() {
-        localStorage.setItem('sgf_fields_config', JSON.stringify(masterFields));
-        alert("Configuración de vista guardada. La jefa verá los datos en este orden.");
-    }
-
-    // --- FUNCIÓN PARA EL POPUP CON IMAGEN (Mejora Cloudinary) ---
-    function createPopup(data) {
-        let statusColor = getStatusColor(data['Licencia Act. Econ.']);
-        let html = `<div class="popup-container">`;
-        
-        // Si hay link de imagen en Cloudinary, se carga la foto (Foto 11)
-        if(data.Imagen && data.Imagen.includes('cloudinary')) {
-            html += `<img src="${data.Imagen}" class="popup-img">`;
-        }
-
-        html += `<span class="status-badge" style="background:${statusColor}">${data['Licencia Act. Econ.'] || 'S/D'}</span>`;
-        html += `<div class="popup-data">`;
-        
-        // Aplicamos el orden y visibilidad que tú configuraste
-        masterFields.forEach(field => {
-            if(field.visible && data[field.id]) {
-                html += `<div><strong>${field.id}:</strong> ${data[field.id]}</div>`;
-            }
+    // 6. HERRAMIENTAS DE DIBUJO (Foto 13)
+    function enableDraw(id) {
+        const drawControl = new L.Control.Draw({
+            edit: { featureGroup: layersData[id].group },
+            draw: { polygon: true, polyline: false, rectangle: true, circle: false, marker: false }
         });
-        
-        html += `</div></div>`;
-        return html;
+        map.addControl(drawControl);
+        map.on(L.Draw.Event.CREATED, e => { layersData[id].group.addLayer(e.layer); });
     }
 
-    // --- CONTROL DE CAPAS (Foto 15) ---
-    function toggleLayer(type) {
-        if(type === 'puntos') {
-            map.hasLayer(markersLayer) ? map.removeLayer(markersLayer) : map.addLayer(markersLayer);
-        } else {
-            map.hasLayer(polygonsLayer) ? map.removeLayer(polygonsLayer) : map.addLayer(polygonsLayer);
-        }
-    }
+    function toggleLayer(id, show) { show ? map.addLayer(layersData[id].group) : map.removeLayer(layersData[id].group); }
+    function closeEditor() { document.getElementById('editor-modal').style.display = 'none'; }
 
-    // --- INICIO ---
-    initFieldsEditor();
-    
-    // Aquí iría tu función triggerBridge original corregida
     async function triggerBridge() {
         const token = document.getElementById('ghToken').value;
-        if(!token) return alert("Falta el Token");
-        document.getElementById('log').innerText = "CONECTANDO CON GITHUB...";
-        
-        try {
-            const res = await fetch('https://api.github.com/repos/proyectomaps2026/mapa-censo/actions/workflows/actualizar.yml/dispatches', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' },
-                body: JSON.stringify({ ref: 'main' })
-            });
-            document.getElementById('log').innerText = res.ok ? "¡ACTUALIZACIÓN LANZADA!" : "ERROR DE CONEXIÓN";
-        } catch(e) {
-            document.getElementById('log').innerText = "ERROR CRÍTICO";
-        }
+        if(!token) return alert("Falta Token");
+        const res = await fetch('https://api.github.com/repos/proyectomaps2026/mapa-censo/actions/workflows/actualizar.yml/dispatches', {
+            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ ref: 'main' })
+        });
+        alert(res.ok ? "Sincronización Iniciada" : "Error");
     }
 </script>
 </body>
