@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF CORE v6.0 - HACIENDA AYACUCHO</title>
+    <title>SGF CORE v6.1 - HACIENDA AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -13,16 +13,16 @@
     <style>
         :root { 
             --accent: #00f2ff; --bg-dark: #0b0e14; --panel: #161b22; 
-            --text: #e6edf3; --border: #30363d; --google-yellow: #fbbc04;
+            --text: #e6edf3; --border: #30363d; --google-yellow: #fbbc04; --danger: #ff4444;
         }
 
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text); overflow: hidden; }
 
-        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; filter: brightness(0.8) contrast(1.2); }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; filter: brightness(0.85) contrast(1.1); }
 
-        /* INTERFAZ TECNOLÓGICA (GLASSMORPHISM) */
+        /* INTERFAZ TECNOLÓGICA */
         .glass-panel { 
-            background: rgba(22, 27, 34, 0.8); backdrop-filter: blur(12px); 
+            background: rgba(22, 27, 34, 0.85); backdrop-filter: blur(12px); 
             border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
         }
 
@@ -33,7 +33,7 @@
         .tools-box { height: 50px; display: flex; align-items: center; padding: 0 10px; gap: 5px; }
         .t-btn { 
             background: transparent; border: none; color: #8b949e; width: 38px; height: 38px; 
-            border-radius: 8px; cursor: pointer; font-size: 18px; transition: 0.3s;
+            border-radius: 8px; cursor: pointer; font-size: 18px; transition: 0.3s; display: flex; align-items: center; justify-content: center;
         }
         .t-btn:hover { color: var(--accent); background: rgba(0, 242, 255, 0.1); }
         .t-btn.active { color: var(--accent); border: 1px solid var(--accent); }
@@ -49,33 +49,42 @@
 
         .layer-scroll { flex: 1; overflow-y: auto; padding: 10px; }
         
-        .layer-card { background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 10px; border: 1px solid transparent; }
+        .layer-card { background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 10px; border: 1px solid transparent; transition: 0.2s; }
         .layer-card.active-l { border-color: var(--accent); background: rgba(0, 242, 255, 0.05); }
         
         .layer-head { padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        
         .item-row { 
-            padding: 8px 15px 8px 45px; font-size: 13px; color: #8b949e; display: flex; 
-            align-items: center; gap: 10px; cursor: pointer;
+            padding: 8px 10px 8px 45px; font-size: 13px; color: #8b949e; display: flex; 
+            align-items: center; gap: 10px; cursor: pointer; transition: 0.2s;
         }
-        .item-row:hover { color: white; background: rgba(255,255,255,0.05); }
+        .item-row:hover { color: white; background: rgba(255,255,255,0.08); }
+        .item-row:hover .row-actions { display: flex; }
+        
+        .row-actions { display: none; margin-left: auto; gap: 5px; }
+        .act-btn { background: none; border: none; color: #8b949e; cursor: pointer; font-size: 13px; padding: 4px; transition: 0.2s; }
+        .act-btn:hover { color: var(--accent); }
+        .act-btn.del:hover { color: var(--danger); }
 
-        /* POPUPS EDITABLES (FOTO 16) */
-        .edit-popup { min-width: 280px; color: #333; }
-        .edit-popup input, .edit-popup textarea { 
-            width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 4px; margin-bottom: 8px; font-family: inherit;
+        /* POPUPS EDITABLES (FOTO 16 MEJORADA) */
+        .edit-popup { min-width: 260px; color: #333; font-family: 'Inter', sans-serif; }
+        .edit-popup label { font-size: 11px; font-weight: bold; color: #555; display: block; margin-top: 8px; margin-bottom: 3px; }
+        .edit-popup input[type="text"], .edit-popup textarea { 
+            width: 100%; border: 1px solid #ccc; padding: 8px; border-radius: 4px; box-sizing: border-box; font-family: inherit; font-size: 13px;
         }
-        .popup-img { width: 100%; border-radius: 4px; margin-top: 5px; display: block; max-height: 150px; object-fit: cover; }
-        .save-btn { background: #1a73e8; color: white; border: none; padding: 8px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .edit-popup input[type="color"] { width: 100%; height: 35px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; padding: 2px; box-sizing: border-box; }
+        .popup-img { width: 100%; border-radius: 4px; margin-top: 8px; display: block; max-height: 160px; object-fit: cover; border: 1px solid #eee; }
+        .save-btn { background: #1a73e8; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 12px; transition: 0.2s; }
+        .save-btn:hover { background: #1557b0; }
 
         /* MODALES */
         .modal { 
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             z-index: 2000; width: 400px; padding: 30px; display: none;
         }
-        .modal input { background: #0d1117; border: 1px solid var(--border); color: white; padding: 12px; width: 100%; margin: 10px 0; border-radius: 6px; }
+        .modal input { background: #0d1117; border: 1px solid var(--border); color: white; padding: 12px; width: 100%; margin: 10px 0; border-radius: 6px; box-sizing: border-box; }
 
-        /* COLORES DINÁMICOS */
-        .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); }
     </style>
 </head>
 <body>
@@ -88,46 +97,47 @@
         <input type="text" id="master-search" placeholder="Rastrear entidad fiscal..." oninput="filtrarTodo()">
     </div>
     <div class="tools-box glass-panel">
-        <button class="t-btn" id="t-marker" title="Marcador"><i class="fas fa-location-dot"></i></button>
-        <button class="t-btn" id="t-poly" title="Área Fiscual"><i class="fas fa-vector-square"></i></button>
-        <button class="t-btn" id="t-line" title="Ruta"><i class="fas fa-route"></i></button>
+        <button class="t-btn" id="t-marker" title="Nuevo Marcador"><i class="fas fa-location-dot"></i></button>
+        <button class="t-btn" id="t-poly" title="Trazar Polígono"><i class="fas fa-vector-square"></i></button>
         <div style="width: 1px; height: 25px; background: var(--border); margin: 0 10px;"></div>
-        <button class="t-btn" onclick="exportar()" title="Backup"><i class="fas fa-cloud-arrow-down"></i></button>
+        <button class="t-btn" onclick="exportar()" title="Backup de Seguridad"><i class="fas fa-cloud-arrow-down"></i></button>
     </div>
 </div>
 
 <aside id="sidebar" class="glass-panel">
     <div class="side-header">
         <h1>SGF CORE SYSTEM</h1>
-        <span>AYACUCHO V6.0 // CONTROL TOTAL</span>
+        <span>AYACUCHO V6.1 // CONTROL TOTAL</span>
     </div>
     <div class="layer-scroll" id="layer-list"></div>
-    <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="save-btn" style="background:#238636" onclick="abrirModal('m-new-layer')">+ Capa</button>
-        <button class="save-btn" onclick="abrirModal('m-import')">Importar</button>
+    <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--border);">
+        <button class="save-btn" style="margin:0; background:#238636" onclick="abrirModal('m-new-layer')">+ Nueva Capa</button>
+        <button class="save-btn" style="margin:0; background:#30363d" onclick="abrirModal('m-import')"><i class="fas fa-file-csv"></i> Importar CSV</button>
     </div>
 </aside>
 
 <div id="m-new-layer" class="modal glass-panel">
     <h3 style="margin-top:0">Nueva Capa de Control</h3>
-    <input type="text" id="new-l-name" placeholder="Ej: Licorerías Sector A">
-    <div style="text-align:right">
-        <button class="t-btn" onclick="cerrarModal('m-new-layer')">Cerrar</button>
-        <button class="save-btn" style="width:auto; padding: 10px 20px" onclick="crearCapaManual()">Crear</button>
+    <input type="text" id="new-l-name" placeholder="Ej: Comercios Casco Central">
+    <div style="text-align:right; margin-top: 15px;">
+        <button class="t-btn" style="display:inline-block; width:auto; padding:0 15px;" onclick="cerrarModal('m-new-layer')">Cancelar</button>
+        <button class="save-btn" style="width:auto; padding: 10px 20px; display:inline-block; margin:0;" onclick="crearCapaManual()">Crear Capa</button>
     </div>
 </div>
 
 <div id="m-import" class="modal glass-panel">
-    <h3>Sincronizar Google Sheets</h3>
+    <h3 style="margin-top:0">Sincronizar Datos</h3>
     <input type="text" id="imp-name" placeholder="Nombre de la capa">
-    <input type="text" id="imp-url" placeholder="URL del CSV">
+    <input type="text" id="imp-url" placeholder="URL del CSV de Google Sheets">
     <div id="mapping-zone" style="display:none; margin-top:15px; font-size:12px;">
-        Coord (Lat,Lon): <select id="sel-c" class="modal-input" style="width:100%"></select><br><br>
-        Título: <select id="sel-t" class="modal-input" style="width:100%"></select>
+        <label>Columna Coordenadas (Lat,Lon):</label>
+        <select id="sel-c" style="width:100%; padding:8px; margin-top:5px; background:#0d1117; color:white; border:1px solid var(--border); border-radius:4px;"></select><br><br>
+        <label>Columna Título / Nombre:</label>
+        <select id="sel-t" style="width:100%; padding:8px; margin-top:5px; background:#0d1117; color:white; border:1px solid var(--border); border-radius:4px;"></select>
     </div>
     <div style="text-align:right; margin-top:20px;">
-        <button class="t-btn" onclick="cerrarModal('m-import')">Cerrar</button>
-        <button id="btn-imp-next" class="save-btn" style="width:auto; padding: 10px 20px" onclick="prepararCSV()">Siguiente</button>
+        <button class="t-btn" style="display:inline-block; width:auto; padding:0 15px;" onclick="cerrarModal('m-import')">Cancelar</button>
+        <button id="btn-imp-next" class="save-btn" style="width:auto; padding: 10px 20px; display:inline-block; margin:0;" onclick="prepararCSV()">Analizar CSV</button>
     </div>
 </div>
 
@@ -136,40 +146,45 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    // 1. CONFIGURACIÓN DEL MAPA
-    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
+    // 1. INICIALIZACIÓN
+    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
 
     let db = {}; 
     let activeId = null;
     let tempCSV = null;
 
-    // 2. DIBUJO AVANZADO
+    // ICONO VECTORIAL DINÁMICO
+    function crearIconoVectorial(color) {
+        return L.divIcon({
+            className: 'custom-pin',
+            html: `<i class="fas fa-map-marker-alt" style="color: ${color}; font-size: 32px; text-shadow: 0 3px 6px rgba(0,0,0,0.6); -webkit-text-stroke: 1px white;"></i>`,
+            iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -32]
+        });
+    }
+
+    // 2. HERRAMIENTAS DE DIBUJO
     const drawers = {
-        m: new L.Draw.Marker(map),
-        p: new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', weight: 3 } }),
-        l: new L.Draw.Polyline(map)
+        m: new L.Draw.Marker(map, { icon: crearIconoVectorial('#00f2ff') }),
+        p: new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', weight: 3, fillOpacity: 0.4 } })
     };
 
-    document.getElementById('t-marker').onclick = () => { if(activeId) drawers.m.enable(); else alert("Selecciona una capa"); };
-    document.getElementById('t-poly').onclick = () => { if(activeId) drawers.p.enable(); else alert("Selecciona una capa"); };
+    document.getElementById('t-marker').onclick = () => { if(activeId) drawers.m.enable(); else alert("⚠️ Seleccione o cree una capa primero en el panel lateral."); };
+    document.getElementById('t-poly').onclick = () => { if(activeId) drawers.p.enable(); else alert("⚠️ Seleccione o cree una capa primero en el panel lateral."); };
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const lyr = e.layer;
-        const nombre = "Nuevo Elemento";
-        const color = "#00f2ff";
-        
         const id = db[activeId].group.addLayer(lyr)._leaflet_id;
         db[activeId].items.push({ 
-            id: id, name: nombre, desc: "Sin descripción", 
-            img: "", color: color, type: e.layerType 
+            id: id, name: "Nuevo Registro", desc: "", 
+            img: "", color: "#00f2ff", type: e.layerType 
         });
-        
         actualizarElemento(activeId, id);
         renderSidebar();
+        foco(activeId, id); // Abre el popup automáticamente al crear
     });
 
-    // 3. LOGICA DE CAPAS Y EDICIÓN
+    // 3. GESTIÓN DE INTERFAZ Y SIDEBAR
     function abrirModal(id) { document.getElementById(id).style.display = 'block'; }
     function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -179,6 +194,7 @@
         const id = 'l_' + Date.now();
         db[id] = { name: nombre, group: new L.FeatureGroup().addTo(map), items: [], visible: true };
         activeId = id;
+        document.getElementById('new-l-name').value = '';
         renderSidebar();
         cerrarModal('m-new-layer');
     }
@@ -192,8 +208,8 @@
                 <div class="layer-card ${activeClass}">
                     <div class="layer-head" onclick="setActive('${id}')">
                         <input type="checkbox" ${db[id].visible ? 'checked' : ''} onclick="toggleV(event, '${id}')">
-                        <span style="flex:1">📁 ${db[id].name}</span>
-                        <input type="color" value="#00f2ff" onchange="cambiarColorCapa('${id}', this.value)" style="width:20px; border:none; background:none;">
+                        <span style="flex:1; font-weight:600; font-size:14px;">📁 ${db[id].name}</span>
+                        <i class="fas fa-trash act-btn del" onclick="borrarCapa(event, '${id}')" title="Eliminar Capa"></i>
                     </div>
                     <div id="items-${id}">`;
             
@@ -201,7 +217,11 @@
                 h += `
                 <div class="item-row" onclick="foco('${id}', ${it.id})">
                     <div class="dot" style="background:${it.color}"></div>
-                    <span>${it.name}</span>
+                    <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.name}</span>
+                    <div class="row-actions">
+                        <button class="act-btn" onclick="editarDesdeLista(event, '${id}', ${it.id})" title="Editar"><i class="fas fa-pen"></i></button>
+                        <button class="act-btn del" onclick="borrarItem(event, '${id}', ${it.id})" title="Borrar"><i class="fas fa-trash-alt"></i></button>
+                    </div>
                 </div>`;
             });
             h += `</div></div>`;
@@ -209,44 +229,64 @@
         }
     }
 
-    // 4. POPUP DINÁMICO (EDICIÓN REAL Y FOTOS)
+    // 4. EDICIÓN EN TIEMPO REAL (COLOR Y DATOS)
     function actualizarElemento(lid, iid) {
         const item = db[lid].items.find(x => x.id === iid);
         const lyr = db[lid].group.getLayer(iid);
 
-        if(lyr.setStyle) lyr.setStyle({ color: item.color, fillColor: item.color });
+        // Actualizar render visual en el mapa
+        if(lyr instanceof L.Marker) {
+            lyr.setIcon(crearIconoVectorial(item.color));
+        } else if(lyr.setStyle) {
+            lyr.setStyle({ color: item.color, fillColor: item.color });
+        }
 
-        const isImg = (str) => /\.(jpg|jpeg|png|webp|avif|gif)$/.test(str);
+        const isImg = (str) => /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(str);
         const imgHtml = isImg(item.img) ? `<img src="${item.img}" class="popup-img">` : '';
 
+        // Construir Popup Formulario
         const content = `
             <div class="edit-popup">
-                <div style="background:var(--google-yellow); padding:10px; margin:-14px -14px 10px; font-weight:bold;">FICHA DE REGISTRO</div>
-                <label>Nombre:</label>
+                <div style="background:var(--google-yellow); padding:10px; margin:-14px -14px 10px; font-weight:800; text-align:center; letter-spacing:1px;">FICHA FISCAL</div>
+                
+                <label>Razón Social / Entidad:</label>
                 <input type="text" id="e-n-${iid}" value="${item.name}">
-                <label>Descripción / Foto URL:</label>
-                <textarea id="e-d-${iid}">${item.img || item.desc}</textarea>
+                
+                <label>Notas Técnicas / Foto URL:</label>
+                <textarea id="e-d-${iid}" rows="2">${item.img || item.desc}</textarea>
+                
+                <label>Color de Clasificación:</label>
+                <input type="color" id="e-c-${iid}" value="${item.color}">
+                
                 ${imgHtml}
-                <button class="save-btn" onclick="guardarPopup('${lid}', ${iid})">GUARDAR CAMBIOS</button>
+                
+                <button class="save-btn" onclick="guardarPopup('${lid}', ${iid})"><i class="fas fa-save"></i> ACTUALIZAR REGISTRO</button>
             </div>`;
         
-        lyr.bindPopup(content);
+        lyr.bindPopup(content, { minWidth: 260 });
     }
 
     function guardarPopup(lid, iid) {
         const item = db[lid].items.find(x => x.id === iid);
         const newN = document.getElementById(`e-n-${iid}`).value;
         const newD = document.getElementById(`e-d-${iid}`).value;
+        const newC = document.getElementById(`e-c-${iid}`).value;
 
         item.name = newN;
-        if(newD.startsWith('http')) { item.img = newD; } else { item.desc = newD; }
+        item.color = newC;
+        
+        if(newD.startsWith('http') && /\.(jpg|jpeg|png|webp|avif|gif)$/i.test(newD)) { 
+            item.img = newD; item.desc = ""; 
+        } else { 
+            item.desc = newD; item.img = ""; 
+        }
 
         actualizarElemento(lid, iid);
         renderSidebar();
         db[lid].group.getLayer(iid).closePopup();
     }
 
-    // 5. IMPORTACIÓN
+    // 5. IMPORTACIÓN DE GOOGLE SHEETS
     function prepararCSV() {
         const url = document.getElementById('imp-url').value.replace('/edit?usp=sharing', '/export?format=csv');
         Papa.parse(url, {
@@ -258,6 +298,7 @@
                 document.getElementById('sel-c').innerHTML = o;
                 document.getElementById('sel-t').innerHTML = o;
                 document.getElementById('mapping-zone').style.display = 'block';
+                document.getElementById('btn-imp-next').innerText = "Importar Ahora";
                 document.getElementById('btn-imp-next').onclick = finalizarCSV;
             }
         });
@@ -266,7 +307,7 @@
     function finalizarCSV() {
         const colC = document.getElementById('sel-c').value;
         const colT = document.getElementById('sel-t').value;
-        const name = document.getElementById('imp-name').value;
+        const name = document.getElementById('imp-name').value || "Datos Importados";
         const group = new L.FeatureGroup().addTo(map);
         const items = [];
 
@@ -275,11 +316,10 @@
             if(val) {
                 let p = val.replace(/[()]/g, '').split(/[, ]+/);
                 let lat = parseFloat(p[0]), lon = parseFloat(p[1]);
-                if(!isNaN(lat)) {
+                if(!isNaN(lat) && !isNaN(lon)) {
                     const m = L.marker([lat, lon]);
                     const id = group.addLayer(m)._leaflet_id;
-                    const it = { id, name: row[colT] || "Censo", desc: "Importado", img: "", color: "#00f2ff" };
-                    items.push(it);
+                    items.push({ id, name: row[colT] || "Sin Nombre", desc: "Importado de Censo", img: "", color: "#ff4444", type: "marker" });
                 }
             }
         });
@@ -287,24 +327,67 @@
         const id = 'l_' + Date.now();
         db[id] = { name, group, items, visible: true };
         activeId = id;
-        renderSidebar();
         items.forEach(it => actualizarElemento(id, it.id));
+        renderSidebar();
+        
+        // Ajustar vista a los nuevos puntos
+        if(items.length > 0) map.fitBounds(group.getBounds());
+        
         cerrarModal('m-import');
+        document.getElementById('mapping-zone').style.display = 'none';
+        document.getElementById('imp-url').value = '';
+        document.getElementById('imp-name').value = '';
     }
 
-    // UTILIDADES
+    // ACCIONES DE LISTA
     function setActive(id) { activeId = id; renderSidebar(); }
     function toggleV(e, id) { e.stopPropagation(); db[id].visible ? map.removeLayer(db[id].group) : map.addLayer(db[id].group); db[id].visible = !db[id].visible; }
+    
     function foco(lid, iid) {
         const l = db[lid].group.getLayer(iid);
-        map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 18);
-        l.openPopup();
+        if(l) {
+            map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 18, {animate: true});
+            l.openPopup();
+        }
     }
-    function cambiarColorCapa(id, color) {
-        db[id].items.forEach(it => {
-            it.color = color;
-            actualizarElemento(id, it.id);
+    
+    function editarDesdeLista(e, lid, iid) {
+        e.stopPropagation();
+        foco(lid, iid);
+    }
+
+    function borrarItem(e, lid, iid) {
+        e.stopPropagation();
+        if(!confirm("¿Está seguro de eliminar este registro fiscal?")) return;
+        db[lid].group.removeLayer(iid);
+        db[lid].items = db[lid].items.filter(x => x.id !== iid);
+        renderSidebar();
+    }
+
+    function borrarCapa(e, id) {
+        e.stopPropagation();
+        if(!confirm("¿Eliminar toda la capa y sus registros?")) return;
+        map.removeLayer(db[id].group);
+        delete db[id];
+        if(activeId === id) activeId = null;
+        renderSidebar();
+    }
+
+    function filtrarTodo() {
+        const q = document.getElementById('master-search').value.toLowerCase();
+        document.querySelectorAll('.item-row').forEach(el => {
+            el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
         });
+    }
+
+    function exportar() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+        const dl = document.createElement('a');
+        dl.setAttribute("href", dataStr);
+        dl.setAttribute("download", "Hacienda_Ayacucho_Backup.json");
+        document.body.appendChild(dl);
+        dl.click();
+        dl.remove();
     }
 </script>
 </body>
