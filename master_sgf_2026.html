@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGF Master - Control de Operaciones</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root { --primary: #3b82f6; --dark: #0f172a; --panel: #1e293b; --success: #10b981; }
+        body { margin: 0; display: flex; height: 100vh; font-family: 'Inter', sans-serif; background: var(--dark); color: white; overflow: hidden; }
+        
+        /* Mapa */
+        #map { flex: 1; z-index: 1; }
+
+        /* Panel Lateral */
+        #sidebar { width: 400px; background: var(--panel); border-left: 1px solid #334155; display: flex; flex-direction: column; box-shadow: -5px 0 15px rgba(0,0,0,0.3); z-index: 10; }
+        
+        .header { padding: 20px; background: var(--primary); text-align: center; font-weight: bold; letter-spacing: 1px; }
+        
+        .content { padding: 20px; flex: 1; overflow-y: auto; }
+        
+        .card { background: #334155; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #475569; }
+        .card h3 { margin-top: 0; font-size: 0.9rem; color: #94a3b8; text-transform: uppercase; }
+
+        input, select { width: 100%; padding: 10px; margin-top: 8px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; box-sizing: border-box; }
+        
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        .btn-sync { background: #f59e0b; color: #1e293b; }
+        .btn-sync:hover { background: #fbbf24; }
+        .btn-save { background: var(--success); color: white; }
+        .btn-save:hover { opacity: 0.9; }
+
+        /* Status indicator */
+        #log { margin-top: 10px; font-size: 0.75rem; color: #94a3b8; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="sidebar">
+    <div class="header">SGF MASTER - HACIENDA</div>
+    
+    <div class="content">
+        <div class="card">
+            <h3>Puente de Datos (Airtable)</h3>
+            <p style="font-size: 0.85rem;">Fuerza la descarga de nuevos comercios desde Airtable a GitHub.</p>
+            <button class="btn btn-sync" onclick="triggerBridge()">⚡ SINCRONIZAR AHORA</button>
+            <div id="log">Estado: Esperando comando...</div>
+        </div>
+
+        <div class="card">
+            <h3>Configuración del Sistema</h3>
+            <label>Token de Acceso (GitHub):</label>
+            <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+            
+            <label style="display:block; margin-top:15px;">URL Google Sheets (Data):</label>
+            <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/...">
+            
+            <button class="btn btn-save" onclick="updateConfig()">GUARDAR EN LA NUBE</button>
+        </div>
+
+        <div class="card">
+            <h3>Resumen del Censo</h3>
+            <div id="census-list" style="font-size: 0.85rem; color: #cbd5e1;">
+                Cargando datos del servidor...
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // --- CONFIGURACIÓN DEL MAPA (GEM ENGINE) ---
+    const streets = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' });
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Esri World Imagery'
+    });
+
+    const map = L.map('map', {
+        center: [7.7667, -72.2250], // Táchira
+        zoom: 14,
+        layers: [satellite] // Empezamos con satélite por el estilo profesional
+    });
+
+    const baseMaps = { "Vista Satelital": satellite, "Mapa de Calles": streets };
+    L.control.layers(baseMaps).addTo(map);
+
+    // --- FUNCIONES DE CONTROL ---
+    async function triggerBridge() {
+        const token = document.getElementById('ghToken').value;
+        const log = document.getElementById('log');
+        
+        if(!token) return alert("Gem necesita tu Token de GitHub para autorizar la descarga.");
+
+        log.innerText = "Conectando con el puente...";
+        
+        // Llamado a GitHub Actions del repositorio 'mapa-censo'
+        try {
+            const res = await fetch('https://api.github.com/repos/Wolf/mapa-censo/actions/workflows/actualizar.yml/dispatches', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ ref: 'main' })
+            });
+            
+            if(res.ok) {
+                log.innerText = "¡Éxito! El puente está bajando la data.";
+                log.style.color = "#10b981";
+            } else {
+                log.innerText = "Error: Verifica el Token o permisos.";
+                log.style.color = "#fb7185";
+            }
+        } catch (e) {
+            log.innerText = "Error de conexión.";
+        }
+    }
+
+    async function updateConfig() {
+        alert("Configuración enviada al cerebro del sistema.");
+        // Aquí conectaremos con tu config.json próximamente
+    }
+</script>
+</body>
+</html>
