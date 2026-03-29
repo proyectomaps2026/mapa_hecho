@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER v2.2 (SÁBANA INTEGRADORA)</title>
+    <title>SGF MASTER - ESTILO MY MAPS</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -13,60 +13,44 @@
         body { margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #000; color: white; overflow: hidden; }
         #map { flex: 1; z-index: 1; background: #000; }
 
-        /* HEADER Y BUSCADOR (RECOPILADO FOTOS 1, 6, 9) */
-        .brand-header { position: absolute; top: 20px; left: 20px; z-index: 1000; background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 10px; border-left: 6px solid var(--amarillo); backdrop-filter: blur(10px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        /* HEADER Y BUSCADOR */
+        .brand-header { position: absolute; top: 20px; left: 20px; z-index: 1000; background: rgba(15, 23, 42, 0.95); padding: 15px 25px; border-radius: 10px; border-left: 6px solid var(--amarillo); backdrop-filter: blur(10px); }
         .top-search-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 400px; }
         .top-search { width: 100%; padding: 14px 20px; border-radius: 25px; border: none; font-weight: 700; box-shadow: 0 4px 15px rgba(0,0,0,0.5); outline: none; }
 
-        /* BARRA HERRAMIENTAS DIBUJO (RECOPILADO FOTOS 7, 8) */
+        /* BARRA HERRAMIENTAS DIBUJO */
         .drawing-toolbar { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); z-index: 1000; background: white; display: flex; padding: 6px; border-radius: 6px; box-shadow: 0 2px 15px rgba(0,0,0,0.3); }
         .tool-btn { padding: 8px 15px; color: #333; cursor: pointer; border-right: 1px solid #ddd; font-size: 13px; font-weight: 600; }
         .tool-btn:hover { background: #f0f4f8; color: var(--azul); }
 
-        /* ESTILO TRAZADO NEGRO/BLANCO (RECOPILADO FOTO 8) */
         .leaflet-draw-draw-polygon { stroke: #000 !important; stroke-width: 5px !important; stroke-opacity: 1 !important; }
         .leaflet-draw-guide-marker { background: #fff !important; border: 2px solid #000 !important; border-radius: 50% !important; width: 12px !important; height: 12px !important; }
 
-        /* SIDEBAR DINÁMICO v2.2 (SOLUCIÓN LISTA VACÍA) */
+        /* SIDEBAR ESTILO MY MAPS */
         #sidebar { width: 420px; background: var(--fondo); border-left: 1px solid #334155; display: flex; flex-direction: column; }
         .side-title { padding: 30px; text-align: center; border-bottom: 5px solid var(--amarillo); background: var(--card); }
         .side-content { flex: 1; overflow-y: auto; padding: 20px; scrollbar-width: thin; scrollbar-color: var(--amarillo) transparent;}
         
-        /* Tarjeta de Capa */
-        .layer-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 2px solid transparent; cursor: pointer; position: relative; }
+        .layer-card { background: var(--card); border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 2px solid transparent; cursor: pointer; }
         .layer-card.active { border-color: var(--amarillo); background: #233149; }
         .layer-header { display: flex; justify-content: space-between; align-items: center; }
         .layer-name { font-weight: 800; font-size: 14px; color: white; display: flex; align-items: center; gap: 10px; }
         
-        /* Lista de Elementos (Replica My Maps Foto 4) */
-        .feature-list { list-style: none; padding: 0; margin: 10px 0 0 25px; font-size: 12px; color: #cbd5e1; display: none; }
-        .layer-card.active .feature-list { display: block; } /* Mostrar solo si está activa */
-        .feature-item { padding: 5px 0; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; }
-        .feature-item:hover { color: var(--amarillo); background: rgba(255,255,255,0.05); }
+        .feature-list { list-style: none; padding: 0; margin: 10px 0 0 25px; font-size: 12px; color: #cbd5e1; display: none; max-height: 250px; overflow-y: auto; }
+        .layer-card.active .feature-list { display: block; }
+        .feature-item { padding: 8px 5px; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .feature-item:hover { color: var(--amarillo); background: rgba(255,255,255,0.1); }
 
         .btn-create { background: transparent; color: var(--azul); border: 2px dashed var(--azul); width: 100%; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 800; margin-top: 10px; }
 
-        /* MODALES v2.2 (SOLUCIÓN SCROLL PANEL PEQUEÑO - FOTOS 8 y 9) */
-        .config-modal { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            z-index: 2000; background: white; color: #333; 
-            width: 420px; /* Ancho controlado */
-            max-height: 80vh; /* Altura máxima controlada (pequeña) */
-            padding: 30px; border-radius: 15px; display: none; 
-            box-shadow: 0 25px 70px rgba(0,0,0,0.9);
-            overflow-y: auto; /* IMPORTANTE: Habilitar Scroll Interno */
-        }
+        /* MODALES COMPACTOS CON SCROLL */
+        .config-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2000; background: white; color: #333; width: 420px; max-height: 80vh; padding: 30px; border-radius: 15px; display: none; box-shadow: 0 25px 70px rgba(0,0,0,0.9); overflow-y: auto; }
         .modal-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        /* Lista de Columnas con Scroll (Replica Foto 9) */
-        .field-scroll-container { 
-            max-height: 200px; /* Altura pequeña para la lista de columnas */
-            overflow-y: scroll; /* Scroll obligatorio */
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 20px; 
-        }
+        .field-scroll-container { max-height: 180px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 20px; }
         .col-option { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #eee; font-size: 13px; }
 
-        /* FICHA POPUP (RECOPILADO FOTO 16) */
+        /* POPUP */
         .leaflet-popup-content-wrapper { border-radius: 10px; padding: 0; overflow: hidden; }
         .ficha-header { background: #f1f5f9; padding: 15px; border-bottom: 4px solid var(--amarillo); font-weight: 800; color: #1e293b; font-size: 16px; }
         .ficha-body { padding: 15px; background: white; color: #333; font-size: 13px; }
@@ -91,9 +75,9 @@
 </div>
 
 <div id="create-modal" class="config-modal">
-    <b style="font-size: 18px; display:block; margin-bottom:15px;">Nueva Capa Dinámica</b>
+    <b style="font-size: 18px; display:block; margin-bottom:15px;">Nueva Capa de Datos</b>
     <input type="text" id="layer-name-in" class="modal-input" placeholder="Nombre (Ej: Sector Centro)">
-    <input type="text" id="layer-url-in" class="modal-input" placeholder="Google Sheets CSV URL">
+    <input type="text" id="layer-url-in" class="modal-input" placeholder="URL de Google Sheets (Opcional)">
     <div style="display:flex; gap:10px; margin-top:15px;">
         <button onclick="closeModal('create-modal')" style="flex:1; padding:10px; cursor:pointer; border:1px solid #ccc; border-radius:4px;">Cancelar</button>
         <button onclick="processLayerRequest()" style="flex:1; padding:10px; background:var(--azul); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Siguiente</button>
@@ -101,34 +85,26 @@
 </div>
 
 <div id="mapeo-modal" class="config-modal">
-    <b style="font-size: 17px; display:block; margin-bottom:10px;">Selecciona columnas para Colocar Marcadores</b>
-    <p style="font-size: 11px; color: #666; margin-bottom: 15px;">Mapea Latitud y Longitud</p>
+    <b style="font-size: 16px; display:block; margin-bottom:5px;">Elige las columnas de ubicación</b>
+    <div class="field-scroll-container" id="lat-lon-fields"></div>
     
-    <div class="field-scroll-container">
-        <div id="lat-lon-fields"></div>
-    </div>
+    <b style="font-size: 16px; display:block; margin-top:15px; margin-bottom:5px;">Elige la columna de título</b>
+    <div class="field-scroll-container" id="title-fields"></div>
     
-    <b style="font-size: 17px; display:block; margin-top:20px; margin-bottom:10px;">Selecciona columna como Título</b>
-    <p style="font-size: 11px; color: #666; margin-bottom: 15px;">Será el nombre del elemento en la lista (Foto 9)</p>
-    
-    <div class="field-scroll-container">
-        <div id="title-fields"></div>
-    </div>
-    
-    <div style="display:flex; gap:10px; margin-top:30px;">
-        <button onclick="closeModal('mapeo-modal')" style="flex:1; padding:10px; cursor:pointer; border:1px solid #ccc; border-radius:4px;">Atrás</button>
-        <button id="btn-finalizar" style="flex:1; padding:10px; background:var(--azul); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Finalizar</button>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button onclick="closeModal('mapeo-modal')" style="flex:1; padding:10px; cursor:pointer; border:1px solid #ccc; border-radius:4px;">Cancelar</button>
+        <button id="btn-finalizar" style="flex:1; padding:10px; background:var(--azul); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Importar Datos</button>
     </div>
 </div>
 
 <aside id="sidebar">
     <div class="side-title">
         <h2 style="margin:0; color:white; font-size:24px;">SGF MASTER</h2>
-        <small style="color:var(--amarillo); font-weight:800;">GESTIÓN TOTAL DE CAPAS v2.2</small>
+        <small style="color:var(--amarillo); font-weight:800;">GESTIÓN ESTILO MY MAPS</small>
     </div>
     <div class="side-content">
         <div id="dynamic-layers"></div>
-        <button class="btn-create" onclick="openModal('create-modal')">✚ AÑADIR NUEVA CAPA</button>
+        <button class="btn-create" onclick="openModal('create-modal')">✚ AÑADIR CAPA</button>
     </div>
 </aside>
 
@@ -140,66 +116,61 @@
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
     L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}').addTo(map);
 
-    let capasDB = {}; // Base de datos de capas { id: { data: group, features: [id_leaflet] } }
+    let capasDB = {}; 
     let capaActivaId = null;
     let tempRawData = null; 
     let tempName = null; 
 
-    // MOTOR DE DIBUJO
-    const polyDrawer = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 5, fillOpacity: 0.3 } });
+    const polyDrawer = new L.Draw.Polygon(map, { shapeOptions: { color: '#000', weight: 4, fillOpacity: 0.4 } });
     const markerDrawer = new L.Draw.Marker(map);
-    document.getElementById('btn-poly').onclick = () => { if(checkActiveLayer()) polyDrawer.enable(); };
-    document.getElementById('btn-marker').onclick = () => { if(checkActiveLayer()) markerDrawer.enable(); };
-
-    function checkActiveLayer() {
-        if(!capaActivaId) { alert("¡Error! Seleccione una capa en el sidebar antes de dibujar."); return false; }
-        return true;
-    }
+    document.getElementById('btn-poly').onclick = () => { if(capaActivaId) polyDrawer.enable(); else alert("Selecciona una capa primero."); };
+    document.getElementById('btn-marker').onclick = () => { if(capaActivaId) markerDrawer.enable(); else alert("Selecciona una capa primero."); };
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const layer = e.layer;
-        const nombre = prompt("Identificación del elemento:");
+        const nombre = prompt("Nombre del elemento:");
         if(nombre) {
-            // Asignar color aleatorio al bloque (Replica My Maps Foto 4)
             const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-            if(layer instanceof L.Polygon) { layer.setStyle({ fillColor: randomColor, color: '#000' }); }
+            if(layer instanceof L.Polygon) layer.setStyle({ fillColor: randomColor, color: '#000' });
             
             layer.bindPopup(`<b>${nombre}</b><br>Capa: ${capasDB[capaActivaId].name}`);
             const leafletId = capasDB[capaActivaId].group.addLayer(layer)._leaflet_id;
             
-            // Sumar a la base de datos interna de la capa
             capasDB[capaActivaId].features.push({ leafletId: leafletId, name: nombre, type: layer instanceof L.Polygon ? 'poly' : 'marker', color: randomColor });
-            
             renderFeatureInSidebar(capaActivaId, capasDB[capaActivaId].features.slice(-1)[0]);
         }
     });
 
-    // SISTEMA DE MODALES
     function openModal(id) { document.getElementById(id).style.display = 'block'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // FLUJO DE IMPORTACIÓN
     function processLayerRequest() {
         tempName = document.getElementById('layer-name-in').value;
         const url = document.getElementById('layer-url-in').value;
-        if(!tempName) return alert("Debe asignar un nombre a la capa.");
+        if(!tempName) return alert("Ponle nombre a la capa.");
         if(!url) { saveCapaFinal(null); closeModal('create-modal'); } 
         else { importAndMap(url); }
     }
 
-    // Procesa la URL y llena el panel de mapeo (Replica image_8.png y 9)
     function importAndMap(url) {
         if(url.includes('docs.google.com')) url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=');
         Papa.parse(url, {
             download: true, header: true,
             complete: function(results) {
-                if(results.errors.length > 0) { alert("Error al leer el CSV."); return; }
+                if(results.errors.length > 0) return alert("Error leyendo el CSV. ¿Es público?");
                 tempRawData = results.data;
                 const headers = results.meta.fields;
                 
-                // Llenar paneles con RadioButtons (Scroll Interno)
-                document.getElementById('lat-lon-fields').innerHTML = fillMapeoOptions(headers, 'lat-field', 'Longitud (Replica Foto 8)');
-                document.getElementById('title-fields').innerHTML = fillRadioOptions(headers, 'title-field');
+                let latLonHtml = '<p style="font-size:12px; margin:0 0 5px 0;">LATITUD:</p>';
+                headers.forEach((h, i) => latLonHtml += `<div class="col-option"><input type="radio" name="lat-field" value="${h}" id="lat_${i}"><label for="lat_${i}">${h}</label></div>`);
+                latLonHtml += '<p style="font-size:12px; margin:15px 0 5px 0;">LONGITUD:</p>';
+                headers.forEach((h, i) => latLonHtml += `<div class="col-option"><input type="radio" name="lon-field" value="${h}" id="lon_${i}"><label for="lon_${i}">${h}</label></div>`);
+                
+                let titleHtml = '';
+                headers.forEach((h, i) => titleHtml += `<div class="col-option"><input type="radio" name="title-field" value="${h}" id="title_${i}"><label for="title_${i}">${h}</label></div>`);
+
+                document.getElementById('lat-lon-fields').innerHTML = latLonHtml;
+                document.getElementById('title-fields').innerHTML = titleHtml;
                 
                 closeModal('create-modal');
                 openModal('mapeo-modal');
@@ -208,12 +179,11 @@
         });
     }
 
-    // Finaliza el mapeo y pinta puntos funcionales
     function finalizeMapping() {
-        const latCol = getSelectedRadio('lat-field');
-        const lonCol = getSelectedRadio('lon-field');
-        const titleCol = getSelectedRadio('title-field');
-        if(!latCol || !lonCol || !titleCol) { alert("¡Faltan mapear columnas!"); return; }
+        const latCol = document.querySelector('input[name="lat-field"]:checked')?.value;
+        const lonCol = document.querySelector('input[name="lon-field"]:checked')?.value;
+        const titleCol = document.querySelector('input[name="title-field"]:checked')?.value;
+        if(!latCol || !lonCol || !titleCol) return alert("Faltan columnas por seleccionar.");
 
         const group = new L.FeatureGroup().addTo(map);
         const featureList = [];
@@ -222,12 +192,12 @@
             let lat = parseFloat(row[latCol]);
             let lon = parseFloat(row[lonCol]);
             if(row[latCol] && row[latCol].includes('(')) {
-                let cleanGPS = row[latCol].replace(/[()]/g, '').split(/[\s,]+/);
-                lat = parseFloat(cleanGPS[0]); lon = parseFloat(cleanGPS[1]);
+                let clean = row[latCol].replace(/[()]/g, '').split(/[\s,]+/);
+                lat = parseFloat(clean[0]); lon = parseFloat(clean[1]);
             }
             if(!isNaN(lat) && !isNaN(lon)) {
                 const m = L.marker([lat, lon]);
-                const nombre = row[titleCol] || 'Punto Importado';
+                const nombre = row[titleCol] || 'Punto';
                 m.bindPopup(`<div class="ficha-header">${nombre}</div><div class="ficha-body">Censo: ${row['N° de censo'] || 'N/A'}</div>`);
                 const leafletId = group.addLayer(m)._leaflet_id;
                 featureList.push({ leafletId: leafletId, name: nombre, type: 'marker' });
@@ -239,55 +209,49 @@
         tempRawData = null; 
     }
 
-    // GUARDA LA CAPA Y GENERA EL SIDEBAR FUNCIONAL (SOLUCIÓN LISTA VACÍA)
     function saveCapaFinal(featureGroup, featureList) {
         const id = 'layer_' + Date.now();
         const group = featureGroup || new L.FeatureGroup().addTo(map);
-        capasDB[id] = { name: tempName, group: group, features: featureList || [] };
+        capasDB[id] = { name: tempName, group: group, features: featureList || [], isVisible: true };
         
-        // Renderizar tarjeta base
         const html = `
             <div class="layer-card" id="card-${id}" onclick="selectLayer('${id}')">
                 <div class="layer-header">
-                    <span class="layer-name">📁 ${tempName}</span>
-                    <span style="color:var(--rojo)" onclick="deleteLayer(event, '${id}')">🗑️</span>
+                    <span class="layer-name">
+                        <input type="checkbox" checked onclick="toggleVisibility(event, '${id}')" title="Mostrar/Ocultar">
+                        📁 ${tempName}
+                    </span>
+                    <span style="color:var(--rojo); cursor:pointer;" onclick="deleteLayer(event, '${id}')">🗑️</span>
                 </div>
-                <div class="layer-stats" id="stats-${id}">Elementos: ${group.getLayers().length}</div>
-                <ul class="feature-list" id="features-${id}"></ul> </div>`;
+                <div style="font-size: 11px; color: var(--amarillo); margin-top: 5px;" id="stats-${id}">Elementos: ${group.getLayers().length}</div>
+                <ul class="feature-list" id="features-${id}"></ul>
+            </div>`;
         document.getElementById('dynamic-layers').insertAdjacentHTML('beforeend', html);
         
-        // Llenar la lista detallada si hay elementos (Importados o Trazados)
         capasDB[id].features.forEach(f => renderFeatureInSidebar(id, f));
-
         selectLayer(id);
         
-        // Limpiar inputs
         document.getElementById('layer-name-in').value = "";
         document.getElementById('layer-url-in').value = "";
-        tempName = null;
     }
 
-    // Renderiza un elemento detallado en la lista de la capa (My Maps Foto 4)
     function renderFeatureInSidebar(layerId, feature) {
-        const listContainer = document.getElementById('features-' + layerId);
-        const iconHtml = feature.type === 'poly' 
-            ? `<div style="width:12px; height:12px; background:${feature.color}; border-radius:2px; border:1px solid #fff"></div>`
-            : `<div style="font-size:14px; color:var(--azul);">📍</div>`;
-        
-        const itemHtml = `
-            <li class="feature-item" onclick="zoomToFeature(event, '${layerId}', ${feature.leafletId})">
-                ${iconHtml}
-                <span>${feature.name}</span>
-            </li>`;
-        listContainer.insertAdjacentHTML('beforeend', itemHtml);
-        
-        // Actualizar contador
+        const list = document.getElementById('features-' + layerId);
+        const icon = feature.type === 'poly' ? `<div style="width:12px;height:12px;background:${feature.color};border:1px solid #fff"></div>` : `📍`;
+        const itemHtml = `<li class="feature-item" onclick="zoomToFeature(event, '${layerId}', ${feature.leafletId})">${icon} <span>${feature.name}</span></li>`;
+        list.insertAdjacentHTML('beforeend', itemHtml);
         document.getElementById('stats-' + layerId).innerText = `Elementos: ${capasDB[layerId].group.getLayers().length}`;
     }
 
-    // Zoom al hacer clic individualmente (My Maps Foto 4)
+    function toggleVisibility(e, id) {
+        e.stopPropagation();
+        capasDB[id].isVisible = e.target.checked;
+        if(capasDB[id].isVisible) map.addLayer(capasDB[id].group);
+        else map.removeLayer(capasDB[id].group);
+    }
+
     function zoomToFeature(e, layerId, leafletId) {
-        e.stopPropagation(); // Evitar que se desactive la capa
+        e.stopPropagation(); 
         const layer = capasDB[layerId].group.getLayer(leafletId);
         if(layer) {
             map.setView(layer.getBounds ? layer.getBounds().getCenter() : layer.getLatLng(), 18);
@@ -295,29 +259,21 @@
         }
     }
 
-    // Funciones auxiliares mapeo
-    function fillMapeoOptions(headers, nameBase) {
-        // En My Maps (Foto 8), Lat y Lon se mapean por pares o individualmente.
-        let html = '';
-        html += '<p style="font-size:12px; margin-bottom:5px;">Selecciona columna LATITUD:</p>';
-        headers.forEach((h, i) => html += `<div class="col-option"><input type="radio" name="lat-field" value="${h}" id="lat_${i}"><label for="lat_${i}">${h}</label></div>`);
-        html += '<p style="font-size:12px; margin-top:15px; margin-bottom:5px;">Selecciona columna LONGITUD:</p>';
-        headers.forEach((h, i) => html += `<div class="col-option"><input type="radio" name="lon-field" value="${h}" id="lon_${i}"><label for="lon_${i}">${h}</label></div>`);
-        return html;
-    }
-    function fillRadioOptions(headers, name) {
-        let html = '';
-        headers.forEach((h, i) => html += `<div class="col-option"><input type="radio" name="${name}" value="${h}" id="${name}_${i}"><label for="${name}_${i}">${h}</label></div>`);
-        return html;
-    }
-    function getSelectedRadio(name) { const selected = document.querySelector(`input[name="${name}"]:checked`); return selected ? selected.value : null; }
-
     function selectLayer(id) {
         capaActivaId = id;
         document.querySelectorAll('.layer-card').forEach(c => c.classList.remove('active'));
         document.getElementById('card-' + id).classList.add('active');
     }
-    function deleteLayer(e, id) { e.stopPropagation(); if(confirm("¿Eliminar capa y todos sus elementos?")) { map.removeLayer(capasDB[id].group); delete capasDB[id]; document.getElementById('card-' + id).remove(); if(capaActivaId === id) capaActivaId = null; } }
+
+    function deleteLayer(e, id) {
+        e.stopPropagation(); 
+        if(confirm("¿Eliminar capa?")) { 
+            map.removeLayer(capasDB[id].group); 
+            delete capasDB[id]; 
+            document.getElementById('card-' + id).remove(); 
+            if(capaActivaId === id) capaActivaId = null; 
+        } 
+    }
 </script>
 </body>
 </html>
