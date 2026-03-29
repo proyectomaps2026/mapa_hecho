@@ -3,132 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF MASTER V10 | HACIENDA AYACUCHO</title>
+    <title>SGF MASTER V12 | HACIENDA AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
         :root { 
             --amarillo: #ffcc00; --rojo: #e60000; --verde: #007a33;
-            --bg: #020617; --panel: #0f172a; --card: #1e293b;
-            --accent: #fbbf24; --text: #f8fafc;
+            --dark: #020617; --panel: #0f172a; --accent: #fbbf24;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--dark); color: #fff; height: 100vh; overflow: hidden; }
 
-        .app-shell { display: flex; height: 100vh; width: 100vw; position: relative; }
+        .layout { display: flex; height: 100vh; width: 100vw; position: relative; }
         #map { flex: 1; z-index: 1; background: #000; }
 
-        /* REVISIÓN FOTO 1-4: IDENTIDAD Y BUSCADOR */
-        .brand-shield { 
+        /* CUADRO IDENTIDAD - RESTAURADO SEGÚN FOTOS */
+        .brand-box { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.95); padding: 18px 25px; border-radius: 12px;
+            background: rgba(15, 23, 42, 0.95); padding: 18px 25px; border-radius: 10px;
             border-left: 6px solid var(--amarillo); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(15px); box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px); box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
-        .brand-shield b { font-size: 20px; display: block; letter-spacing: 1px; color: #fff; }
-        .brand-shield span { font-size: 11px; color: var(--accent); font-weight: 800; text-transform: uppercase; }
+        .brand-box b { font-size: 20px; display: block; letter-spacing: 1px; }
+        .brand-box span { font-size: 11px; color: var(--accent); font-weight: 800; text-transform: uppercase; }
 
-        .omni-search { 
+        .search-bar { 
             position: absolute; top: 25px; left: 50%; transform: translateX(-50%); z-index: 1000; 
             width: 450px; background: #fff; border-radius: 50px; padding: 12px 25px;
             display: flex; align-items: center; box-shadow: 0 15px 40px rgba(0,0,0,0.4);
         }
-        .omni-search input { border: none; outline: none; flex: 1; font-weight: 700; color: #0f172a; font-size: 15px; }
+        .search-bar input { border: none; outline: none; flex: 1; font-weight: 700; color: #0f172a; font-size: 15px; }
 
-        /* REVISIÓN FOTO 5-8: SIDEBAR Y BOTONES */
         #sidebar { 
             width: 440px; background: var(--panel); border-left: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column; z-index: 100; box-shadow: -15px 0 40px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; z-index: 100;
         }
-        .sidebar-header { 
-            padding: 40px 30px; text-align: center; 
-            border-bottom: 5px solid transparent;
-            border-image: linear-gradient(to right, var(--amarillo) 33%, var(--rojo) 33% 66%, var(--verde) 66%) 1;
+        .sidebar-header { padding: 40px 30px; text-align: center; border-bottom: 5px solid var(--amarillo); }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 25px; }
+
+        .cloud-input {
+            background: #020617; border: 1px solid #334155; color: #fff;
+            padding: 14px; border-radius: 10px; width: 100%; margin-bottom: 12px; font-size: 12px;
         }
-        .content-area { flex: 1; overflow-y: auto; padding: 25px; }
 
         .btn { 
             width: 100%; padding: 18px; border-radius: 12px; border: none; cursor: pointer;
             font-weight: 900; font-size: 12px; text-transform: uppercase; margin-bottom: 25px;
-            transition: 0.3s;
         }
-        .btn-main { background: var(--accent); color: #000; }
-        .btn-main:hover { transform: translateY(-3px); background: #fff; }
+        .btn-gold { background: var(--accent); color: #000; }
 
-        .layer-card { background: var(--card); border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .layer-card { background: #1e293b; border-radius: 20px; margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
         .layer-head { padding: 18px; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; font-weight: 800; color: var(--accent); }
         .layer-grid { padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-tool { padding: 12px; font-size: 10px; background: #334155; color: #fff; border-radius: 8px; font-weight: 700; }
         
         .btn-draw { grid-column: span 2; border: 2px solid var(--accent); background: transparent; color: var(--accent); }
-        .btn-draw.active { background: var(--rojo); color: #fff; border-color: #fff; }
+        .btn-draw.active { background: var(--rojo); color: #fff; }
 
-        /* REVISIÓN FOTO 9-12: SECTORES Y CENSO */
-        .sector-list { background: #020617; max-height: 250px; overflow-y: auto; border-top: 1px solid #334155; }
-        .sector-row { padding: 15px 25px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .sector-row:hover { background: #1e293b; }
-        .color-dot { width: 14px; height: 14px; border-radius: 4px; }
+        .sector-item { padding: 12px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; background: #020617; font-size: 13px; }
 
-        /* REVISIÓN FOTO 13-16: MODALES Y FICHA TÉCNICA (SOLUCIÓN CUADROS BLANCOS) */
+        /* MODALES RESTAURADOS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 999; display: none; backdrop-filter: blur(10px); }
         .modal { 
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             background: var(--panel); width: 480px; padding: 40px; border-radius: 25px; 
             z-index: 1000; border: 1px solid var(--accent); display: none;
         }
-        .field-item { 
-            display: flex; align-items: center; background: #020617; padding: 15px; 
-            margin: 10px 0; border-radius: 12px; border: 1px solid #334155; 
-        }
-        .field-item input { margin-right: 15px; width: 20px; height: 20px; cursor: pointer; }
+        .ficha-item { display: flex; align-items: center; background: #020617; padding: 15px; margin: 10px 0; border-radius: 12px; border: 1px solid #334155; }
+        .ficha-item input { margin-right: 15px; width: 18px; height: 18px; }
 
-        /* POPUPS REVISADOS */
-        .leaflet-popup-content-wrapper { border-radius: 15px; padding: 0; overflow: hidden; background: #fff; }
-        .pop-card { width: 320px; color: #0f172a; }
-        .pop-header { background: #f8fafc; padding: 15px; font-weight: 900; font-size: 16px; border-bottom: 4px solid var(--verde); }
-        .pop-content { padding: 15px; font-size: 13px; }
-        .pop-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f1f5f9; }
-        .pop-row b { color: #94a3b8; font-size: 10px; text-transform: uppercase; }
-        .pop-row span { font-weight: 800; color: #1e293b; text-align: right; }
+        /* POPUP RESTAURADO */
+        .pop-box { width: 300px; color: #000; }
+        .pop-h { background: #f8fafc; padding: 15px; font-weight: 900; font-size: 16px; border-bottom: 4px solid var(--verde); }
+        .pop-b { padding: 15px; font-size: 13px; }
+        .pop-r { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #eee; }
+        .pop-r b { color: #94a3b8; font-size: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div class="app-shell">
+<div class="layout">
     <div id="map"></div>
 
-    <div class="brand-shield">
-        <b>HACIENDA AYACUCHO</b>
+    <div class="brand-box">
+        <b>SGF HACIENDA AYACUCHO</b>
         <span>MONITOREO TRIBUTARIO</span>
     </div>
 
-    <div class="omni-search">
+    <div class="search-bar">
         <span style="margin-right:15px">🔍</span>
-        <input type="text" id="main-search" placeholder="RIF, Nombre o Estatus..." onkeyup="runOmniSearch()">
+        <input type="text" id="omni-search" placeholder="RIF, Comercio o Estatus..." onkeyup="runSearch()">
     </div>
 
     <aside id="sidebar">
         <header class="sidebar-header">
-            <h1 style="font-weight:900; font-size:26px">SGF MASTER V10</h1>
+            <h1 style="font-weight:900; font-size:26px">SGF MASTER</h1>
             <p style="font-size:11px; color:var(--accent); letter-spacing:3px">ESTADO TÁCHIRA</p>
         </header>
-        <div class="content-area">
-            <button class="btn btn-main" onclick="createNewLayer()">+ REGISTRAR CAPA FISCAL</button>
-            <div id="layer-container"></div>
+        <div class="scroll-area">
+            <button class="btn btn-gold" onclick="newLayer()">+ REGISTRAR CAPA DESDE GOOGLE</button>
+            <div id="layer-list"></div>
         </div>
     </aside>
 </div>
 
 <div class="overlay" id="overlay" onclick="closeModals()"></div>
 <div class="modal" id="modal-ficha">
-    <h3 style="color:var(--accent); margin-bottom:15px">Campos Detectados en CSV</h3>
-    <p style="font-size:11px; color:#94a3b8; margin-bottom:20px">Seleccione la información que será visible en el mapa:</p>
-    <div id="ficha-fields" style="max-height:350px; overflow-y:auto"></div>
-    <button class="btn btn-main" style="margin-top:25px" onclick="applyFichaConfig()">GUARDAR Y ACTUALIZAR</button>
+    <h3 style="color:var(--accent); margin-bottom:15px">Campos de la Ficha</h3>
+    <div id="ficha-list" style="max-height:350px; overflow-y:auto"></div>
+    <button class="btn btn-gold" style="margin-top:25px" onclick="saveFicha()">APLICAR CAMBIOS</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -138,120 +125,109 @@
 
 <script>
     let STORE = {};
-    let VIEW = { lid: null, drawInstance: null };
+    let ACTIVE = { lid: null, drawCtrl: null };
 
-    // 1. INICIALIZAR MAPA (REVISIÓN FOTO 1)
     const map = L.map('map', { center: [8.03317, -72.25693], zoom: 16, zoomControl: false });
-    
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-        maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3']
-    }).addTo(map);
+    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 22, subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    function createNewLayer() {
+    function newLayer() {
         const name = prompt("Nombre de la Capa:");
         if(!name) return;
         const id = 'L' + Date.now();
-        STORE[id] = { name: name, group: L.featureGroup().addTo(map), csv: [], config: [], drawing: false };
-        updateSidebar();
+        STORE[id] = { name: name, group: L.featureGroup().addTo(map), url: '', config: [], data: [], drawing: false };
+        renderUI();
     }
 
-    function updateSidebar() {
-        const container = document.getElementById('layer-container');
-        container.innerHTML = "";
+    function renderUI() {
+        const box = document.getElementById('layer-list');
+        box.innerHTML = "";
         Object.keys(STORE).forEach(id => {
             const l = STORE[id];
-            let sectors = "";
+            let secs = "";
             l.group.eachLayer(layer => {
                 if(layer instanceof L.Polygon) {
-                    const eid = L.Util.stamp(layer);
-                    sectors += `<div class="sector-row" onclick="focusEntity('${id}','${eid}')">
-                        <div style="display:flex; align-items:center; gap:10px">
-                            <div class="color-dot" style="background:${layer.options.color}"></div>
-                            <b>${layer.options.name}</b>
-                        </div>
-                        <span style="font-size:10px; color:#94a3b8">Ver</span>
+                    secs += `<div class="sector-item" onclick="zoomTo('${id}','${L.Util.stamp(layer)}')">
+                        <b>Sector: ${layer.options.name}</b>
+                        <span>📍</span>
                     </div>`;
                 }
             });
 
-            container.innerHTML += `
+            box.innerHTML += `
                 <div class="layer-card">
                     <div class="layer-head"><span>${l.name}</span><b onclick="deleteLayer('${id}')" style="cursor:pointer">✕</b></div>
-                    <div class="layer-grid">
-                        <button class="btn-tool" onclick="loadCSV('${id}')">CARGAR CSV</button>
-                        <button class="btn-tool" onclick="openFichaPanel('${id}')">CONFIG. FICHA</button>
-                        <button class="btn-tool btn-draw ${l.drawing?'active':''}" onclick="toggleDraw('${id}')">
-                            ${l.drawing ? 'CERRAR DIBUJO' : '✏️ DIBUJAR SECTOR'}
-                        </button>
+                    <div style="padding:15px">
+                        <input type="text" class="cloud-input" placeholder="URL de Google Sheets..." 
+                               onchange="updateUrl('${id}', this.value)" value="${l.url}">
+                        <div class="layer-grid">
+                            <button class="btn-tool" onclick="syncData('${id}')">🔄 SINCRONIZAR</button>
+                            <button class="btn-tool" onclick="openFicha('${id}')">📋 CONFIG. FICHA</button>
+                            <button class="btn-tool btn-draw ${l.drawing?'active':''}" onclick="toggleDraw('${id}')">
+                                ${l.drawing ? 'FINALIZAR' : '✏️ DIBUJAR SECTOR'}
+                            </button>
+                        </div>
                     </div>
-                    <div class="sector-list">${sectors}</div>
+                    <div>${secs}</div>
                 </div>`;
         });
     }
 
-    // 2. GESTIÓN DE DATOS (FIX FOTO 15: CUADROS BLANCOS)
-    function loadCSV(lid) {
-        const file = document.createElement('input'); file.type = 'file'; file.accept = ".csv";
-        file.onchange = e => {
-            Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true,
-                complete: r => {
-                    STORE[lid].csv = r.data;
-                    // REPARO: Asegurar que los campos no estén vacíos antes de crear la config
-                    const fields = Object.keys(r.data[0]).filter(f => f.trim() !== "");
-                    STORE[lid].config = fields.map(f => ({ id: f, on: true }));
-                    plotCSVPoints(lid);
-                    updateSidebar();
-                }
-            });
-        };
-        file.click();
+    function updateUrl(id, url) {
+        if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
+        STORE[id].url = url;
     }
 
-    function plotCSVPoints(lid) {
-        const l = STORE[lid];
+    function syncData(id) {
+        if(!STORE[id].url) return alert("Ingrese el URL.");
+        Papa.parse(STORE[id].url, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: r => {
+                STORE[id].data = r.data;
+                const cols = Object.keys(r.data[0]).filter(k => k.trim() !== "");
+                STORE[id].config = cols.map(c => ({ id: c, on: true }));
+                plotPoints(id);
+                renderUI();
+            }
+        });
+    }
+
+    function plotPoints(id) {
+        const l = STORE[id];
         l.group.eachLayer(layer => { if(layer instanceof L.CircleMarker) l.group.removeLayer(layer); });
 
-        l.csv.forEach(row => {
-            const lat = parseFloat(row.Latitud || row.lat || row.LAT);
-            const lon = parseFloat(row.Longitud || row.lon || row.LON);
+        l.data.forEach(row => {
+            const lat = parseFloat(row.Latitud || row.lat);
+            const lon = parseFloat(row.Longitud || row.lon);
             if(isNaN(lat) || isNaN(lon)) return;
 
-            // Semáforo Fiscal
-            let color = "#3b82f6";
-            const status = (row.Estatus || row.Estado || "").toUpperCase();
-            if(status.includes("AL DIA") || status.includes("PAGO")) color = "#10b981";
-            else if(status.includes("MORA") || status.includes("DEUDA")) color = "#ef4444";
+            let col = "#3b82f6";
+            const s = (row.Estatus || row.Estado || "").toUpperCase();
+            if(s.includes("PAGO") || s.includes("AL DIA")) col = "#10b981";
+            else if(s.includes("MORA") || s.includes("DEUDA")) col = "#ef4444";
 
-            const p = L.circleMarker([lat, lon], { radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 });
+            const p = L.circleMarker([lat, lon], { radius: 8, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 });
             
-            // Popup Profesional (FIX FOTO 13)
-            let html = `<div class="pop-card"><div class="pop-header">${row.Nombre || row.RAZON_SOCIAL || 'Comercio'}</div><div class="pop-content">`;
+            let html = `<div class="pop-box"><div class="pop-h">${row.Nombre || 'Registro'}</div><div class="pop-b">`;
             l.config.forEach(c => {
-                if(c.on && row[c.id]) {
-                    html += `<div class="pop-row"><b>${c.id}</b><span>${row[c.id]}</span></div>`;
-                }
+                if(c.on && row[c.id]) html += `<div class="pop-r"><b>${c.id}</b><span>${row[c.id]}</span></div>`;
             });
-            p.bindPopup(html + `</div></div>`, { maxWidth: 350 });
+            p.bindPopup(html + `</div></div>`);
             l.group.addLayer(p);
         });
     }
 
-    // 3. DIBUJO Y TURF (FIX FOTO 10)
-    function toggleDraw(lid) {
-        if(STORE[lid].drawing) {
-            map.removeControl(VIEW.drawInstance);
-            STORE[lid].drawing = false;
+    function toggleDraw(id) {
+        if(STORE[id].drawing) {
+            map.removeControl(ACTIVE.drawCtrl);
+            STORE[id].drawing = false;
         } else {
-            VIEW.lid = lid; STORE[lid].drawing = true;
-            VIEW.drawInstance = new L.Control.Draw({
-                draw: { polygon: { shapeOptions: { color: '#fbbf24', fillOpacity: 0.4 } }, rectangle: true, circle: false, marker: false, polyline: false }
+            ACTIVE.lid = id; STORE[id].drawing = true;
+            ACTIVE.drawCtrl = new L.Control.Draw({
+                draw: { polygon: true, rectangle: true, circle: false, marker: false, polyline: false }
             });
-            map.addControl(VIEW.drawInstance);
+            map.addControl(ACTIVE.drawCtrl);
         }
-        updateSidebar();
+        renderUI();
     }
 
     map.on(L.Draw.Event.CREATED, e => {
@@ -260,43 +236,31 @@
         const layer = e.layer;
         layer.options.name = name;
         layer.options.color = '#fbbf24';
-        STORE[VIEW.lid].group.addLayer(layer);
+        STORE[ACTIVE.lid].group.addLayer(layer);
         
-        // CENSO ESPACIAL
         const poly = layer.toGeoJSON();
         let count = 0;
-        STORE[VIEW.lid].group.eachLayer(l => {
+        STORE[ACTIVE.lid].group.eachLayer(l => {
             if(l instanceof L.CircleMarker && turf.booleanPointInPolygon(l.toGeoJSON(), poly)) count++;
         });
-        layer.bindPopup(`<div style="text-align:center; padding:10px">
-            <b style="font-size:16px">${name}</b><br>
-            <p style="margin:5px 0; color:#64748b">Censo de Comercios:</p>
-            <span style="font-size:26px; color:var(--verde); font-weight:900">${count}</span>
-        </div>`);
-        toggleDraw(VIEW.lid);
+        layer.bindPopup(`<b>${name}</b><br>Comercios: ${count}`);
+        toggleDraw(ACTIVE.lid);
     });
 
-    // 4. MODALES (FIX FOTO 16)
-    function openFichaPanel(lid) {
-        VIEW.lid = lid;
-        const panel = document.getElementById('ficha-fields');
-        panel.innerHTML = "";
-        STORE[lid].config.forEach((c, idx) => {
-            panel.innerHTML += `<div class="field-item">
-                <input type="checkbox" id="field-${idx}" ${c.on?'checked':''}>
-                <b>${c.id}</b>
-            </div>`;
+    function openFicha(id) {
+        ACTIVE.lid = id;
+        const list = document.getElementById('ficha-list');
+        list.innerHTML = "";
+        STORE[id].config.forEach((c, i) => {
+            list.innerHTML += `<div class="ficha-item"><input type="checkbox" id="f-${i}" ${c.on?'checked':''}><span>${c.id}</span></div>`;
         });
         document.getElementById('overlay').style.display = "block";
         document.getElementById('modal-ficha').style.display = "block";
     }
 
-    function applyFichaConfig() {
-        const lid = VIEW.lid;
-        STORE[lid].config.forEach((c, idx) => {
-            c.on = document.getElementById(`field-${idx}`).checked;
-        });
-        plotCSVPoints(lid);
+    function saveFicha() {
+        STORE[ACTIVE.lid].config.forEach((c, i) => { c.on = document.getElementById(`f-${i}`).checked; });
+        plotPoints(ACTIVE.lid);
         closeModals();
     }
 
@@ -305,24 +269,24 @@
         document.querySelectorAll('.modal').forEach(m => m.style.display = "none");
     }
 
-    function runOmniSearch() {
-        const q = document.getElementById('main-search').value.toLowerCase();
-        Object.keys(STORE).forEach(lid => {
-            STORE[lid].group.eachLayer(l => {
-                const content = l.getPopup() ? l.getPopup().getContent().toString().toLowerCase() : "";
-                l.setStyle({ opacity: content.includes(q)?1:0.1, fillOpacity: content.includes(q)?1:0.1 });
+    function runSearch() {
+        const q = document.getElementById('omni-search').value.toLowerCase();
+        Object.keys(STORE).forEach(id => {
+            STORE[id].group.eachLayer(l => {
+                if(l instanceof L.CircleMarker) {
+                    const txt = JSON.stringify(l.getPopup().getContent()).toLowerCase();
+                    l.setStyle({ opacity: txt.includes(q)?1:0.1, fillOpacity: txt.includes(q)?1:0.1 });
+                }
             });
         });
     }
 
-    function focusEntity(lid, eid) {
+    function zoomTo(lid, eid) {
         const l = STORE[lid].group.getLayer(eid);
-        map.fitBounds(l.getBounds(), { padding: [50, 50] });
+        map.fitBounds(l.getBounds());
     }
 
-    function deleteLayer(id) {
-        if(confirm("¿Eliminar capa?")) { map.removeLayer(STORE[id].group); delete STORE[id]; updateSidebar(); }
-    }
+    function deleteLayer(id) { if(confirm("¿Eliminar?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderUI(); } }
 </script>
 </body>
 </html>
