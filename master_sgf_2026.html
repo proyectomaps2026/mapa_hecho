@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF - HACIENDA MUNICIPAL AYACUCHO</title>
+    <title>SGF - AYACUCHO</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
     <style>
@@ -11,53 +11,46 @@
         #map { flex: 1; z-index: 1; background: #000; }
         .leaflet-control-attribution { display: none !important; }
 
-        .brand-card { 
+        /* IDENTIDAD IZQUIERDA */
+        .brand { 
             position: absolute; top: 20px; left: 20px; z-index: 1000; 
-            background: rgba(15, 23, 42, 0.9); padding: 15px 20px; border-radius: 8px;
-            border-left: 6px solid var(--am); border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); color: white;
+            background: rgba(15,23,42,0.9); padding: 15px; border-radius: 8px;
+            border-left: 5px solid var(--am); border: 1px solid rgba(255,255,255,0.1);
+            color: white; backdrop-filter: blur(8px);
         }
 
-        #sidebar { width: 420px; background: var(--dk); display: flex; flex-direction: column; border-left: 1px solid #334155; }
-        .side-header { padding: 40px 20px; text-align: center; position: relative; background: #1e293b; }
+        /* SIDEBAR DERECHA */
+        #sidebar { width: 400px; background: var(--dk); border-left: 1px solid #334155; display: flex; flex-direction: column; }
+        .side-header { padding: 30px 20px; text-align: center; position: relative; background: #1e293b; }
         .side-header::after {
             content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 5px;
-            background: linear-gradient(to right, var(--am) 33.3%, var(--rj) 33.3% 66.6%, var(--vd) 66.6%);
+            background: linear-gradient(to right, var(--am) 33%, var(--rj) 33% 66%, var(--vd) 66%);
         }
         
-        .side-content { flex: 1; overflow-y: auto; padding: 25px; }
-        .btn-add { width: 100%; padding: 15px; background: var(--am); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 25px; }
+        .side-content { flex: 1; overflow-y: auto; padding: 20px; }
+        .btn-add { width: 100%; padding: 15px; background: var(--am); border: none; border-radius: 8px; font-weight: 900; cursor: pointer; margin-bottom: 20px; }
 
-        .layer-box { background: #1e293b; border-radius: 12px; padding: 15px; margin-bottom: 20px; border: 1px solid #334155; }
-        .url-input { width: 100%; padding: 10px; background: #020617; border: 1px solid #475569; color: white; border-radius: 5px; font-size: 11px; margin: 10px 0; }
+        .layer-box { background: #1e293b; border-radius: 10px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+        .url-in { width: 100%; padding: 8px; background: #020617; border: 1px solid #475569; color: white; border-radius: 4px; font-size: 11px; margin: 10px 0; }
         
-        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn-s { padding: 10px; font-size: 10px; border: none; border-radius: 5px; background: #334155; color: white; font-weight: bold; cursor: pointer; }
-        .btn-draw { grid-column: span 2; border: 1px solid var(--am); background: transparent; color: var(--am); margin-top: 5px; }
+        .btn-s { padding: 10px; border: none; border-radius: 4px; background: #334155; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 5px; }
+        .btn-draw { background: transparent; border: 1px solid var(--am); color: var(--am); }
         .btn-draw.active { background: var(--rj); color: white; }
 
-        .pop-header { background: #f8fafc; padding: 10px; font-weight: 800; border-bottom: 3px solid var(--vd); color: #000; }
-        .pop-body { padding: 10px; color: #000; font-size: 12px; }
-        .pop-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
-        .pop-row b { color: #64748b; font-size: 9px; text-transform: uppercase; }
+        /* POPUP */
+        .p-h { background: #f8fafc; padding: 8px; font-weight: bold; border-bottom: 2px solid var(--vd); color: #000; }
+        .p-b { padding: 8px; color: #000; font-size: 11px; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
-
-<div class="brand-card">
-    <b>HACIENDA MUNICIPAL AYACUCHO</b>
-    <span style="font-size:10px; color:var(--am); display:block; font-weight:bold">SGF - GESTIÓN FISCAL MASTER</span>
-</div>
+<div class="brand"><b>HACIENDA MUNICIPAL AYACUCHO</b><br><small style="color:var(--am)">SGF MASTER</small></div>
 
 <aside id="sidebar">
-    <div class="side-header">
-        <h2 style="margin:0; color:white; font-size:18px;">GESTIÓN FISCAL MASTER</h2>
-        <small style="color:var(--am); font-weight:bold;">TÁCHIRA - VENEZUELA</small>
-    </div>
+    <div class="side-header"><h3 style="margin:0; color:white;">GESTIÓN FISCAL</h3></div>
     <div class="side-content">
-        <button class="btn-add" onclick="createLayer()">+ VINCULAR GOOGLE SHEETS</button>
+        <button class="btn-add" onclick="createLayer()">+ NUEVA CAPA GOOGLE</button>
         <div id="layer-list"></div>
     </div>
 </aside>
@@ -70,67 +63,61 @@
 <script>
     let LAYERS = {}; let DRAW_TOOL = null; let ACTIVE_ID = null;
 
-    const sat = L.tileLayer('https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 22 });
+    // GOOGLE MAPS SATELITAL DIRECTO
+    const sat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 });
     const map = L.map('map', { center: [8.033, -72.256], zoom: 16, layers: [sat], zoomControl: false });
 
     function createLayer() {
-        const name = prompt("Nombre de la Capa:");
-        if(!name) return;
-        const id = 'L' + Date.now();
-        LAYERS[id] = { name: name, group: L.featureGroup().addTo(map), url: '', drawing: false };
+        const n = prompt("Nombre Capa:"); if(!n) return;
+        const id = 'L'+Date.now();
+        LAYERS[id] = { name: n, group: L.featureGroup().addTo(map), url: '', drawing: false };
         render();
     }
 
     function render() {
-        const list = document.getElementById('layer-list');
-        list.innerHTML = "";
+        const list = document.getElementById('layer-list'); list.innerHTML = "";
         Object.keys(LAYERS).forEach(id => {
             const l = LAYERS[id];
-            list.innerHTML += `
-                <div class="layer-box">
-                    <b style="color:var(--am); font-size:14px">${l.name}</b>
-                    <input type="text" class="url-input" placeholder="Pegar Link /edit..." onchange="handleUrl('${id}', this.value)" value="${l.url}">
-                    <div class="btn-group">
-                        <button class="btn-s" onclick="sync('${id}')">🔄 CARGAR DATOS</button>
-                        <button class="btn-s btn-draw ${l.drawing?'active':''}" onclick="startDraw('${id}')">${l.drawing?'LISTO':'✏️ DIBUJAR'}</button>
-                    </div>
-                </div>`;
+            list.innerHTML += `<div class="layer-box">
+                <b style="color:var(--am)">${l.name}</b>
+                <input type="text" class="url-in" placeholder="URL Google Sheets..." onchange="updUrl('${id}', this.value)" value="${l.url}">
+                <button class="btn-s" onclick="sync('${id}')">🔄 CARGAR PINCHETAS</button>
+                <button class="btn-s btn-draw ${l.drawing?'active':''}" onclick="startDraw('${id}')">${l.drawing?'LISTO':'✏️ DIBUJAR'}</button>
+            </div>`;
         });
     }
 
-    function handleUrl(id, url) {
-        if(url.includes('/edit')) url = url.split('/edit')[0] + '/export?format=csv';
-        LAYERS[id].url = url;
-    }
+    function updUrl(id, u) { if(u.includes('/edit')) u = u.split('/edit')[0] + '/export?format=csv'; LAYERS[id].url = u; }
 
     function sync(id) {
-        if(!LAYERS[id].url) return alert("Pegue el link.");
+        if(!LAYERS[id].url) return alert("Pega el link.");
         Papa.parse(LAYERS[id].url, {
             download: true, header: true, skipEmptyLines: true,
             complete: r => {
-                const group = LAYERS[id].group;
-                group.eachLayer(ly => { if(ly instanceof L.CircleMarker) group.removeLayer(ly); });
+                const group = LAYERS[id].group; group.clearLayers();
+                let cargados = 0;
 
                 r.data.forEach(row => {
-                    // REPARO CLAVE: Extracción de coordenadas desde una sola columna
-                    let rawCoords = row['coordenadas gps (oficina)'] || "";
-                    if(rawCoords) {
-                        let parts = rawCoords.split(/[\s,]+/); // Separa por espacio o coma
-                        let lat = parseFloat(parts[0]);
-                        let lon = parseFloat(parts[1]);
+                    // BUSCADOR DE COORDENADAS MULTI-FORMATO
+                    let raw = row['coordenadas gps (oficina)'] || row['Coordenadas'] || "";
+                    if(raw) {
+                        // Limpieza: quita paréntesis y separa por coma o espacio
+                        let clean = raw.replace(/[()]/g, '').split(/[\s,]+/);
+                        let lat = parseFloat(clean[0]);
+                        let lon = parseFloat(clean[1]);
 
                         if(!isNaN(lat) && !isNaN(lon)) {
-                            let col = (row.Estatus || "").toUpperCase().includes("MORA") ? "#ef4444" : "#10b981";
-                            const m = L.circleMarker([lat, lon], { radius: 7, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 });
-                            
-                            let h = `<div class="pop-header">${row.Nombre || 'Comercio'}</div><div class="pop-body">`;
-                            Object.keys(row).forEach(k => { if(row[k]) h += `<div class="pop-row"><b>${k}</b><span>${row[k]}</span></div>`; });
-                            m.bindPopup(h + `</div>`);
+                            let color = (row.Estatus||"").toUpperCase().includes("MORA") ? "#ef4444" : "#10b981";
+                            const m = L.circleMarker([lat, lon], { radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 1 });
+                            m.bindPopup(`<div class="p-h">${row.Nombre||'Comercio'}</div><div class="pop-body">RIF: ${row.RIF||'S/D'}</div>`);
                             group.addLayer(m);
+                            cargados++;
                         }
                     }
                 });
-                alert("Carga lista: " + r.data.length + " comercios procesados.");
+                // REPARO: Centrar mapa en los nuevos puntos automáticamente
+                if(cargados > 0) map.fitBounds(group.getBounds());
+                alert("Éxito: " + cargados + " pinchetas visibles.");
             }
         });
     }
@@ -139,25 +126,16 @@
         if(LAYERS[id].drawing) { map.removeControl(DRAW_TOOL); LAYERS[id].drawing = false; }
         else {
             ACTIVE_ID = id; LAYERS[id].drawing = true;
-            DRAW_TOOL = new L.Control.Draw({ draw: { polygon: true, rectangle: true, circle: false, marker: false, polyline: false } });
+            DRAW_TOOL = new L.Control.Draw({ draw: { polyline: false, circle: false, marker: false, circlemarker: false } });
             map.addControl(DRAW_TOOL);
         }
         render();
     }
 
     map.on(L.Draw.Event.CREATED, e => {
-        const ly = e.layer;
-        const name = prompt("Nombre Sector:");
-        if(name) {
-            ly.options.color = '#ffcc00';
-            LAYERS[ACTIVE_ID].group.addLayer(ly);
-            let count = 0;
-            const g = ly.toGeoJSON();
-            Object.keys(LAYERS).forEach(id => {
-                LAYERS[id].group.eachLayer(m => { if(m instanceof L.CircleMarker && turf.booleanPointInPolygon(m.toGeoJSON(), g)) count++; });
-            });
-            ly.bindPopup(`<b>${name}</b><br>Censo: ${count}`);
-        }
+        const n = prompt("Sector:"); if(!n) return;
+        const ly = e.layer; ly.options.color = '#ffcc00';
+        LAYERS[ACTIVE_ID].group.addLayer(ly);
         startDraw(ACTIVE_ID);
     });
 </script>
