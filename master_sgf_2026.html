@@ -3,140 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF AYACUCHO v9.0 - SISTEMA PROFESIONAL</title>
+    <title>SGF AYACUCHO v10.0 - FINAL PROFESIONAL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono&display=swap" rel="stylesheet">
     
     <style>
-        :root { 
-            --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; 
-            --text: #e6edf3; --border: #30363d; --yellow: #fbbc04; --safe: #238636; --danger: #da3633;
-        }
-
+        :root { --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; --text: #e6edf3; --border: #30363d; --yellow: #fbbc04; --safe: #238636; --danger: #da3633; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
 
-        /* Mapa con Brillo Ajustado (No tan oscuro) */
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #111; }
-        .map-bright { filter: brightness(0.8) contrast(1.1); } /* Brillo suave solicitado */
+        .map-bright { filter: brightness(0.85) contrast(1.1); }
 
-        /* Interfaz de Usuario */
         .ui { position: absolute; z-index: 1000; pointer-events: auto; }
-        .glass { background: rgba(22, 27, 34, 0.96); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .glass { background: rgba(22, 27, 34, 0.98); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
 
         /* Barra Superior */
-        .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 12px; height: 50px; }
-        .search-engine { flex: 1; max-width: 400px; display: flex; align-items: center; padding: 0 15px; }
-        .search-engine input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
+        .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 10px; height: 55px; align-items: center; padding: 0 15px; }
+        .search-box { flex: 1; max-width: 350px; display: flex; align-items: center; gap: 10px; }
+        .search-box input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
         
-        .tools { display: flex; align-items: center; padding: 0 10px; gap: 8px; }
-        .t-btn { background: transparent; border: none; color: #8b949e; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .tool-dock { display: flex; gap: 5px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 10px; border: 1px solid var(--border); }
+        .t-btn { background: transparent; border: none; color: #8b949e; width: 42px; height: 42px; border-radius: 8px; cursor: pointer; transition: 0.2s; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .t-btn:hover { color: var(--accent); background: rgba(0,242,255,0.1); }
-        .t-btn.active { color: var(--accent); border: 1px solid var(--accent); background: rgba(0,242,255,0.05); }
+        .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.15); border: 1px solid var(--accent); }
 
-        .btn-config { background: var(--safe); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+        .btn-save { background: var(--safe); color: white; border: none; padding: 0 20px; height: 42px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 8px; margin-left: auto; }
 
-        /* Panel Lateral de Capas */
-        #sidebar { top: 80px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; }
-        .side-header { padding: 20px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); border-radius: 12px 12px 0 0; }
-        .side-header h1 { margin: 0; font-size: 15px; letter-spacing: 1px; font-weight: 800; }
+        /* Sidebar */
+        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; }
+        .side-head { padding: 20px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
+        .side-head h1 { margin: 0; font-size: 16px; font-weight: 900; }
         
-        .layer-container { flex: 1; overflow-y: auto; padding: 12px; }
-        .block-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 12px; border: 1px solid transparent; overflow: hidden; }
-        .block-card.active-b { border-color: var(--accent); }
-        .block-head { padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; background: rgba(255,255,255,0.02); }
-        .badge { background: var(--border); color: var(--accent); padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; margin-left: auto; }
+        .layer-zone { flex: 1; overflow-y: auto; padding: 15px; }
+        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; border: 1px solid transparent; transition: 0.3s; }
+        .b-card.active-b { border-color: var(--accent); background: rgba(0,242,255,0.05); }
+        .b-head { padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .badge { background: var(--border); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; margin-left: auto; }
         
-        .item-list { padding: 5px 0; display: none; }
-        .block-card.open .item-list { display: block; }
-        .item-row { padding: 8px 15px 8px 45px; font-size: 12px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 10px; border-left: 3px solid transparent; }
-        .item-row:hover { color: white; background: rgba(255,255,255,0.08); border-left-color: var(--accent); }
+        .item-row { padding: 8px 15px 8px 45px; font-size: 12px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .item-row:hover { color: white; background: rgba(255,255,255,0.1); }
 
-        /* Popups de Edición */
-        .leaflet-popup-content-wrapper { background: #fff; border-radius: 8px; color: #222; }
-        .pop-form { min-width: 250px; padding: 5px; }
-        .pop-form label { font-size: 10px; font-weight: 800; color: #888; display: block; margin-top: 10px; text-transform: uppercase; }
-        .pop-form input, .pop-form textarea { width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 5px; box-sizing: border-box; margin-top: 4px; font-family: inherit; }
-        .pop-img { width: 100%; border-radius: 6px; margin-top: 12px; border: 1px solid #eee; max-height: 160px; object-fit: cover; }
-        .pop-save { background: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; font-weight: 800; margin-top: 15px; cursor: pointer; }
+        /* Popups */
+        .pop-card { min-width: 260px; padding: 5px; }
+        .pop-card label { font-size: 10px; font-weight: 800; color: #888; display: block; margin-top: 10px; }
+        .pop-card input, .pop-card textarea { width: 100%; border: 1px solid #ddd; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-top: 5px; font-family: inherit; }
+        .pop-img { width: 100%; border-radius: 8px; margin-top: 12px; max-height: 180px; object-fit: cover; border: 1px solid #eee; }
+        .pop-btn { background: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 800; margin-top: 15px; cursor: pointer; }
 
         /* Modales */
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 350px; padding: 30px; display: none; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 360px; padding: 30px; display: none; }
+        .modal h3 { margin-top: 0; color: white; }
         .modal input, .modal select { width: 100%; padding: 12px; background: #0d1117; border: 1px solid var(--border); color: white; margin: 12px 0; border-radius: 6px; box-sizing: border-box; }
-        .btn-confirm { background: var(--accent); color: #000; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: 800; cursor: pointer; }
-        
-        /* Botón Flotante de Capas Mapa */
-        .map-selector { bottom: 30px; right: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .m-type { width: 50px; height: 50px; border-radius: 12px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; transition: 0.3s; }
-        .m-type.active { border-color: var(--accent); transform: scale(1.1); }
-        .m-type img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* Selector Capas Mapa */
+        .map-ctrl { bottom: 25px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .m-btn { width: 55px; height: 55px; border-radius: 12px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; transition: 0.2s; background: #000; }
+        .m-btn.active { border-color: var(--accent); transform: scale(1.1); box-shadow: 0 0 15px rgba(0,242,255,0.4); }
+        .m-btn img { width: 100%; height: 100%; object-fit: cover; opacity: 0.7; }
+        .m-btn.active img { opacity: 1; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="ui top-nav">
-    <div class="search-engine glass">
-        <i class="fas fa-search" style="color: var(--accent); margin-right: 12px;"></i>
-        <input type="text" id="master-search" placeholder="Buscar local o RIF..." oninput="filtrarSide()">
+<div class="ui top-nav glass">
+    <div class="search-box">
+        <i class="fas fa-search" style="color: var(--accent)"></i>
+        <input type="text" id="main-search" placeholder="Buscar local..." oninput="filtrarLista()">
     </div>
     
-    <div class="tools glass">
-        <button class="t-btn" id="btn-marker" title="Poner Pincheta"><i class="fas fa-location-dot"></i></button>
-        <button class="t-btn" id="btn-poly" title="Dibujar Área"><i class="fas fa-draw-polygon"></i></button>
-        <div style="width:1px; height:25px; background:var(--border); margin:0 5px;"></div>
-        <button class="t-btn" onclick="eliminarCapaActiva()" title="Borrar Bloque"><i class="fas fa-trash" style="color:var(--danger)"></i></button>
+    <div class="tool-dock">
+        <button class="t-btn active" id="btn-select" title="Puntero (ESC)" onclick="resetTool()"><i class="fas fa-mouse-pointer"></i></button>
+        <button class="t-btn" id="btn-mark" title="Pincheta" onclick="enableTool('marker')"><i class="fas fa-map-pin"></i></button>
+        <button class="t-btn" id="btn-poly" title="Área" onclick="enableTool('poly')"><i class="fas fa-draw-polygon"></i></button>
+        <div style="width:1px; height:20px; background:var(--border); margin:10px 5px;"></div>
+        <button class="t-btn" title="Borrar Bloque" onclick="borrarCapa()"><i class="fas fa-trash" style="color:var(--danger)"></i></button>
     </div>
 
-    <button class="btn-config" onclick="guardarTodoEnMemoria()">
-        <i class="fas fa-save"></i> GUARDAR CONFIG
+    <button class="btn-save" onclick="guardarBackup()">
+        <i class="fas fa-cloud-upload-alt"></i> GUARDAR CONFIG
     </button>
 </div>
 
 <aside id="sidebar" class="glass ui">
-    <div class="side-header">
-        <h1>HACIENDA AYACUCHO</h1>
-        <span>SISTEMA DE GESTIÓN FISCAL v9.0</span>
+    <div class="side-head">
+        <h1>SGF AYACUCHO v10</h1>
+        <span style="font-family:'JetBrains Mono'; font-size:10px; color:var(--accent)">CATASTRO MUNICIPAL DIGITAL</span>
     </div>
     
-    <div class="layer-container" id="lista-bloques">
-        </div>
+    <div class="layer-zone" id="list-container"></div>
 
-    <div style="padding: 15px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-        <button class="btn-confirm" style="margin:0; background: var(--panel); color: white; border: 1px solid var(--border);" onclick="abrir('mod-capa')">+ Bloque</button>
-        <button class="btn-confirm" style="margin:0; background: var(--panel); color: white; border: 1px solid var(--border);" onclick="abrir('mod-csv')"><i class="fas fa-upload"></i> CSV</button>
+    <div style="padding: 15px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <button class="pop-btn" style="margin:0; background: var(--panel); border:1px solid var(--border)" onclick="abrir('m-capa')">+ Bloque</button>
+        <button class="pop-btn" style="margin:0; background: var(--panel); border:1px solid var(--border)" onclick="abrir('m-csv')"><i class="fas fa-file-csv"></i> CSV</button>
     </div>
 </aside>
 
-<div class="ui map-selector">
-    <div class="m-type active" id="m-sat" onclick="cambiarMapa('h')">
-        <img src="https://mt1.google.com/vt/lyrs=y&x=1194&y=1646&z=12" title="Satélite">
-    </div>
-    <div class="m-type" id="m-str" onclick="cambiarMapa('m')">
-        <img src="https://mt1.google.com/vt/lyrs=m&x=1194&y=1646&z=12" title="Calles">
-    </div>
+<div class="ui map-ctrl">
+    <div class="m-btn active" id="m-sat" onclick="setMap('y')"><img src="https://mt1.google.com/vt/lyrs=y&x=1194&y=1646&z=12"></div>
+    <div class="m-btn" id="m-str" onclick="setMap('m')"><img src="https://mt1.google.com/vt/lyrs=m&x=1194&y=1646&z=12"></div>
 </div>
 
-<div id="mod-capa" class="modal glass">
-    <h3>Crear Bloque Fiscal</h3>
-    <input type="text" id="nombre-capa" placeholder="Ej: Sector Las Flores">
-    <button class="btn-confirm" onclick="crearBloque()">Confirmar</button>
-    <button class="t-btn" style="width:100%; margin-top:10px" onclick="cerrar('mod-capa')">Cancelar</button>
+<div id="m-capa" class="modal glass">
+    <h3>Nuevo Bloque</h3>
+    <input type="text" id="n-capa" placeholder="Nombre del Sector">
+    <button class="pop-btn" onclick="crearBloque()">Confirmar</button>
+    <button class="t-btn" style="width:100%; margin-top:10px" onclick="cerrar('m-capa')">Cancelar</button>
 </div>
 
-<div id="mod-csv" class="modal glass">
-    <h3>Sincronizar Google Sheets</h3>
-    <input type="text" id="csv-url" placeholder="Pegue la URL del CSV aquí...">
-    <div id="mapping" style="display:none">
-        <label style="font-size:10px">COLUMNA COORDENADAS:</label>
-        <select id="sel-coo"></select>
-        <label style="font-size:10px">COLUMNA NOMBRE:</label>
-        <select id="sel-nom"></select>
+<div id="m-csv" class="modal glass">
+    <h3>Importar Google Sheets</h3>
+    <input type="text" id="csv-url" placeholder="Pegue el enlace CSV">
+    <div id="csv-map" style="display:none">
+        <label>Columna Coordenadas:</label>
+        <select id="s-coo"></select>
+        <label>Columna Nombre:</label>
+        <select id="s-nom"></select>
     </div>
-    <button id="btn-import-go" class="btn-confirm" onclick="procesarCSV()">Analizar CSV</button>
+    <button id="btn-import-act" class="pop-btn" onclick="analizarCSV()">Procesar Archivo</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -144,129 +132,114 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    // 1. INICIALIZAR MAPA Y CAPAS
+    // 1. INICIALIZACIÓN
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
-    
-    const layerSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], className: 'map-bright' }).addTo(map);
-    const layerStr = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] });
+    const sat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], className: 'map-bright' }).addTo(map);
+    const str = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] });
 
-    let DATA = {}; // Base de datos maestra
+    let STORE = {}; 
     let activeId = null;
-    let csvTemporal = null;
+    let csvCache = null;
 
-    // Bloqueo de clics en la UI
-    const sidebar = document.getElementById('sidebar');
-    L.DomEvent.disableClickPropagation(sidebar);
-    L.DomEvent.disableScrollPropagation(sidebar);
+    // Bloqueo de UI
+    const side = document.getElementById('sidebar');
+    L.DomEvent.disableClickPropagation(side);
+    L.DomEvent.disableScrollPropagation(side);
 
-    // 2. HERRAMIENTAS DE DIBUJO (CON LIMPIEZA AUTOMÁTICA)
-    function crearIcono(color) {
-        return L.divIcon({
-            html: `<i class="fas fa-location-dot" style="color:${color}; font-size:30px; text-shadow: 0 2px 5px #000;"></i>`,
-            className: 'pin-pro', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -25]
-        });
-    }
-
-    const toolMarker = new L.Draw.Marker(map, { icon: crearIcono('#00f2ff') });
-    const toolPoly = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.3 } });
-
-    document.getElementById('btn-marker').onclick = function() {
-        desactivarHerramientas();
-        if(activeId) { toolMarker.enable(); this.classList.add('active'); } 
-        else alert("Seleccione un bloque primero");
-    };
-
-    document.getElementById('btn-poly').onclick = function() {
-        desactivarHerramientas();
-        if(activeId) { toolPoly.enable(); this.classList.add('active'); }
-        else alert("Seleccione un bloque primero");
-    };
-
-    function desactivarHerramientas() {
-        toolMarker.disable(); toolPoly.disable();
-        document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active'));
-    }
-
-    map.on(L.Draw.Event.CREATED, (e) => {
-        const layer = e.layer;
-        DATA[activeId].group.addLayer(layer);
-        
-        DATA[activeId].items.push({
-            id: layer._leaflet_id,
-            name: "Nuevo Registro",
-            desc: "",
-            color: "#00f2ff",
-            type: e.layerType
-        });
-        
-        configurarElemento(activeId, layer._leaflet_id);
-        renderSidebar();
-        desactivarHerramientas(); // <-- AQUÍ SE CORRIGE EL ERROR DE LA PINCHETA PEGADA
+    // 2. HERRAMIENTAS DE DIBUJO
+    const getIcon = (color) => L.divIcon({
+        html: `<i class="fas fa-map-pin" style="color:${color}; font-size:30px; text-shadow:0 2px 4px #000"></i>`,
+        className: 'custom-p', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -25]
     });
 
-    // 3. FICHA FISCAL Y EDICIÓN
-    function configurarElemento(bid, iid) {
-        const item = DATA[bid].items.find(x => x.id === iid);
-        const lyr = DATA[bid].group.getLayer(iid);
+    const drawMarker = new L.Draw.Marker(map, { icon: getIcon('#00f2ff') });
+    const drawPoly = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.3 } });
 
-        if(lyr.setIcon) lyr.setIcon(crearIcono(item.color));
-        else lyr.setStyle({ color: item.color, fillColor: item.color });
+    function enableTool(type) {
+        resetTool();
+        if(!activeId) return alert("Crea/Selecciona un Bloque primero");
+        if(type === 'marker') { drawMarker.enable(); document.getElementById('btn-mark').classList.add('active'); }
+        else { drawPoly.enable(); document.getElementById('btn-poly').classList.add('active'); }
+        document.getElementById('btn-select').classList.remove('active');
+    }
 
-        const detectorImg = (url) => (url && url.startsWith('http') && /\.(jpg|jpeg|png|webp)$/i.test(url));
-        const imgTag = detectorImg(item.desc) ? `<img src="${item.desc}" class="pop-img">` : '';
+    function resetTool() {
+        drawMarker.disable(); drawPoly.disable();
+        document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-select').classList.add('active');
+    }
 
-        const html = `
-            <div class="pop-form" onmousedown="L.DomEvent.stopPropagation(event)">
-                <div style="background:var(--yellow); color:#000; padding:10px; font-weight:800; text-align:center; margin:-14px -14px 10px; border-radius:8px 8px 0 0;">REGISTRO FISCAL</div>
-                <label>Razón Social:</label>
-                <input type="text" id="n-${iid}" value="${item.name}">
-                <label>Descripción / Foto URL:</label>
-                <textarea id="d-${iid}" rows="2">${item.desc}</textarea>
-                <label>Color Identificador:</label>
-                <input type="color" id="c-${iid}" value="${item.color}" style="height:35px; cursor:pointer">
-                ${imgTag}
-                <button class="pop-save" onclick="guardarFicha('${bid}', ${iid})">GUARDAR CAMBIOS</button>
-            </div>`;
+    // Tecla ESC para soltar herramientas
+    window.addEventListener('keydown', (e) => { if(e.key === "Escape") resetTool(); });
+
+    map.on(L.Draw.Event.CREATED, (e) => {
+        const lyr = e.layer;
+        STORE[activeId].group.addLayer(lyr);
+        STORE[activeId].items.push({ id: lyr._leaflet_id, name: "Local Nuevo", desc: "", color: "#00f2ff", type: e.layerType });
+        configItem(activeId, lyr._leaflet_id);
+        renderSide();
+        resetTool(); // <-- LIBERA LA PINCHETA AL TERMINAR
+    });
+
+    // 3. EDICIÓN Y POPUPS
+    function configItem(bid, iid) {
+        const it = STORE[bid].items.find(x => x.id === iid);
+        const lyr = STORE[bid].group.getLayer(iid);
+
+        if(lyr.setIcon) lyr.setIcon(getIcon(it.color));
+        else lyr.setStyle({ color: it.color, fillColor: it.color });
+
+        const isImg = (u) => (u && u.startsWith('http') && /\.(jpg|jpeg|png|webp)$/i.test(u));
+        const img = isImg(it.desc) ? `<img src="${it.desc}" class="pop-img">` : '';
+
+        const html = `<div class="pop-card" onmousedown="L.DomEvent.stopPropagation(event)">
+            <label>NOMBRE / RIF:</label>
+            <input type="text" id="in-${iid}" value="${it.name}">
+            <label>DESCRIPCIÓN / LINK FOTO:</label>
+            <textarea id="id-${iid}" rows="2">${it.desc}</textarea>
+            <label>COLOR CATEGORÍA:</label>
+            <input type="color" id="ic-${iid}" value="${it.color}" style="height:35px">
+            ${img}
+            <button class="pop-btn" onclick="savePop('${bid}', ${iid})">ACTUALIZAR DATOS</button>
+        </div>`;
         lyr.bindPopup(html, { maxWidth: 280 });
     }
 
-    window.guardarFicha = (bid, iid) => {
-        const item = DATA[bid].items.find(x => x.id === iid);
-        item.name = document.getElementById(`n-${iid}`).value;
-        item.desc = document.getElementById(`d-${iid}`).value;
-        item.color = document.getElementById(`c-${iid}`).value;
-        
-        configurarElemento(bid, iid);
-        renderSidebar();
-        DATA[bid].group.getLayer(iid).closePopup();
+    window.savePop = (bid, iid) => {
+        const it = STORE[bid].items.find(x => x.id === iid);
+        it.name = document.getElementById(`in-${iid}`).value;
+        it.desc = document.getElementById(`id-${iid}`).value;
+        it.color = document.getElementById(`ic-${iid}`).value;
+        configItem(bid, iid);
+        renderSide();
+        STORE[bid].group.getLayer(iid).closePopup();
     };
 
-    // 4. GESTIÓN DE BLOQUES (CAPAS)
+    // 4. CAPAS Y BLOQUES
     function crearBloque() {
-        const nom = document.getElementById('nombre-capa').value;
-        if(!nom) return;
-        const id = 'b_' + Date.now();
-        DATA[id] = { name: nom, items: [], visible: true, group: new L.FeatureGroup().addTo(map) };
+        const n = document.getElementById('n-capa').value;
+        if(!n) return;
+        const id = 'b' + Date.now();
+        STORE[id] = { name: n, items: [], visible: true, group: new L.FeatureGroup().addTo(map) };
         activeId = id;
-        renderSidebar();
-        cerrar('mod-capa');
+        renderSide();
+        cerrar('m-capa');
     }
 
-    function renderSidebar() {
-        const box = document.getElementById('lista-bloques');
+    function renderSide() {
+        const box = document.getElementById('list-container');
         box.innerHTML = "";
-        for(let id in DATA) {
-            const act = (id === activeId) ? 'active-b open' : '';
-            let h = `
-                <div class="block-card ${act}">
-                    <div class="block-head" onclick="activarBloque('${id}')">
-                        <input type="checkbox" ${DATA[id].visible?'checked':''} onclick="toggleVis(event, '${id}')">
-                        <span style="font-weight:700; color:white;">📁 ${DATA[id].name}</span>
-                        <span class="badge">${DATA[id].items.length}</span>
-                    </div>
-                    <div class="item-list">`;
-            DATA[id].items.forEach(it => {
-                h += `<div class="item-row" onclick="zoomA('${id}', ${it.id})">
+        for(let id in STORE) {
+            const isA = (id === activeId);
+            let h = `<div class="b-card ${isA?'active-b':''}">
+                <div class="b-head" onclick="selB('${id}')">
+                    <input type="checkbox" ${STORE[id].visible?'checked':''} onclick="togV(event, '${id}')">
+                    <span style="font-weight:800; color:white">📁 ${STORE[id].name}</span>
+                    <span class="badge">${STORE[id].items.length}</span>
+                </div>
+                <div style="display:${isA?'block':'none'}">`;
+            STORE[id].items.forEach(it => {
+                h += `<div class="item-row" onclick="focusL('${id}', ${it.id})">
                         <div style="width:8px; height:8px; border-radius:50%; background:${it.color}"></div>
                         ${it.name}
                       </div>`;
@@ -276,92 +249,93 @@
         }
     }
 
-    // 5. MOTOR DE IMPORTACIÓN CSV PROTEGIDO
-    function procesarCSV() {
+    // 5. IMPORTACIÓN CSV MEJORADA (Se cierra sola y limpia coordenadas)
+    function analizarCSV() {
         const url = document.getElementById('csv-url').value.replace('/edit?usp=sharing', '/export?format=csv');
-        Papa.parse(url, { download: true, header: true, skipEmptyLines: true, complete: function(results) {
-            csvTemporal = results.data;
-            let opt = ""; results.meta.fields.forEach(f => opt += `<option value="${f}">${f}</option>`);
-            document.getElementById('sel-coo').innerHTML = opt;
-            document.getElementById('sel-nom').innerHTML = opt;
-            document.getElementById('mapping').style.display = 'block';
-            document.getElementById('btn-import-go').innerText = "IMPORTAR AHORA";
-            document.getElementById('btn-import-go').onclick = importarFinal;
+        Papa.parse(url, { download: true, header: true, skipEmptyLines: true, complete: (r) => {
+            csvCache = r.data;
+            let o = ""; r.meta.fields.forEach(f => o += `<option value="${f}">${f}</option>`);
+            document.getElementById('s-coo').innerHTML = o;
+            document.getElementById('s-nom').innerHTML = o;
+            document.getElementById('csv-map').style.display = 'block';
+            document.getElementById('btn-import-act').innerText = "VINCULAR E IMPORTAR";
+            document.getElementById('btn-import-act').onclick = importNow;
         }});
     }
 
-    function importarFinal() {
-        const colC = document.getElementById('sel-coo').value;
-        const colN = document.getElementById('sel-nom').value;
-        const bid = 'b_' + Date.now();
-        const grupo = new L.FeatureGroup().addTo(map);
-        const items = [];
+    function importNow() {
+        const cCol = document.getElementById('s-coo').value;
+        const nCol = document.getElementById('s-nom').value;
+        const bid = 'b' + Date.now();
+        const grp = new L.FeatureGroup().addTo(map);
+        const its = [];
 
-        csvTemporal.forEach(row => {
-            if(row[colC]) {
-                let coords = row[colC].replace(/[()]/g,'').split(/[, ]+/);
-                let lat = parseFloat(coords[0]), lon = parseFloat(coords[1]);
+        csvCache.forEach(row => {
+            if(row[cCol]) {
+                // Limpiador de coordenadas: elimina paréntesis, letras o espacios extra
+                let raw = row[cCol].replace(/[A-Za-z()]/g, '').trim();
+                let pts = raw.split(/[, ]+/);
+                let lat = parseFloat(pts[0]), lon = parseFloat(pts[1]);
                 if(!isNaN(lat)) {
                     const m = L.marker([lat, lon]);
-                    const iid = grupo.addLayer(m)._leaflet_id;
-                    items.push({ id: iid, name: row[colN] || "Sin Nombre", desc: "Censo", color: "#da3633", type: 'marker' });
+                    const iid = grp.addLayer(m)._leaflet_id;
+                    its.push({ id: iid, name: row[nCol] || "Censo", desc: "Importado", color: "#da3633", type: 'marker' });
                 }
             }
         });
 
-        DATA[bid] = { name: "Importado " + new Date().toLocaleTimeString(), items, visible: true, group: grupo };
+        STORE[bid] = { name: "Importado " + new Date().toLocaleTimeString(), items: its, visible: true, group: grp };
         activeId = bid;
-        items.forEach(it => configurarElemento(bid, it.id));
-        renderSidebar();
-        cerrar('mod-csv');
-        if(items.length > 0) map.fitBounds(grupo.getBounds());
+        its.forEach(it => configItem(bid, it.id));
+        renderSide();
+        cerrar('m-csv'); // <-- CIERRA EL MODAL AUTOMÁTICAMENTE
+        if(its.length > 0) map.fitBounds(grp.getBounds());
     }
 
-    // 6. PERSISTENCIA Y MAPAS
-    function guardarTodoEnMemoria() {
-        const pack = {};
-        for(let id in DATA) {
-            pack[id] = {
-                name: DATA[id].name, visible: DATA[id].visible,
-                items: DATA[id].items.map(it => {
-                    const lyr = DATA[id].group.getLayer(it.id);
-                    return { ...it, pos: lyr.getLatLng ? lyr.getLatLng() : lyr.getLatLngs() };
+    // 6. PERSISTENCIA
+    function guardarBackup() {
+        const raw = {};
+        for(let id in STORE) {
+            raw[id] = { name: STORE[id].name, visible: STORE[id].visible, 
+                items: STORE[id].items.map(it => {
+                    const l = STORE[id].group.getLayer(it.id);
+                    return { ...it, pos: l.getLatLng ? l.getLatLng() : l.getLatLngs() };
                 })
             };
         }
-        localStorage.setItem('CONFIG_HACIENDA_V9', JSON.stringify(pack));
-        alert("✅ CONFIGURACIÓN GUARDADA CORRECTAMENTE");
+        localStorage.setItem('HACIENDA_AYACUCHO_FINAL', JSON.stringify(raw));
+        alert("SISTEMA GUARDADO: Los datos están protegidos en este navegador.");
     }
 
     window.onload = () => {
-        const saved = JSON.parse(localStorage.getItem('CONFIG_HACIENDA_V9'));
-        if(!saved) return;
-        for(let id in saved) {
-            const grp = new L.FeatureGroup();
-            if(saved[id].visible) grp.addTo(map);
-            saved[id].items.forEach(it => {
+        const s = JSON.parse(localStorage.getItem('HACIENDA_AYACUCHO_FINAL'));
+        if(!s) return;
+        for(let id in s) {
+            const g = new L.FeatureGroup();
+            if(s[id].visible) g.addTo(map);
+            s[id].items.forEach(it => {
                 let l = it.type === 'marker' ? L.marker(it.pos) : L.polygon(it.pos);
-                grp.addLayer(l);
+                g.addLayer(l);
                 it.id = l._leaflet_id;
             });
-            DATA[id] = { ...saved[id], group: grp };
-            saved[id].items.forEach(it => configurarElemento(id, it.id));
+            STORE[id] = { ...s[id], group: g };
+            s[id].items.forEach(it => configItem(id, it.id));
         }
-        renderSidebar();
+        renderSide();
     };
 
-    // UTILIDADES
-    function cambiarMapa(tipo) {
-        if(tipo === 'h') { layerSat.addTo(map); map.removeLayer(layerStr); document.getElementById('m-sat').classList.add('active'); document.getElementById('m-str').classList.remove('active'); }
-        else { layerStr.addTo(map); map.removeLayer(layerSat); document.getElementById('m-str').classList.add('active'); document.getElementById('m-sat').classList.remove('active'); }
+    // AUXILIARES
+    function setMap(t) {
+        if(t === 'y') { sat.addTo(map); map.removeLayer(str); document.getElementById('m-sat').classList.add('active'); document.getElementById('m-str').classList.remove('active'); }
+        else { str.addTo(map); map.removeLayer(sat); document.getElementById('m-str').classList.add('active'); document.getElementById('m-sat').classList.remove('active'); }
     }
-    function activarBloque(id) { activeId = id; renderSidebar(); }
-    function toggleVis(e, id) { e.stopPropagation(); DATA[id].visible ? map.removeLayer(DATA[id].group) : map.addLayer(DATA[id].group); DATA[id].visible = !DATA[id].visible; }
-    function zoomA(bid, iid) { const lyr = DATA[bid].group.getLayer(iid); map.setView(lyr.getBounds ? lyr.getBounds().getCenter() : lyr.getLatLng(), 19); lyr.openPopup(); }
-    function abrir(id) { document.getElementById(id).style.display='block'; }
-    function cerrar(id) { document.getElementById(id).style.display='none'; }
-    function filtrarSide() { const q = document.getElementById('master-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none'); }
-    function eliminarCapaActiva() { if(activeId && confirm("¿Borrar bloque completo?")) { map.removeLayer(DATA[activeId].group); delete DATA[activeId]; activeId = null; renderSidebar(); } }
+    function selB(id) { activeId = id; renderSide(); }
+    function togV(e, id) { e.stopPropagation(); STORE[id].visible ? map.removeLayer(STORE[id].group) : map.addLayer(STORE[id].group); STORE[id].visible = !STORE[id].visible; }
+    function focusL(bid, iid) { const l = STORE[bid].group.getLayer(iid); map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 19); l.openPopup(); }
+    function abrir(id) { document.getElementById(id).style.display = 'block'; }
+    function cerrar(id) { document.getElementById(id).style.display = 'none'; }
+    function borrarCapa() { if(activeId && confirm("¿Eliminar bloque seleccionado?")) { map.removeLayer(STORE[activeId].group); delete STORE[activeId]; activeId = null; renderSide(); } }
+    function filtrarLista() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q)?'flex':'none'); }
 </script>
 </body>
 </html>
