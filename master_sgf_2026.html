@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF AYACUCHO v10.1 - PROTECCIÓN TOTAL</title>
+    <title>SGF AYACUCHO v10.3 - REPOSITORIO JSON</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -30,27 +30,26 @@
         .t-btn:hover { color: var(--accent); background: rgba(0,242,255,0.1); }
         .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.15); border: 1px solid var(--accent); }
 
-        .btn-save { background: var(--safe); color: white; border: none; padding: 0 15px; height: 42px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 11px; margin-left: auto; }
+        .btn-save { background: var(--safe); color: white; border: none; padding: 0 15px; height: 42px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 11px; margin-left: auto; display: flex; align-items: center; gap: 8px; }
 
         /* Sidebar */
-        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 360px; display: flex; flex-direction: column; transition: 0.3s; }
+        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 360px; display: flex; flex-direction: column; }
         .side-head { padding: 15px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
-        .side-head h1 { margin: 0; font-size: 14px; font-weight: 900; letter-spacing: 1px; }
+        .side-head h1 { margin: 0; font-size: 14px; font-weight: 900; }
         
         .layer-zone { flex: 1; overflow-y: auto; padding: 12px; }
         .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid transparent; }
-        .b-card.active-b { border-color: var(--accent); }
+        .b-card.active-b { border-color: var(--accent); background: rgba(0,242,255,0.05); }
         .b-head { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .badge { background: var(--border); color: var(--accent); padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: bold; margin-left: auto; }
         
-        .item-row { padding: 7px 12px 7px 40px; font-size: 12px; color: #8b949e; cursor: pointer; border-left: 2px solid transparent; }
-        .item-row:hover { color: white; background: rgba(255,255,255,0.08); border-left-color: var(--accent); }
+        .item-row { padding: 7px 12px 7px 40px; font-size: 12px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .item-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
         /* Popups */
         .pop-card { min-width: 250px; padding: 5px; color: #222; }
         .pop-card label { font-size: 10px; font-weight: 900; color: #888; display: block; margin-top: 8px; }
         .pop-card input, .pop-card textarea { width: 100%; border: 1px solid #ccc; padding: 8px; border-radius: 5px; box-sizing: border-box; margin-top: 4px; font-family: inherit; }
-        .pop-img { width: 100%; border-radius: 6px; margin-top: 10px; max-height: 150px; object-fit: cover; }
         .pop-btn { background: #1a73e8; color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: 800; margin-top: 12px; cursor: pointer; }
 
         /* Modales */
@@ -59,7 +58,7 @@
 
         /* Mapa Selector */
         .map-ctrl { bottom: 25px; right: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .m-btn { width: 50px; height: 50px; border-radius: 10px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; transition: 0.2s; }
+        .m-btn { width: 50px; height: 50px; border-radius: 10px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; }
         .m-btn.active { border-color: var(--accent); transform: scale(1.1); }
         .m-btn img { width: 100%; height: 100%; object-fit: cover; }
     </style>
@@ -71,28 +70,30 @@
 <div class="ui top-nav glass">
     <div class="search-box">
         <i class="fas fa-search" style="color: var(--accent)"></i>
-        <input type="text" id="main-search" placeholder="Filtrar por nombre..." oninput="filtrarLista()">
+        <input type="text" id="main-search" placeholder="Buscar local..." oninput="filtrarLista()">
     </div>
     
     <div class="tool-dock">
-        <button class="t-btn active" id="btn-select" title="Mover Mapa (ESC)" onclick="resetTool()"><i class="fas fa-hand-paper"></i></button>
+        <button class="t-btn active" id="btn-select" onclick="resetTool()"><i class="fas fa-hand-paper"></i></button>
         <button class="t-btn" id="btn-mark" onclick="enableTool('marker')"><i class="fas fa-map-marker-alt"></i></button>
         <button class="t-btn" id="btn-poly" onclick="enableTool('poly')"><i class="fas fa-vector-square"></i></button>
-        <button class="t-btn" onclick="borrarCapa()"><i class="fas fa-eraser" style="color:var(--danger)"></i></button>
+        <button class="t-btn" onclick="borrarCapa()"><i class="fas fa-trash" style="color:var(--danger)"></i></button>
     </div>
 
-    <button class="btn-save" onclick="guardarTodo()">GUARDAR CONFIG</button>
+    <button class="btn-save" onclick="exportarConfig()">
+        <i class="fas fa-server"></i> ACTUALIZAR CONFIG.JSON
+    </button>
 </div>
 
 <aside id="sidebar" class="glass ui">
     <div class="side-head">
-        <h1>HACIENDA AYACUCHO</h1>
-        <span style="font-size:9px; color:var(--accent); font-weight:bold">MOTOR FISCAL v10.1</span>
+        <h1>REPOSITORIO FISCAL</h1>
+        <span style="font-size:9px; color:var(--accent); font-weight:bold">AYACUCHO v10.3</span>
     </div>
     <div class="layer-zone" id="list-container"></div>
     <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid var(--border)">
-        <button class="pop-btn" style="margin:0; background: #30363d" onclick="abrir('m-capa')">+ Bloque</button>
-        <button class="pop-btn" style="margin:0; background: #30363d" onclick="abrir('m-csv')">Cargar CSV</button>
+        <button class="pop-btn" style="margin:0; background: #30363d" onclick="abrir('m-capa')">+ Sector</button>
+        <button class="pop-btn" style="margin:0; background: #30363d" onclick="abrir('m-csv')">Importar CSV</button>
     </div>
 </aside>
 
@@ -103,21 +104,21 @@
 
 <div id="m-capa" class="modal glass">
     <h3>Nuevo Sector</h3>
-    <input type="text" id="n-capa" placeholder="Nombre">
-    <button class="pop-btn" onclick="crearBloque()">Crear</button>
+    <input type="text" id="n-capa" placeholder="Nombre del Sector">
+    <button class="pop-btn" onclick="crearBloque()">Confirmar</button>
     <button class="t-btn" style="width:100%; margin-top:5px" onclick="cerrar('m-capa')">Cancelar</button>
 </div>
 
 <div id="m-csv" class="modal glass">
-    <h3>Importar Sheets</h3>
-    <input type="text" id="csv-url" placeholder="Pegue la URL del Google Sheets">
+    <h3>Carga desde Google Sheets</h3>
+    <input type="text" id="csv-url" placeholder="URL del CSV">
     <div id="csv-map" style="display:none; margin-top:10px">
         <label>Columna Coordenadas:</label>
         <select id="s-coo"></select>
-        <label>Columna Nombre:</label>
+        <label>Columna RIF/Nombre:</label>
         <select id="s-nom"></select>
     </div>
-    <button id="btn-import-act" class="pop-btn" onclick="analizarCSV()">1. Analizar</button>
+    <button id="btn-import-act" class="pop-btn" onclick="analizarCSV()">Procesar Enlace</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -131,16 +132,14 @@
 
     let STORE = {}; let activeId = null; let csvCache = null;
 
-    const side = document.getElementById('sidebar');
-    L.DomEvent.disableClickPropagation(side);
-    L.DomEvent.disableScrollPropagation(side);
+    L.DomEvent.disableClickPropagation(document.getElementById('sidebar'));
 
     const getIcon = (c) => L.divIcon({ html: `<i class="fas fa-map-marker-alt" style="color:${c}; font-size:28px; text-shadow:0 2px 4px #000"></i>`, className: 'c-pin', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -25] });
     const drawM = new L.Draw.Marker(map, { icon: getIcon('#00f2ff') });
     const drawP = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.3 } });
 
     function enableTool(t) {
-        resetTool(); if(!activeId) return alert("Crea un Bloque primero");
+        resetTool(); if(!activeId) return alert("Seleccione un Sector primero");
         if(t==='marker') { drawM.enable(); document.getElementById('btn-mark').classList.add('active'); }
         else { drawP.enable(); document.getElementById('btn-poly').classList.add('active'); }
         document.getElementById('btn-select').classList.remove('active');
@@ -164,13 +163,12 @@
         const it = STORE[bid].items.find(x => x.id === iid);
         const l = STORE[bid].group.getLayer(iid);
         if(l.setIcon) l.setIcon(getIcon(it.color)); else l.setStyle({ color: it.color, fillColor: it.color });
-        const isImg = (u) => (u && u.startsWith('http') && /\.(jpg|jpeg|png|webp)$/i.test(u));
+        
         const html = `<div class="pop-card" onmousedown="L.DomEvent.stopPropagation(event)">
-            <label>FISCAL/RAZÓN:</label><input type="text" id="in-${iid}" value="${it.name}">
-            <label>DETALLES/FOTO:</label><textarea id="id-${iid}" rows="2">${it.desc}</textarea>
-            <label>COLOR:</label><input type="color" id="ic-${iid}" value="${it.color}" style="height:30px">
-            ${isImg(it.desc) ? `<img src="${it.desc}" class="pop-img">` : ''}
-            <button class="pop-btn" onclick="saveP('${bid}', ${iid})">GUARDAR</button>
+            <label>FISCAL / CONTRIBUYENTE:</label><input type="text" id="in-${iid}" value="${it.name}">
+            <label>ESTADO / OBSERVACIÓN:</label><textarea id="id-${iid}" rows="2">${it.desc}</textarea>
+            <label>SEMAFORIZACIÓN (Color):</label><input type="color" id="ic-${iid}" value="${it.color}" style="height:35px">
+            <button class="pop-btn" onclick="saveP('${bid}', ${iid})">ACTUALIZAR FICHA</button>
         </div>`;
         l.bindPopup(html, { maxWidth: 260 });
     }
@@ -193,40 +191,45 @@
         const box = document.getElementById('list-container'); box.innerHTML = "";
         for(let id in STORE) {
             let h = `<div class="b-card ${id===activeId?'active-b':''}">
-                <div class="b-head" onclick="activeId='${id}';renderSide()"><span style="font-weight:900">📁 ${STORE[id].name}</span><span class="badge">${STORE[id].items.length}</span></div>
+                <div class="b-head" onclick="activeId='${id}';renderSide()">
+                    <span style="font-weight:900">📁 ${STORE[id].name}</span>
+                    <span class="badge">${STORE[id].items.length}</span>
+                </div>
                 <div style="display:${id===activeId?'block':'none'}">`;
-            STORE[id].items.forEach(it => h += `<div class="item-row" onclick="foc('${id}',${it.id})">● ${it.name}</div>`);
+            STORE[id].items.forEach(it => {
+                h += `<div class="item-row" onclick="foc('${id}',${it.id})">
+                        <div style="width:10px; height:10px; border-radius:50%; background:${it.color}"></div>
+                        ${it.name}
+                      </div>`;
+            });
             box.insertAdjacentHTML('beforeend', h+'</div></div>');
         }
     }
 
-    // MOTOR DE IMPORTACIÓN RE-CONSTRUIDO
+    // FLUJO CSV CORREGIDO
     function analizarCSV() {
         let rawUrl = document.getElementById('csv-url').value;
-        // Convierte link de Google Sheets a exportación CSV real
         let url = rawUrl.includes('/edit') ? rawUrl.replace(/\/edit.*$/, '/export?format=csv') : rawUrl;
         
         Papa.parse(url, { download: true, header: true, complete: (r) => {
-            if(r.data && r.data.length > 0) {
+            if(r.data) {
                 csvCache = r.data;
                 let o = ""; r.meta.fields.forEach(f => o += `<option value="${f}">${f}</option>`);
                 document.getElementById('s-coo').innerHTML = o;
                 document.getElementById('s-nom').innerHTML = o;
                 document.getElementById('csv-map').style.display = 'block';
-                document.getElementById('btn-import-act').innerText = "2. IMPORTAR AHORA";
-                document.getElementById('btn-import-act').onclick = forzarImportacion;
-            } else { alert("Error: El archivo está vacío o el link es privado."); }
+                document.getElementById('btn-import-act').innerText = "VINCULAR E IMPORTAR";
+                document.getElementById('btn-import-act').onclick = importNow;
+            }
         }});
     }
 
-    function forzarImportacion() {
+    function importNow() {
         const cCol = document.getElementById('s-coo').value;
         const nCol = document.getElementById('s-nom').value;
         const bid = 'b'+Date.now();
         const grp = new L.FeatureGroup().addTo(map);
         const its = [];
-
-        cerrar('m-csv'); // CIERRE INMEDIATO PARA EVITAR BLOQUEO
 
         csvCache.forEach(row => {
             if(row[cCol]) {
@@ -236,29 +239,56 @@
                 if(!isNaN(lat)) {
                     const m = L.marker([lat, lon]);
                     const iid = grp.addLayer(m)._leaflet_id;
-                    its.push({ id: iid, name: row[nCol] || "Censo", desc: "Cargado", color: "#da3633", type: 'marker' });
+                    its.push({ id: iid, name: row[nCol] || "Local", desc: "Sincronizado", color: "#fbbc04", type: 'marker' });
                 }
             }
         });
 
-        STORE[bid] = { name: "Carga " + new Date().toLocaleTimeString(), items: its, visible: true, group: grp };
+        STORE[bid] = { name: "Importación " + new Date().toLocaleTimeString(), items: its, visible: true, group: grp };
         activeId = bid;
         its.forEach(it => configIt(bid, it.id));
-        renderSide();
+        cerrar('m-csv');
+        renderSide(); // ACTUALIZACIÓN INSTANTÁNEA DEL PANEL
         if(its.length > 0) map.fitBounds(grp.getBounds());
     }
 
-    function guardarTodo() {
-        const s = {}; for(let id in STORE) { s[id] = { name: STORE[id].name, visible: STORE[id].visible, items: STORE[id].items.map(it => { const l = STORE[id].group.getLayer(it.id); return { ...it, pos: l.getLatLng ? l.getLatLng() : l.getLatLngs() }; }) }; }
-        localStorage.setItem('HACIENDA_101', JSON.stringify(s)); alert("CONFIGURACIÓN RESPALDADA.");
+    // GESTIÓN DEL REPOSITORIO CONFIG.JSON
+    function exportarConfig() {
+        const dataParaArchivo = {};
+        for(let id in STORE) {
+            dataParaArchivo[id] = {
+                name: STORE[id].name,
+                visible: STORE[id].visible,
+                items: STORE[id].items.map(it => {
+                    const l = STORE[id].group.getLayer(it.id);
+                    return { ...it, pos: l.getLatLng ? l.getLatLng() : l.getLatLngs() };
+                })
+            };
+        }
+        
+        // Esto genera el texto para su archivo config.json
+        const blob = new Blob([JSON.stringify(dataParaArchivo, null, 2)], {type : 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'config.json';
+        a.click();
+        
+        // También guardamos en navegador por si acaso
+        localStorage.setItem('REPOSITORIO_AYACUCHO', JSON.stringify(dataParaArchivo));
+        alert("¡DATOS SINCRONIZADOS! Se ha descargado su config.json para el repositorio.");
     }
 
     window.onload = () => {
-        const s = JSON.parse(localStorage.getItem('HACIENDA_101')); if(!s) return;
+        const s = JSON.parse(localStorage.getItem('REPOSITORIO_AYACUCHO'));
+        if(!s) return;
         for(let id in s) {
-            const g = new L.FeatureGroup(); if(s[id].visible) g.addTo(map);
-            s[id].items.forEach(it => { let l = it.type==='marker'?L.marker(it.pos):L.polygon(it.pos); g.addLayer(l); it.id=l._leaflet_id; });
-            STORE[id] = { ...s[id], group: g }; s[id].items.forEach(it => configIt(id, it.id));
+            const g = new L.FeatureGroup().addTo(map);
+            s[id].items.forEach(it => {
+                let l = it.type==='marker'?L.marker(it.pos):L.polygon(it.pos);
+                g.addLayer(l); it.id=l._leaflet_id;
+            });
+            STORE[id] = { ...s[id], group: g };
+            s[id].items.forEach(it => configIt(id, it.id));
         }
         renderSide();
     };
@@ -267,8 +297,8 @@
     function foc(bid, iid) { const l = STORE[bid].group.getLayer(iid); map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 19); l.openPopup(); }
     function abrir(id) { document.getElementById(id).style.display = 'block'; }
     function cerrar(id) { document.getElementById(id).style.display = 'none'; }
-    function borrarCapa() { if(activeId && confirm("¿Borrar?")) { map.removeLayer(STORE[activeId].group); delete STORE[activeId]; activeId = null; renderSide(); } }
-    function filtrarLista() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q)?'block':'none'); }
+    function borrarCapa() { if(activeId && confirm("¿Eliminar bloque seleccionado del repositorio?")) { map.removeLayer(STORE[activeId].group); delete STORE[activeId]; activeId = null; renderSide(); } }
+    function filtrarLista() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q)?'flex':'none'); }
 </script>
 </body>
 </html>
