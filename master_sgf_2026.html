@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF AYACUCHO v11.0 - CONTROL TOTAL</title>
+    <title>SGF AYACUCHO v11.1 - IDENTITY & FLOW</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -14,18 +14,19 @@
         :root { --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; --text: #f0f3f6; --border: #30363d; --yellow: #fbbc04; --safe: #238636; --danger: #da3633; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #000; }
+        
+        /* Nav Superior & Buscador */
         .ui { position: absolute; z-index: 1000; pointer-events: auto; }
         .glass { background: rgba(22, 27, 34, 0.98); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 12px; }
         
-        /* Top Nav & Search */
         .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 10px; height: 55px; align-items: center; padding: 0 15px; }
-        .search-box { flex: 1; max-width: 400px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border); }
+        .search-box { flex: 1; max-width: 380px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border); }
         .search-box input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
         
         .tool-dock { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px; border: 1px solid var(--border); }
         .t-btn { background: transparent; border: none; color: #8b949e; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.1); border: 1px solid var(--accent); }
-        .btn-save { background: var(--safe); color: white; border: none; padding: 0 20px; height: 42px; border-radius: 8px; font-weight: 800; cursor: pointer; margin-left: auto; }
+        .btn-save { background: var(--safe); color: white; border: none; padding: 0 15px; height: 42px; border-radius: 8px; font-weight: 800; cursor: pointer; margin-left: auto; font-size: 11px; display: flex; align-items: center; gap: 8px; }
 
         /* Sidebar */
         #sidebar { top: 85px; left: 15px; bottom: 20px; width: 360px; display: flex; flex-direction: column; }
@@ -33,30 +34,42 @@
         .layer-zone { flex: 1; overflow-y: auto; padding: 10px; }
         
         /* Cards & Layers */
-        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; border: 1px solid transparent; overflow: hidden; }
-        .b-card.active-b { border-color: var(--accent); }
+        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; border: 1px solid transparent; overflow: hidden; transition: 0.2s; }
+        .b-card.active-b { border-color: var(--accent); background: rgba(0,242,255,0.05); }
         .b-head { padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.02); }
-        .b-head span { flex: 1; font-weight: 800; font-size: 13px; }
+        .b-head span { flex: 1; font-weight: 800; font-size: 13px; color: #f0f3f6; }
+        .capa-rename { background: transparent; border: none; color: white; font-weight: 800; font-size: 13px; width: 100%; outline: none; padding: 0; margin: 0; }
         .item-row { padding: 8px 15px 8px 45px; font-size: 11px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .item-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
-        /* Popups con Visor */
-        .pop-card { min-width: 240px; padding: 5px; color: #222; }
-        .img-visor { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; background: #eee; border: 1px solid #ddd; }
-        .pop-card input, .pop-card textarea, .pop-card select { width: 100%; border: 1px solid #ccc; padding: 8px; border-radius: 6px; margin-top: 5px; box-sizing: border-box; }
+        /* Atribución de Hacienda Ayacucho (NUEVO) */
+        .hacienda-attr { position: absolute; bottom: 5px; right: 10px; z-index: 1000; font-size: 9px; color: white; background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 4px; pointer-events: none; border: 1px solid var(--border); display: flex; align-items: center; gap: 5px; }
+
+        /* Popups con Visor y Semaforización */
+        .pop-card { min-width: 230px; padding: 5px; color: #222; }
+        .img-visor { width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; background: #eee; border: 1px solid #ddd; }
+        .pop-card input, .pop-card textarea { width: 100%; border: 1px solid #ccc; padding: 8px; border-radius: 6px; margin-top: 5px; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         .pop-btn { background: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 800; margin-top: 10px; cursor: pointer; }
 
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 340px; padding: 25px; display: none; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 320px; padding: 25px; display: none; }
+        .m-ctrl { bottom: 20px; right: 10px; display: flex; flex-direction: column; gap: 5px; }
+        .m-btn { width: 45px; height: 45px; border-radius: 10px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; }
+        .m-btn.active { border-color: var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
+<div class="hacienda-attr ui">
+    <div style="width: 12px; height: 12px; background: #004d40; border-radius: 2px; display: flex; align-items: center; justify-content: center;">Venezolano</div>
+    HACIENDA AYACUCHO 2026
+</div>
+
 <div class="ui top-nav glass">
     <div class="search-box">
         <i class="fas fa-search" style="color:var(--accent)"></i>
-        <input type="text" id="main-search" placeholder="Buscar RIF o Nombre..." oninput="filtrarTodo()">
+        <input type="text" id="main-search" placeholder="Buscar RIF o Contribuyente..." oninput="filtrarTodo()">
     </div>
     
     <div class="tool-dock">
@@ -65,24 +78,29 @@
         <button class="t-btn" id="btn-poly" onclick="enableTool('poly')"><i class="fas fa-draw-polygon"></i></button>
     </div>
 
-    <button class="btn-save" onclick="exportarConfig()"><i class="fas fa-download"></i> EXPORTAR CONFIG.JSON</button>
+    <button class="btn-save" onclick="exportarConfig()"><i class="fas fa-file-code"></i> GUARDAR CONFIG.JSON</button>
 </div>
 
 <aside id="sidebar" class="glass ui">
     <div class="side-head">
         <h2 style="margin:0; font-size:15px; letter-spacing:1px">HACIENDA MUNICIPAL</h2>
-        <span style="font-size:10px; color:var(--accent); font-weight:bold">SGF AYACUCHO v11.0</span>
+        <span style="font-size:10px; color:var(--accent); font-weight:bold">SGF AYACUCHO v11.1</span>
     </div>
     <div class="layer-zone" id="list-container"></div>
     <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--border)">
         <button class="pop-btn" style="margin:0; background: #30363d" onclick="abrir('m-capa')">+ Bloque</button>
-        <button class="pop-btn" style="margin:0; background: var(--accent); color:#000" onclick="abrir('m-csv')">CONEXIÓN RAW</button>
+        <button class="pop-btn" style="margin:0; background: var(--yellow); color:#000" onclick="abrir('m-csv')">CONEXIÓN RAW</button>
     </div>
 </aside>
 
+<div class="ui m-ctrl">
+    <div class="m-btn active" id="m-sat" onclick="setLayer('y')"><img src="https://mt1.google.com/vt/lyrs=y&x=1194&y=1646&z=12" width="100%"></div>
+    <div class="m-btn" id="m-str" onclick="setLayer('m')"><img src="https://mt1.google.com/vt/lyrs=m&x=1194&y=1646&z=12" width="100%"></div>
+</div>
+
 <div id="m-csv" class="modal glass ui">
     <h3 style="margin:0 0 15px 0">Importación Fiscal RAW</h3>
-    <input type="text" id="csv-url" style="width:100%; padding:10px; background:#0d1117; color:white; border:1px solid var(--border)" placeholder="URL de Google Sheets">
+    <input type="text" id="csv-url" style="width:100%; padding:10px; background:#0d1117; color:white; border:1px solid var(--border)" placeholder="URL Google Sheets">
     <button id="btn-raw" class="pop-btn" style="background:var(--safe)" onclick="procesoRaw()">1. CARGAR DATOS</button>
     
     <div id="raw-map" style="display:none; margin-top:15px">
@@ -98,16 +116,18 @@
     <h3>Nuevo Sector</h3>
     <input type="text" id="n-capa" style="width:100%; padding:10px; background:#0d1117; color:white; border:1px solid var(--border)" placeholder="Nombre del bloque">
     <button class="pop-btn" onclick="crearBloque()">Crear</button>
-    <button class="pop-btn" style="background:#333; margin-top:10px" onclick="cerrar('m-capa')">Cancelar</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
-    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
+    // Inicializar mapa sin control de atribución por defecto
+    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false, attributionControl: false });
     
+    const satLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
+    const strLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] });
+
     let STORE = {}; let activeId = null; let rawData = [];
 
     const getIcon = (c) => L.divIcon({ html: `<i class="fas fa-map-marker-alt" style="color:${c}; font-size:26px; text-shadow: 0 0 3px #000"></i>`, className: 'c-pin', iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -20] });
@@ -118,14 +138,25 @@
     function resetTool() { drawM.disable(); drawP.disable(); document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-select').classList.add('active'); }
 
     map.on(L.Draw.Event.CREATED, (e) => {
-        const l = e.layer; STORE[activeId].group.addLayer(l);
-        const it = { id: l._leaflet_id, name: "Nuevo Contribuyente", desc: "", color: "#00f2ff", type: e.layerType, img: "" };
+        const l = e.layer;
+        // Hacer la pincheta manual MOVIBLE por defecto
+        if(l.options) l.options.draggable = true; 
+        
+        STORE[activeId].group.addLayer(l);
+        const it = { id: l._leaflet_id, name: "Local Nuevo", desc: "", color: "#00f2ff", type: e.layerType, img: "" };
         STORE[activeId].items.push(it); configIt(activeId, it.id); renderSide(); resetTool();
+        
+        // Al soltar la pincheta, guardar la nueva posición
+        l.on('dragend', () => renderSide()); 
     });
 
     function configIt(bid, iid) {
         const it = STORE[bid].items.find(x => x.id === iid);
         const l = STORE[bid].group.getLayer(iid);
+        
+        // Activar DRAGGABLE en todas las pinchetas al configurar
+        if(l.dragging) l.dragging.enable(); 
+
         if(l.setIcon) l.setIcon(getIcon(it.color)); else l.setStyle({ color: it.color, fillColor: it.color });
         
         const imgTag = it.img ? `<img src="${it.img}" class="img-visor" onerror="this.style.display='none'">` : "";
@@ -159,8 +190,8 @@
             rawData = [];
             for(let i=1; i<rows.length; i++) { if(rows[i].length >= headers.length) { let obj = {}; headers.forEach((h, idx) => obj[h] = rows[i][idx]); rawData.push(obj); } }
             let opts = ""; headers.forEach(h => opts += `<option value="${h}">${h}</option>`);
-            document.getElementById('s-coo').innerHTML = `<option>-- Columna GPS --</option>` + opts;
-            document.getElementById('s-nom').innerHTML = `<option>-- Columna Nombre --</option>` + opts;
+            document.getElementById('s-coo').innerHTML = `<option>-- GPS --</option>` + opts;
+            document.getElementById('s-nom').innerHTML = `<option>-- Nombre --</option>` + opts;
             document.getElementById('s-img').innerHTML = `<option value="">-- Sin Foto --</option>` + opts;
             document.getElementById('raw-map').style.display = 'block';
         } catch (e) { alert("Error RAW."); }
@@ -175,30 +206,20 @@
                 let p = row[cCol].replace(/[A-Za-z()]/g, '').trim().split(/[, ]+/);
                 let lat = parseFloat(p[0]), lon = parseFloat(p[1]);
                 if(!isNaN(lat)) {
-                    const m = L.marker([lat, lon]); grp.addLayer(m);
+                    const m = L.marker([lat, lon]); 
+                    grp.addLayer(m);
                     its.push({ id: m._leaflet_id, name: row[nCol] || "Local", desc: "Cargado RAW", color: "#fbbc04", img: row[iCol] || "", type: 'marker' });
                 }
             }
         });
-        STORE[bid] = { name: "Sector " + new Date().toLocaleTimeString(), items: its, group: grp, visible: true };
+        STORE[bid] = { name: "Sector RAW", items: its, group: grp, visible: true };
         activeId = bid; its.forEach(it => configIt(bid, it.id));
         renderSide(); cerrar('m-csv');
     }
 
-    function toggleCapa(id) {
-        STORE[id].visible = !STORE[id].visible;
-        if(STORE[id].visible) map.addLayer(STORE[id].group); else map.removeLayer(STORE[id].group);
-        renderSide();
-    }
-
-    function borrarCapa(id) {
-        if(confirm("¿Eliminar este bloque completo?")) {
-            map.removeLayer(STORE[id].group);
-            delete STORE[id];
-            if(activeId === id) activeId = null;
-            renderSide();
-        }
-    }
+    function renameCapa(id, input) { if(input.value) { STORE[id].name = input.value; } renderSide(); }
+    function toggleCapa(id) { STORE[id].visible = !STORE[id].visible; if(STORE[id].visible) map.addLayer(STORE[id].group); else map.removeLayer(STORE[id].group); renderSide(); }
+    function borrarCapa(id) { if(confirm("¿Eliminar bloque completo?")) { map.removeLayer(STORE[id].group); delete STORE[id]; if(activeId === id) activeId = null; renderSide(); } }
 
     function renderSide() {
         const box = document.getElementById('list-container'); box.innerHTML = "";
@@ -206,8 +227,8 @@
             let h = `<div class="b-card ${id===activeId?'active-b':''}">
                 <div class="b-head">
                     <input type="checkbox" ${STORE[id].visible?'checked':''} onclick="toggleCapa('${id}')">
-                    <span onclick="activeId='${id}';renderSide()">📁 ${STORE[id].name}</span>
-                    <i class="fas fa-trash" style="color:var(--danger); cursor:pointer; font-size:12px" onclick="borrarCapa('${id}')"></i>
+                    <input type="text" class="capa-rename" value="${STORE[id].name}" onblur="renameCapa('${id}', this)" onkeydown="if(event.key==='Enter') this.blur()">
+                    <i class="fas fa-trash" style="color:var(--danger); cursor:pointer; font-size:12px; margin-left:auto" onclick="borrarCapa('${id}')"></i>
                 </div>
                 <div style="display:${id===activeId?'block':'none'}">`;
             STORE[id].items.forEach(it => {
@@ -220,15 +241,20 @@
         }
     }
 
-    function filtrarTodo() {
-        const q = document.getElementById('main-search').value.toLowerCase();
-        document.querySelectorAll('.item-row').forEach(el => {
-            el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
-        });
-    }
-
+    function setLayer(t) { if(t==='y') { satLayer.addTo(map); map.removeLayer(strLayer); document.getElementById('m-sat').classList.add('active'); document.getElementById('m-str').classList.remove('active'); } else { strLayer.addTo(map); map.removeLayer(satLayer); document.getElementById('m-str').classList.add('active'); document.getElementById('m-sat').classList.remove('active'); } }
+    function filtrarTodo() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none'); }
     function foc(bid, iid) { const l = STORE[bid].group.getLayer(iid); map.setView(l.getLatLng ? l.getLatLng() : l.getBounds().getCenter(), 19); l.openPopup(); }
-    function exportarConfig() { /* Lógica de descarga JSON estándar */ }
+    function exportarConfig() {
+        const data = {};
+        for(let id in STORE) {
+            data[id] = { name: STORE[id].name, items: STORE[id].items.map(it => {
+                const l = STORE[id].group.getLayer(it.id);
+                return { ...it, pos: l.getLatLng ? l.getLatLng() : l.getLatLngs() };
+            })};
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'config.json'; a.click();
+    }
     function abrir(id) { document.getElementById(id).style.display = 'block'; }
     function cerrar(id) { document.getElementById(id).style.display = 'none'; }
     function crearBloque() { 
