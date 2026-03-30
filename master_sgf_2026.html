@@ -3,73 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF AYACUCHO v12.2 - CONTROL SUPREMO</title>
+    <title>SGF AYACUCHO v12.3 - PROFESSIONAL CONTROL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
         :root { --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; --text: #f0f3f6; --border: #30363d; --yellow: #fbbc04; --safe: #238636; --danger: #da3633; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #000; }
         
+        /* UI Estilo Glass v12.1 */
         .ui { position: absolute; z-index: 1000; pointer-events: auto; }
         .glass { background: rgba(22, 27, 34, 0.96); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; }
         .hacienda-attr { bottom: 10px; right: 10px; font-size: 10px; color: white; background: rgba(0,0,0,0.8); padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); font-weight: 800; display: flex; align-items: center; gap: 8px; }
-        
-        /* Top Nav & Tools */
+
+        /* Nav y Herramientas Elegantes */
         .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 10px; height: 55px; align-items: center; padding: 0 15px; }
-        .search-box { flex: 1; max-width: 350px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border); }
+        .search-box { flex: 1; max-width: 380px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border); }
         .search-box input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
         
         .tool-dock { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px; border: 1px solid var(--border); }
-        .t-btn { background: transparent; border: none; color: #8b949e; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.1); border: 1px solid var(--accent); }
+        .t-btn { background: transparent; border: none; color: #8b949e; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.15); border: 1px solid var(--accent); }
 
-        /* Sidebar Multi-Capa */
+        /* Sidebar Multi-Capa Blindado */
         #sidebar { top: 85px; left: 15px; bottom: 20px; width: 360px; display: flex; flex-direction: column; }
         .side-head { padding: 15px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
         .layer-zone { flex: 1; overflow-y: auto; padding: 10px; }
         
-        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); overflow: hidden; }
-        .b-card.active-b { border-color: var(--accent); }
-        .b-head { padding: 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border); overflow: hidden; transition: 0.2s; }
+        .b-card.active-b { border-color: var(--accent); background: rgba(0,242,255,0.03); }
+        .b-head { padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .capa-rename { background: transparent; border: none; color: white; font-weight: 800; font-size: 13px; flex: 1; outline: none; }
         
-        /* Selector de Visualización en Panel */
-        .view-selector { font-size: 9px; background: #0d1117; color: var(--accent); border: 1px solid var(--border); padding: 2px; border-radius: 4px; cursor: pointer; }
+        .view-sel { font-size: 9px; background: var(--bg); color: var(--accent); border: 1px solid var(--border); border-radius: 4px; padding: 2px; }
 
-        .item-list { border-top: 1px solid var(--border); display: none; max-height: 250px; overflow-y: auto; }
+        .item-list { border-top: 1px solid var(--border); display: none; max-height: 280px; overflow-y: auto; }
         .active-b .item-list { display: block; }
-        .item-row { padding: 8px 15px 8px 45px; font-size: 11px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .item-row { padding: 10px 15px 10px 45px; font-size: 11px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .item-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
-        /* Popup Editable */
-        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; }
-        .pop-card { width: 260px; font-family: 'Inter', sans-serif; color: #333; }
-        .pop-img { width: 100%; height: 140px; object-fit: cover; background: #eee; }
-        .pop-body { padding: 12px; }
-        .pop-body label { font-size: 10px; font-weight: 800; color: #888; text-transform: uppercase; display: block; margin-top: 8px; }
-        .pop-body input, .pop-body select { width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 5px; font-size: 12px; margin-top: 2px; box-sizing: border-box; }
-        .pop-save { background: var(--safe); color: white; border: none; width: 100%; padding: 10px; border-radius: 6px; font-weight: 800; margin-top: 12px; cursor: pointer; }
+        /* Popup Ayacucho (Basado en su foto) */
+        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 14px; background: white; }
+        .pop-card { width: 280px; color: #333; }
+        .pop-img { width: 100%; height: 160px; object-fit: cover; background: #222; }
+        .pop-body { padding: 15px; }
+        .pop-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; color: #000; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
+        .pop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+        .pop-field { display: flex; flex-direction: column; gap: 2px; }
+        .pop-field label { font-size: 9px; font-weight: 800; color: #999; text-transform: uppercase; }
+        .pop-field input, .pop-field select { padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; width: 100%; box-sizing: border-box; }
+        .pop-save { background: var(--safe); color: white; border: none; width: 100%; padding: 10px; border-radius: 6px; font-weight: 800; margin-top: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
         .m-ctrl { bottom: 50px; right: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .m-btn { width: 45px; height: 45px; border-radius: 10px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; }
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 320px; padding: 25px; display: none; }
+        .m-btn { width: 48px; height: 48px; border-radius: 12px; cursor: pointer; border: 2px solid var(--border); overflow: hidden; opacity: 0.8; }
+        .m-btn.active { opacity: 1; border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="hacienda-attr ui"><i class="fas fa-city"></i> HACIENDA AYACUCHO 2026</div>
+<div class="hacienda-attr ui"><i class="fas fa-landmark"></i> HACIENDA AYACUCHO 2026</div>
 
 <div class="ui top-nav glass">
     <div class="search-box">
         <i class="fas fa-search" style="color:var(--accent)"></i>
-        <input type="text" id="main-search" placeholder="Buscar en el censo..." oninput="filtrarTodo()">
+        <input type="text" id="main-search" placeholder="Buscar por RIF, Nombre o Censo..." oninput="filtrarTodo()">
     </div>
     
     <div class="tool-dock">
@@ -78,18 +81,18 @@
         <button class="t-btn" id="btn-poly" onclick="enableTool('poly')"><i class="fas fa-draw-polygon"></i></button>
     </div>
 
-    <button class="pop-btn" style="width:auto; margin:0; padding:0 15px; background:var(--safe)" onclick="exportarConfig()"><i class="fas fa-download"></i> EXPORTAR JSON</button>
+    <button class="pop-btn" style="width:auto; margin:0; padding:0 20px; background:var(--safe); font-size: 11px; border-radius: 8px; height: 40px; cursor: pointer; color: white; border: none; font-weight: 800;" onclick="exportarConfig()"><i class="fas fa-file-export"></i> GUARDAR CONFIG</button>
 </div>
 
 <aside id="sidebar" class="glass ui">
     <div class="side-head">
-        <h2 style="margin:0; font-size:14px;">CENSO MUNICIPAL</h2>
-        <span style="font-size:10px; color:var(--accent); font-weight:bold">MOTOR v12.2 SUPREMO</span>
+        <h2 style="margin:0; font-size:14px; letter-spacing: 0.5px">CONTROL FISCAL</h2>
+        <span style="font-size:10px; color:var(--accent); font-weight:bold">MOTOR AYACUCHO v12.3</span>
     </div>
     <div class="layer-zone" id="list-container"></div>
-    <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid var(--border)">
-        <button class="pop-btn" style="margin:0; background: #30363d; font-size:11px" onclick="crearBloqueManual()">+ SECTOR</button>
-        <button class="pop-btn" style="margin:0; background: var(--yellow); color:#000; font-size:11px" onclick="abrir('m-csv')">IMPORTAR RAW</button>
+    <div style="padding: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--border)">
+        <button class="pop-btn" style="background:#30363d; border: 1px solid var(--border); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 800;" onclick="crearBloqueManual()">+ SECTOR</button>
+        <button class="pop-btn" style="background:var(--yellow); color:#000; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: 800;" onclick="abrirModal('m-csv')">IMPORTAR RAW</button>
     </div>
 </aside>
 
@@ -98,17 +101,18 @@
     <div class="m-btn" id="m-str" onclick="setLayer('m')"><img src="https://mt1.google.com/vt/lyrs=m&x=1194&y=1646&z=12" width="100%"></div>
 </div>
 
-<div id="m-csv" class="modal glass ui">
-    <h3>Carga Masiva (752 Puntos)</h3>
-    <input type="text" id="csv-url" style="width:100%; padding:10px; background:#0d1117; color:white; border:1px solid var(--border)" placeholder="URL Google Sheets">
-    <button class="pop-btn" onclick="procesoRaw()">CARGAR CAMPOS</button>
-    <div id="raw-map" style="display:none; margin-top:10px; max-height:220px; overflow-y:auto">
-        <label>Nombre:</label><select id="s-nom" style="width:100%"></select>
-        <label>Coordenadas:</label><select id="s-coo" style="width:100%"></select>
-        <label>Foto URL:</label><select id="s-img" style="width:100%"></select>
-        <button class="pop-btn" style="background:var(--safe)" onclick="inyectarDatos()">INYECTAR AL MAPA</button>
+<div id="m-csv" class="modal glass ui" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:320px; padding:25px; display:none;">
+    <h3 style="margin:0 0 15px 0; font-size:15px">Importación Masiva</h3>
+    <input type="text" id="csv-url" style="width:100%; padding:10px; background:#0d1117; color:white; border:1px solid var(--border); border-radius:6px;" placeholder="URL Google Sheets">
+    <button class="pop-save" style="margin-top:10px" onclick="procesoRaw()">1. CARGAR COLUMNAS</button>
+    
+    <div id="raw-map" style="display:none; margin-top:15px; max-height:220px; overflow-y:auto">
+        <label style="font-size:10px; color:#aaa">Nombre:</label><select id="s-nom" style="width:100%; margin-bottom:5px"></select>
+        <label style="font-size:10px; color:#aaa">Coordenadas:</label><select id="s-coo" style="width:100%; margin-bottom:5px"></select>
+        <label style="font-size:10px; color:#aaa">Foto URL:</label><select id="s-img" style="width:100%; margin-bottom:10px"></select>
+        <button class="pop-save" onclick="inyectarDatos()"><i class="fas fa-bolt"></i> INYECTAR AL MAPA</button>
     </div>
-    <button class="pop-btn" style="background:var(--danger)" onclick="cerrar('m-csv')">Cerrar</button>
+    <button class="pop-save" style="background:var(--danger); margin-top:10px" onclick="cerrarModal('m-csv')">CERRAR</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -122,50 +126,89 @@
     let STORE = {}; let activeId = null; let rawData = [];
     const getIcon = (c) => L.divIcon({ html: `<i class="fas fa-map-marker-alt" style="color:${c}; font-size:26px; text-shadow: 0 0 4px #000"></i>`, className: 'c-pin', iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -22] });
     
-    // HERRAMIENTAS DE DIBUJO RESTAURADAS
+    // Herramientas de Dibujo
     const drawM = new L.Draw.Marker(map, { icon: getIcon('#00f2ff') });
     const drawP = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff' } });
 
-    function enableTool(t) { resetTool(); if(!activeId) return alert("Selecciona un sector"); t==='marker'?drawM.enable():drawP.enable(); document.getElementById('btn-'+(t==='marker'?'mark':'poly')).classList.add('active'); }
+    function enableTool(t) { resetTool(); if(!activeId) return alert("Crea un Sector primero"); t==='marker'?drawM.enable():drawP.enable(); document.getElementById('btn-'+(t==='marker'?'mark':'poly')).classList.add('active'); }
     function resetTool() { drawM.disable(); drawP.disable(); document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-select').classList.add('active'); }
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const l = e.layer; if(l.options) l.options.draggable = true;
         STORE[activeId].group.addLayer(l);
-        const it = { leafletId: l._leaflet_id, name: "Local Nuevo", censo: "S/N", fiscal: "PENDIENTE", estatus: "ACTIVA", img: "", color: "#00f2ff" };
-        STORE[activeId].items.push(it); 
-        configIt(activeId, it.leafletId); renderSide(); resetTool();
+        const it = { lid: l._leaflet_id, name: "Local Nuevo", censo: "000", fiscal: "PENDIENTE", img: "", color: "#00f2ff" };
+        STORE[activeId].items.push(it); configIt(activeId, it.lid); renderSide(); resetTool();
     });
 
-    // POPUP EDITABLE RESTAURADO
+    // POPUP DINÁMICO (Estilo Captura)
     function configIt(bid, lid) {
-        const it = STORE[bid].items.find(x => x.leafletId === lid);
+        const it = STORE[bid].items.find(x => x.lid === lid);
         const l = STORE[bid].group.getLayer(lid);
         if(l.setIcon) l.setIcon(getIcon(it.color)); else l.setStyle({ color: it.color, fillColor: it.color });
         
         l.bindPopup(`
             <div class="pop-card">
-                <img src="${it.img}" class="pop-img" onerror="this.src='https://via.placeholder.com/260x140?text=SIN+FOTO'">
+                <img src="${it.img}" class="pop-img" onerror="this.src='https://via.placeholder.com/280x160?text=FOTO+PENDIENTE'">
                 <div class="pop-body">
-                    <label>Contribuyente/RIF</label><input type="text" id="p-nom-${lid}" value="${it.name}">
-                    <label>N° Censo</label><input type="text" id="p-cen-${lid}" value="${it.censo}">
-                    <label>Fiscal</label><input type="text" id="p-fis-${lid}" value="${it.fiscal}">
-                    <label>Color Pincheta</label><input type="color" id="p-col-${lid}" value="${it.color}">
-                    <button class="pop-save" onclick="guardarIt('${bid}', ${lid})">GUARDAR CAMBIOS</button>
+                    <div class="pop-title"><input type="text" id="e-nom-${lid}" value="${it.name}" style="border:none; width:100%; font-weight:800; font-family:'Inter'"></div>
+                    <div class="pop-grid">
+                        <div class="pop-field"><label>Censo N°</label><input type="text" id="e-cen-${lid}" value="${it.censo}"></div>
+                        <div class="pop-field"><label>Fiscal</label><input type="text" id="e-fis-${lid}" value="${it.fiscal}"></div>
+                        <div class="pop-field"><label>Foto URL</label><input type="text" id="e-img-${lid}" value="${it.img}"></div>
+                        <div class="pop-field"><label>Color</label><input type="color" id="e-col-${lid}" value="${it.color}"></div>
+                    </div>
+                    <button class="pop-save" onclick="guardarIt('${bid}', ${lid})"><i class="fas fa-save"></i> ACTUALIZAR DATOS</button>
                 </div>
             </div>
         `, { padding: [0,0] });
     }
 
     function guardarIt(bid, lid) {
-        const it = STORE[bid].items.find(x => x.leafletId === lid);
-        it.name = document.getElementById(`p-nom-${lid}`).value;
-        it.censo = document.getElementById(`p-cen-${lid}`).value;
-        it.fiscal = document.getElementById(`p-fis-${lid}`).value;
-        it.color = document.getElementById(`p-col-${lid}`).value;
+        const it = STORE[bid].items.find(x => x.lid === lid);
+        it.name = document.getElementById(`e-nom-${lid}`).value;
+        it.censo = document.getElementById(`e-cen-${lid}`).value;
+        it.fiscal = document.getElementById(`e-fis-${lid}`).value;
+        it.img = document.getElementById(`e-img-${lid}`).value;
+        it.color = document.getElementById(`e-col-${lid}`).value;
         configIt(bid, lid); renderSide(); STORE[bid].group.getLayer(lid).closePopup();
     }
 
+    // PANEL LATERAL (Diseño v12.1 Corregido)
+    function renderSide() {
+        const box = document.getElementById('list-container'); box.innerHTML = "";
+        for(let id in STORE) {
+            const isActive = (id === activeId);
+            const capa = STORE[id];
+            let h = `<div class="b-card ${isActive?'active-b':''}">
+                <div class="b-head" onclick="toggleAccordion('${id}')">
+                    <input type="checkbox" ${capa.visible?'checked':''} onclick="event.stopPropagation(); toggleVis('${id}')">
+                    <input type="text" class="capa-rename" value="${capa.name}" onclick="event.stopPropagation()" onchange="STORE['${id}'].name=this.value">
+                    <select class="view-sel" onclick="event.stopPropagation()" onchange="STORE['${id}'].view=this.value;renderSide()">
+                        <option value="name" ${capa.view==='name'?'selected':''}>Nom</option>
+                        <option value="censo" ${capa.view==='censo'?'selected':''}>Cen</option>
+                    </select>
+                    <i class="fas fa-trash" style="color:var(--danger); font-size:10px" onclick="event.stopPropagation(); borrarCapa('${id}')"></i>
+                </div>
+                <div class="item-list">`;
+            capa.items.forEach(it => {
+                const text = it[capa.view || 'name'];
+                h += `<div class="item-row" onclick="foc('${id}',${it.lid})">
+                    <div style="width:8px; height:8px; border-radius:50%; background:${it.color}"></div>
+                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${text}</span>
+                </div>`;
+            });
+            box.insertAdjacentHTML('beforeend', h+'</div></div>');
+        }
+    }
+
+    // FUNCIONES CORE
+    function toggleAccordion(id) { activeId = (activeId === id) ? null : id; renderSide(); }
+    function toggleVis(id) { STORE[id].visible = !STORE[id].visible; if(STORE[id].visible) map.addLayer(STORE[id].group); else map.removeLayer(STORE[id].group); renderSide(); }
+    function borrarCapa(id) { if(confirm("¿Eliminar sector?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderSide(); } }
+    function foc(bid, lid) { const l = STORE[bid].group.getLayer(lid); map.setView(l.getLatLng(), 19); l.openPopup(); }
+    function crearBloqueManual() { const bid = 'b'+Date.now(); STORE[bid] = { name: "Nuevo Sector", items: [], group: new L.FeatureGroup().addTo(map), visible: true, view: 'name' }; activeId = bid; renderSide(); }
+    
+    // RAW ENGINE
     async function procesoRaw() {
         let url = document.getElementById('csv-url').value;
         if(url.includes('/edit')) url = url.replace(/\/edit.*$/, '/export?format=csv');
@@ -177,7 +220,7 @@
             let opts = ""; h.forEach(k => opts += `<option value="${k}">${k}</option>`);
             ['s-nom','s-coo','s-img'].forEach(id => document.getElementById(id).innerHTML = opts);
             document.getElementById('raw-map').style.display = 'block';
-        } catch (e) { alert("Error RAW"); }
+        } catch (e) { alert("Error en Google Sheets."); }
     }
 
     function inyectarDatos() {
@@ -185,58 +228,26 @@
         const its = [];
         const nCol = document.getElementById('s-nom').value; const cCol = document.getElementById('s-coo').value; const iCol = document.getElementById('s-img').value;
         rawData.forEach(row => {
-            const coords = row[cCol].replace(/[A-Za-z()]/g, '').trim().split(/[, ]+/);
-            const lat = parseFloat(coords[0]), lng = parseFloat(coords[1]);
+            const p = row[cCol].replace(/[A-Za-z()]/g, '').trim().split(/[, ]+/);
+            const lat = parseFloat(p[0]), lng = parseFloat(p[1]);
             if(!isNaN(lat)) {
                 const m = L.marker([lat, lng], { draggable: true });
                 grp.addLayer(m);
-                const it = { leafletId: m._leaflet_id, name: row[nCol], censo: "RAW", fiscal: "CARGADO", img: row[iCol], color: "#fbbc04" };
+                const it = { lid: m._leaflet_id, name: row[nCol], censo: "RAW", fiscal: "CARGADO", img: row[iCol], color: "#fbbc04" };
                 its.push(it);
             }
         });
         STORE[bid] = { name: "Sector RAW", items: its, group: grp, visible: true, view: 'name' };
-        activeId = bid; its.forEach(it => configIt(bid, it.leafletId));
-        renderSide(); cerrar('m-csv');
+        activeId = bid; its.forEach(it => configIt(bid, it.lid));
+        renderSide(); cerrarModal('m-csv');
     }
 
-    function renderSide() {
-        const box = document.getElementById('list-container'); box.innerHTML = "";
-        for(let id in STORE) {
-            const isActive = (id === activeId);
-            const capa = STORE[id];
-            let h = `<div class="b-card ${isActive?'active-b':''}">
-                <div class="b-head" onclick="activeId='${id}';renderSide()">
-                    <input type="checkbox" ${capa.visible?'checked':''} onclick="event.stopPropagation(); toggleCapa('${id}')">
-                    <input type="text" class="capa-rename" value="${capa.name}" onblur="STORE['${id}'].name=this.value">
-                    <select class="view-selector" onclick="event.stopPropagation()" onchange="STORE['${id}'].view=this.value;renderSide()">
-                        <option value="name" ${capa.view==='name'?'selected':''}>Ver Nombre</option>
-                        <option value="censo" ${capa.view==='censo'?'selected':''}>Ver Censo</option>
-                        <option value="fiscal" ${capa.view==='fiscal'?'selected':''}>Ver Fiscal</option>
-                    </select>
-                    <i class="fas fa-trash" style="color:var(--danger); font-size:10px" onclick="event.stopPropagation(); borrarCapa('${id}')"></i>
-                </div>
-                <div class="item-list">`;
-            capa.items.forEach(it => {
-                const val = it[capa.view || 'name'];
-                h += `<div class="item-row" onclick="foc('${id}',${it.leafletId})">
-                    <div style="width:8px; height:8px; border-radius:50%; background:${it.color}"></div>
-                    <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${val}</span>
-                </div>`;
-            });
-            box.insertAdjacentHTML('beforeend', h+'</div></div>');
-        }
-    }
-
-    function toggleCapa(id) { STORE[id].visible = !STORE[id].visible; if(STORE[id].visible) map.addLayer(STORE[id].group); else map.removeLayer(STORE[id].group); renderSide(); }
-    function borrarCapa(id) { if(confirm("¿Borrar sector?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderSide(); } }
-    function foc(bid, lid) { const l = STORE[bid].group.getLayer(lid); map.setView(l.getLatLng(), 19); l.openPopup(); }
     function setLayer(t) { if(t==='y') { satLayer.addTo(map); map.removeLayer(strLayer); } else { strLayer.addTo(map); map.removeLayer(satLayer); } 
         document.querySelectorAll('.m-btn').forEach(b => b.classList.remove('active')); document.getElementById('m-'+(t==='y'?'sat':'str')).classList.add('active'); }
     function filtrarTodo() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none'); }
-    function crearBloqueManual() { const bid = 'b'+Date.now(); STORE[bid] = { name: "Nuevo Sector", items: [], group: new L.FeatureGroup().addTo(map), visible: true, view: 'name' }; activeId = bid; renderSide(); }
-    function abrir(id) { document.getElementById(id).style.display = 'block'; }
-    function cerrar(id) { document.getElementById(id).style.display = 'none'; }
-    function exportarConfig() { const blob = new Blob([JSON.stringify(STORE)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'censo_ayacucho.json'; a.click(); }
+    function abrirModal(id) { document.getElementById(id).style.display = 'block'; }
+    function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+    function exportarConfig() { const blob = new Blob([JSON.stringify(STORE)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hacienda_config.json'; a.click(); }
 </script>
 </body>
 </html>
