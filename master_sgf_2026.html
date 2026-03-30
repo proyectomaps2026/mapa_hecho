@@ -2,76 +2,194 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SGF - PRUEBA 1: IMÁGENES LOCALES</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGF AYACUCHO v10.5v - RECONSTRUIDO</title>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
     <style>
-        body { margin: 0; font-family: sans-serif; background: #0b0e14; color: white; }
-        #map { height: 100vh; width: 100%; }
-        .pop-card { color: #333; min-width: 200px; }
-        .img-preview { width: 100%; max-height: 150px; object-fit: cover; border-radius: 5px; margin-top: 10px; border: 1px solid #ccc; display: none; }
-        .btn-upload { background: #1a73e8; color: white; border: none; padding: 8px; width: 100%; border-radius: 4px; cursor: pointer; margin-top: 5px; font-weight: bold; }
-        .ui-info { position: absolute; top: 10px; right: 10px; z-index: 1000; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; border: 1px solid #00f2ff; }
+        :root { --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; --text: #f0f3f6; --border: #30363d; --yellow: #fbbc04; --safe: #238636; --danger: #da3633; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #000; }
+        .ui { position: absolute; z-index: 1000; pointer-events: auto; }
+        .glass { background: rgba(22, 27, 34, 0.98); backdrop-filter: blur(15px); border: 1px solid var(--border); border-radius: 12px; }
+        
+        .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 10px; height: 55px; align-items: center; padding: 0 15px; }
+        .btn-save { background: var(--safe); color: white; border: none; padding: 0 15px; height: 42px; border-radius: 8px; font-weight: 800; cursor: pointer; margin-left: auto; font-size: 11px; }
+
+        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 350px; display: flex; flex-direction: column; }
+        .side-head { padding: 15px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
+        .layer-zone { flex: 1; overflow-y: auto; padding: 12px; }
+        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 8px; border: 1px solid transparent; }
+        .b-head { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 800; font-size: 13px; }
+        .item-row { padding: 8px 12px 8px 40px; font-size: 11px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        /* Estilo para las fotos en el popup */
+        .pop-card { min-width: 230px; padding: 5px; color: #222; }
+        .img-visor { width: 100%; max-height: 180px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; border: 1px solid #ddd; background: #eee; }
+        .pop-card input, .pop-card textarea { width: 100%; border: 1px solid #ccc; padding: 6px; border-radius: 4px; margin-top: 4px; box-sizing: border-box; }
+        .pop-btn { background: #1a73e8; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: 800; margin-top: 8px; cursor: pointer; }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 320px; padding: 20px; display: none; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
-<div class="ui-info">
-    <b>PRUEBA 1:</b> Cargue una foto en la pincheta <br>
-    y verifique que se mantenga al recargar.
+
+<div class="ui top-nav glass">
+    <div style="display:flex; gap:5px; background:rgba(0,0,0,0.3); padding:5px; border-radius:10px;">
+        <button class="btn-save" style="background:transparent; color:#8b949e" onclick="location.reload()"><i class="fas fa-sync"></i> REINICIAR</button>
+    </div>
+    <button class="btn-save" onclick="exportarConfig()"><i class="fas fa-file-code"></i> ACTUALIZAR CONFIG.JSON</button>
+</div>
+
+<aside id="sidebar" class="glass ui">
+    <div class="side-head">
+        <h2 style="margin:0; font-size:14px">MOTOR FISCAL</h2>
+        <span style="font-size:9px; color:var(--accent)">COLÓN, TÁCHIRA v10.5v RAW</span>
+    </div>
+    <div class="layer-zone" id="list-container"></div>
+    <div style="padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <button class="pop-btn" style="margin:0; background: #30363d" onclick="abrir('m-capa')">+ Bloque</button>
+        <button class="pop-btn" style="margin:0; background: var(--accent); color:#000" onclick="abrir('m-csv')">CONEXIÓN RAW</button>
+    </div>
+</aside>
+
+<div id="m-csv" class="modal glass ui">
+    <h3 style="margin:0; color:white">Importación RAW</h3>
+    <input type="text" id="csv-url" style="width:100%; padding:10px; margin:10px 0;" placeholder="URL de Google Sheets">
+    <button id="btn-raw" class="pop-btn" style="background:var(--safe)" onclick="procesoRaw()">1. CARGAR DATOS</button>
+    
+    <div id="raw-map" style="display:none; margin-top:10px">
+        <label style="font-size:10px; color:#aaa">Columna Coordenadas:</label>
+        <select id="s-coo" style="width:100%; margin-bottom:5px"></select>
+        <label style="font-size:10px; color:#aaa">Columna Nombre:</label>
+        <select id="s-nom" style="width:100%; margin-bottom:5px"></select>
+        <label style="font-size:10px; color:#aaa">Columna FOTO (URL):</label>
+        <select id="s-img" style="width:100%; margin-bottom:10px"></select>
+        <button class="pop-btn" onclick="inyectarDatos()">2. INYECTAR AL MAPA</button>
+    </div>
+    <button class="pop-btn" style="background:#da3633" onclick="cerrar('m-csv')">Cerrar</button>
+</div>
+
+<div id="m-capa" class="modal glass ui">
+    <h3>Nuevo Sector</h3>
+    <input type="text" id="n-capa" style="width:100%; padding:10px;" placeholder="Nombre del Sector">
+    <button class="pop-btn" onclick="crearBloque()">Crear</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
-    const map = L.map('map').setView([8.02611, -72.25244], 17);
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {subdomains:['mt0','mt1','mt2','mt3']}).addTo(map);
-
-    let DATA = JSON.parse(localStorage.getItem('PRUEBA_FOTOS')) || {};
-
-    // Pincheta de prueba
-    const marker = L.marker([8.02611, -72.25244]).addTo(map);
+    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
+    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
     
-    function updatePopup() {
-        const stored = DATA["test_local"] || { name: "Local de Prueba", img: "" };
-        const displayImg = stored.img ? `display:block` : `display:none`;
+    let STORE = {}; let activeId = null; let rawData = [];
+
+    const getIcon = (c) => L.divIcon({ html: `<i class="fas fa-map-marker-alt" style="color:${c}; font-size:26px;"></i>`, className: 'c-pin', iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -20] });
+
+    function configIt(bid, iid) {
+        const it = STORE[bid].items.find(x => x.id === iid);
+        const l = STORE[bid].group.getLayer(iid);
         
-        marker.bindPopup(`
+        // El visor de imagen inteligente
+        const imgHtml = it.img && it.img !== "" ? `<img src="${it.img}" class="img-visor" onerror="this.style.display='none'">` : "";
+
+        l.bindPopup(`
             <div class="pop-card">
-                <b>${stored.name}</b><br>
-                <img src="${stored.img}" id="prev" class="img-preview" style="${displayImg}">
-                <label style="font-size:10px; display:block; margin-top:10px">FOTO DEL LOCAL:</label>
-                <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="processFile(this)">
-                <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-                    <i class="fas fa-camera"></i> SELECCIONAR FOTO
-                </button>
+                ${imgHtml}
+                <label>NOMBRE/RIF:</label>
+                <input type="text" id="en-${iid}" value="${it.name}">
+                <label>OBSERVACIONES:</label>
+                <textarea id="ed-${iid}">${it.desc || ""}</textarea>
+                <button class="pop-btn" onclick="saveIt('${bid}', ${iid})">GUARDAR CAMBIOS</button>
             </div>
-        `).openPopup();
+        `);
     }
 
-    window.processFile = function(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64 = e.target.result;
-                // Guardar en nuestra "base de datos" temporal
-                DATA["test_local"] = { name: "Local de Prueba", img: base64 };
-                localStorage.setItem('PRUEBA_FOTOS', JSON.stringify(DATA));
-                
-                // Actualizar la vista previa al momento
-                const img = document.getElementById('prev');
-                img.src = base64;
-                img.style.display = 'block';
-                alert("¡Imagen guardada localmente!");
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
+    window.saveIt = (bid, iid) => {
+        const it = STORE[bid].items.find(x => x.id === iid);
+        it.name = document.getElementById(`en-${iid}`).value;
+        it.desc = document.getElementById(`ed-${iid}`).value;
+        configIt(bid, iid); renderSide(); STORE[bid].group.getLayer(iid).closePopup();
     };
 
-    marker.on('click', updatePopup);
-    updatePopup();
+    async function procesoRaw() {
+        let url = document.getElementById('csv-url').value;
+        if(url.includes('/edit')) url = url.replace(/\/edit.*$/, '/export?format=csv');
+        try {
+            const res = await fetch(url);
+            const text = await res.text();
+            const rows = text.split(/\r?\n/).map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim()));
+            const headers = rows[0];
+            rawData = [];
+            for(let i=1; i<rows.length; i++) { if(rows[i].length >= headers.length) { let obj = {}; headers.forEach((h, idx) => obj[h] = rows[i][idx]); rawData.push(obj); } }
+            
+            let opts = ""; headers.forEach(h => opts += `<option value="${h}">${h}</option>`);
+            document.getElementById('s-coo').innerHTML = opts; 
+            document.getElementById('s-nom').innerHTML = opts;
+            document.getElementById('s-img').innerHTML = `<option value="">Ninguna</option>` + opts;
+            document.getElementById('raw-map').style.display = 'block';
+        } catch (e) { alert("Error en conexión RAW."); }
+    }
 
+    function inyectarDatos() {
+        const bid = 'b'+Date.now(); const grp = new L.FeatureGroup().addTo(map);
+        const cCol = document.getElementById('s-coo').value; 
+        const nCol = document.getElementById('s-nom').value;
+        const iCol = document.getElementById('s-img').value;
+        const its = [];
+
+        rawData.forEach(row => {
+            if(row[cCol]) {
+                let p = row[cCol].replace(/[A-Za-z()]/g, '').trim().split(/[, ]+/);
+                let lat = parseFloat(p[0]), lon = parseFloat(p[1]);
+                if(!isNaN(lat)) {
+                    const m = L.marker([lat, lon]); grp.addLayer(m);
+                    its.push({ id: m._leaflet_id, name: row[nCol], img: iCol ? row[iCol] : "", desc: "Fiscalizado", color: "#fbbc04" });
+                }
+            }
+        });
+        STORE[bid] = { name: "Sector RAW", items: its, group: grp };
+        activeId = bid; its.forEach(it => configIt(bid, it.id));
+        renderSide(); cerrar('m-csv');
+    }
+
+    function renderSide() {
+        const box = document.getElementById('list-container'); box.innerHTML = "";
+        for(let id in STORE) {
+            let h = `<div class="b-card ${id===activeId?'active-b':''}">
+                <div class="b-head" onclick="activeId='${id}';renderSide()">📁 ${STORE[id].name} (${STORE[id].items.length})</div>
+                <div style="display:${id===activeId?'block':'none'}">`;
+            STORE[id].items.forEach(it => h += `<div class="item-row" onclick="foc('${id}',${it.id})"><i class="fas fa-map-marker-alt" style="color:${it.color}"></i> ${it.name}</div>`);
+            box.insertAdjacentHTML('beforeend', h+'</div></div>');
+        }
+    }
+
+    function foc(bid, iid) { const l = STORE[bid].group.getLayer(iid); map.setView(l.getLatLng(), 19); l.openPopup(); }
+    function abrir(id) { document.getElementById(id).style.display = 'block'; }
+    function cerrar(id) { document.getElementById(id).style.display = 'none'; }
+    function crearBloque() { 
+        const n = document.getElementById('n-capa').value; if(!n) return;
+        const id = 'b'+Date.now(); STORE[id] = { name: n, items: [], group: new L.FeatureGroup().addTo(map) };
+        activeId = id; renderSide(); cerrar('m-capa');
+    }
+    function exportarConfig() {
+        const data = {};
+        for(let id in STORE) {
+            data[id] = { name: STORE[id].name, items: STORE[id].items.map(it => {
+                const l = STORE[id].group.getLayer(it.id);
+                return { ...it, pos: l.getLatLng() };
+            })};
+        }
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'config.json'; a.click();
+    }
 </script>
 </body>
 </html>
