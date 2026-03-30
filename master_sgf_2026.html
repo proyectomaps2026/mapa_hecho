@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF AYACUCHO v13.2 - MODO EDICIÓN CRÍTICO</title>
+    <title>SGF AYACUCHO v13.3 - CONTROL TOTAL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -16,71 +16,79 @@
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
         .ui { position: absolute; z-index: 1000; pointer-events: auto; }
         .glass { background: rgba(22, 27, 34, 0.96); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; }
-        
-        /* PANEL LATERAL DE EDICIÓN */
-        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; transition: 0.3s; }
+
+        /* Sidebar con Desglose */
+        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; }
         .side-head { padding: 15px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
         .layer-zone { flex: 1; overflow-y: auto; padding: 10px; }
+        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); overflow: hidden; }
+        .b-card.active-b { border-color: var(--accent); }
         
-        /* DASHBOARD DE SECTOR (NUEVO) */
-        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
-        .b-card.active-b { border-color: var(--accent); background: rgba(0,242,255,0.05); }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); }
-        .stat-pill { padding: 8px; border-radius: 6px; text-align: center; font-size: 10px; font-weight: 900; }
+        /* Stats Dashboard */
+        .stats-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; padding: 10px; background: rgba(0,0,0,0.3); }
+        .s-pill { padding: 5px; border-radius: 4px; font-size: 9px; font-weight: 900; text-align: center; color: white; }
         
-        /* POPUP REPARADO */
-        .leaflet-popup-content-wrapper { padding: 0; border-radius: 12px; overflow: hidden; width: 300px; }
-        .pop-img { width: 100%; height: 150px; object-fit: cover; background: #000; }
-        .pop-body { padding: 15px; color: #333; }
-        .f-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #eee; }
-        .v-lab { font-size: 9px; color: #999; font-weight: 800; text-transform: uppercase; }
-        .v-val { font-size: 12px; font-weight: 600; border: none; background: transparent; text-align: right; width: 60%; }
-        
-        /* BOTONES */
-        .t-btn { background: transparent; border: none; color: #8b949e; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 18px; }
-        .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.1); border: 1px solid var(--accent); }
-        .pop-save { background: var(--safe); color: white; border: none; width: 100%; padding: 10px; font-weight: 900; cursor: pointer; }
+        .item-list { border-top: 1px solid var(--border); max-height: 200px; overflow-y: auto; background: rgba(0,0,0,0.2); }
+        .item-row { padding: 8px 12px; font-size: 11px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; }
+
+        /* Popup Double Face con Ojito */
+        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 16px; background: white; width: 320px; }
+        .pop-card { color: #333; }
+        .pop-img-box { position: relative; width: 100%; height: 160px; background: #000; }
+        .pop-img { width: 100%; height: 100%; object-fit: cover; }
+        .mode-btn { position: absolute; bottom: -20px; right: 20px; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--accent); color: #000; border: 3px solid white; cursor: pointer; z-index: 10; }
+        .color-dot { position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid white; cursor: pointer; overflow: hidden; }
+        .color-dot input { opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        .pop-body { padding: 25px 15px 15px; max-height: 250px; overflow-y: auto; }
+        .f-row { margin-bottom: 6px; border-bottom: 1px solid #eee; padding-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .v-lab { font-size: 9px; color: #999; font-weight: 800; text-transform: uppercase; flex: 1; }
+        .v-val { font-size: 12px; color: #222; font-weight: 600; text-align: right; border: none; background: transparent; width: 65%; outline: none; }
+        .eye-btn { cursor: pointer; font-size: 13px; color: #ccc; }
+        .eye-btn.active { color: var(--accent); }
+
+        .pop-save { background: var(--safe); color: white; border: none; width: 100%; padding: 12px; font-weight: 900; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="ui top-nav glass" style="top:15px; left:15px; right:15px; height:55px; display:flex; align-items:center; padding:0 15px; gap:10px;">
-    <div style="flex:1; display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.3); padding:8px 15px; border-radius:8px; border:1px solid var(--border);">
+<div class="ui top-nav glass" style="top:15px; left:15px; right:15px; display:flex; gap:10px; padding:8px 15px; align-items:center;">
+    <div style="flex:1; display:flex; gap:10px; background:rgba(0,0,0,0.4); padding:8px 15px; border-radius:8px; border:1px solid var(--border);">
         <i class="fas fa-search" style="color:var(--accent)"></i>
-        <input type="text" id="main-search" placeholder="Buscar en base de datos..." oninput="filtrarTodo()" style="background:transparent; border:none; color:white; outline:none; width:100%;">
+        <input type="text" id="main-search" placeholder="Buscar Contribuyente..." oninput="filtrarTodo()" style="background:transparent; border:none; color:white; width:100%; outline:none;">
     </div>
-    <div class="tool-dock" style="display:flex; gap:5px; padding:5px; background:rgba(0,0,0,0.2); border-radius:10px;">
-        <button class="t-btn active" id="btn-select" onclick="resetTool()"><i class="fas fa-mouse-pointer"></i></button>
-        <button class="t-btn" id="btn-mark" onclick="enableTool('marker')"><i class="fas fa-map-marker-alt"></i></button>
-        <button class="t-btn" id="btn-poly" onclick="enableTool('poly')"><i class="fas fa-draw-polygon"></i></button>
+    <div style="display:flex; gap:5px; background:rgba(0,0,0,0.2); padding:5px; border-radius:10px;">
+        <button class="glass" style="color:#8b949e; width:40px; height:40px;" onclick="enableTool('marker')"><i class="fas fa-map-marker-alt"></i></button>
+        <button class="glass" style="color:#8b949e; width:40px; height:40px;" onclick="enableTool('poly')"><i class="fas fa-draw-polygon"></i></button>
     </div>
-    <button class="glass" style="color:var(--yellow); padding:10px 20px; font-weight:900; cursor:pointer;" onclick="exportarJSON()">RESPALDO JSON</button>
+    <button class="glass" style="color:var(--yellow); padding:0 20px; height:40px; font-weight:900;" onclick="exportarJSON()">EXPORTAR JSON</button>
 </div>
 
 <aside id="sidebar" class="glass ui">
     <div class="side-head">
-        <h2 style="margin:0; font-size:14px;">EDICIÓN DE CATASTRO</h2>
-        <span style="font-size:10px; color:var(--accent); font-weight:bold">ALCALDÍA DE AYACUCHO</span>
+        <h2 style="margin:0; font-size:14px;">CONTROL FISCAL HACIENDA</h2>
+        <span style="font-size:10px; color:var(--accent); font-weight:bold">MODO EDICIÓN AVANZADA</span>
     </div>
     <div class="layer-zone" id="list-container"></div>
-    <div style="padding:15px; border-top:1px solid var(--border); display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-        <button class="glass" style="color:white; padding:10px; font-size:11px;" onclick="crearCapaManual()">+ SECTOR</button>
-        <button class="glass" style="background:var(--yellow); color:#000; padding:10px; font-size:11px; font-weight:900;" onclick="abrirModal('m-csv')">IMPORTAR RAW</button>
+    <div style="padding:15px; display:grid; grid-template-columns:1fr 1fr; gap:10px; border-top:1px solid var(--border);">
+        <button class="glass" style="color:white; padding:12px; font-size:11px;" onclick="crearCapaManual()">+ SECTOR</button>
+        <button class="glass" style="background:var(--yellow); color:#000; padding:12px; font-weight:900;" onclick="abrirModal('m-csv')">IMPORTAR RAW</button>
     </div>
 </aside>
 
 <div id="m-csv" class="glass ui" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:320px; padding:25px; display:none; z-index:2001">
-    <h3 style="margin:0 0 15px">Cargar Excel Hacienda</h3>
-    <input type="text" id="csv-url" style="width:100%; padding:10px; margin-bottom:10px; border-radius:6px; background:#000; color:white; border:1px solid var(--border)" placeholder="URL Google Sheets">
-    <button class="pop-save" style="border-radius:6px" onclick="analizarExcel()">ANALIZAR COLUMNAS</button>
+    <h3 style="margin:0 0 15px">Importar desde Sheets</h3>
+    <input type="text" id="csv-url" style="width:100%; padding:10px; margin-bottom:10px; background:#000; color:white; border:1px solid var(--border)" placeholder="URL de Google Sheets">
+    <button class="pop-save" onclick="analizarExcel()">ANALIZAR</button>
     <div id="raw-ui" style="display:none; margin-top:15px">
-        <label style="font-size:10px">Ubicación:</label><select id="sel-coo" style="width:100%; margin-bottom:10px"></select>
-        <label style="font-size:10px">Estatus (Color):</label><select id="sel-col" style="width:100%; margin-bottom:15px"></select>
-        <button class="pop-save" style="background:var(--accent); color:black; border-radius:6px" onclick="inyectarDatos()">INYECTAR AL MAPA</button>
+        <label style="font-size:10px">Ubicación (Coords):</label><select id="sel-coo" style="width:100%; margin-bottom:10px"></select>
+        <label style="font-size:10px">Foto (URL):</label><select id="sel-img" style="width:100%; margin-bottom:10px"></select>
+        <label style="font-size:10px">Estatus inicial:</label><select id="sel-col" style="width:100%; margin-bottom:15px"></select>
+        <button class="pop-save" style="background:var(--accent); color:black" onclick="inyectarDatos()">INYECTAR</button>
     </div>
-    <button class="pop-save" style="background:var(--danger); margin-top:10px; border-radius:6px" onclick="cerrarModal('m-csv')">CANCELAR</button>
+    <button class="pop-save" style="background:var(--danger); margin-top:10px" onclick="cerrarModal('m-csv')">CERRAR</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -93,107 +101,103 @@
     let STORE = {}; let activeId = null; let allCols = []; let rawData = [];
 
     const getIcon = (color) => L.divIcon({ 
-        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:24px; text-shadow: 0 0 3px #000"></i>`, 
-        className: 'c-pin', iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -20] 
+        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:28px; text-shadow: 0 0 5px #000"></i>`, 
+        className: 'c-pin', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -25] 
     });
 
-    // Herramientas de Dibujo
     const drawM = new L.Draw.Marker(map, { icon: getIcon('#00f2ff') });
     const drawP = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.2, weight: 3 } });
     
-    function enableTool(t) { resetTool(); if(!activeId) return alert("Selecciona un sector"); t==='marker'?drawM.enable():drawP.enable(); document.getElementById('btn-'+(t==='marker'?'mark':'poly')).classList.add('active'); }
-    function resetTool() { drawM.disable(); drawP.disable(); document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-select').classList.add('active'); }
+    function enableTool(t) { if(!activeId) return alert("Selecciona un sector"); t==='marker'?drawM.enable():drawP.enable(); }
 
-    // EVENTO DE CREACIÓN (Marcadores siempre draggables)
     map.on(L.Draw.Event.CREATED, (e) => {
         const l = e.layer;
         if(l instanceof L.Marker) l.options.draggable = true;
         STORE[activeId].group.addLayer(l);
-        const it = { lid: l._leaflet_id, data: {"Contribuyente": "Nuevo"}, img: "", color: "#00f2ff", type: e.layerType };
+        const it = { lid: l._leaflet_id, data: {"Contribuyente": "NUEVO"}, img: "", color: "#00f2ff", type: e.layerType, ocultos: [] };
         STORE[activeId].items.push(it);
-        
-        vinvularEvento(l, activeId, it.lid);
+        vincular(l, activeId, it.lid);
         renderPanel();
-        abrirPopup(activeId, it.lid);
+        abrirPopup(activeId, it.lid, 'edicion');
     });
 
-    function vinvularEvento(layer, bid, lid) {
-        layer.on('click', () => abrirPopup(bid, lid));
-        layer.on('dragend', (e) => { console.log("Nueva pos:", e.target.getLatLng()); });
-    }
+    function vincular(l, bid, lid) { l.on('click', () => abrirPopup(bid, lid, 'vista')); l.on('dragend', renderPanel); }
 
-    // CEREBRO DE CONTEO (Suma por colores)
-    function obtenerResumen(bid) {
-        const resumen = { vigentes: 0, temporales: 0, deuda: 0, total: 0 };
-        STORE[bid].items.forEach(it => {
-            resumen.total++;
-            if(it.color === "#238636") resumen.vigentes++;
-            else if(it.color === "#fbbc04") resumen.temporales++;
-            else if(it.color === "#da3633") resumen.deuda++;
-        });
-        return resumen;
-    }
-
-    // POPUP REESTRUCTURADO (No se rompe al actualizar)
-    function abrirPopup(bid, lid) {
+    function abrirPopup(bid, lid, modo = 'vista') {
         const it = STORE[bid].items.find(x => x.lid === lid);
         const l = STORE[bid].group.getLayer(lid);
         
         let html = `<div class="pop-card">
-            <div style="position:relative">
-                <img src="${it.img || 'https://via.placeholder.com/300x150?text=SIN+FOTO'}" class="pop-img">
-                <div style="position:absolute; top:10px; left:10px; background:white; border-radius:50%; width:25px; height:25px; border:2px solid #333; overflow:hidden">
-                    <input type="color" value="${it.color}" onchange="upCol('${bid}',${lid},this.value)" style="opacity:0; cursor:pointer">
-                </div>
+            <div class="pop-img-box">
+                <img src="${it.img}" class="pop-img" onerror="this.src='https://via.placeholder.com/320x160?text=FOTO+HACIENDA'">
+                <div class="color-dot" style="background:${it.color}"><input type="color" value="${it.color}" onchange="upCol('${bid}',${lid},this.value)"></div>
+                <div class="mode-btn" onclick="abrirPopup('${bid}',${lid},'${modo==='vista'?'edicion':'vista'}')"><i class="fas ${modo==='vista'?'fa-edit':'fa-eye'}"></i></div>
             </div>
             <div class="pop-body">`;
 
         for(let key in it.data) {
-            html += `<div class="f-row">
-                <span class="v-lab">${key}</span>
-                <input type="text" class="v-val" value="${it.data[key]}" onchange="upData('${bid}',${lid},'${key}',this.value)">
-            </div>`;
+            const isHidden = it.ocultos && it.ocultos.includes(key);
+            if(modo === 'vista') {
+                if(!isHidden) html += `<div class="f-row"><span class="v-lab">${key}</span><span class="v-val">${it.data[key]}</span></div>`;
+            } else {
+                html += `<div class="f-row">
+                    <i class="fas ${isHidden?'fa-eye-slash':'fa-eye'} eye-btn ${!isHidden?'active':''}" onclick="toggleOjo('${bid}',${lid},'${key}')"></i>
+                    <input type="text" class="v-val" value="${it.data[key]}" onchange="upData('${bid}',${lid},'${key}',this.value)">
+                </div>`;
+            }
         }
 
-        html += `<input type="text" placeholder="URL Foto" value="${it.img}" onchange="upImg('${bid}',${lid},this.value)" style="width:100%; font-size:10px; margin-top:10px">
-                 <button onclick="borrarPunto('${bid}',${lid})" style="background:none; border:none; color:red; font-size:10px; margin-top:10px; cursor:pointer">ELIMINAR REGISTRO</button>
-                 </div><button class="pop-save" onclick="map.closePopup()">LISTO</button></div>`;
+        if(modo === 'edicion') {
+            html += `<div class="f-row" style="background:#f9f9f9; padding:5px;"><i class="fas fa-camera"></i><input type="text" style="font-size:10px; flex:1; border:none;" value="${it.img}" onchange="upImg('${bid}',${lid},this.value)" placeholder="URL de la Foto"></div>`;
+            html += `<button class="pop-save" style="background:var(--danger); margin-top:10px" onclick="borrarPunto('${bid}',${lid})">ELIMINAR</button>`;
+        }
 
-        l.bindPopup(html).openPopup();
+        html += `</div><button class="pop-save" onclick="STORE['${bid}'].group.getLayer(${lid}).closePopup()">GUARDAR</button></div>`;
+        l.bindPopup(html, { padding: [0,0] }).openPopup();
     }
 
     function upData(bid, lid, k, v) { STORE[bid].items.find(x => x.lid === lid).data[k] = v; renderPanel(); }
-    function upImg(bid, lid, v) { STORE[bid].items.find(x => x.lid === lid).img = v; abrirPopup(bid, lid); }
+    function upImg(bid, lid, v) { STORE[bid].items.find(x => x.lid === lid).img = v; abrirPopup(bid, lid, 'edicion'); }
     function upCol(bid, lid, v) { 
-        const it = STORE[bid].items.find(x => x.lid === lid);
-        it.color = v;
+        const it = STORE[bid].items.find(x => x.lid === lid); it.color = v;
         const l = STORE[bid].group.getLayer(lid);
-        if(l.setIcon) l.setIcon(getIcon(v));
-        renderPanel();
-        abrirPopup(bid, lid);
+        if(l.setIcon) l.setIcon(getIcon(v)); else l.setStyle({color:v, fillColor:v});
+        renderPanel(); abrirPopup(bid, lid, 'vista');
+    }
+    function toggleOjo(bid, lid, k) {
+        const it = STORE[bid].items.find(x => x.lid === lid);
+        it.ocultos.includes(k) ? it.ocultos = it.ocultos.filter(x => x !== k) : it.ocultos.push(k);
+        abrirPopup(bid, lid, 'edicion');
     }
 
-    // PANEL LATERAL REPARADO (Resumen en lugar de lista larga)
     function renderPanel() {
         const cont = document.getElementById('list-container'); cont.innerHTML = "";
         for(let id in STORE) {
             const capa = STORE[id];
-            const res = obtenerResumen(id);
-            const isActive = (id === activeId);
+            const v = capa.items.filter(i=>i.color==='#238636').length;
+            const t = capa.items.filter(i=>i.color==='#fbbc04').length;
+            const d = capa.items.filter(i=>i.color==='#da3633').length;
 
-            let h = `<div class="b-card ${isActive?'active-b':''}" onclick="activeId='${id}';renderPanel()">
+            let h = `<div class="b-card ${id===activeId?'active-b':''}" onclick="activeId='${id}';renderPanel()">
                 <div style="padding:10px; display:flex; justify-content:space-between; align-items:center">
-                    <b style="font-size:12px; color:white">${capa.name}</b>
-                    <i class="fas fa-trash" style="color:var(--danger); font-size:10px; cursor:pointer" onclick="borrarCapa('${id}')"></i>
+                    <input type="text" value="${capa.name}" onchange="STORE['${id}'].name=this.value" style="background:transparent; border:none; color:white; font-size:12px; font-weight:800; flex:1">
+                    <i class="fas fa-trash-alt" style="color:var(--danger); cursor:pointer" onclick="borrarCapa('${id}')"></i>
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-pill" style="background:var(--safe)">${res.vigentes} VIG</div>
-                    <div class="stat-pill" style="background:var(--yellow); color:black">${res.temporales} TEMP</div>
-                    <div class="stat-pill" style="background:var(--danger)">${res.deuda} DEUDA</div>
+                <div class="stats-bar">
+                    <div class="s-pill" style="background:var(--safe)">${v} VIG</div>
+                    <div class="s-pill" style="background:var(--yellow); color:black">${t} TEMP</div>
+                    <div class="s-pill" style="background:var(--danger)">${d} DEUDA</div>
                 </div>
-                <div style="padding:8px; font-size:9px; color:#8b949e; text-align:center">Total Registros: ${res.total}</div>
-            </div>`;
-            cont.insertAdjacentHTML('beforeend', h);
+                <div class="item-list">`;
+            
+            capa.items.forEach(it => {
+                h += `<div class="item-row" onclick="irA('${id}',${it.lid})">
+                    <span style="color:${it.color}">●</span>
+                    <span style="flex:1; margin-left:10px">${it.data["Contribuyente"] || it.data[Object.keys(it.data)[0]]}</span>
+                    <i class="fas fa-edit" style="color:var(--accent)" onclick="event.stopPropagation(); abrirPopup('${id}',${it.lid},'edicion')"></i>
+                </div>`;
+            });
+            cont.insertAdjacentHTML('beforeend', h + `</div></div>`);
         }
     }
 
@@ -208,43 +212,44 @@
                 let obj = {}; allCols.forEach((k, idx) => obj[k] = rows[i][idx]); rawData.push(obj); 
             }}
             document.getElementById('sel-coo').innerHTML = allCols.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('sel-col').innerHTML = `<option value="">Sin Filtro</option>` + allCols.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('sel-img').innerHTML = allCols.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('sel-col').innerHTML = `<option value="">Default</option>` + allCols.map(c => `<option value="${c}">${c}</option>`).join('');
             document.getElementById('raw-ui').style.display = 'block';
-        } catch (e) { alert("Error al conectar con Google Sheets"); }
+        } catch (e) { alert("Error en Google Sheets"); }
     }
 
     function inyectarDatos() {
         const bid = 'b'+Date.now(); const grp = new L.FeatureGroup().addTo(map);
-        const cCol = document.getElementById('sel-coo').value, sCol = document.getElementById('sel-col').value;
+        const cCol = document.getElementById('sel-coo').value, iCol = document.getElementById('sel-img').value, sCol = document.getElementById('sel-col').value;
         const its = [];
-        
         rawData.forEach(row => {
             const p = row[cCol].replace(/[A-Za-z()]/g, '').trim().split(/[, ]+/);
             const lat = parseFloat(p[0]), lng = parseFloat(p[1]);
             if(!isNaN(lat)) {
                 let col = '#00f2ff';
-                const val = row[sCol]?.toUpperCase() || "";
-                if(val.includes("VIGENTE") || val.includes("PAGO")) col = "#238636";
-                else if(val.includes("TEMPORAL")) col = "#fbbc04";
-                else if(val.includes("SIN") || val.includes("DEUDA") || val.includes("VENCIDA")) col = "#da3633";
+                const s = row[sCol]?.toUpperCase() || "";
+                if(s.includes("VIGENTE") || s.includes("PAGO")) col = "#238636";
+                else if(s.includes("TEMPORAL")) col = "#fbbc04";
+                else if(s.includes("DEUDA") || s.includes("VENCIDA")) col = "#da3633";
 
                 const m = L.marker([lat, lng], { icon: getIcon(col), draggable: true });
-                vinvularEvento(m, bid, m._leaflet_id);
+                vincular(m, bid, m._leaflet_id);
                 grp.addLayer(m);
-                its.push({ lid: m._leaflet_id, data: {...row}, img: "", color: col, type: 'marker' });
+                its.push({ lid: m._leaflet_id, data: {...row}, ocultos: [], img: row[iCol] || "", color: col, type: 'marker' });
             }
         });
-        STORE[bid] = { name: "Censo Nuevo", items: its, group: grp };
+        STORE[bid] = { name: "Censo Hacienda", items: its, group: grp };
         activeId = bid; renderPanel(); cerrarModal('m-csv');
     }
 
+    function irA(bid, lid) { const l = STORE[bid].group.getLayer(lid); map.setView(l.getLatLng(), 19); abrirPopup(bid, lid, 'vista'); }
     function borrarPunto(bid, lid) { if(confirm("¿Eliminar?")) { STORE[bid].group.removeLayer(lid); STORE[bid].items = STORE[bid].items.filter(x => x.lid !== lid); renderPanel(); map.closePopup(); } }
-    function borrarCapa(id) { event.stopPropagation(); if(confirm("¿Borrar sector completo?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderPanel(); } }
+    function borrarCapa(id) { event.stopPropagation(); if(confirm("¿Borrar sector?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderPanel(); } }
     function crearCapaManual() { const bid = 'b'+Date.now(); STORE[bid] = { name: "Nuevo Sector", items: [], group: new L.FeatureGroup().addTo(map) }; activeId = bid; renderPanel(); }
     function exportarJSON() { const blob = new Blob([JSON.stringify(STORE)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hacienda_final.json'; a.click(); }
     function abrirModal(id) { document.getElementById(id).style.display = 'block'; }
     function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
-    function filtrarTodo() { /* Lógica de búsqueda simple si es necesaria */ }
+    function filtrarTodo() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none'); }
 </script>
 </body>
 </html>
