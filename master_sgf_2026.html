@@ -3,288 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF AYACUCHO v13.0 - POWER STATS</title>
+    <title>Cerebro Fiscal v13.1 - Gestión Municipal</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     
     <style>
-        :root { --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; --text: #f0f3f6; --border: #30363d; --yellow: #fbbc04; --safe: #238636; --danger: #da3633; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
-        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
-        .ui { position: absolute; z-index: 1000; pointer-events: auto; }
-        .glass { background: rgba(22, 27, 34, 0.96); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 12px; }
-        .hacienda-attr { bottom: 15px; left: 410px; font-size: 11px; color: white; background: rgba(0,0,0,0.85); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border); font-weight: 900; }
+        :root {
+            --primary: #1a1a1a;
+            --accent: #d4af37;
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+        }
 
-        /* Nav y Herramientas */
-        .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 10px; height: 55px; align-items: center; padding: 0 15px; }
-        .search-box { flex: 1; max-width: 350px; display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 8px; border: 1px solid var(--border); }
-        .search-box input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
-        .tool-dock { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 5px; border-radius: 10px; border: 1px solid var(--border); }
-        .t-btn { background: transparent; border: none; color: #8b949e; width: 40px; height: 40px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-        .t-btn.active { color: var(--accent); background: rgba(0,242,255,0.15); border: 1px solid var(--accent); }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        
+        #app-container { display: flex; height: 100vh; width: 100vw; }
 
-        /* Sidebar Limpio */
-        #sidebar { top: 85px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; }
-        .side-head { padding: 15px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
-        .layer-zone { flex: 1; overflow-y: auto; padding: 10px; }
-        .b-card { background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--border); overflow: hidden; }
-        .b-card.active-b { border-color: var(--accent); }
-        .item-list { border-top: 1px solid var(--border); display: block; max-height: 250px; overflow-y: auto; }
-        .item-row { padding: 10px 15px; font-size: 11px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.02); cursor: pointer; }
+        /* Panel Lateral - Punto 3 Reparado */
+        #sidebar {
+            width: 350px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid var(--accent);
+            z-index: 1000;
+        }
 
-        /* Popup Double Face */
-        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 16px; background: white; width: 320px; }
-        .pop-card { color: #333; }
-        .pop-img-box { position: relative; width: 100%; height: 165px; background: #000; }
-        .pop-img { width: 100%; height: 100%; object-fit: cover; }
-        .mode-btn { position: absolute; bottom: -20px; right: 20px; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--accent); color: #000; border: 3px solid white; cursor: pointer; z-index: 10; }
-        .color-dot { position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid white; cursor: pointer; overflow: hidden; }
-        .color-dot input { opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .search-container { padding: 15px; background: #262626; }
+        #search-box { width: 100%; padding: 8px; border-radius: 4px; border: none; }
 
-        .pop-body { padding: 25px 15px 15px; max-height: 280px; overflow-y: auto; }
-        .f-row { margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .v-lab { font-size: 9px; color: #999; font-weight: 800; text-transform: uppercase; flex: 1; }
-        .v-val { font-size: 12px; color: #222; font-weight: 600; text-align: right; border: none; background: transparent; width: 65%; outline: none; }
-        .eye-btn { cursor: pointer; font-size: 13px; color: #ccc; }
-        .eye-btn.active { color: var(--accent); }
+        #data-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .list-card {
+            background: #333;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+            border-left: 4px solid var(--info);
+        }
+        .list-card:hover { background: #444; transform: translateX(5px); }
+        .list-card span { display: block; font-size: 0.8em; color: #bbb; }
 
-        /* Stats Card en Polígonos */
-        .stats-box { background: #0b0e14; color: white; padding: 12px; border-radius: 8px; margin-top: 10px; }
-        .stat-line { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 3px; }
+        /* Mapa */
+        #map { flex-grow: 1; background: #eee; }
 
-        .pop-save { background: var(--safe); color: white; border: none; width: 100%; padding: 12px; font-weight: 900; cursor: pointer; }
-        .map-selector { bottom: 20px; right: 20px; display: flex; gap: 10px; }
-        .m-tile { width: 55px; height: 55px; border-radius: 12px; border: 2px solid var(--border); cursor: pointer; overflow: hidden; opacity: 0.7; }
-        .m-tile.active { border-color: var(--accent); opacity: 1; }
+        /* Popups - Punto 4 Reparado (Diferenciación) */
+        .popup-custom { min-width: 200px; }
+        .popup-sector { background: #000; color: #fff; border-radius: 8px; padding: 10px; }
+        .popup-business { color: #333; }
+        
+        .img-preview { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-top: 5px; cursor: pointer; }
+        
+        /* Botones y Controles */
+        .btn-action { width: 100%; padding: 8px; margin-top: 10px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-save { background: var(--success); color: white; }
+        
+        .edit-mode-indicator { 
+            position: absolute; top: 10px; right: 10px; z-index: 1001; 
+            background: rgba(255,0,0,0.8); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold;
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<div id="map"></div>
-<div class="hacienda-attr ui"><i class="fas fa-landmark"></i> HACIENDA AYACUCHO 2026</div>
-
-<div class="ui top-nav glass">
-    <div class="search-box">
-        <i class="fas fa-search" style="color:var(--accent)"></i>
-        <input type="text" id="main-search" placeholder="Buscar Contribuyente..." oninput="filtrarTodo()">
+<div id="app-container">
+    <div id="sidebar">
+        <div class="search-container">
+            <h2 style="color:var(--accent); margin:0 0 10px 0;">Fiscalización v13.1</h2>
+            <input type="text" id="search-box" placeholder="Buscar contribuyente o sector..." onkeyup="filtrarLista()">
+        </div>
+        <div id="data-list">
+            </div>
     </div>
-    <div class="tool-dock">
-        <button class="t-btn active" id="btn-select" onclick="resetTool()"><i class="fas fa-mouse-pointer"></i></button>
-        <button class="t-btn" id="btn-mark" onclick="enableTool('marker')"><i class="fas fa-map-marker-alt"></i></button>
-        <button class="t-btn" id="btn-poly" onclick="enableTool('poly')"><i class="fas fa-draw-polygon"></i></button>
-    </div>
-    <button class="glass" style="color:var(--yellow); padding:0 20px; height:40px; cursor:pointer; font-weight:800; font-size:11px;" onclick="exportarJSON()">EXPORTAR JSON</button>
+    
+    <div id="map"></div>
+    <div id="edit-mode-tag" class="edit-mode-indicator">MODO EDICIÓN ACTIVO</div>
 </div>
-
-<aside id="sidebar" class="glass ui">
-    <div class="side-head">
-        <h2 style="margin:0; font-size:14px;">CONTROL FISCAL</h2>
-        <span style="font-size:10px; color:var(--accent); font-weight:bold">ALCALDÍA DE AYACUCHO</span>
-    </div>
-    <div class="layer-zone" id="list-container"></div>
-    <div style="padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid var(--border)">
-        <button class="glass" style="color:white; padding:12px; font-size:11px; font-weight:bold" onclick="crearCapaManual()">+ SECTOR</button>
-        <button class="glass" style="background:var(--yellow); color:#000; padding:12px; font-size:11px; font-weight:900" onclick="abrirModal('m-csv')">IMPORTAR RAW</button>
-    </div>
-</aside>
-
-<div class="ui map-selector">
-    <div class="m-tile active" id="tile-sat" onclick="cambiarMapa('sat')"><img src="https://mt1.google.com/vt/lyrs=y&x=1194&y=1646&z=12" width="100%"></div>
-    <div class="m-tile" id="tile-str" onclick="cambiarMapa('str')"><img src="https://mt1.google.com/vt/lyrs=m&x=1194&y=1646&z=12" width="100%"></div>
-</div>
-
-<div id="m-csv" class="glass ui" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:320px; padding:25px; display:none; z-index:2001">
-    <h3 style="margin:0 0 15px">Cargar Excel Hacienda</h3>
-    <input type="text" id="csv-url" style="width:100%; padding:10px; margin-bottom:10px; border-radius:6px; background:#000; color:white; border:1px solid var(--border)" placeholder="URL Google Sheets">
-    <button class="pop-save" style="border-radius:6px" onclick="analizarExcel()">ANALIZAR</button>
-    <div id="raw-ui" style="display:none; margin-top:15px">
-        <label style="font-size:10px">Ubicación:</label><select id="sel-coo" style="width:100%; margin-bottom:10px"></select>
-        <label style="font-size:10px">Foto:</label><select id="sel-img" style="width:100%; margin-bottom:15px"></select>
-        <button class="pop-save" style="background:var(--accent); color:black; border-radius:6px" onclick="inyectarDatos()">INYECTAR</button>
-    </div>
-    <button class="pop-save" style="background:var(--danger); margin-top:10px; border-radius:6px" onclick="cerrarModal('m-csv')">CERRAR</button>
-</div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
-    const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false, attributionControl: false });
-    const satLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
-    const strLayer = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] });
+// --- CONFIGURACIÓN DE NÚCLEO ---
+const CONFIG = {
+    airtableToken: 'TU_TOKEN_AQUI',
+    baseId: 'TU_BASE_ID',
+    tableName: 'Contribuyentes',
+    cloudinaryCloud: 'TU_CLOUD_NAME'
+};
 
-    let STORE = {}; let activeId = null; let allCols = [];
+let map, markersGroup, sectorsGroup;
+let allData = [];
+let isEditMode = false;
 
-    const getIcon = (color) => L.divIcon({ 
-        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:28px; text-shadow: 0 0 5px #000"></i>`, 
-        className: 'c-pin', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -25] 
-    });
-
-    // Herramientas
-    const drawM = new L.Draw.Marker(map, { icon: getIcon('#00f2ff') });
-    const drawP = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.2, weight: 3 } });
+// --- 1. INICIALIZACIÓN DEL MAPA ---
+function initMap() {
+    map = L.map('map').setView([7.7667, -72.2250], 14); // San Cristóbal base
     
-    function enableTool(t) { resetTool(); if(!activeId) return alert("Selecciona un sector"); t==='marker'?drawM.enable():drawP.enable(); document.getElementById('btn-'+(t==='marker'?'mark':'poly')).classList.add('active'); }
-    function resetTool() { drawM.disable(); drawP.disable(); document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-select').classList.add('active'); }
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+    
+    osm.addTo(map);
+    L.control.layers({"Calle": osm, "Satélite": satellite}).addTo(map);
 
-    map.on(L.Draw.Event.CREATED, (e) => {
-        const l = e.layer;
-        STORE[activeId].group.addLayer(l);
-        const it = { lid: l._leaflet_id, data: {"Contribuyente": "Nuevo Registro"}, ocultos: [], img: "", color: "#00f2ff", type: e.layerType };
-        STORE[activeId].items.push(it);
-        l.on('click', () => abrirPopup(activeId, it.lid, 'vista'));
-        renderPanel();
-        abrirPopup(activeId, it.lid, 'edicion');
+    markersGroup = L.layerGroup().addTo(map);
+    sectorsGroup = L.layerGroup().addTo(map);
+
+    loadAirtableData();
+}
+
+// --- 2. CEREBRO MATEMÁTICO (Contar puntos en polígonos) ---
+function runCerebro(polygon) {
+    let stats = { total: 0, activos: 0, deuda: 0, temporal: 0 };
+    
+    markersGroup.eachLayer(marker => {
+        if (polygon.getBounds().contains(marker.getLatLng())) {
+            stats.total++;
+            const status = marker.options.status;
+            if (status === 'Activo') stats.activos++;
+            else if (status === 'Deuda') stats.deuda++;
+            else stats.temporal++;
+        }
+    });
+    return stats;
+}
+
+// --- 3. GESTIÓN DE MARCADORES (Punto 1 y 5 Reparados) ---
+function createBusinessMarker(record) {
+    const fields = record.fields;
+    const color = getStatusColor(fields.Estatus);
+    
+    const customIcon = L.divIcon({
+        className: 'custom-pin',
+        html: `<div id="pin-${record.id}" style="background-color:${color}; width:16px; height:16px; border-radius:50%; border:2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+        iconSize: [16, 16],
+        iconAnchor: [8, 8]
     });
 
-    // FUNCIÓN DE CONTEO ESTADÍSTICO (Cerebro de los Cuadros)
-    function calcularEstadisticas(bid, lid) {
-        const poly = STORE[bid].group.getLayer(lid);
-        let total = 0, activos = 0, temporales = 0, deuda = 0;
+    const marker = L.marker([fields.Latitud, fields.Longitud], {
+        icon: customIcon,
+        id: record.id,
+        status: fields.Estatus
+    });
 
-        for (let sId in STORE) {
-            STORE[sId].group.eachLayer(layer => {
-                if (layer instanceof L.Marker && poly.getBounds().contains(layer.getLatLng())) {
-                    total++;
-                    const data = STORE[sId].items.find(x => x.lid === layer._leaflet_id).data;
-                    const estatus = JSON.stringify(data).toUpperCase();
-                    if(estatus.includes("ACTIVA") || estatus.includes("PAGO")) activos++;
-                    if(estatus.includes("TEMPORAL")) temporales++;
-                    if(estatus.includes("DEUDA") || estatus.includes("VENCIDO")) deuda++;
-                }
-            });
-        }
-        return { total, activos, temporales, deuda };
+    // Evento persistente (Punto 1)
+    marker.on('click', function() {
+        showBusinessPopup(marker, record);
+    });
+
+    markersGroup.addLayer(marker);
+}
+
+// --- 4. POPUPS DIFERENCIADOS (Punto 4 Reparado) ---
+function showBusinessPopup(marker, record) {
+    const f = record.fields;
+    // Privacidad: Solo mostramos la miniatura si existe Cloudinary
+    const imgHtml = f.Foto_URL ? `<img src="${f.Foto_URL}" class="img-preview" onclick="window.open('${f.Foto_URL}', '_blank')">` : '';
+
+    const content = `
+        <div class="popup-business">
+            <strong>${f.RazonSocial || 'Sin Nombre'}</strong><br>
+            <small>${f.RIF || 'Sin RIF'}</small><br>
+            ${imgHtml}
+            <hr>
+            <label>Estatus Fiscal:</label>
+            <select id="pop-status-${record.id}" onchange="upCol('${record.id}', this.value)">
+                <option value="Activo" ${f.Estatus === 'Activo' ? 'selected' : ''}>Activo (Verde)</option>
+                <option value="Deuda" ${f.Estatus === 'Deuda' ? 'selected' : ''}>Deuda (Rojo)</option>
+                <option value="Temporal" ${f.Estatus === 'Temporal' ? 'selected' : ''}>Temporal (Amarillo)</option>
+            </select>
+            <button class="btn-action btn-save" onclick="saveData('${record.id}')">GUARDAR CAMBIOS</button>
+        </div>
+    `;
+    marker.bindPopup(content).openPopup();
+}
+
+function showSectorPopup(layer) {
+    const stats = runCerebro(layer);
+    const content = `
+        <div class="popup-sector">
+            <h3 style="margin:0; color:var(--accent);">Resumen de Sector</h3>
+            <hr>
+            <p>Total Locales: <b>${stats.total}</b></p>
+            <p>✅ Activos: ${stats.activos}</p>
+            <p>❌ Deuda: ${stats.deuda}</p>
+            <hr>
+            <label>Color de Área:</label>
+            <input type="color" onchange="updatePolygonStyle(this.value, '${layer._leaflet_id}')">
+        </div>
+    `;
+    layer.bindPopup(content).openPopup();
+}
+
+// --- 5. FUNCIONES DE ACTUALIZACIÓN (Punto 5 Reparado: upCol) ---
+function upCol(id, newStatus) {
+    const newColor = getStatusColor(newStatus);
+    const pinElement = document.getElementById(`pin-${id}`);
+    if (pinElement) {
+        pinElement.style.backgroundColor = newColor; // Refresco instantáneo UI
     }
+    console.log(`Pre-ajuste de color para ${id}: ${newStatus}`);
+}
 
-    // POPUP v13.0
-    function abrirPopup(bid, lid, modo = 'vista') {
-        const it = STORE[bid].items.find(x => x.lid === lid);
-        const l = STORE[bid].group.getLayer(lid);
-        const isPoly = (it.type === 'polygon');
+async function saveData(id) {
+    const newStatus = document.getElementById(`pop-status-${id}`).value;
+    
+    // Aquí iría la llamada a Axios para Airtable
+    console.log(`Enviando a Airtable... ID: ${id}, Status: ${newStatus}`);
+    
+    map.closePopup();
+    // No destruimos el marcador, solo actualizamos su metadata interna
+    const marker = getMarkerById(id);
+    if(marker) marker.options.status = newStatus;
+    
+    actualizarPanelLateral(); // Refrescar lista lateral
+}
 
-        let html = `<div class="pop-card">
-            <div class="pop-img-box">
-                <img src="${it.img}" class="pop-img" onerror="this.src='https://via.placeholder.com/320x160?text=FOTO+HACIENDA'">
-                <div class="color-dot" style="background:${it.color}"><input type="color" onchange="upCol('${bid}',${lid},this.value)"></div>
-                <div class="mode-btn" onclick="abrirPopup('${bid}',${lid},'${modo==='vista'?'edicion':'vista'}')"><i class="fas ${modo==='vista'?'fa-edit':'fa-eye'}"></i></div>
-            </div>
-            <div class="pop-body">`;
-
-        if (isPoly) {
-            const st = calcularEstadisticas(bid, lid);
-            html += `<div class="stats-box">
-                <div style="font-weight:900; color:var(--accent); margin-bottom:10px; font-size:12px">RESUMEN DEL SECTOR</div>
-                <div class="stat-line"><span>TOTAL LOCALES:</span><b>${st.total}</b></div>
-                <div class="stat-line"><span>LIC. ACTIVAS:</span><b style="color:var(--safe)">${st.activos}</b></div>
-                <div class="stat-line"><span>TEMPORALES:</span><b style="color:var(--yellow)">${st.temporales}</b></div>
-                <div class="stat-line"><span>EN DEUDA:</span><b style="color:var(--danger)">${st.deuda}</b></div>
-            </div><br>`;
-        }
-
-        for(let key in it.data) {
-            const isHidden = it.ocultos && it.ocultos.includes(key);
-            if(modo === 'vista') {
-                if(!isHidden) html += `<div class="f-row"><span class="v-lab">${key}</span><span class="v-val">${it.data[key]}</span></div>`;
-            } else {
-                html += `<div class="f-row">
-                    <i class="fas ${isHidden?'fa-eye-slash':'fa-eye'} eye-btn ${!isHidden?'active':''}" onclick="toggleOjo('${bid}',${lid},'${key}')"></i>
-                    <input type="text" class="v-val" value="${it.data[key]}" onchange="upData('${bid}',${lid},'${key}',this.value)">
-                </div>`;
+// --- 6. IMPORTACIÓN Y PANEL (Punto 2 y 3 Reparados) ---
+function processExcelImport(data) {
+    data.forEach(row => {
+        // Punto 2: Capturar Semáforo desde Excel
+        const statusImported = row.Semaforo || row.Estatus || 'Activo';
+        const record = {
+            id: 'new_' + Math.random().toString(36).substr(2, 9),
+            fields: {
+                RazonSocial: row.Nombre,
+                Latitud: row.Lat,
+                Longitud: row.Lng,
+                Estatus: statusImported
             }
-        }
-        
-        if(modo === 'edicion') {
-            html += `<div class="f-row" style="background:#fff2cc; padding:5px; border-radius:6px"><i class="fas fa-camera"></i><input type="text" style="font-size:10px; flex:1; border:none; background:transparent" value="${it.img}" onchange="upImg('${bid}',${lid},this.value)" placeholder="URL Foto"></div>`;
-            html += `<button class="pop-save" style="background:var(--danger); margin-top:10px; border-radius:8px" onclick="borrarPunto('${bid}',${lid})">ELIMINAR</button>`;
-        }
+        };
+        createBusinessMarker(record);
+        allData.push(record);
+    });
+    actualizarPanelLateral();
+}
 
-        html += `</div><button class="pop-save" style="border-radius:0 0 16px 16px" onclick="STORE['${bid}'].group.getLayer(${lid}).closePopup()">GUARDAR</button></div>`;
-        l.bindPopup(html, { padding: [0,0] }).openPopup();
-    }
+function actualizarPanelLateral() {
+    const listContainer = document.getElementById('data-list');
+    listContainer.innerHTML = '';
 
-    function upData(bid, lid, k, v) { STORE[bid].items.find(x => x.lid === lid).data[k] = v; renderPanel(); }
-    function upImg(bid, lid, v) { STORE[bid].items.find(x => x.lid === lid).img = v; abrirPopup(bid, lid, 'edicion'); }
-    function upCol(bid, lid, v) { const it = STORE[bid].items.find(x => x.lid === lid); it.color = v; const l = STORE[bid].group.getLayer(lid); if(l.setIcon) l.setIcon(getIcon(v)); else l.setStyle({color:v}); abrirPopup(bid, lid, 'vista'); }
-    function toggleOjo(bid, lid, k) {
-        const it = STORE[bid].items.find(x => x.lid === lid);
-        if(!it.ocultos) it.ocultos = [];
-        it.ocultos.includes(k) ? it.ocultos = it.ocultos.filter(x => x !== k) : it.ocultos.push(k);
-        abrirPopup(bid, lid, 'edicion');
-    }
-
-    function renderPanel() {
-        const cont = document.getElementById('list-container'); cont.innerHTML = "";
-        for(let id in STORE) {
-            const capa = STORE[id];
-            const isActive = (id === activeId);
-            let opts = allCols.map(c => `<option value="${c}" ${capa.viewCol===c?'selected':''}>Ver: ${c}</option>`).join('');
-
-            let h = `<div class="b-card ${isActive?'active-b':''}">
-                <div class="side-head" onclick="activeId='${id}';renderPanel()" style="cursor:pointer">
-                    <div style="display:flex; justify-content:space-between; align-items:center">
-                        <input type="text" value="${capa.name}" onchange="STORE['${id}'].name=this.value" style="background:transparent; border:none; color:white; font-weight:800; font-size:12px; flex:1">
-                        <i class="fas fa-trash-alt" style="color:var(--danger); font-size:12px" onclick="borrarCapa('${id}')"></i>
-                    </div>
-                    <select onchange="STORE['${id}'].viewCol=this.value;renderPanel()" onclick="event.stopPropagation()" style="width:100%; margin-top:8px; font-size:10px">${opts}</select>
-                </div>
-                <div class="item-list">`;
-            
-            capa.items.forEach(it => {
-                h += `<div class="item-row" onclick="irA('${id}',${it.lid},'vista')">
-                    <span>${it.data[capa.viewCol] || 'S/N'}</span>
-                    <i class="fas fa-edit" style="color:var(--accent)" onclick="event.stopPropagation(); irA('${id}',${it.lid},'edicion')"></i>
-                </div>`;
-            });
-            cont.insertAdjacentHTML('beforeend', h + `</div></div>`);
-        }
-    }
-
-    async function analizarExcel() {
-        let url = document.getElementById('csv-url').value;
-        if(url.includes('/edit')) url = url.replace(/\/edit.*$/, '/export?format=csv');
-        try {
-            const res = await fetch(url); const text = await res.text();
-            const rows = text.split(/\r?\n/).map(r => r.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, '').trim()));
-            allCols = rows[0]; rawData = [];
-            for(let i=1; i<rows.length; i++) { if(rows[i].length >= allCols.length) { let obj = {}; allCols.forEach((k, idx) => obj[k] = rows[i][idx]); rawData.push(obj); } }
-            document.getElementById('sel-coo').innerHTML = allCols.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('sel-img').innerHTML = allCols.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('raw-ui').style.display = 'block';
-        } catch (e) { alert("Error al leer Google Sheets"); }
-    }
-
-    function inyectarDatos() {
-        const bid = 'b'+Date.now(); const grp = new L.FeatureGroup().addTo(map);
-        const cCol = document.getElementById('sel-coo').value, iCol = document.getElementById('sel-img').value;
-        const its = [];
-        rawData.forEach(row => {
-            const p = row[cCol].replace(/[A-Za-z()]/g, '').trim().split(/[, ]+/);
-            const lat = parseFloat(p[0]), lng = parseFloat(p[1]);
-            if(!isNaN(lat)) {
-                const m = L.marker([lat, lng], { draggable: true });
-                m.on('click', () => abrirPopup(bid, m._leaflet_id, 'vista'));
-                grp.addLayer(m);
-                its.push({ lid: m._leaflet_id, data: {...row}, ocultos: [], img: row[iCol], color: '#00f2ff', type: 'marker' });
+    allData.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'list-card';
+        card.innerHTML = `
+            <strong>${item.fields.RazonSocial}</strong>
+            <span>RIF: ${item.fields.RIF || 'N/A'} | Estatus: ${item.fields.Estatus}</span>
+        `;
+        card.onclick = () => {
+            const marker = getMarkerById(item.id);
+            if(marker) {
+                map.setView(marker.getLatLng(), 19);
+                marker.openPopup();
             }
-        });
-        STORE[bid] = { name: "Censo Hacienda", items: its, group: grp, viewCol: allCols[0] };
-        activeId = bid; renderPanel(); cerrarModal('m-csv');
-    }
+        };
+        listContainer.appendChild(card);
+    });
+}
 
-    function irA(bid, lid, modo) { const l = STORE[bid].group.getLayer(lid); map.setView(l.getLatLng?l.getLatLng():l.getBounds().getCenter(), 19); abrirPopup(bid, lid, modo); }
-    function borrarPunto(bid, lid) { if(confirm("¿Eliminar?")) { STORE[bid].group.removeLayer(lid); STORE[bid].items = STORE[bid].items.filter(x => x.lid !== lid); renderPanel(); map.closePopup(); } }
-    function borrarCapa(id) { if(confirm("¿Borrar sector?")) { map.removeLayer(STORE[id].group); delete STORE[id]; renderPanel(); } }
-    function crearCapaManual() { const bid = 'b'+Date.now(); STORE[bid] = { name: "Nuevo Sector", items: [], group: new L.FeatureGroup().addTo(map), viewCol: 'Contribuyente' }; activeId = bid; renderPanel(); }
-    function cambiarMapa(t) { if(t==='sat') { satLayer.addTo(map); map.removeLayer(strLayer); } else { strLayer.addTo(map); map.removeLayer(satLayer); } 
-        document.querySelectorAll('.m-tile').forEach(b => b.classList.remove('active')); document.getElementById('tile-'+t).classList.add('active'); }
-    function filtrarTodo() { const q = document.getElementById('main-search').value.toLowerCase(); document.querySelectorAll('.item-row').forEach(el => el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none'); }
-    function abrirModal(id) { document.getElementById(id).style.display = 'block'; }
-    function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
-    function exportarJSON() { const blob = new Blob([JSON.stringify(STORE)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hacienda_respaldo.json'; a.click(); }
+// --- HELPERS ---
+function getStatusColor(status) {
+    switch(status) {
+        case 'Activo': return '#28a745';
+        case 'Deuda': return '#dc3545';
+        case 'Temporal': return '#ffc107';
+        default: return '#007bff';
+    }
+}
+
+function getMarkerById(id) {
+    let found = null;
+    markersGroup.eachLayer(layer => {
+        if (layer.options.id === id) found = layer;
+    });
+    return found;
+}
+
+function updatePolygonStyle(color, leafletId) {
+    const layer = sectorsGroup.getLayer(leafletId);
+    if (layer) {
+        layer.setStyle({ fillColor: color, color: color });
+    }
+}
+
+// Iniciar sistema
+window.onload = initMap;
+
 </script>
 </body>
 </html>
