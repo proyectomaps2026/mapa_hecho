@@ -3,122 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGF OMNI v7.0 - ALCALDÍA DE AYACUCHO</title>
+    <title>SGF MASTER v8.0 - ALCALDÍA DE AYACUCHO</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     
     <style>
         :root { 
-            --accent: #00f2ff; --bg-dark: #0d1117; --panel: #161b22; 
-            --text: #c9d1d9; --border: #30363d; --google-yellow: #fbbc04; --success: #238636;
+            --accent: #00f2ff; --bg: #0b0e14; --panel: #161b22; 
+            --text: #e6edf3; --border: #30363d; --yellow: #fbbc04; --safe: #238636;
         }
 
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text); overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
 
-        /* Contenedor del Mapa con Filtro Selectivo */
+        /* Mapa y Filtros */
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; background: #000; }
-        .leaflet-tile { filter: brightness(0.5) contrast(1.2) saturate(1.1); }
+        .leaflet-tile { filter: brightness(0.4) contrast(1.2); }
 
-        /* UI Elements */
-        .ui-panel { position: absolute; z-index: 1000; pointer-events: auto; }
-        .glass { background: rgba(22, 27, 34, 0.92); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.7); }
+        /* UI Base */
+        .ui { position: absolute; z-index: 1000; pointer-events: auto; }
+        .glass { background: rgba(22, 27, 34, 0.95); backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.8); }
 
-        /* Barra Superior Profesional */
-        .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 12px; height: 50px; }
+        /* Top Bar */
+        .top-nav { top: 15px; left: 15px; right: 15px; display: flex; gap: 10px; height: 50px; }
         .search-engine { flex: 1; max-width: 400px; display: flex; align-items: center; padding: 0 15px; }
         .search-engine input { background: transparent; border: none; color: white; width: 100%; outline: none; font-size: 14px; }
         
-        .sys-tools { display: flex; align-items: center; padding: 0 10px; gap: 8px; }
-        .btn-icon { background: transparent; border: none; color: #8b949e; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-size: 16px; }
-        .btn-icon:hover { color: var(--accent); background: rgba(0, 242, 255, 0.1); }
-        .btn-icon.active { color: var(--accent); border: 1px solid var(--accent); }
+        .draw-tools { display: flex; align-items: center; padding: 0 10px; gap: 5px; }
+        .t-btn { background: transparent; border: none; color: #8b949e; width: 38px; height: 38px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .t-btn:hover { color: var(--accent); background: rgba(0,242,255,0.1); }
+        .t-btn.active { color: var(--accent); border: 1px solid var(--accent); }
 
-        /* Sidebar de Gestión de Bloques */
-        #sidebar { top: 80px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; overflow: hidden; }
-        .side-header { padding: 20px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--google-yellow); }
-        .side-header h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 1px; color: white; }
+        .btn-config { background: var(--safe); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+
+        /* Sidebar - Gestión de Capas */
+        #sidebar { top: 75px; left: 15px; bottom: 20px; width: 380px; display: flex; flex-direction: column; }
+        .side-header { padding: 15px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--yellow); }
+        .side-header h1 { margin: 0; font-size: 14px; letter-spacing: 1px; }
         .side-header span { font-size: 10px; color: var(--accent); font-family: 'JetBrains Mono'; }
 
-        .layer-list { flex: 1; overflow-y: auto; padding: 12px; }
-        .block-card { background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 12px; border: 1px solid transparent; transition: 0.2s; }
-        .block-card.active-b { border-color: var(--accent); background: rgba(0,242,255,0.05); }
-        .block-head { padding: 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .badge { background: var(--border); padding: 2px 8px; border-radius: 10px; font-size: 10px; color: var(--accent); font-weight: bold; }
+        .content-area { flex: 1; overflow-y: auto; padding: 10px; }
+        .layer-box { background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 10px; border: 1px solid transparent; }
+        .layer-box.active-l { border-color: var(--accent); background: rgba(0,242,255,0.05); }
+        .layer-head { padding: 10px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .count-badge { margin-left: auto; background: var(--border); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
 
-        .item-row { padding: 8px 12px 8px 45px; font-size: 13px; color: #8b949e; display: flex; align-items: center; gap: 10px; cursor: pointer; border-left: 2px solid transparent; }
-        .item-row:hover { background: rgba(255,255,255,0.08); color: white; border-left-color: var(--accent); }
+        .item-row { padding: 8px 10px 8px 40px; font-size: 12px; color: #8b949e; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .item-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
-        /* Popups de Edición Avanzada */
-        .edit-form { min-width: 260px; color: #111; padding: 5px; }
-        .edit-form label { font-size: 10px; font-weight: 800; color: #666; text-transform: uppercase; display: block; margin-top: 10px; }
-        .edit-form input, .edit-form textarea { width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 4px; margin-top: 4px; box-sizing: border-box; font-family: inherit; }
-        .preview-img { width: 100%; border-radius: 4px; margin-top: 10px; max-height: 180px; object-fit: cover; border: 1px solid #eee; display: block; }
-        .save-btn { background: #1a73e8; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 15px; font-size: 12px; }
+        /* Popups de Edición */
+        .pop-edit { min-width: 240px; padding: 5px; color: #333; }
+        .pop-edit label { font-size: 10px; font-weight: 900; color: #777; display: block; margin-top: 10px; text-transform: uppercase; }
+        .pop-edit input, .pop-edit textarea { width: 100%; border: 1px solid #ddd; padding: 8px; border-radius: 4px; box-sizing: border-box; margin-top: 4px; }
+        .pop-img { width: 100%; border-radius: 4px; margin-top: 10px; border: 1px solid #ccc; max-height: 150px; object-fit: cover; }
+        .btn-pop-save { background: #1a73e8; color: white; border: none; padding: 10px; width: 100%; border-radius: 4px; font-weight: bold; margin-top: 15px; cursor: pointer; }
 
         /* Modales */
-        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 350px; padding: 30px; display: none; }
-        .modal h3 { margin-top: 0; color: white; font-size: 18px; }
-        .modal input { background: #0d1117; border: 1px solid var(--border); color: white; padding: 12px; width: 100%; margin: 15px 0; border-radius: 6px; box-sizing: border-box; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5000; width: 340px; padding: 25px; display: none; }
+        .modal input, .modal select { width: 100%; padding: 10px; background: #0d1117; border: 1px solid var(--border); color: white; margin: 10px 0; border-radius: 5px; box-sizing: border-box; }
 
-        .btn-save-cfg { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
-        .btn-save-cfg:hover { filter: brightness(1.2); box-shadow: 0 0 15px rgba(35, 134, 54, 0.4); }
+        .btn-main { background: var(--accent); color: #000; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: 800; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div id="map"></div>
 
-<div class="ui-panel top-nav">
+<div class="ui top-nav">
     <div class="search-engine glass">
-        <i class="fas fa-fingerprint" style="color: var(--accent); margin-right: 12px;"></i>
-        <input type="text" id="master-search" placeholder="Buscar local o RIF en Ayacucho..." oninput="filtrarTodo()">
+        <i class="fas fa-search" style="color: var(--accent); margin-right: 12px;"></i>
+        <input type="text" id="master-search" placeholder="Buscar local..." oninput="filtrarTodo()">
     </div>
     
-    <div class="sys-tools glass">
-        <button class="btn-icon" id="draw-m" title="Marcar Local"><i class="fas fa-map-pin"></i></button>
-        <button class="btn-icon" id="draw-p" title="Dibujar Polígono"><i class="fas fa-draw-polygon"></i></button>
-        <div style="width: 1px; height: 25px; background: var(--border); margin: 0 5px;"></div>
-        <button class="btn-icon" onclick="exportarData()" title="Backup Local"><i class="fas fa-cloud-download"></i></button>
+    <div class="draw-tools glass">
+        <button class="t-btn" id="t-punto" title="Nueva Pincheta"><i class="fas fa-map-marker-alt"></i></button>
+        <button class="t-btn" id="t-area" title="Nuevo Polígono"><i class="fas fa-draw-polygon"></i></button>
     </div>
 
-    <button class="btn-save-cfg" onclick="guardarConfigTotal()">
+    <button class="btn-config" onclick="guardarConfigMaestra()">
         <i class="fas fa-save"></i> GUARDAR CONFIG
     </button>
 </div>
 
-<aside id="sidebar" class="glass">
+<aside id="sidebar" class="glass ui">
     <div class="side-header">
-        <h1>SGF CORE SYSTEM</h1>
-        <span>SINCRO: AYACUCHO_CAT_2026</span>
+        <h1>SGF AYACUCHO v8.0</h1>
+        <span>SISTEMA DE GESTIÓN FISCAL</span>
     </div>
     
-    <div class="layer-list" id="layer-container">
+    <div class="content-area" id="lista-capas">
         </div>
 
     <div style="padding: 15px; border-top: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-        <button class="save-btn" style="margin:0; background:var(--panel); border: 1px solid var(--border);" onclick="abrirModal('m-layer')">+ Bloque</button>
-        <button class="save-btn" style="margin:0; background:var(--panel); border: 1px solid var(--border);" onclick="abrirModal('m-csv')"><i class="fas fa-file-import"></i> CSV</button>
+        <button class="btn-main" style="margin:0; background: var(--panel); color: white; border: 1px solid var(--border);" onclick="abrirModal('m-capa')">+ Bloque</button>
+        <button class="btn-main" style="margin:0; background: var(--panel); color: white; border: 1px solid var(--border);" onclick="abrirModal('m-csv')">Cargar CSV</button>
     </div>
 </aside>
 
-<div id="m-layer" class="modal glass">
-    <h3>Nuevo Bloque Fiscal</h3>
-    <input type="text" id="new-l-name" placeholder="Ej: Zona Industrial I">
-    <button class="save-btn" onclick="crearBloqueManual()">Crear Capa</button>
-    <button class="btn-icon" style="width:100%; margin-top:10px;" onclick="cerrarModal('m-layer')">Cancelar</button>
+<div id="m-capa" class="modal glass">
+    <h3>Nuevo Bloque</h3>
+    <input type="text" id="capa-nombre" placeholder="Nombre del Sector...">
+    <button class="btn-main" onclick="crearCapaManual()">Crear Capa</button>
+    <button class="t-btn" style="width:100%; margin-top:10px" onclick="cerrarModal('m-capa')">Cancelar</button>
 </div>
 
 <div id="m-csv" class="modal glass">
-    <h3>Sincronizar CSV</h3>
-    <input type="text" id="csv-url" placeholder="URL de Google Sheets (CSV)">
-    <div id="csv-mapping" style="display:none; margin-top:10px; font-size:11px;">
-        Coord (Lat,Lon): <select id="sel-c" style="width:100%; margin-bottom:10px;"></select>
-        Nombre Local: <select id="sel-t" style="width:100%;"></select>
+    <h3>Importar desde Google</h3>
+    <input type="text" id="csv-url" placeholder="URL CSV del Google Sheet">
+    <div id="csv-fields" style="display:none; margin-top:10px">
+        Coord: <select id="sel-coord"></select>
+        Nombre: <select id="sel-name"></select>
     </div>
-    <button id="csv-btn" class="save-btn" onclick="analizarCSV()">Analizar Archivo</button>
+    <button id="btn-csv-pro" class="btn-main" onclick="analizarCSV()">Analizar Archivo</button>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -126,39 +124,39 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
 <script>
-    // 1. INICIALIZACIÓN DEL MOTOR
+    // 1. INICIO DEL MAPA
     const map = L.map('map', { center: [8.02611, -72.25244], zoom: 17, zoomControl: false });
     L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'] }).addTo(map);
 
-    let DB = JSON.parse(localStorage.getItem('SGF_CONFIG')) || {}; 
-    let activeBlockId = null;
-    let rawCSV = null;
+    let DB = {}; // Memoria central
+    let activeId = null;
+    let tempCSVData = null;
 
-    // Prevenir interferencias de clics
+    // Bloquear que el mapa robe clics a la interfaz
     const sidebar = document.getElementById('sidebar');
     L.DomEvent.disableClickPropagation(sidebar);
     L.DomEvent.disableScrollPropagation(sidebar);
 
-    // 2. HERRAMIENTAS DE EDICIÓN
-    function getCustomIcon(color) {
+    // 2. HERRAMIENTAS DE DIBUJO
+    function getIcono(color) {
         return L.divIcon({
-            html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow:0 3px 5px rgba(0,0,0,0.5);"></i>`,
-            className: 'marker-pro', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30]
+            html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:28px; text-shadow: 0 2px 4px #000;"></i>`,
+            className: 'custom-pin', iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -25]
         });
     }
 
-    const toolMarker = new L.Draw.Marker(map, { icon: getCustomIcon('#00f2ff') });
-    const toolPoly = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.3 } });
+    const drawMarker = new L.Draw.Marker(map, { icon: getIcono('#00f2ff') });
+    const drawPolygon = new L.Draw.Polygon(map, { shapeOptions: { color: '#00f2ff', fillOpacity: 0.4 } });
 
-    document.getElementById('draw-m').onclick = () => { if(activeBlockId) toolMarker.enable(); else alert("Seleccione un bloque fiscal primero."); };
-    document.getElementById('draw-p').onclick = () => { if(activeBlockId) toolPoly.enable(); else alert("Seleccione un bloque fiscal primero."); };
+    document.getElementById('t-punto').onclick = () => { if(activeId) drawMarker.enable(); else alert("Crea o selecciona un Bloque primero."); };
+    document.getElementById('t-area').onclick = () => { if(activeId) drawPolygon.enable(); else alert("Crea o selecciona un Bloque primero."); };
 
     map.on(L.Draw.Event.CREATED, (e) => {
         const id = 'it_' + Date.now();
         const layer = e.layer;
-        DB[activeBlockId].group.addLayer(layer);
+        DB[activeId].group.addLayer(layer);
         
-        DB[activeBlockId].items.push({
+        DB[activeId].items.push({
             id: layer._leaflet_id,
             name: "Nuevo Registro",
             desc: "",
@@ -166,210 +164,174 @@
             type: e.layerType
         });
         
-        renderizarElemento(activeBlockId, layer._leaflet_id);
+        actualizarElementoEnMapa(activeId, layer._leaflet_id);
         renderSidebar();
-        guardarConfigTotal(); // Auto-guardado al crear
     });
 
-    // 3. RENDERIZADO DE POPUPS E IMÁGENES
-    function renderizarElemento(bid, iid) {
-        const item = DB[bid].items.find(x => x.id === iid);
-        const layer = DB[bid].group.getLayer(iid);
+    // 3. RENDERIZADO Y EDICIÓN (PINCHETAS Y POPUPS)
+    function actualizarElementoEnMapa(lid, iid) {
+        const item = DB[lid].items.find(x => x.id === iid);
+        const lyr = DB[lid].group.getLayer(iid);
 
-        if(layer.setIcon) layer.setIcon(getCustomIcon(item.color));
-        else layer.setStyle({ color: item.color, fillColor: item.color });
+        if(lyr.setIcon) lyr.setIcon(getIcono(item.color));
+        else lyr.setStyle({ color: item.color, fillColor: item.color });
 
-        const isImg = (s) => (s && s.startsWith('http') && /\.(jpg|jpeg|png|webp|avif)$/i.test(s));
-        const visual = isImg(item.desc) ? `<img src="${item.desc}" class="preview-img">` : '';
+        const isImg = (t) => t.startsWith('http') && /\.(jpg|jpeg|png|webp)$/i.test(t);
+        const imgHtml = isImg(item.desc) ? `<img src="${item.desc}" class="pop-img">` : '';
 
-        const content = `
-            <div class="edit-form" onmousedown="L.DomEvent.stopPropagation(event)">
-                <div style="background:var(--google-yellow); padding:8px; margin:-14px -14px 10px; font-weight:800; text-align:center;">DATOS FISCALES</div>
-                <label>Razón Social:</label>
+        const html = `
+            <div class="pop-edit" onmousedown="L.DomEvent.stopPropagation(event)">
+                <label>Nombre Fiscal:</label>
                 <input type="text" id="n-${iid}" value="${item.name}">
-                <label>Descripción / Link de Foto:</label>
+                <label>Descripción / Foto URL:</label>
                 <textarea id="d-${iid}" rows="2">${item.desc}</textarea>
-                <label>Color de Categoría:</label>
-                <input type="color" id="c-${iid}" value="${item.color}" style="height:35px; cursor:pointer">
-                ${visual}
-                <button class="save-btn" onclick="guardarItem('${bid}', ${iid})">ACTUALIZAR Y GUARDAR</button>
+                <label>Color Pincheta:</label>
+                <input type="color" id="c-${iid}" value="${item.color}" style="height:30px">
+                ${imgHtml}
+                <button class="btn-pop-save" onclick="guardarItem('${lid}', ${iid})">GUARDAR CAMBIOS</button>
             </div>`;
-        
-        layer.bindPopup(content, { minWidth: 260 });
+        lyr.bindPopup(html);
     }
 
-    window.guardarItem = (bid, iid) => {
-        const it = DB[bid].items.find(x => x.id === iid);
+    window.guardarItem = (lid, iid) => {
+        const it = DB[lid].items.find(x => x.id === iid);
         it.name = document.getElementById(`n-${iid}`).value;
         it.desc = document.getElementById(`d-${iid}`).value;
         it.color = document.getElementById(`c-${iid}`).value;
-
-        renderizarElemento(bid, iid);
+        
+        actualizarElementoEnMapa(lid, iid);
         renderSidebar();
-        DB[bid].group.getLayer(iid).closePopup();
-        guardarConfigTotal();
+        DB[lid].group.getLayer(iid).closePopup();
     };
 
     // 4. GESTIÓN DE BLOQUES (CAPAS)
-    function crearBloqueManual() {
-        const name = document.getElementById('new-l-name').value;
-        if(!name) return;
-        const id = 'block_' + Date.now();
-        DB[id] = { name, items: [], visible: true, group: new L.FeatureGroup().addTo(map) };
-        activeBlockId = id;
+    function crearCapaManual() {
+        const n = document.getElementById('capa-nombre').value;
+        if(!n) return;
+        const id = 'l_' + Date.now();
+        DB[id] = { name: n, items: [], visible: true, group: new L.FeatureGroup().addTo(map) };
+        activeId = id;
         renderSidebar();
-        cerrarModal('m-layer');
-        guardarConfigTotal();
+        cerrarModal('m-capa');
     }
 
     function renderSidebar() {
-        const container = document.getElementById('layer-container');
-        container.innerHTML = "";
+        const box = document.getElementById('lista-capas');
+        box.innerHTML = "";
         for(let id in DB) {
-            const activeClass = id === activeBlockId ? 'active-b' : '';
-            const count = DB[id].items.length;
-            
-            let html = `
-                <div class="block-card ${activeClass}">
-                    <div class="block-head" onclick="seleccionarBloque('${id}')">
-                        <input type="checkbox" ${DB[id].visible ? 'checked' : ''} onclick="toggleVisibilidad(event, '${id}')">
-                        <span style="flex:1; font-weight:bold; color:white;">📁 ${DB[id].name}</span>
-                        <span class="badge">${count} Locales</span>
-                    </div>
-                    <div id="items-${id}">`;
-            
-            DB[id].items.forEach(it => {
-                html += `
-                    <div class="item-row" onclick="enfocarElemento('${id}', ${it.id})">
-                        <div style="width:8px; height:8px; border-radius:50%; background:${it.color}"></div>
-                        <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${it.name}</span>
+            let h = `
+                <div class="layer-box ${id === activeId ? 'active-l' : ''}">
+                    <div class="layer-head" onclick="seleccionarCapa('${id}')">
+                        <input type="checkbox" ${DB[id].visible?'checked':''} onclick="toggleVis(event, '${id}')">
+                        <span style="font-weight:bold; color:white">📁 ${DB[id].name}</span>
+                        <span class="count-badge">${DB[id].items.length}</span>
                     </div>`;
+            DB[id].items.forEach(it => {
+                h += `<div class="item-row" onclick="irA('${id}', ${it.id})">
+                        <div style="width:8px; height:8px; border-radius:50%; background:${it.color}"></div>
+                        ${it.name}
+                      </div>`;
             });
-            html += `</div></div>`;
-            container.insertAdjacentHTML('beforeend', html);
+            h += `</div>`;
+            box.insertAdjacentHTML('beforeend', h);
         }
     }
 
-    // 5. IMPORTACIÓN CSV MEJORADA (Editable)
+    // 5. IMPORTACIÓN CSV (GOOGLE SHEETS)
     function analizarCSV() {
         const url = document.getElementById('csv-url').value.replace('/edit?usp=sharing', '/export?format=csv');
-        Papa.parse(url, { download: true, header: true, complete: (res) => {
-            rawCSV = res.data;
-            let options = ""; res.meta.fields.forEach(f => options += `<option value="${f}">${f}</option>`);
-            document.getElementById('sel-c').innerHTML = options;
-            document.getElementById('sel-t').innerHTML = options;
-            document.getElementById('csv-mapping').style.display = 'block';
-            document.getElementById('csv-btn').innerText = "Finalizar Importación";
-            document.getElementById('csv-btn').onclick = importarCSVFinal;
+        Papa.parse(url, { download: true, header: true, complete: (r) => {
+            tempCSVData = r.data;
+            let o = ""; r.meta.fields.forEach(f => o+=`<option value="${f}">${f}</option>`);
+            document.getElementById('sel-coord').innerHTML = o;
+            document.getElementById('sel-name').innerHTML = o;
+            document.getElementById('csv-fields').style.display = 'block';
+            document.getElementById('btn-csv-pro').innerText = "Importar Ahora";
+            document.getElementById('btn-csv-pro').onclick = finalizarImportacion;
         }});
     }
 
-    function importarCSVFinal() {
-        const colC = document.getElementById('sel-c').value;
-        const colT = document.getElementById('sel-t').value;
-        const id = 'block_' + Date.now();
+    function finalizarImportacion() {
+        const colC = document.getElementById('sel-coord').value;
+        const colN = document.getElementById('sel-name').value;
+        const id = 'l_' + Date.now();
         const group = new L.FeatureGroup().addTo(map);
         const items = [];
 
-        rawCSV.forEach(row => {
+        tempCSVData.forEach(row => {
             if(row[colC]) {
-                let coords = row[colC].replace(/[()]/g, '').split(/[, ]+/);
-                let lat = parseFloat(coords[0]), lon = parseFloat(coords[1]);
+                let p = row[colC].replace(/[()]/g,'').split(/[, ]+/);
+                let lat = parseFloat(p[0]), lon = parseFloat(p[1]);
                 if(!isNaN(lat)) {
-                    const marker = L.marker([lat, lon]);
-                    const iid = group.addLayer(marker)._leaflet_id;
-                    items.push({ id: iid, name: row[colT] || "Sin Nombre", desc: "Importado", color: "#ff4444", type: "marker" });
+                    const m = L.marker([lat, lon]);
+                    const iid = group.addLayer(m)._leaflet_id;
+                    items.push({ id: iid, name: row[colN] || "Censo", desc: "Importado", color: "#ff4444", type: 'marker' });
                 }
             }
         });
 
         DB[id] = { name: "Importación " + new Date().toLocaleTimeString(), items, visible: true, group };
-        activeBlockId = id;
-        items.forEach(it => renderizarElemento(id, it.id));
+        activeId = id;
+        items.forEach(it => actualizarElementoEnMapa(id, it.id));
         renderSidebar();
         cerrarModal('m-csv');
-        if(items.length > 0) map.fitBounds(group.getBounds());
-        guardarConfigTotal();
     }
 
-    // 6. SISTEMA DE CONFIGURACIÓN Y PERSISTENCIA
-    function guardarConfigTotal() {
-        // Clonamos la DB para guardar solo datos, no los objetos de Leaflet (que dan error de circularidad)
-        const configToSave = {};
+    // 6. PERSISTENCIA (GUARDAR EN CONFIG)
+    function guardarConfigMaestra() {
+        const dataToSave = {};
         for(let id in DB) {
-            configToSave[id] = {
+            dataToSave[id] = {
                 name: DB[id].name,
                 visible: DB[id].visible,
                 items: DB[id].items.map(it => {
-                    const layer = DB[id].group.getLayer(it.id);
-                    return {
-                        ...it,
-                        latlng: layer.getLatLng ? layer.getLatLng() : layer.getLatLngs()
-                    };
+                    const l = DB[id].group.getLayer(it.id);
+                    return { ...it, pos: l.getLatLng ? l.getLatLng() : l.getLatLngs() };
                 })
             };
         }
-        localStorage.setItem('SGF_CONFIG', JSON.stringify(configToSave));
-        console.log("✅ Configuración guardada en LocalStorage");
+        localStorage.setItem('SGF_AYACUCHO_CONFIG', JSON.stringify(dataToSave));
+        alert("¡Configuración guardada con éxito en la memoria del navegador!");
     }
 
-    // Al cargar la página, restaurar datos
+    // Cargar al iniciar
     window.onload = () => {
-        const saved = JSON.parse(localStorage.getItem('SGF_CONFIG'));
+        const saved = JSON.parse(localStorage.getItem('SGF_AYACUCHO_CONFIG'));
         if(!saved) return;
-        
         for(let id in saved) {
             const group = new L.FeatureGroup();
             if(saved[id].visible) group.addTo(map);
-            
             saved[id].items.forEach(it => {
-                let layer;
-                if(it.type === 'marker') layer = L.marker(it.latlng);
-                else layer = L.polygon(it.latlng);
-                
-                group.addLayer(layer);
-                it.id = layer._leaflet_id; // Sincronizar nuevo ID de sesión
+                let l = it.type === 'marker' ? L.marker(it.pos) : L.polygon(it.pos);
+                group.addLayer(l);
+                it.id = l._leaflet_id;
             });
-
             DB[id] = { ...saved[id], group };
-            saved[id].items.forEach(it => renderizarElemento(id, it.id));
+            saved[id].items.forEach(it => actualizarElementoEnMapa(id, it.id));
         }
         renderSidebar();
     };
 
-    // UTILIDADES RÁPIDAS
-    function seleccionarBloque(id) { activeBlockId = id; renderSidebar(); }
-    
-    function toggleVisibilidad(e, id) {
+    // UTILIDADES
+    function seleccionarCapa(id) { activeId = id; renderSidebar(); }
+    function irA(lid, iid) {
+        const l = DB[lid].group.getLayer(iid);
+        map.setView(l.getBounds ? l.getBounds().getCenter() : l.getLatLng(), 19);
+        l.openPopup();
+    }
+    function toggleVis(e, id) {
         e.stopPropagation();
         DB[id].visible ? map.removeLayer(DB[id].group) : map.addLayer(DB[id].group);
         DB[id].visible = !DB[id].visible;
-        guardarConfigTotal();
     }
-
-    function enfocarElemento(bid, iid) {
-        const layer = DB[bid].group.getLayer(iid);
-        map.setView(layer.getBounds ? layer.getBounds().getCenter() : layer.getLatLng(), 19);
-        layer.openPopup();
-    }
-
-    function abrirModal(id) { document.getElementById(id).style.display = 'block'; }
-    function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
-    
     function filtrarTodo() {
         const q = document.getElementById('master-search').value.toLowerCase();
         document.querySelectorAll('.item-row').forEach(el => {
             el.style.display = el.innerText.toLowerCase().includes(q) ? 'flex' : 'none';
         });
     }
-
-    function exportarData() {
-        const blob = new Blob([localStorage.getItem('SGF_CONFIG')], {type: "application/json"});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `SGF_AYACUCHO_BACKUP_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-    }
+    function abrirModal(id) { document.getElementById(id).style.display='block'; }
+    function cerrarModal(id) { document.getElementById(id).style.display='none'; }
 </script>
 </body>
 </html>
