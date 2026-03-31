@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISTEMA DE AUDITORÍA FISCAL - HACIENDA AYACUCHO 2026</title>
+    <title>SISTEMA DE AUDITORÍA FISCAL - HACIENDA AYACUCHO (V16 PRO)</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -11,7 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* VARIABLES MAESTRAS DE DISEÑO INSTITUCIONAL */
+        /* ==========================================================================
+           1. VARIABLES MAESTRAS Y RESETEO (UI CORPORATIVA MUNICIPAL)
+           ========================================================================== */
         :root { 
             --cyan-neon: #00f2ff; 
             --bg-dark: #07090d; 
@@ -29,26 +31,37 @@
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text-main); overflow: hidden; }
         
-        /* CONTENEDOR DEL MAPA */
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* UTILIDADES UI */
+        /* ==========================================================================
+           2. COMPONENTES DE INTERFAZ (UI)
+           ========================================================================== */
         .ui-layer { position: absolute; z-index: 1000; pointer-events: auto; }
         .glass-panel { background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-heavy); }
         .btn { border: none; font-family: 'Inter', sans-serif; font-weight: 900; cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
 
-        /* BARRA SUPERIOR DE COMANDOS */
-        .top-nav { top: 15px; left: 15px; right: 15px; height: 64px; display: flex; align-items: center; padding: 0 20px; gap: 15px; }
-        .search-container { flex: 1; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.4); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-color); transition: 0.3s; }
+        /* BARRA SUPERIOR */
+        .top-nav { top: 15px; left: 15px; right: 15px; height: 64px; display: flex; align-items: center; padding: 0 20px; gap: 15px; justify-content: space-between; }
+        
+        .search-container { flex: 0 1 500px; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.4); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-color); transition: 0.3s; }
         .search-container:focus-within { border-color: var(--cyan-neon); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
         .search-container input { background: transparent; border: none; color: white; outline: none; width: 100%; font-size: 14px; font-weight: 600; }
-        .search-container input::placeholder { color: #6e7681; font-weight: 400; }
-
+        
+        .tools-container { display: flex; gap: 10px; align-items: center; }
         .tool-btn { width: 44px; height: 44px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; transition: 0.2s; }
-        .tool-btn:hover { border-color: var(--cyan-neon); color: var(--cyan-neon); background: rgba(0, 242, 255, 0.1); }
+        .tool-btn:hover, .tool-btn.active { border-color: var(--cyan-neon); color: var(--cyan-neon); background: rgba(0, 242, 255, 0.1); }
+        
+        /* TOGGLE MODO LECTURA */
+        .toggle-container { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 800; color: #a5b0bf; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border-color); }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #da3633; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--color-vigente); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
-        /* SIDEBAR MAESTRO (PANEL DE CAPAS) */
+        /* SIDEBAR (PANEL MAESTRO) */
         #sidebar { top: 95px; left: 15px; bottom: 20px; width: 420px; display: flex; flex-direction: column; border-top: 5px solid var(--color-temporal); }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
         .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
@@ -58,16 +71,29 @@
         .layers-container::-webkit-scrollbar { width: 6px; }
         .layers-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
-        /* TARJETAS DE SECTOR (NIVEL 1) */
+        /* TARJETAS DE SECTOR Y CONTROLES DUALES (Solución Error 3) */
         .sector-card { margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.3); overflow: hidden; transition: all 0.3s ease; }
         .sector-card.is-active { border-color: var(--cyan-neon); background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); }
-        .sector-header { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        
+        .sector-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent; }
         .sector-header:hover { background: rgba(255,255,255,0.05); }
-        .sector-title { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
-        .sector-actions i { padding: 8px; font-size: 13px; color: #6e7681; transition: 0.2s; }
-        .sector-actions i.fa-trash-alt:hover { color: var(--color-vencida); text-shadow: 0 0 10px var(--color-vencida); }
+        .sector-title-group { display: flex; align-items: center; gap: 10px; }
+        
+        /* Controles Visuales del Sector */
+        .sector-controls { display: flex; align-items: center; gap: 8px; }
+        .radio-active { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 50%; outline: none; cursor: pointer; position: relative; }
+        .radio-active:checked { border-color: var(--cyan-neon); }
+        .radio-active:checked::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; background: var(--cyan-neon); border-radius: 50%; }
+        
+        .check-visible { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 4px; outline: none; cursor: pointer; position: relative; }
+        .check-visible:checked { background: var(--color-vigente); border-color: var(--color-vigente); }
+        .check-visible:checked::after { content: '✔'; position: absolute; color: white; font-size: 10px; top: -1px; left: 2px; }
 
-        /* ACORDEÓN DE ESTATUS (NIVEL 2) */
+        .sector-title { font-size: 13px; font-weight: 800; color: var(--text-main); cursor: pointer; }
+        .sector-trash { padding: 5px; font-size: 13px; color: #6e7681; cursor: pointer; transition: 0.2s; }
+        .sector-trash:hover { color: var(--color-vencida); text-shadow: 0 0 10px var(--color-vencida); }
+
+        /* ACORDEÓN DE ESTATUS Y LISTA */
         .status-group { border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
         .status-header { padding: 10px 16px; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
         .status-header:hover { background: rgba(255,255,255,0.04); }
@@ -75,26 +101,27 @@
         .status-dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
         .status-count { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px; font-size: 10px; }
 
-        /* LISTA DE CONTRIBUYENTES (NIVEL 3) */
         .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
         .local-row { padding: 8px 16px 8px 36px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
-        /* BOTONERA INFERIOR */
         .sidebar-footer { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
         .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; padding: 14px; border-radius: 8px; font-size: 11px; }
         .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.05); }
         .btn-solid-yellow { background: var(--color-temporal); color: #000; padding: 14px; border-radius: 8px; font-size: 11px; }
 
-        /* SISTEMA DE POPUPS (INMORTALES Y BLINDADOS) */
+        /* ==========================================================================
+           3. POPUPS INMORTALES (Solución Error 1 y 2)
+           ========================================================================== */
         .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; background: #fff; width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .leaflet-popup-tip { background: #fff; }
+        .leaflet-popup-content { margin: 0; } /* Reseteo crítico para Leaflet */
         
         .pop-cover { width: 100%; height: 160px; background: #111; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
         .pop-cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
         .pop-badge { position: absolute; top: 15px; left: 15px; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 900; color: white; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.5); }
         
-        .pop-content { padding: 20px; color: #111; max-height: 350px; overflow-y: auto; }
+        .pop-content { padding: 20px; color: #111; max-height: 380px; overflow-y: auto; }
         .form-group { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px; position: relative; }
         .form-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
         .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #000; background: transparent; outline: none; }
@@ -102,20 +129,28 @@
         
         .form-select { width: 100%; padding: 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; outline: none; cursor: pointer; }
         
-        .eye-btn { position: absolute; right: 5px; top: 20px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        /* Botón Ojo blindado */
+        .eye-btn { position: absolute; right: 5px; top: 20px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; z-index: 10; padding: 5px; }
         .eye-btn:hover, .eye-btn.is-hidden { color: var(--color-vencida); }
 
-        .btn-popup-save { background: var(--color-vigente); color: white; width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 15px; box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
+        .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; }
+        .btn-save { background: var(--color-vigente); box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
+        .btn-del { background: var(--color-vencida); margin-top: 15px; }
 
-        /* REPORTE DE AUDITORÍA (POLÍGONO) */
-        .audit-report { background: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 6px solid var(--cyan-neon); }
+        /* MODO LECTURA CSS */
+        .readonly-mode .form-input { pointer-events: none; color: #555; }
+        .readonly-mode .form-select { pointer-events: none; background: #eee; }
+        .readonly-mode .eye-btn { display: none; }
+
+        /* ==========================================================================
+           4. MODALES Y REPORTES
+           ========================================================================== */
+        .audit-report { background: #f8f9fa; padding: 20px; }
         .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
-        .audit-total { margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px; font-size: 14px; color: #000; }
 
-        /* MODALES MAESTROS */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { width: 450px; padding: 30px; }
+        .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
         .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
         .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; }
         .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
@@ -128,26 +163,34 @@
 <nav class="ui-layer glass-panel top-nav">
     <div class="search-container">
         <i class="fas fa-search" style="color: var(--cyan-neon);"></i>
-        <input type="text" id="buscador-global" placeholder="Buscar por Nombre, RIF o Estatus..." oninput="motorBusqueda()">
+        <input type="text" id="buscador-global" placeholder="Filtrado Profundo: Buscar por Contribuyente, RIF o Estatus..." oninput="ejecutarMotorBusqueda()">
     </div>
     
-    <div style="display: flex; gap: 10px;">
-        <button class="btn tool-btn" title="Nuevo Registro (Punto)" onclick="activarHerramienta('punto')">
-            <i class="fas fa-map-marker-alt" style="color: var(--cyan-neon);"></i>
+    <div class="tools-container">
+        <div class="toggle-container" title="Bloquea la edición para evitar cambios accidentales">
+            <label class="switch">
+                <input type="checkbox" id="toggle-readonly" onchange="alternarModoLectura()">
+                <span class="slider"></span>
+            </label>
+            SOLO LECTURA
+        </div>
+
+        <button class="btn tool-btn" id="btn-draw-marker" title="Nuevo Contribuyente" onclick="activarHerramienta('punto')">
+            <i class="fas fa-map-marker-alt"></i>
         </button>
-        <button class="btn tool-btn" title="Auditar Sector (Polígono)" onclick="activarHerramienta('poligono')">
-            <i class="fas fa-draw-polygon" style="color: var(--color-temporal);"></i>
+        <button class="btn tool-btn" id="btn-draw-poly" title="Auditar Área" onclick="activarHerramienta('poligono')">
+            <i class="fas fa-draw-polygon"></i>
         </button>
         <button class="btn tool-btn" title="Descargar Respaldo JSON" onclick="exportarBaseDatos()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white;">
-            <i class="fas fa-download" style="margin-right: 8px;"></i> JSON
+            <i class="fas fa-download" style="margin-right: 8px;"></i> RESPALDO JSON
         </button>
     </div>
 </nav>
 
 <aside id="sidebar" class="ui-layer glass-panel">
     <div class="sidebar-header">
-        <h1>HACIENDA MUNICIPAL AYACUCHO</h1>
-        <p id="indicador-capa-activa">ESTADO: ESPERANDO SELECCIÓN DE SECTOR</p>
+        <h1>CATASTRO AYACUCHO</h1>
+        <p id="indicador-capa-activa">SELECCIONE UNA CAPA PARA TRABAJAR</p>
     </div>
     
     <div class="layers-container" id="arbol-datos">
@@ -155,39 +198,42 @@
     
     <div class="sidebar-footer">
         <button class="btn btn-outline" onclick="crearNuevoSector()">
-            <i class="fas fa-folder-plus"></i> NUEVO SECTOR
+            <i class="fas fa-folder-plus"></i> CREAR SECTOR
         </button>
         <button class="btn btn-solid-yellow" onclick="abrirModalImportacion()">
-            <i class="fas fa-file-csv"></i> IMPORTAR RAW
+            <i class="fas fa-database"></i> IMPORTAR RAW
         </button>
     </div>
 </aside>
 
 <div class="modal-overlay" id="modal-importar">
     <div class="glass-panel modal-box">
-        <h2 class="modal-title"><i class="fas fa-cloud-download-alt"></i> Inyección de Datos Masiva</h2>
-        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Pegue el enlace público de su Google Sheets (formato CSV). El sistema procesará hasta 1,000 registros.</p>
+        <h2 class="modal-title"><i class="fas fa-cloud-download-alt"></i> Inyección Masiva (Sheets/CSV)</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Pegue el enlace de su Google Sheets (CSV). El sistema procesará las coordenadas y las imágenes automáticamente.</p>
         
-        <input type="text" id="input-url-sheets" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/...">
+        <input type="text" id="input-url-sheets" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
         
-        <button class="btn btn-solid-yellow" style="width: 100%; margin-bottom: 15px;" onclick="analizarCabecerasCSV()">
-            1. ANALIZAR COLUMNAS
+        <button class="btn btn-solid-yellow" style="width: 100%; margin-bottom: 15px;" id="btn-analizar-csv" onclick="analizarCabecerasCSV()">
+            1. LEER COLUMNAS DEL ARCHIVO
         </button>
 
         <div id="configuracion-columnas" style="display: none; padding-top: 15px; border-top: 1px solid var(--border-color);">
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">COLUMNA DE COORDENADAS (Lat, Lng):</label>
+            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">1. COORDENADAS (Lat, Lng):</label>
             <select id="sel-coordenadas" class="modal-select"></select>
             
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">COLUMNA DE ESTATUS (Vigente/Vencida):</label>
-            <select id="sel-estatus" class="modal-select"></select>
-            
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">COLUMNA DE CONTRIBUYENTE (Nombre):</label>
+            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">2. NOMBRE COMERCIAL / CONTRIBUYENTE:</label>
             <select id="sel-nombre" class="modal-select"></select>
 
-            <button class="btn btn-popup-save" onclick="ejecutarInyeccionDatos()">2. GENERAR CATASTRO</button>
+            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">3. ESTATUS FISCAL:</label>
+            <select id="sel-estatus" class="modal-select"></select>
+            
+            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">4. URL FOTOGRAFÍA FACHADA (Opcional):</label>
+            <select id="sel-imagen" class="modal-select"></select>
+
+            <button class="btn btn-save btn-popup-action" onclick="ejecutarInyeccionDatos()">2. PROCESAR CATASTRO</button>
         </div>
         
-        <button class="btn btn-outline" style="width: 100%; margin-top: 10px; border-color: var(--color-vencida); color: var(--color-vencida);" onclick="cerrarModal('modal-importar')">CANCELAR</button>
+        <button class="btn btn-popup-action" style="background: transparent; border: 1px solid var(--color-vencida); color: var(--color-vencida); margin-top: 10px;" onclick="cerrarModal('modal-importar')">CANCELAR Y CERRAR</button>
     </div>
 </div>
 
@@ -195,582 +241,551 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
-    /** ============================================================================
-     * FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
-     * ============================================================================ */
-    
-    // Inicialización del motor Leaflet con capa híbrida de Google
+    /* ==========================================================================
+       FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
+       ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
-        subdomains:['mt0','mt1','mt2','mt3'],
-        maxZoom: 21
-    }).addTo(mapa);
+    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 }).addTo(mapa);
 
-    // Contenedor Maestro de Datos (La Base de Datos en Memoria)
+    // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
     let STORE = {}; 
     let capaActivaId = null; 
-    let cacheCSV = { data: [], cabeceras: [] }; // Memoria temporal para la importación
+    let modoLecturaGlobal = false;
+    let cacheCSV = { data: [], cabeceras: [] };
+    let textoFiltroGlobal = "";
 
-    // Motor de Inteligencia de Color (DICCIONARIO ESTRICTO)
     const DICCIONARIO_ESTATUS = {
-        "VIGENTE": { color: "#238636", icono: "fa-check-circle" },
-        "VENCIDA": { color: "#da3633", icono: "fa-times-circle" },
-        "TEMPORAL": { color: "#fbbc04", icono: "fa-clock" },
-        "CENSO / NUEVO": { color: "#00f2ff", icono: "fa-star" },
-        "SIN LICENCIA": { color: "#da3633", icono: "fa-exclamation-triangle" },
-        "SIN CATEGORÍA": { color: "#6e7681", icono: "fa-question-circle" }
+        "VIGENTE": { color: "#238636" },
+        "VENCIDA": { color: "#da3633" },
+        "TEMPORAL": { color: "#fbbc04" },
+        "CENSO / NUEVO": { color: "#00f2ff" },
+        "SIN LICENCIA": { color: "#da3633" },
+        "SIN CATEGORÍA": { color: "#6e7681" }
     };
 
-    // Función generadora de marcadores HTML personalizados
-    const crearPinFiscal = (color) => {
-        return L.divIcon({ 
-            html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
-            className: 'pin-fiscal-ayacucho', 
-            iconSize: [32, 32], 
-            iconAnchor: [16, 32], 
-            popupAnchor: [0, -30] 
-        });
-    };
-
-    /** ============================================================================
-     * FASE 2: HERRAMIENTAS DE DIBUJO Y CAPTURA ESPACIAL
-     * ============================================================================ */
-    
-    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
-    const herramientaPoligono = new L.Draw.Polygon(mapa, { 
-        shapeOptions: { color: varCSS('--cyan-neon'), fillOpacity: 0.25, weight: 3, dashArray: '5, 5' },
-        showArea: true, allowIntersection: false
+    const crearPinFiscal = (color) => L.divIcon({ 
+        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
+        className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
     });
 
-    function varCSS(nombre) { return getComputedStyle(document.documentElement).getPropertyValue(nombre).trim(); }
+    // Herramientas Leaflet Draw
+    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
+    const herramientaPoligono = new L.Draw.Polygon(mapa, { 
+        shapeOptions: { color: '#00f2ff', fillOpacity: 0.25, weight: 3, dashArray: '5, 5' }
+    });
 
     function activarHerramienta(tipo) {
-        if(!capaActivaId) {
-            alert("⚠️ ACCESO DENEGADO: Debe seleccionar o crear un Sector (Capa) en el panel izquierdo antes de registrar datos.");
-            return;
-        }
+        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
+        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
+        if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
+        
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
 
-    // Escuchador de eventos: Cuando se termina de dibujar en el mapa
+    // EVENTO DE CREACIÓN
     mapa.on(L.Draw.Event.CREATED, (evento) => {
-        const capaGenerada = evento.layer;
-        const idUnico = L.stamp(capaGenerada); // ID irrefutable de Leaflet
+        const idFisico = L.stamp(evento.layer);
         
-        // Si es un punto, lo hacemos arrastrable para ajustes finos
-        if(capaGenerada instanceof L.Marker) {
-            capaGenerada.options.draggable = true;
-            capaGenerada.on('dragend', renderizarPanelMaestro); // Actualiza si se mueve
+        if(evento.layer instanceof L.Marker) {
+            evento.layer.options.draggable = true;
+            evento.layer.on('dragend', () => actualizarUIYMapa());
         }
 
-        // Agregar físicamente al grupo de la capa activa
-        STORE[capaActivaId].grupoFisico.addLayer(capaGenerada);
-
-        // Crear el registro de base de datos
         const nuevoRegistro = {
-            idFisico: idUnico,
+            idFisico: idFisico,
             tipoGeometria: evento.layerType,
+            capaLeaflet: evento.layer, // Guardamos la referencia física exacta
             datosGenerales: { 
-                "Contribuyente": "NUEVO REGISTRO", 
-                "RIF / Cédula": "J-00000000-0",
+                "Contribuyente": "NUEVO ESTABLECIMIENTO", 
+                "RIF": "J-00000000-0",
+                "Teléfono": "0414-0000000",
+                "Metros Cuadrados": "0 m2",
+                "Fecha Fiscalización": new Date().toISOString().split('T')[0],
                 "Estatus": "CENSO / NUEVO",
                 "Link Fotografía": ""
             },
-            camposOcultos: [] // Array para la función del "Ojito"
+            camposOcultos: []
         };
 
         STORE[capaActivaId].registros.push(nuevoRegistro);
+        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
         
-        // Blindaje: Vincular el popup inmortal
-        vincularPopupInmortal(capaGenerada, capaActivaId, idUnico);
+        actualizarUIYMapa();
         
-        // Refrescar UI y abrir la ficha automáticamente
-        renderizarPanelMaestro();
-        capaGenerada.fire('click'); 
+        // Abrir popup inmediatamente
+        setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
     });
 
-
-    /** ============================================================================
-     * FASE 3: SISTEMA DE POPUPS INMORTALES Y AUDITORÍA
-     * ============================================================================ */
-    
-    // Esta función garantiza que el popup NO se congele. Se regenera en cada clic.
-    function vincularPopupInmortal(capaLeaflet, idSector, idRegistro) {
-        capaLeaflet.on('click', function() {
-            const registro = STORE[idSector].registros.find(r => r.idFisico === idRegistro);
-            if(!registro) return;
-
-            let htmlConstructor = `<div class="pop-wrapper">`;
-
-            // RUTA A: ES UN POLÍGONO (MODO AUDITORÍA)
-            if(capaLeaflet instanceof L.Polygon) {
-                const reporte = auditarZonaPoligono(capaLeaflet);
-                htmlConstructor += `
-                <div class="audit-report">
-                    <h3 class="audit-title"><i class="fas fa-chart-pie"></i> REPORTE DE SECTOR</h3>
-                    <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}">
-                        <span>Comercios Vigentes:</span> <span>${reporte.vigentes}</span>
-                    </div>
-                    <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}">
-                        <span>Licencias Temporales:</span> <span>${reporte.temporales}</span>
-                    </div>
-                    <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}">
-                        <span>Licencias Vencidas:</span> <span>${reporte.vencidas}</span>
-                    </div>
-                    <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['SIN CATEGORÍA'].color}">
-                        <span>Sin Clasificar:</span> <span>${reporte.otros}</span>
-                    </div>
-                    <div class="audit-stat audit-total">
-                        <span>TOTAL ESTABLECIMIENTOS:</span> <span>${reporte.total}</span>
-                    </div>
-                </div>`;
-            } 
-            // RUTA B: ES UN MARCADOR (MODO FICHA DE CONTRIBUYENTE)
-            else {
-                const estatusActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                const colorConfig = DICCIONARIO_ESTATUS[estatusActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                const imgLink = registro.datosGenerales["Link Fotografía"];
-
-                // Cabecera Visual
-                htmlConstructor += `
-                <div class="pop-cover">
-                    ${imgLink && imgLink.length > 5 ? `<img src="${imgLink}" onerror="this.src='https://via.placeholder.com/400x200/111/fff?text=IMAGEN+NO+DISPONIBLE'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
-                    <div class="pop-badge" style="background: ${colorConfig.color};">${estatusActual}</div>
-                </div>
-                <div class="pop-content">`;
-
-                // Iterar sobre los campos de datos
-                for(let claveCampo in registro.datosGenerales) {
-                    if(claveCampo === "Estatus" || claveCampo === "Link Fotografía") continue; // Se manejan por separado
-
-                    const estaOculto = registro.camposOcultos.includes(claveCampo);
-                    
-                    htmlConstructor += `
-                    <div class="form-group">
-                        <i class="fas ${estaOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" title="Ocultar de reportes" onclick="alternarVisibilidadCampo('${idSector}', ${idRegistro}, '${claveCampo}')"></i>
-                        <span class="form-label">${claveCampo}</span>
-                        <input type="text" class="form-input" value="${registro.datosGenerales[claveCampo]}" 
-                               ${estaOculto ? 'type="password"' : ''} 
-                               onchange="guardarEdicionCampo('${idSector}', ${idRegistro}, '${claveCampo}', this.value)">
-                    </div>`;
-                }
-
-                // Selector de Estatus (Gatillo del Motor de Color)
-                htmlConstructor += `
-                <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
-                    <span class="form-label" style="color: #111;">MODIFICAR ESTADO FISCAL</span>
-                    <select class="form-select" onchange="procesarCambioEstatus('${idSector}', ${idRegistro}, this.value)">
-                        ${Object.keys(DICCIONARIO_ESTATUS).map(clave => 
-                            `<option value="${clave}" ${estatusActual === clave ? 'selected' : ''}>${clave}</option>`
-                        ).join('')}
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <span class="form-label">URL Fotografía (Drive/Web)</span>
-                    <input type="text" class="form-input" style="font-weight: 400;" value="${registro.datosGenerales['Link Fotografía'] || ''}" placeholder="Pegar enlace aquí..." onchange="guardarEdicionCampo('${idSector}', ${idRegistro}, 'Link Fotografía', this.value)">
-                </div>`;
-            }
-
-            // Botonera final del popup
-            htmlConstructor += `
-                </div>
-                <div style="padding: 0 20px 20px;">
-                    <button class="btn btn-popup-save" style="background: var(--color-vencida); margin-bottom: 5px;" onclick="eliminarRegistroFisico('${idSector}', ${idRegistro})"><i class="fas fa-trash"></i> ELIMINAR REGISTRO</button>
-                    <button class="btn btn-popup-save" onclick="cerrarPopupManual('${idSector}', ${idRegistro})"><i class="fas fa-check"></i> GUARDAR Y CERRAR</button>
-                </div>
-            </div>`;
-
-            // Re-enlazar y abrir
-            capaLeaflet.bindPopup(htmlConstructor, { closeButton: false, minWidth: 320 }).openPopup();
-        });
-    }
-
-    // Lógica de Auditoría por Intersección Espacial
-    function auditarZonaPoligono(poligonoActivo) {
-        let conteo = { vigentes: 0, vencidas: 0, temporales: 0, otros: 0, total: 0 };
-        const limites = poligonoActivo.getBounds(); // Caja de contención del polígono
-
-        for(let idCapa in STORE) {
-            STORE[idCapa].registros.forEach(reg => {
-                const capaMarcador = STORE[idCapa].grupoFisico.getLayer(reg.idFisico);
-                // Si es un marcador y está dentro de los límites
-                if(capaMarcador instanceof L.Marker && limites.contains(capaMarcador.getLatLng())) {
-                    conteo.total++;
-                    const est = reg.datosGenerales["Estatus"] || "";
-                    if(est.includes("VIGENTE")) conteo.vigentes++;
-                    else if(est.includes("VENCIDA")) conteo.vencidas++;
-                    else if(est.includes("TEMPORAL")) conteo.temporales++;
-                    else conteo.otros++;
-                }
-            });
-        }
-        return conteo;
-    }
-
-
-    /** ============================================================================
-     * FASE 4: MOTOR DE DATOS Y RENDERIZADO DEL PANEL (EL ACORDEÓN)
-     * ============================================================================ */
-
-    function guardarEdicionCampo(idSector, idRegistro, clave, nuevoValor) {
-        const registro = STORE[idSector].registros.find(r => r.idFisico === idRegistro);
-        registro.datosGenerales[clave] = nuevoValor;
-        renderizarPanelMaestro();
-        
-        // Si editó la imagen, forzamos re-render del popup abierto
-        if(clave === 'Link Fotografía') {
-            const capaMapa = STORE[idSector].grupoFisico.getLayer(idRegistro);
-            capaMapa.fire('click');
-        }
-    }
-
-    function procesarCambioEstatus(idSector, idRegistro, nuevoEstatus) {
-        const registro = STORE[idSector].registros.find(r => r.idFisico === idRegistro);
-        registro.datosGenerales["Estatus"] = nuevoEstatus;
-        
-        // Ejecución inmediata del cambio de color en el mapa
-        const capaMapa = STORE[idSector].grupoFisico.getLayer(idRegistro);
-        if(capaMapa instanceof L.Marker) {
-            const configVisual = DICCIONARIO_ESTATUS[nuevoEstatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-            capaMapa.setIcon(crearPinFiscal(configVisual.color));
-        }
-        
-        renderizarPanelMaestro();
-        capaMapa.fire('click'); // Recarga el popup para mostrar la medalla con el nuevo color
-    }
-
-    function alternarVisibilidadCampo(idSector, idRegistro, clave) {
-        const registro = STORE[idSector].registros.find(r => r.idFisico === idRegistro);
-        const indice = registro.camposOcultos.indexOf(clave);
-        if(indice > -1) registro.camposOcultos.splice(indice, 1); // Quitar
-        else registro.camposOcultos.push(clave); // Añadir
-        
-        STORE[idSector].grupoFisico.getLayer(idRegistro).fire('click');
-    }
-
-    // EL CORAZÓN DEL SIDEBAR: Renderiza la jerarquía
-    function renderizarPanelMaestro(filtroTexto = "") {
+    /* ==========================================================================
+       FASE 2: EL MOTOR STATE-DRIVEN (RENDERIZADO FÍSICO Y LÓGICO)
+       ========================================================================== */
+    // Esta función sincroniza lo que ves en el Panel y lo que ves en el Mapa
+    function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
         contenedor.innerHTML = "";
-        filtroTexto = filtroTexto.toLowerCase();
+        
+        // 1. Limpieza Física: Removemos todos los grupos del mapa para recalcular
+        for(let id in STORE) {
+            if(mapa.hasLayer(STORE[id].grupoFisico)) {
+                mapa.removeLayer(STORE[id].grupoFisico);
+            }
+            STORE[id].grupoFisico.clearLayers(); // Vaciamos el grupo
+        }
 
+        // 2. Iteración de Datos
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
             const gruposPorEstatus = {};
-            let contadorSectorLocal = 0;
+            let hayResultadosBusqueda = false;
 
-            // 1. Agrupar y Filtrar
             sectorData.registros.forEach(reg => {
-                const nombre = (reg.datosGenerales["Contribuyente"] || "").toLowerCase();
-                const rif = (reg.datosGenerales["RIF / Cédula"] || "").toLowerCase();
-                const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                
-                // Aplicar buscador global
-                if(filtroTexto === "" || nombre.includes(filtroTexto) || rif.includes(filtroTexto) || estatus.toLowerCase().includes(filtroTexto)) {
+                const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
+                const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+
+                if(cumpleFiltro) {
+                    hayResultadosBusqueda = true;
+                    const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                    
                     if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
                     gruposPorEstatus[estatus].conteo++;
                     gruposPorEstatus[estatus].lista.push(reg);
-                    contadorSectorLocal++;
+
+                    // Si cumple el filtro y la capa está visible, se añade al mapa físico
+                    if(sectorData.visible) {
+                        sectorData.grupoFisico.addLayer(reg.capaLeaflet);
+                    }
                 }
             });
 
-            // Si el buscador ocultó todo en este sector, no lo renderizamos
-            if(filtroTexto !== "" && contadorSectorLocal === 0) continue;
+            // Si la capa está visible y tiene items tras el filtro, se muestra en el mapa
+            if(sectorData.visible) mapa.addLayer(sectorData.grupoFisico);
 
-            // 2. Construir HTML del Sector (Capa)
-            let htmlBloque = `
+            // Si el buscador eliminó todos los items de este sector, no dibujamos su UI
+            if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
+
+            // 3. Construcción del Panel (UI)
+            let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
-                <div class="sector-header" onclick="seleccionarSectorActivo('${idSector}')">
-                    <div class="sector-title">
-                        <i class="fas ${idSector === capaActivaId ? 'fa-folder-open' : 'fa-folder'}"></i>
-                        ${sectorData.nombreSector}
+                <div class="sector-header">
+                    <div class="sector-title-group">
+                        <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
+                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
+                        <input type="checkbox" class="check-visible" title="Mostrar/Ocultar del Mapa"
+                               ${sectorData.visible ? 'checked' : ''} onchange="toggleVisibilidadCapa('${idSector}', this.checked)">
+                        <span class="sector-title" onclick="enfocarSector('${idSector}')">${sectorData.nombreSector}</span>
                     </div>
-                    <div class="sector-actions">
-                        <i class="fas fa-trash-alt" title="Eliminar Sector Completo" onclick="eliminarSectorFisico(event, '${idSector}')"></i>
-                    </div>
+                    <i class="fas fa-trash-alt sector-trash" onclick="eliminarSectorDefinitivo('${idSector}')"></i>
                 </div>
-                <div class="sector-body" style="display: ${idSector === capaActivaId || filtroTexto !== '' ? 'block' : 'none'};">`;
+                <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
-            // 3. Construir HTML de Estatus (Contadores Vivos)
-            for(let estatusClave in gruposPorEstatus) {
-                const confEstatus = DICCIONARIO_ESTATUS[estatusClave] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                const idUnicoAcordeon = `lista-${idSector}-${estatusClave.replace(/\s+/g, '')}`;
+            for(let estatus in gruposPorEstatus) {
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
 
-                htmlBloque += `
+                htmlSector += `
                 <div class="status-group">
-                    <div class="status-header" onclick="document.getElementById('${idUnicoAcordeon}').style.display = document.getElementById('${idUnicoAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
                         <div class="status-info">
-                            <div class="status-dot" style="background: ${confEstatus.color}; color: ${confEstatus.color}"></div>
-                            ${estatusClave}
+                            <div class="status-dot" style="background: ${confEst.color}; color: ${confEst.color}"></div>
+                            ${estatus}
                         </div>
-                        <span class="status-count">${gruposPorEstatus[estatusClave].conteo}</span>
+                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
                     </div>
-                    <div class="local-list" id="${idUnicoAcordeon}" style="display: ${filtroTexto !== '' ? 'block' : 'none'};">`;
+                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
-                // 4. Construir HTML de Locales
-                gruposPorEstatus[estatusClave].lista.forEach(local => {
-                    htmlBloque += `
-                        <div class="local-row" onclick="enfocarRegistroMapa('${idSector}', ${local.idFisico})">
+                gruposPorEstatus[estatus].lista.forEach(local => {
+                    htmlSector += `
+                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', ${local.idFisico}, true)">
                             <i class="fas fa-caret-right" style="opacity:0.5"></i> 
                             ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                         </div>`;
                 });
-
-                htmlBloque += `</div></div>`; // Cierra lista y grupo
+                htmlSector += `</div></div>`;
             }
-
-            htmlBloque += `</div></div>`; // Cierra body y card
-            contenedor.insertAdjacentHTML('beforeend', htmlBloque);
+            htmlSector += `</div></div>`;
+            contenedor.insertAdjacentHTML('beforeend', htmlSector);
         }
 
-        // Actualizar Cabecera
+        // Actualizar Cabecera Sidebar
         const indicador = document.getElementById('indicador-capa-activa');
         if(capaActivaId && STORE[capaActivaId]) {
-            indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector;
+            indicador.innerText = "CAPA DE TRABAJO: " + STORE[capaActivaId].nombreSector;
             indicador.style.color = varCSS('--cyan-neon');
         } else {
-            indicador.innerText = "ESTADO: ESPERANDO SELECCIÓN";
-            indicador.style.color = varCSS('--color-vencida');
+            indicador.innerText = "ESTADO: MODO LECTURA GLOBAL";
+            indicador.style.color = "#6e7681";
         }
     }
 
-
-    /** ============================================================================
-     * FASE 5: GESTIÓN FÍSICA Y DESTRUCCIÓN DE DATOS (BLINDAJE DE BORRADO)
-     * ============================================================================ */
-
-    function crearNuevoSector() {
-        const idGenerado = 'sector_' + Date.now();
-        const nombreInput = prompt("Ingrese el nombre del Nuevo Sector Fiscal:");
-        if(!nombreInput) return;
-
-        STORE[idGenerado] = { 
-            nombreSector: nombreInput.toUpperCase(), 
-            registros: [], 
-            grupoFisico: new L.FeatureGroup().addTo(mapa) 
-        };
-        capaActivaId = idGenerado;
-        renderizarPanelMaestro();
+    /* ==========================================================================
+       FASE 3: GENERACIÓN Y BLINDAJE DE POPUPS (Solución Error 1 y 2)
+       ========================================================================== */
+    
+    // Vinculación basal de eventos a las geometrías (Clic y Arrastre)
+    function vincularEventosCapa(capaFisica, idSector, idFisico) {
+        // En lugar de bindPopup, capturamos el clic y creamos un L.popup "On the fly"
+        capaFisica.on('click', () => abrirPopupDinamico(idSector, idFisico, false));
     }
 
-    function seleccionarSectorActivo(idSector) {
-        capaActivaId = idSector;
-        renderizarPanelMaestro();
-    }
+    // EL CONSTRUCTOR DE POPUPS (Totalmente Dinámico)
+    function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
+        const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        if(!registro) return;
 
-    // ELIMINACIÓN TOTAL (Mapa + Memoria)
-    function eliminarSectorFisico(evento, idSector) {
-        evento.stopPropagation(); // Evita que se dispare seleccionarSectorActivo
-        if(!confirm(`⚠️ ATENCIÓN: ¿Está seguro que desea eliminar la capa "${STORE[idSector].nombreSector}"?\nSe borrarán TODOS los marcadores y polígonos del mapa irrevocablemente.`)) return;
+        const capaMapa = registro.capaLeaflet;
         
-        // 1. Quitar del motor gráfico (Leaflet)
-        mapa.removeLayer(STORE[idSector].grupoFisico);
-        // 2. Eliminar de la base de datos en memoria
-        delete STORE[idSector];
-        // 3. Resetear foco si era la capa activa
-        if(capaActivaId === idSector) capaActivaId = null;
-        
-        renderizarPanelMaestro();
-    }
-
-    function eliminarRegistroFisico(idSector, idRegistro) {
-        if(!confirm("¿Borrar este contribuyente del censo?")) return;
-        
-        const capaMapa = STORE[idSector].grupoFisico.getLayer(idRegistro);
-        if(capaMapa) STORE[idSector].grupoFisico.removeLayer(capaMapa); // Quita del mapa
-        
-        // Filtra el array de datos para borrarlo de memoria
-        STORE[idSector].registros = STORE[idSector].registros.filter(r => r.idFisico !== idRegistro);
-        renderizarPanelMaestro();
-    }
-
-    function cerrarPopupManual(idSector, idRegistro) {
-        const capaMapa = STORE[idSector].grupoFisico.getLayer(idRegistro);
-        if(capaMapa) capaMapa.closePopup();
-    }
-
-    function enfocarRegistroMapa(idSector, idRegistro) {
-        const capaMapa = STORE[idSector].grupoFisico.getLayer(idRegistro);
-        if(capaMapa) {
-            // Si es punto va a la coordenada, si es polígono va al centro geométrico
+        if(centrarMapa) {
             const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
             mapa.flyTo(destino, 19, { duration: 0.5 });
-            setTimeout(() => capaMapa.fire('click'), 600); // Abre popup tras el vuelo
+        }
+
+        const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
+
+        // Si ya hay un popup abierto y es el mismo, solo actualizamos su contenido (Solución Error 2: El Ojo)
+        if(mapa._popup && mapa._popup._source === capaMapa) {
+            mapa._popup.setContent(htmlContenido);
+        } else {
+            // Generar nuevo popup desde cero (Solución Error 1: Inmortalidad)
+            const coords = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
+            L.popup({ minWidth: 320, closeButton: false, className: modoLecturaGlobal ? 'readonly-mode' : '' })
+                .setLatLng(coords)
+                .setContent(htmlContenido)
+                .openOn(mapa);
+            
+            // Linkear el popup a la capa para validaciones futuras
+            mapa._popup._source = capaMapa; 
         }
     }
 
-    function motorBusqueda() {
-        const texto = document.getElementById('buscador-global').value;
-        renderizarPanelMaestro(texto);
+    // EL GENERADOR DE STRINGS HTML (Separado para limpieza)
+    function generarContenidoHTMLPopup(idSector, idFisico) {
+        const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        let html = `<div class="pop-wrapper">`;
+
+        // SI ES POLÍGONO (AUDITORÍA)
+        if(registro.tipoGeometria === 'polygon') {
+            const rep = calcularAuditoria(registro.capaLeaflet);
+            html += `
+            <div class="audit-report">
+                <h3 class="audit-title"><i class="fas fa-chart-area"></i> AUDITORÍA ESPACIAL</h3>
+                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}"><span>Vigentes:</span> <span>${rep.v}</span></div>
+                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}"><span>Vencidas:</span> <span>${rep.x}</span></div>
+                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
+                <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
+            </div>`;
+        } 
+        // SI ES MARCADOR (FICHA)
+        else {
+            const estActual = registro.datosGenerales["Estatus"];
+            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+            const imgUrl = registro.datosGenerales["Link Fotografía"];
+
+            html += `
+            <div class="pop-cover">
+                ${imgUrl && imgUrl.length > 10 ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                <div class="pop-badge" style="background: ${confEst.color};">${estActual}</div>
+            </div>
+            <div class="pop-content">`;
+
+            // Iterar Campos
+            for(let clave in registro.datosGenerales) {
+                if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                
+                const isOculto = registro.camposOcultos.includes(clave);
+                
+                // Solución Error 2: onclick usa stopPropagation()
+                html += `
+                <div class="form-group">
+                    <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', ${idFisico}, '${clave}')"></i>
+                    <span class="form-label">${clave}</span>
+                    <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
+                           ${isOculto ? 'type="password"' : ''} 
+                           onchange="actualizarDatoCampo('${idSector}', ${idFisico}, '${clave}', this.value)">
+                </div>`;
+            }
+
+            // Selectores y Botones
+            html += `
+            <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
+                <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
+                <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', ${idFisico}, this.value)">
+                    ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
+                <input type="text" class="form-input" value="${registro.datosGenerales['Link Fotografía'] || ''}" onchange="actualizarDatoCampo('${idSector}', ${idFisico}, 'Link Fotografía', this.value)">
+            </div>
+            
+            <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR ESTE REGISTRO</button>
+            `;
+        }
+        
+        html += `</div></div>`;
+        return html;
+    }
+
+    // --- Controladores de Interacción del Popup ---
+    function ejecutarToggleOjo(eventoClick, idSector, idFisico, claveCampo) {
+        eventoClick.stopPropagation(); // CLAVE PARA EL ERROR 2: Evita que el clic llegue al mapa y cierre el popup
+        if(modoLecturaGlobal) return;
+
+        const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        const idx = reg.camposOcultos.indexOf(claveCampo);
+        if(idx > -1) reg.camposOcultos.splice(idx, 1);
+        else reg.camposOcultos.push(claveCampo);
+
+        // Regeneramos el HTML y lo inyectamos en el popup abierto SIN cerrarlo
+        const nuevoHTML = generarContenidoHTMLPopup(idSector, idFisico);
+        if(mapa._popup) mapa._popup.setContent(nuevoHTML);
+    }
+
+    function actualizarDatoCampo(idSector, idFisico, clave, valor) {
+        STORE[idSector].registros.find(r => r.idFisico === idFisico).datosGenerales[clave] = valor;
+        actualizarUIYMapa(); // Refresca UI
+        // Si actualizó foto, refresca el popup vivo
+        if(clave === 'Link Fotografía' && mapa._popup) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
+    }
+
+    function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
+        const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        reg.datosGenerales["Estatus"] = nuevoEst;
+        
+        // Cambio visual del icono
+        const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+        reg.capaLeaflet.setIcon(crearPinFiscal(conf.color));
+        
+        actualizarUIYMapa();
+        if(mapa._popup) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
     }
 
 
-    /** ============================================================================
-     * FASE 6: MÓDULO DE IMPORTACIÓN RAW (GOOGLE SHEETS)
-     * ============================================================================ */
-     
-    function abrirModalImportacion() {
-        document.getElementById('modal-importar').style.display = 'flex';
+    /* ==========================================================================
+       FASE 4: FUNCIONES DE SISTEMA (BÚSQUEDA, UI, ELIMINACIÓN)
+       ========================================================================== */
+    
+    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+    function alternarModoLectura() {
+        modoLecturaGlobal = document.getElementById('toggle-readonly').checked;
+        const bMarker = document.getElementById('btn-draw-marker');
+        const bPoly = document.getElementById('btn-draw-poly');
+        
+        if(modoLecturaGlobal) {
+            bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
+            bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
+            if(mapa._popup) mapa.closePopup(); // Cierra popups abiertos para refrescar estilos
+        } else {
+            bMarker.style.opacity = "1"; bMarker.style.pointerEvents = "auto";
+            bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
+        }
     }
-    function cerrarModal(idModal) {
-        document.getElementById(idModal).style.display = 'none';
-        document.getElementById('configuracion-columnas').style.display = 'none';
+
+    function ejecutarMotorBusqueda() {
+        textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase();
+        actualizarUIYMapa();
     }
+
+    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
+    
+    function toggleVisibilidadCapa(idSector, isVisible) { 
+        STORE[idSector].visible = isVisible; 
+        actualizarUIYMapa(); 
+    }
+
+    function crearNuevoSector() {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        const nombre = prompt("Nombre del Nuevo Sector/Capa:");
+        if(!nombre) return;
+        const id = 'sec_' + Date.now();
+        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, registros: [], grupoFisico: new L.FeatureGroup() };
+        capaActivaId = id;
+        actualizarUIYMapa();
+    }
+
+    function eliminarSectorDefinitivo(idSector) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
+        
+        mapa.removeLayer(STORE[idSector].grupoFisico); // Purga de Leaflet
+        delete STORE[idSector]; // Purga de RAM
+        if(capaActivaId === idSector) capaActivaId = null;
+        actualizarUIYMapa();
+    }
+
+    function borrarRegistroIndividual(idSector, idFisico) {
+        if(modoLecturaGlobal) return;
+        if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
+        
+        // 1. Quitar del grupo Leaflet
+        const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        STORE[idSector].grupoFisico.removeLayer(reg.capaLeaflet);
+        
+        // 2. Quitar del array
+        STORE[idSector].registros = STORE[idSector].registros.filter(r => r.idFisico !== idFisico);
+        
+        mapa.closePopup();
+        actualizarUIYMapa();
+    }
+
+    function enfocarSector(idSector) {
+        if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
+        const limites = STORE[idSector].grupoFisico.getBounds();
+        if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] });
+    }
+
+    function calcularAuditoria(poligonoActivo) {
+        let count = { v: 0, x: 0, t: 0, total: 0 };
+        const box = poligonoActivo.getBounds();
+        for(let id in STORE) {
+            STORE[id].registros.forEach(r => {
+                if(r.tipoGeometria === 'marker' && box.contains(r.capaLeaflet.getLatLng())) {
+                    count.total++;
+                    const e = r.datosGenerales["Estatus"];
+                    if(e === "VIGENTE") count.v++;
+                    else if(e === "VENCIDA" || e === "SIN LICENCIA") count.x++;
+                    else if(e === "TEMPORAL") count.t++;
+                }
+            });
+        }
+        return count;
+    }
+
+
+    /* ==========================================================================
+       FASE 5: MÓDULO DE IMPORTACIÓN MEJORADO (Solución Error 4)
+       ========================================================================== */
+       
+    function abrirModalImportacion() { document.getElementById('modal-importar').style.display = 'flex'; }
+    function cerrarModal(id) { document.getElementById(id).style.display = 'none'; document.getElementById('configuracion-columnas').style.display = 'none'; }
 
     async function analizarCabecerasCSV() {
         let url = document.getElementById('input-url-sheets').value;
-        if(!url) return alert("Pegue la URL primero.");
-        
-        // Autocorrección de URL de Google Sheets a CSV
+        if(!url) return alert("Inserte URL de Google Sheets");
         if(url.includes('/edit')) url = url.replace(/\/edit.*$/, '/export?format=csv');
         
+        const btn = document.getElementById('btn-analizar-csv');
+        btn.innerText = "⏳ CONECTANDO A GOOGLE...";
+        
         try {
-            document.querySelector('#modal-importar .btn-solid-yellow').innerText = "⏳ DESCARGANDO DATOS...";
-            const respuesta = await fetch(url);
-            if(!respuesta.ok) throw new Error("Acceso denegado");
+            const resp = await fetch(url);
+            if(!resp.ok) throw new Error("Sin acceso");
+            const txt = await resp.text();
             
-            const textoCSV = await respuesta.text();
-            // Regex robusto para separar por comas respetando comillas
-            const lineas = textoCSV.split('\n').map(l => l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
-            
-            cacheCSV.cabeceras = lineas[0];
-            cacheCSV.data = lineas.slice(1).filter(fila => fila.length >= cacheCSV.cabeceras.length);
+            // Separador CSV inteligente para comas dentro de comillas
+            const rows = txt.split('\n').map(l => l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
+            cacheCSV.cabeceras = rows[0];
+            cacheCSV.data = rows.slice(1).filter(r => r.length >= cacheCSV.cabeceras.length);
 
-            // Poblar selectores
-            const opcionesHTML = cacheCSV.cabeceras.map(cab => `<option value="${cab}">${cab}</option>`).join('');
-            document.getElementById('sel-coordenadas').innerHTML = opcionesHTML;
-            document.getElementById('sel-estatus').innerHTML = opcionesHTML;
-            document.getElementById('sel-nombre').innerHTML = opcionesHTML;
+            const options = cacheCSV.cabeceras.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            document.getElementById('sel-coordenadas').innerHTML = options;
+            document.getElementById('sel-nombre').innerHTML = options;
+            document.getElementById('sel-estatus').innerHTML = options;
+            
+            // Solución Error 4: Columna de imagen opcional
+            document.getElementById('sel-imagen').innerHTML = `<option value="NONE">NINGUNA (Dejar Vacío)</option>` + options;
 
             document.getElementById('configuracion-columnas').style.display = 'block';
-            document.querySelector('#modal-importar .btn-solid-yellow').innerText = "1. ANALIZAR COLUMNAS";
-
-        } catch(error) {
-            alert("❌ ERROR DE LECTURA: Asegúrese de que el documento de Google Sheets tenga los permisos de acceso configurados como 'Cualquier persona con el enlace'.");
-            document.querySelector('#modal-importar .btn-solid-yellow').innerText = "1. ANALIZAR COLUMNAS";
+            btn.innerText = "1. COLUMNAS DETECTADAS (OK)";
+        } catch(e) {
+            alert("❌ ERROR: El documento debe ser público ('Cualquier persona con el enlace').");
+            btn.innerText = "1. LEER COLUMNAS DEL ARCHIVO";
         }
     }
 
-    function normalizarEstatus(textoBruto) {
-        if(!textoBruto) return "SIN CATEGORÍA";
-        const t = textoBruto.toUpperCase();
-        if(t.includes("VIGENTE")) return "VIGENTE";
-        if(t.includes("VENCIDA") || t.includes("NO RENOVADA")) return "VENCIDA";
-        if(t.includes("TEMPORAL") || t.includes("PROVISIONAL")) return "TEMPORAL";
-        if(t.includes("NUEVO") || t.includes("CENSO")) return "CENSO / NUEVO";
-        if(t.includes("SIN LICENCIA")) return "SIN LICENCIA";
+    function homologarEstatus(txt) {
+        if(!txt) return "SIN CATEGORÍA";
+        const t = txt.toUpperCase();
+        if(t.includes("VIGENT")) return "VIGENTE";
+        if(t.includes("VENCID") || t.includes("NO RENOV")) return "VENCIDA";
+        if(t.includes("TEMP") || t.includes("PROV")) return "TEMPORAL";
+        if(t.includes("SIN LICEN")) return "SIN LICENCIA";
         return "SIN CATEGORÍA";
     }
 
     function ejecutarInyeccionDatos() {
-        const idSectorImportado = 'import_' + Date.now();
-        const grupoLeaflet = new L.FeatureGroup().addTo(mapa);
+        const idNuevo = 'imp_' + Date.now();
+        const grpFisico = new L.FeatureGroup();
         
-        const colCoord = document.getElementById('sel-coordenadas').value;
-        const colEstatus = document.getElementById('sel-estatus').value;
-        const colNombre = document.getElementById('sel-nombre').value;
+        const cCo = document.getElementById('sel-coordenadas').value;
+        const cNo = document.getElementById('sel-nombre').value;
+        const cEs = document.getElementById('sel-estatus').value;
+        const cIm = document.getElementById('sel-imagen').value;
 
-        let registrosProcesados = [];
-        let erroresGeometria = 0;
+        let regArr = [];
+        let fails = 0;
 
-        cacheCSV.data.forEach(filaArray => {
-            let filaDiccionario = {};
-            cacheCSV.cabeceras.forEach((cab, i) => filaDiccionario[cab] = filaArray[i]);
+        cacheCSV.data.forEach(filaArr => {
+            let diccionario = {};
+            cacheCSV.cabeceras.forEach((cab, i) => diccionario[cab] = filaArr[i]);
 
-            // Intentar extraer Latitud y Longitud
-            let stringCoord = filaDiccionario[colCoord];
-            if(stringCoord) {
-                // Limpia paréntesis y letras, extrae los dos primeros números flotantes
-                const matchCoord = stringCoord.replace(/[^\d.,-]/g, ' ').trim().split(/\s+/);
-                if(matchCoord.length >= 2) {
-                    const lat = parseFloat(matchCoord[0].replace(',', '.'));
-                    const lng = parseFloat(matchCoord[1].replace(',', '.'));
+            const strC = diccionario[cCo];
+            if(strC) {
+                const parts = strC.replace(/[^\d.,-]/g, ' ').trim().split(/\s+/);
+                if(parts.length >= 2) {
+                    const lat = parseFloat(parts[0].replace(',', '.'));
+                    const lng = parseFloat(parts[1].replace(',', '.'));
 
                     if(!isNaN(lat) && !isNaN(lng)) {
-                        const estatusLimpio = normalizarEstatus(filaDiccionario[colEstatus]);
-                        const colorFinal = DICCIONARIO_ESTATUS[estatusLimpio].color;
+                        const estReal = homologarEstatus(diccionario[cEs]);
+                        const colHex = DICCIONARIO_ESTATUS[estReal].color;
+                        
+                        const mark = L.marker([lat, lng], { icon: crearPinFiscal(colHex), draggable: true });
+                        grpFisico.addLayer(mark);
+                        
+                        // Eventos para el nuevo marcador
+                        mark.on('dragend', () => actualizarUIYMapa());
+                        const idM = L.stamp(mark);
+                        vincularEventosCapa(mark, idNuevo, idM);
 
-                        const marcador = L.marker([lat, lng], { 
-                            icon: crearPinFiscal(colorFinal), 
-                            draggable: true 
-                        });
-                        
-                        grupoLeaflet.addLayer(marcador);
-                        const idLeaflet = L.stamp(marcador);
-                        
-                        // Formatear datos para la ficha (pasamos todas las columnas)
-                        let datosLimpios = { 
-                            "Contribuyente": filaDiccionario[colNombre] || "SIN REGISTRO",
-                            "Estatus": estatusLimpio
+                        // Mapeo Data General
+                        let dg = {
+                            "Contribuyente": diccionario[cNo] || "SIN REGISTRO",
+                            "Estatus": estReal,
+                            "Link Fotografía": cIm !== "NONE" ? (diccionario[cIm] || "") : ""
                         };
                         
-                        // Añadir el resto de columnas como datos extra
-                        for(let k in filaDiccionario) {
-                            if(k !== colCoord && k !== colEstatus && k !== colNombre) {
-                                datosLimpios[k] = filaDiccionario[k];
-                            }
+                        // Añadir extra
+                        for(let k in diccionario) {
+                            if(k !== cCo && k !== cNo && k !== cEs && k !== cIm) dg[k] = diccionario[k];
                         }
 
-                        registrosProcesados.push({
-                            idFisico: idLeaflet,
-                            tipoGeometria: 'marker',
-                            datosGenerales: datosLimpios,
-                            camposOcultos: []
-                        });
-
-                        // Vincular lógica inmortal
-                        vincularPopupInmortal(marcador, idSectorImportado, idLeaflet);
-                        
-                        // Escuchar movimiento
-                        marcador.on('dragend', renderizarPanelMaestro);
-                    } else { erroresGeometria++; }
-                } else { erroresGeometria++; }
-            } else { erroresGeometria++; }
+                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, datosGenerales: dg, camposOcultos: [] });
+                    } else fails++;
+                } else fails++;
+            } else fails++;
         });
 
-        // Guardar en STORE maestro
-        STORE[idSectorImportado] = {
-            nombreSector: "CENSO IMPORTADO (" + new Date().toLocaleDateString() + ")",
-            registros: registrosProcesados,
-            grupoFisico: grupoLeaflet
-        };
-
-        capaActivaId = idSectorImportado;
-        renderizarPanelMaestro();
+        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, registros: regArr, grupoFisico: grpFisico };
+        capaActivaId = idNuevo;
         cerrarModal('modal-importar');
+        actualizarUIYMapa();
         
-        if(erroresGeometria > 0) alert(`✅ Importación finalizada.\n⚠️ Se ignoraron ${erroresGeometria} filas porque no tenían coordenadas válidas.`);
-        else alert(`✅ Inyección exitosa de ${registrosProcesados.length} registros fiscales.`);
-        
-        // Ajustar la vista del mapa para ver los datos importados
-        mapa.fitBounds(grupoLeaflet.getBounds());
+        mapa.fitBounds(grpFisico.getBounds());
+        alert(`✅ Carga exitosa: ${regArr.length} marcadores.\n⚠️ Fallos de Coordenadas (Ignorados): ${fails}`);
     }
 
-    /** ============================================================================
-     * FASE 7: EXPORTACIÓN Y BACKUP
-     * ============================================================================ */
-    
+    /* ==========================================================================
+       FASE 6: EXPORTACIÓN
+       ========================================================================== */
     function exportarBaseDatos() {
-        // Clonamos STORE para no exportar los objetos pesados de Leaflet ('grupoFisico')
-        const backupData = JSON.stringify(STORE, (key, value) => {
-            if(key === 'grupoFisico') return undefined; // Ignoramos la geometría cruda, guardamos los datos
-            return value;
+        const payload = JSON.stringify(STORE, (key, val) => {
+            // Ignorar los objetos crudos de Leaflet para que el JSON sea texto plano
+            if(key === 'grupoFisico' || key === 'capaLeaflet') return undefined; 
+            return val;
         }, 2);
-
-        const blob = new Blob([backupData], { type: "application/json" });
-        const urlObj = URL.createObjectURL(blob);
-        const enlaceDescarga = document.createElement('a');
         
-        enlaceDescarga.href = urlObj;
-        enlaceDescarga.download = `RESPALDO_HACIENDA_AYACUCHO_${new Date().getTime()}.json`;
-        document.body.appendChild(enlaceDescarga);
-        enlaceDescarga.click();
-        document.body.removeChild(enlaceDescarga);
+        const blob = new Blob([payload], { type: "application/json" });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `CATASTRO_AYACUCHO_BACKUP_${Date.now()}.json`;
+        a.click();
     }
 
-    // INICIAR UI VACÍA
-    renderizarPanelMaestro();
+    // Arranque Inicial
+    actualizarUIYMapa();
 </script>
 </body>
 </html>
