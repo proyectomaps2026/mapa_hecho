@@ -114,7 +114,7 @@
         .btn-solid-yellow { background: var(--color-temporal); color: #000; padding: 14px; border-radius: 8px; font-size: 11px; }
 
         /* ==========================================================================
-           3. POPUPS INMORTALES 
+           3. POPUPS INMORTALES (VISTA LECTURA Y EDICIÓN)
            ========================================================================== */
         .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; background: #fff; width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .leaflet-popup-tip { background: #fff; }
@@ -124,7 +124,14 @@
         .pop-cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
         .pop-badge { position: absolute; top: 15px; left: 15px; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 900; color: white; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.5); }
         
-        .pop-content { padding: 20px; color: #111; max-height: 380px; overflow-y: auto; }
+        .pop-content { padding: 20px; color: #111; max-height: 400px; overflow-y: auto; }
+        
+        /* Estilos Vista Lectura Profesional */
+        .read-field { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 8px; }
+        .read-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+        .read-value { font-size: 13px; font-weight: 700; color: #111; word-break: break-word; }
+
+        /* Estilos Vista Edición */
         .form-group { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px; position: relative; }
         .form-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
         .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #000; background: transparent; outline: none; }
@@ -138,16 +145,16 @@
         .eye-btn { position: absolute; right: 5px; top: 20px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; z-index: 10; padding: 5px; }
         .eye-btn:hover, .eye-btn.is-hidden { color: var(--color-vencida); }
 
-        .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; }
+        .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; transition: 0.2s; }
+        .btn-popup-action:hover { filter: brightness(1.1); }
         .btn-save { background: var(--color-vigente); box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
         .btn-edit { background: var(--cyan-neon); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); }
         .btn-del { background: var(--color-vencida); margin-top: 15px; }
 
-        /* MODO LECTURA CSS */
+        /* MODO LECTURA CSS MAESTRO */
         .readonly-mode .form-input { pointer-events: none; color: #555; }
         .readonly-mode .form-select { pointer-events: none; background: #eee; }
         .readonly-mode .eye-btn { display: none; }
-        /* Bloqueo del selector de color manual en lectura */
         .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
 
         /* ==========================================================================
@@ -305,8 +312,8 @@
             tipoGeometria: evento.layerType,
             capaLeaflet: evento.layer,
             colorPersonalizado: null, 
-            _modoPopup: 'edicion',
-            visibleIndividual: true, // CAMBIO 2: Estado de visibilidad independiente en el Árbol
+            _modoPopup: 'edicion', // Al crearlo nuevo, abrir directamente en edición
+            visibleIndividual: true,
             datosGenerales: { 
                 "Contribuyente": "NUEVO ESTABLECIMIENTO", 
                 "RIF": "J-00000000-0",
@@ -344,10 +351,15 @@
         actualizarUIYMapa();
     }
 
+    // SOLUCIÓN 2: SELECTOR DE COLOR POR GRUPO (NIVEL INTERMEDIO)
     function cambiarColorBloque(idSector, color) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
         
+        // Guardamos el color global del sector
+        STORE[idSector].colorPrincipal = color;
+        
+        // Iteramos y aplicamos a todos los hijos
         STORE[idSector].registros.forEach(reg => {
             reg.colorPersonalizado = color;
             if (reg.tipoGeometria === 'marker') {
@@ -356,6 +368,7 @@
         });
         
         actualizarUIYMapa();
+        // Sincronizar popup abierto si pertenece a este sector
         if (mapa._popup && mapa._popup._source) {
             const idFisicoPopup = L.stamp(mapa._popup._source);
             const exists = STORE[idSector].registros.find(r => r.idFisico === idFisicoPopup);
@@ -365,7 +378,8 @@
 
 
     /* ==========================================================================
-       FASE 2: EL MOTOR STATE-DRIVEN (MODIFICADO: GESTIÓN DE CAPAS INTELIGENTE)
+       FASE 2: EL MOTOR STATE-DRIVEN 
+       SOLUCIÓN 1: GESTIÓN DE CAPAS 100% INDEPENDIENTES
        ========================================================================== */
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
@@ -376,7 +390,8 @@
             const gruposPorEstatus = {};
             let hayResultadosBusqueda = false;
 
-            // CAMBIO 1: INDEPENDENCIA DE CAPAS - Gestionar adición/eliminación del Grupo principal con Leaflet
+            // GESTIÓN INDEPENDIENTE A NIVEL SECTOR: Añadimos o quitamos EL GRUPO de este sector
+            // Esto permite tener múltiples sectores seleccionados a la vez sin que uno borre al otro.
             if (sectorData.visible && !mapa.hasLayer(sectorData.grupoFisico)) {
                 mapa.addLayer(sectorData.grupoFisico);
             } else if (!sectorData.visible && mapa.hasLayer(sectorData.grupoFisico)) {
@@ -384,13 +399,12 @@
             }
 
             sectorData.registros.forEach(reg => {
-                // Prevenir fallos en datos viejos
                 if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
 
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                // CAMBIO 1: GESTIÓN INTELIGENTE - Sólo quitar/poner los marcadores necesarios SIN destruir todo
+                // GESTIÓN INDEPENDIENTE A NIVEL MARCADOR: Lo metemos/sacamos de su FeatureGroup respectivo
                 const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && cumpleFiltro;
                 const hasLayer = sectorData.grupoFisico.hasLayer(reg.capaLeaflet);
 
@@ -412,7 +426,9 @@
 
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
-            // CONSTRUCCIÓN DEL PANEL
+            // Renderizar la UI del panel lateral
+            const colorGlobalActual = sectorData.colorPrincipal || '#6e7681'; // Valor por defecto visual
+            
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
                 <div class="sector-header">
@@ -430,7 +446,8 @@
                     </div>
                     
                     <div class="sector-controls">
-                        <input type="color" title="Color Global del Sector" 
+                        <!-- SELECTOR DE COLOR POR GRUPO -->
+                        <input type="color" title="Color Global del Sector" value="${colorGlobalActual}"
                                onchange="cambiarColorBloque('${idSector}', this.value)" 
                                style="width: 20px; height: 20px; border: none; cursor: pointer; background: transparent; padding: 0;">
                         <i class="fas fa-trash-alt sector-trash" onclick="eliminarSectorDefinitivo('${idSector}')"></i>
@@ -453,7 +470,6 @@
                     </div>
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
-                // CAMBIO 2: Checkbox Individual en el Árbol
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', ${local.idFisico}, true)">
@@ -485,11 +501,17 @@
     }
 
     /* ==========================================================================
-       FASE 3: GENERACIÓN, BLINDAJE DE POPUPS Y DOBLE CAPA (LECTURA/EDICIÓN)
+       FASE 3: BLINDAJE DE POPUPS 
+       SOLUCIÓN 3: DOBLE VISTA EN POPUP (LECTURA vs EDICIÓN)
        ========================================================================== */
     
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
-        capaFisica.on('click', () => abrirPopupDinamico(idSector, idFisico, false));
+        // Al hacer clic manual, forzamos que siempre se abra inicialmente en modo 'lectura'
+        capaFisica.on('click', () => {
+            const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+            if(reg) reg._modoPopup = 'lectura';
+            abrirPopupDinamico(idSector, idFisico, false);
+        });
     }
 
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
@@ -501,16 +523,18 @@
         if(centrarMapa) {
             const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
             mapa.flyTo(destino, 19, { duration: 0.5 });
+            // Si venimos del menú lateral, también forzamos vista lectura limpia
+            registro._modoPopup = 'lectura'; 
         }
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
-        // CAMBIO 3: POPUP PERSISTENTE. Actualiza el contenido en lugar de destruirlo
+        // POPUP PERSISTENTE. Actualiza in-situ usando setContent, evitando cierres abruptos
         if(mapa._popup && mapa._popup._source === capaMapa) {
             mapa._popup.setContent(htmlContenido);
         } else {
             const coords = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
-            L.popup({ minWidth: 320, closeButton: false, className: modoLecturaGlobal ? 'readonly-mode' : '' })
+            L.popup({ minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' })
                 .setLatLng(coords)
                 .setContent(htmlContenido)
                 .openOn(mapa);
@@ -519,7 +543,7 @@
         }
     }
 
-    // Alternador de Vista (Doble Capa en Popup)
+    // ALTERNADOR DE VISTA EN POPUP
     function alternarVistaPopup(idFisico, modo) {
         let idSectorEncontrado = null;
         for(let idSec in STORE) {
@@ -533,12 +557,13 @@
         const reg = STORE[idSectorEncontrado].registros.find(r => r.idFisico === idFisico);
         reg._modoPopup = modo;
         
+        // Refrescar contenido in-situ
         if(mapa._popup) {
             mapa._popup.setContent(generarContenidoHTMLPopup(idSectorEncontrado, idFisico));
         }
     }
 
-    // EL GENERADOR DE STRINGS HTML CON LÓGICA DE DOBLE CAPA
+    // EL GENERADOR DE STRINGS HTML BIFURCADO
     function generarContenidoHTMLPopup(idSector, idFisico) {
         const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         let html = `<div class="pop-wrapper">`;
@@ -555,7 +580,7 @@
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
             </div>`;
         } 
-        // SI ES MARCADOR (FICHA) - LÓGICA BIFURCADA LECTURA / EDICIÓN
+        // SI ES MARCADOR (FICHA DE CONTRIBUYENTE)
         else {
             const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
@@ -565,7 +590,7 @@
             
             const modoVistaActual = registro._modoPopup || 'lectura';
 
-            // PORTADA UNIVERSAL
+            // PORTADA UNIVERSAL (Visible en ambas vistas)
             html += `
             <div class="pop-cover">
                 ${imgUrl && imgUrl.length > 10 ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
@@ -573,7 +598,9 @@
             </div>
             <div class="pop-content">`;
 
-            // --- VISTA DE LECTURA LIMPIA ---
+            // ==========================================
+            // VISTA 1: LECTURA PROFESIONAL ESTÁTICA
+            // ==========================================
             if (modoVistaActual === 'lectura') {
                 for(let clave in registro.datosGenerales) {
                     if(clave === "Estatus" || clave === "Link Fotografía") continue;
@@ -581,17 +608,20 @@
                     if(isOculto) continue; 
                     
                     html += `
-                    <div style="margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px;">
-                        <span class="form-label">${clave}</span>
-                        <div style="font-size: 13px; font-weight: 700; color: #000; word-break: break-word;">${registro.datosGenerales[clave] || '-'}</div>
+                    <div class="read-field">
+                        <span class="read-label">${clave}</span>
+                        <div class="read-value">${registro.datosGenerales[clave] || '-'}</div>
                     </div>`;
                 }
                 
+                // Botón elegante para pasar a Edición
                 if(!modoLecturaGlobal) {
-                    html += `<button class="btn-popup-action btn-edit" onclick="alternarVistaPopup(${idFisico}, 'edicion')"><i class="fas fa-edit"></i> MODO EDICIÓN</button>`;
+                    html += `<button class="btn-popup-action btn-edit" onclick="alternarVistaPopup(${idFisico}, 'edicion')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
                 }
             } 
-            // --- VISTA DE EDICIÓN PROFUNDA ---
+            // ==========================================
+            // VISTA 2: EDICIÓN PROFUNDA (INPUTS)
+            // ==========================================
             else {
                 for(let clave in registro.datosGenerales) {
                     if(clave === "Estatus" || clave === "Link Fotografía") continue;
@@ -626,8 +656,8 @@
                     <input type="password" class="form-input input-oculto" value="${registro.datosGenerales['Link Fotografía'] || ''}" onchange="actualizarDatoCampo('${idSector}', ${idFisico}, 'Link Fotografía', this.value)">
                 </div>
                 
-                <button class="btn-popup-action btn-save" onclick="alternarVistaPopup(${idFisico}, 'lectura')"><i class="fas fa-save"></i> GUARDAR Y VER</button>
-                <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR ESTE REGISTRO</button>
+                <button class="btn-popup-action btn-save" onclick="alternarVistaPopup(${idFisico}, 'lectura')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>
+                <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR REGISTRO</button>
                 `;
             }
         }
@@ -723,7 +753,8 @@
         const nombre = prompt("Nombre del Nuevo Sector/Capa:");
         if(!nombre) return;
         const id = 'sec_' + Date.now();
-        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, registros: [], grupoFisico: new L.FeatureGroup() };
+        // Inicializamos el sector con color por defecto y FeatureGroup limpio
+        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, colorPrincipal: '#00f2ff', registros: [], grupoFisico: new L.FeatureGroup() };
         capaActivaId = id;
         actualizarUIYMapa();
     }
@@ -778,7 +809,7 @@
 
 
     /* ==========================================================================
-       FASE 5: MÓDULO DE IMPORTACIÓN (INTACTO)
+       FASE 5: MÓDULO DE IMPORTACIÓN (INTACTO - NO TOCADO)
        ========================================================================== */
        
     function abrirModalImportacion() { document.getElementById('modal-importar').style.display = 'flex'; }
@@ -871,14 +902,15 @@
                             if(k !== cCo && k !== cNo && k !== cEs && k !== cIm) dg[k] = diccionario[k];
                         }
 
-                        // CAMBIO 2: Inyección masiva incluye visibleIndividual
+                        // Al inyectar de CSV, por defecto marcamos los popups como modo lectura
                         regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, _modoPopup: 'lectura', visibleIndividual: true, datosGenerales: dg, camposOcultos: [] });
                     } else fails++;
                 } else fails++;
             } else fails++;
         });
 
-        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, registros: regArr, grupoFisico: grpFisico };
+        // Configuración de la capa con su colorPrincipal por defecto
+        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, colorPrincipal: '#00f2ff', registros: regArr, grupoFisico: grpFisico };
         capaActivaId = idNuevo;
         cerrarModal('modal-importar');
         actualizarUIYMapa();
