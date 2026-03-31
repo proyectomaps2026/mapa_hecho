@@ -105,7 +105,7 @@
         .status-count { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px; font-size: 10px; }
 
         .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
-        .local-row { padding: 8px 16px 8px 36px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; gap: 8px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .local-row { padding: 8px 16px 8px 36px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
         .sidebar-footer { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
@@ -130,7 +130,7 @@
         .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #000; background: transparent; outline: none; }
         .form-input:focus { color: var(--color-vigente); }
         
-        /* 5. PRIVACIDAD DE URls: Clase para ofuscar input visualmente pero permitir uso */
+        /* PRIVACIDAD DE URls: Clase para ofuscar input visualmente pero permitir uso */
         .input-oculto { opacity: 0.6; font-family: monospace; letter-spacing: 1px; }
 
         .form-select { width: 100%; padding: 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; outline: none; cursor: pointer; }
@@ -140,6 +140,7 @@
 
         .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; }
         .btn-save { background: var(--color-vigente); box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
+        .btn-edit { background: var(--cyan-neon); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); }
         .btn-del { background: var(--color-vencida); margin-top: 15px; }
 
         /* MODO LECTURA CSS */
@@ -196,7 +197,7 @@
 
 <aside id="sidebar" class="ui-layer glass-panel">
     <div class="sidebar-header">
-        <!-- 1. IDENTIDAD CORPORATIVA: Sidebar Títulos -->
+        <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
         <h1>SISTEMA DE CONTROL FISCAL</h1>
         <p id="indicador-capa-activa">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
     </div>
@@ -302,8 +303,9 @@
         const nuevoRegistro = {
             idFisico: idFisico,
             tipoGeometria: evento.layerType,
-            capaLeaflet: evento.layer, // Guardamos la referencia física exacta
-            colorPersonalizado: null, // 3. SELECTOR DE COLOR INDIVIDUAL: Propiedad agregada
+            capaLeaflet: evento.layer,
+            colorPersonalizado: null, 
+            _modoPopup: 'edicion', // <-- NUEVO: Los registros nuevos abren directo en modo edición
             datosGenerales: { 
                 "Contribuyente": "NUEVO ESTABLECIMIENTO", 
                 "RIF": "J-00000000-0",
@@ -326,23 +328,52 @@
     });
 
     /* ==========================================================================
+       NUEVAS FUNCIONES MAESTRAS (ERRORES 1 Y 3 SOLUCIONADOS)
+       ========================================================================== */
+       
+    // FUNCIÓN SOLICITADA: Actualizar Nombre del Sector desde el Input
+    function actualizarNombreSector(id, valor) {
+        if(!STORE[id]) return;
+        STORE[id].nombreSector = valor.toUpperCase();
+        actualizarUIYMapa();
+    }
+
+    // FUNCIÓN SOLICITADA: Cambiar el Color de TODO el bloque/sector
+    function cambiarColorBloque(idSector, color) {
+        if (modoLecturaGlobal) return alert("Modo lectura activo.");
+        if (!STORE[idSector]) return;
+        
+        STORE[idSector].registros.forEach(reg => {
+            reg.colorPersonalizado = color;
+            if (reg.tipoGeometria === 'marker') {
+                reg.capaLeaflet.setIcon(crearPinFiscal(color));
+            }
+        });
+        
+        actualizarUIYMapa();
+        // Si hay un popup abierto de este sector, lo actualizamos para que refleje el nuevo color visualmente
+        if (mapa._popup && mapa._popup._source) {
+            const idFisicoPopup = L.stamp(mapa._popup._source);
+            const exists = STORE[idSector].registros.find(r => r.idFisico === idFisicoPopup);
+            if(exists) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisicoPopup));
+        }
+    }
+
+
+    /* ==========================================================================
        FASE 2: EL MOTOR STATE-DRIVEN (RENDERIZADO FÍSICO Y LÓGICO)
        ========================================================================== */
-    // Esta función sincroniza lo que ves en el Panel y lo que ves en el Mapa
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
         contenedor.innerHTML = "";
         
-        // 2. REPARACIÓN SELECTOR CAPAS FANTASMAS: Lógica verificada
-        // Removemos TODOS los grupos del mapa usando el condicional exacto que previene errores
         for(let id in STORE) {
             if(mapa.hasLayer(STORE[id].grupoFisico)) {
                 mapa.removeLayer(STORE[id].grupoFisico);
             }
-            STORE[id].grupoFisico.clearLayers(); // Vaciamos el grupo tras haberlo quitado del mapa
+            STORE[id].grupoFisico.clearLayers(); 
         }
 
-        // 2. Iteración de Datos
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
             const gruposPorEstatus = {};
@@ -360,20 +391,17 @@
                     gruposPorEstatus[estatus].conteo++;
                     gruposPorEstatus[estatus].lista.push(reg);
 
-                    // Si cumple el filtro y la capa está visible, se añade al mapa físico
                     if(sectorData.visible) {
                         sectorData.grupoFisico.addLayer(reg.capaLeaflet);
                     }
                 }
             });
 
-            // Si la capa está visible y tiene items tras el filtro, se muestra en el mapa
             if(sectorData.visible) mapa.addLayer(sectorData.grupoFisico);
 
-            // Si el buscador eliminó todos los items de este sector, no dibujamos su UI
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
-            // 3. Construcción del Panel (UI)
+            // CONSTRUCCIÓN DEL PANEL (Modificaciones Errores 1 y 3 integradas)
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
                 <div class="sector-header">
@@ -382,9 +410,22 @@
                                ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
                         <input type="checkbox" class="check-visible" title="Mostrar/Ocultar del Mapa"
                                ${sectorData.visible ? 'checked' : ''} onchange="toggleVisibilidadCapa('${idSector}', this.checked)">
-                        <span class="sector-title" onclick="enfocarSector('${idSector}')">${sectorData.nombreSector}</span>
+                        
+                        <!-- 1. SOLUCIÓN: Input para editar nombre del sector -->
+                        <input type="text" value="${sectorData.nombreSector}" 
+                               title="Doble clic para enfocar sector en el mapa"
+                               ondblclick="enfocarSector('${idSector}')"
+                               onchange="actualizarNombreSector('${idSector}', this.value)" 
+                               style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 180px; outline:none; text-transform:uppercase;">
                     </div>
-                    <i class="fas fa-trash-alt sector-trash" onclick="eliminarSectorDefinitivo('${idSector}')"></i>
+                    
+                    <div class="sector-controls">
+                        <!-- 3. SOLUCIÓN: Input de Color Masivo para todo el sector -->
+                        <input type="color" title="Color Global del Sector" 
+                               onchange="cambiarColorBloque('${idSector}', this.value)" 
+                               style="width: 20px; height: 20px; border: none; cursor: pointer; background: transparent; padding: 0;">
+                        <i class="fas fa-trash-alt sector-trash" onclick="eliminarSectorDefinitivo('${idSector}')"></i>
+                    </div>
                 </div>
                 <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
@@ -406,8 +447,12 @@
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', ${local.idFisico}, true)">
-                            <i class="fas fa-caret-right" style="opacity:0.5"></i> 
-                            ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
+                            <div style="flex:1; display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
+                                ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
+                            </div>
+                            <!-- 3. SOLUCIÓN: Botón de eliminación individual desde el menú lateral -->
+                            <i class="fas fa-trash sector-trash" style="font-size:11px;" title="Borrar Registro" onclick="event.stopPropagation(); borrarRegistroIndividual('${idSector}', ${local.idFisico})"></i>
                         </div>`;
                 });
                 htmlSector += `</div></div>`;
@@ -422,23 +467,19 @@
             indicador.innerText = "CAPA DE TRABAJO: " + STORE[capaActivaId].nombreSector;
             indicador.style.color = varCSS('--cyan-neon');
         } else {
-            // 1. IDENTIDAD CORPORATIVA: Ajuste de mensaje de no-selección
             indicador.innerText = "HACIENDA MUNICIPAL - MODO LECTURA";
             indicador.style.color = "#6e7681";
         }
     }
 
     /* ==========================================================================
-       FASE 3: GENERACIÓN Y BLINDAJE DE POPUPS 
+       FASE 3: GENERACIÓN, BLINDAJE DE POPUPS Y DOBLE CAPA (LECTURA/EDICIÓN)
        ========================================================================== */
     
-    // Vinculación basal de eventos a las geometrías (Clic y Arrastre)
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
-        // En lugar de bindPopup, capturamos el clic y creamos un L.popup "On the fly"
         capaFisica.on('click', () => abrirPopupDinamico(idSector, idFisico, false));
     }
 
-    // EL CONSTRUCTOR DE POPUPS (Totalmente Dinámico)
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
         const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         if(!registro) return;
@@ -452,28 +493,45 @@
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
-        // Si ya hay un popup abierto y es el mismo, solo actualizamos su contenido
         if(mapa._popup && mapa._popup._source === capaMapa) {
             mapa._popup.setContent(htmlContenido);
         } else {
-            // Generar nuevo popup desde cero
             const coords = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
             L.popup({ minWidth: 320, closeButton: false, className: modoLecturaGlobal ? 'readonly-mode' : '' })
                 .setLatLng(coords)
                 .setContent(htmlContenido)
                 .openOn(mapa);
             
-            // Linkear el popup a la capa para validaciones futuras
             mapa._popup._source = capaMapa; 
         }
     }
 
-    // EL GENERADOR DE STRINGS HTML (Separado para limpieza)
+    // FUNCIÓN SOLICITADA: Alternador de Vista (Doble Capa en Popup)
+    function alternarVistaPopup(idFisico, modo) {
+        let idSectorEncontrado = null;
+        for(let idSec in STORE) {
+            if(STORE[idSec].registros.find(r => r.idFisico === idFisico)) {
+                idSectorEncontrado = idSec;
+                break;
+            }
+        }
+        if(!idSectorEncontrado) return;
+        
+        const reg = STORE[idSectorEncontrado].registros.find(r => r.idFisico === idFisico);
+        reg._modoPopup = modo; // Actualizamos el estado interno del registro a 'lectura' o 'edicion'
+        
+        // Refrescamos in-situ el HTML del popup abierto
+        if(mapa._popup) {
+            mapa._popup.setContent(generarContenidoHTMLPopup(idSectorEncontrado, idFisico));
+        }
+    }
+
+    // EL GENERADOR DE STRINGS HTML CON LÓGICA DE DOBLE CAPA (SOLUCIÓN ERROR 2)
     function generarContenidoHTMLPopup(idSector, idFisico) {
         const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         let html = `<div class="pop-wrapper">`;
 
-        // SI ES POLÍGONO (AUDITORÍA)
+        // SI ES POLÍGONO (AUDITORÍA) - Esto se mantiene igual
         if(registro.tipoGeometria === 'polygon') {
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
@@ -485,15 +543,18 @@
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
             </div>`;
         } 
-        // SI ES MARCADOR (FICHA)
+        // SI ES MARCADOR (FICHA) - LÓGICA BIFURCADA LECTURA / EDICIÓN
         else {
             const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
-            // 3. SELECTOR DE COLOR INDIVIDUAL: Resolución de qué color usar para la UI del popup
             const colorFinal = registro.colorPersonalizado || confEst.color;
             const imgUrl = registro.datosGenerales["Link Fotografía"];
+            
+            // Verificamos en qué modo está el popup (por defecto lo empujamos a lectura si no existe)
+            const modoVistaActual = registro._modoPopup || 'lectura';
 
+            // PORTADA UNIVERSAL (Se ve en ambos modos)
             html += `
             <div class="pop-cover">
                 ${imgUrl && imgUrl.length > 10 ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
@@ -501,45 +562,67 @@
             </div>
             <div class="pop-content">`;
 
-            // Iterar Campos
-            for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
+            // --- VISTA DE LECTURA LIMPIA ---
+            if (modoVistaActual === 'lectura') {
+                for(let clave in registro.datosGenerales) {
+                    if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                    const isOculto = registro.camposOcultos.includes(clave);
+                    if(isOculto) continue; // Si es un campo sensible, no lo mostramos en lectura limpia
+                    
+                    html += `
+                    <div style="margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px;">
+                        <span class="form-label">${clave}</span>
+                        <div style="font-size: 13px; font-weight: 700; color: #000; word-break: break-word;">${registro.datosGenerales[clave] || '-'}</div>
+                    </div>`;
+                }
                 
-                const isOculto = registro.camposOcultos.includes(clave);
-                
+                // Botón para pasar al modo edición (siempre que no esté activado el Candado Maestro)
+                if(!modoLecturaGlobal) {
+                    html += `<button class="btn-popup-action btn-edit" onclick="alternarVistaPopup(${idFisico}, 'edicion')"><i class="fas fa-edit"></i> MODO EDICIÓN</button>`;
+                }
+            } 
+            // --- VISTA DE EDICIÓN PROFUNDA ---
+            else {
+                for(let clave in registro.datosGenerales) {
+                    if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                    
+                    const isOculto = registro.camposOcultos.includes(clave);
+                    
+                    html += `
+                    <div class="form-group">
+                        <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', ${idFisico}, '${clave}')"></i>
+                        <span class="form-label">${clave}</span>
+                        <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
+                               ${isOculto ? 'type="password"' : ''} 
+                               onchange="actualizarDatoCampo('${idSector}', ${idFisico}, '${clave}', this.value)">
+                    </div>`;
+                }
+
+                // Selectores y Color Personalizado Individual
                 html += `
+                <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
+                    <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
+                    <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', ${idFisico}, this.value)">
+                        ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 10px;">
+                    <span class="form-label" style="color: #111;">COLOR DE PINCHETA (PERSONALIZADO)</span>
+                    <input type="color" style="width: 100%; height: 32px; border: none; cursor: pointer; border-radius: 6px; background: transparent; padding: 0;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', ${idFisico}, this.value)">
+                </div>
+
                 <div class="form-group">
-                    <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', ${idFisico}, '${clave}')"></i>
-                    <span class="form-label">${clave}</span>
-                    <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
-                           ${isOculto ? 'type="password"' : ''} 
-                           onchange="actualizarDatoCampo('${idSector}', ${idFisico}, '${clave}', this.value)">
-                </div>`;
+                    <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
+                    <!-- El link de foto es ahora password ofuscado -->
+                    <input type="password" class="form-input input-oculto" value="${registro.datosGenerales['Link Fotografía'] || ''}" onchange="actualizarDatoCampo('${idSector}', ${idFisico}, 'Link Fotografía', this.value)">
+                </div>
+                
+                <!-- Controles Finales de la Vista Edición -->
+                <button class="btn-popup-action btn-save" onclick="alternarVistaPopup(${idFisico}, 'lectura')"><i class="fas fa-save"></i> GUARDAR Y VER</button>
+                <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR ESTE REGISTRO</button>
+                `;
             }
-
-            // Selectores y Botones
-            html += `
-            <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
-                <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
-                <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', ${idFisico}, this.value)">
-                    ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
-                </select>
-            </div>
-            
-            <!-- 3. SELECTOR DE COLOR INDIVIDUAL: Input renderizado aquí -->
-            <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 10px;">
-                <span class="form-label" style="color: #111;">COLOR DE PINCHETA (PERSONALIZADO)</span>
-                <input type="color" style="width: 100%; height: 32px; border: none; cursor: pointer; border-radius: 6px; background: transparent; padding: 0;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', ${idFisico}, this.value)">
-            </div>
-
-            <div class="form-group">
-                <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
-                <!-- 5. PRIVACIDAD DE URLs: Modificado a type="password" y añadida clase input-oculto -->
-                <input type="password" class="form-input input-oculto" value="${registro.datosGenerales['Link Fotografía'] || ''}" onchange="actualizarDatoCampo('${idSector}', ${idFisico}, 'Link Fotografía', this.value)">
-            </div>
-            
-            <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR ESTE REGISTRO</button>
-            `;
         }
         
         html += `</div></div>`;
@@ -548,7 +631,6 @@
 
     // --- Controladores de Interacción del Popup ---
     
-    // 3. SELECTOR DE COLOR INDIVIDUAL: Función de cambio y asignación
     function cambiarColorPin(idSector, idFisico, colorHex) {
         if(modoLecturaGlobal) return;
         const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
@@ -556,12 +638,10 @@
         
         reg.colorPersonalizado = colorHex;
         
-        // Reflejar inmediatamente en Leaflet
         if(reg.tipoGeometria === 'marker') {
             reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
         }
         
-        // Refrescar HTML inyectado del popup sin destruirlo
         if(mapa._popup) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
     }
 
@@ -574,15 +654,13 @@
         if(idx > -1) reg.camposOcultos.splice(idx, 1);
         else reg.camposOcultos.push(claveCampo);
 
-        // Regeneramos el HTML y lo inyectamos en el popup abierto SIN cerrarlo
         const nuevoHTML = generarContenidoHTMLPopup(idSector, idFisico);
         if(mapa._popup) mapa._popup.setContent(nuevoHTML);
     }
 
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
         STORE[idSector].registros.find(r => r.idFisico === idFisico).datosGenerales[clave] = valor;
-        actualizarUIYMapa(); // Refresca UI
-        // Si actualizó foto, refresca el popup vivo
+        actualizarUIYMapa(); 
         if(clave === 'Link Fotografía' && mapa._popup) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
     }
 
@@ -590,7 +668,6 @@
         const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         reg.datosGenerales["Estatus"] = nuevoEst;
         
-        // 3. SELECTOR DE COLOR INDIVIDUAL: Usar color estatus SOLO si no hay personalizado
         const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
         const colorAUsar = reg.colorPersonalizado || conf.color;
         
@@ -615,7 +692,7 @@
         if(modoLecturaGlobal) {
             bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
             bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
-            if(mapa._popup) mapa.closePopup(); // Cierra popups abiertos para refrescar estilos
+            if(mapa._popup) mapa.closePopup(); 
         } else {
             bMarker.style.opacity = "1"; bMarker.style.pointerEvents = "auto";
             bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
@@ -629,7 +706,6 @@
 
     function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
     
-    // 4. PERSISTENCIA DE VISIBILIDAD: Aquí definimos al boolean true/false permanentemente
     function toggleVisibilidadCapa(idSector, isVisible) { 
         STORE[idSector].visible = isVisible; 
         actualizarUIYMapa(); 
@@ -649,8 +725,8 @@
         if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
         if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
         
-        mapa.removeLayer(STORE[idSector].grupoFisico); // Purga de Leaflet
-        delete STORE[idSector]; // Purga de RAM
+        mapa.removeLayer(STORE[idSector].grupoFisico); 
+        delete STORE[idSector]; 
         if(capaActivaId === idSector) capaActivaId = null;
         actualizarUIYMapa();
     }
@@ -659,11 +735,9 @@
         if(modoLecturaGlobal) return;
         if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
         
-        // 1. Quitar del grupo Leaflet
         const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         STORE[idSector].grupoFisico.removeLayer(reg.capaLeaflet);
         
-        // 2. Quitar del array
         STORE[idSector].registros = STORE[idSector].registros.filter(r => r.idFisico !== idFisico);
         
         mapa.closePopup();
@@ -695,7 +769,7 @@
 
 
     /* ==========================================================================
-       FASE 5: MÓDULO DE IMPORTACIÓN MEJORADO
+       FASE 5: MÓDULO DE IMPORTACIÓN (INTACTO)
        ========================================================================== */
        
     function abrirModalImportacion() { document.getElementById('modal-importar').style.display = 'flex'; }
@@ -714,7 +788,6 @@
             if(!resp.ok) throw new Error("Sin acceso");
             const txt = await resp.text();
             
-            // Separador CSV inteligente para comas dentro de comillas
             const rows = txt.split('\n').map(l => l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
             cacheCSV.cabeceras = rows[0];
             cacheCSV.data = rows.slice(1).filter(r => r.length >= cacheCSV.cabeceras.length);
@@ -775,25 +848,21 @@
                         const mark = L.marker([lat, lng], { icon: crearPinFiscal(colHex), draggable: true });
                         grpFisico.addLayer(mark);
                         
-                        // Eventos para el nuevo marcador
                         mark.on('dragend', () => actualizarUIYMapa());
                         const idM = L.stamp(mark);
                         vincularEventosCapa(mark, idNuevo, idM);
 
-                        // Mapeo Data General
                         let dg = {
                             "Contribuyente": diccionario[cNo] || "SIN REGISTRO",
                             "Estatus": estReal,
                             "Link Fotografía": cIm !== "NONE" ? (diccionario[cIm] || "") : ""
                         };
                         
-                        // Añadir extra
                         for(let k in diccionario) {
                             if(k !== cCo && k !== cNo && k !== cEs && k !== cIm) dg[k] = diccionario[k];
                         }
 
-                        // 3. SELECTOR DE COLOR INDIVIDUAL: Añadir llave nula en inyecciones masivas
-                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, datosGenerales: dg, camposOcultos: [] });
+                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, _modoPopup: 'lectura', datosGenerales: dg, camposOcultos: [] });
                     } else fails++;
                 } else fails++;
             } else fails++;
@@ -812,10 +881,7 @@
        FASE 6: EXPORTACIÓN
        ========================================================================== */
     function exportarBaseDatos() {
-        // 4. PERSISTENCIA DE VISIBILIDAD: Al serializar todo STORE, las propiedades "visible: true/false"
-        // y la nueva "colorPersonalizado: #hex" se incrustan nativamente al archivo JSON y persisten.
         const payload = JSON.stringify(STORE, (key, val) => {
-            // Ignorar los objetos crudos de Leaflet para que el JSON sea texto plano
             if(key === 'grupoFisico' || key === 'capaLeaflet') return undefined; 
             return val;
         }, 2);
@@ -827,7 +893,6 @@
         a.click();
     }
 
-    // Arranque Inicial
     actualizarUIYMapa();
 </script>
 </body>
