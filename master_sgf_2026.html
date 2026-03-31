@@ -66,7 +66,7 @@
         #sidebar { top: 95px; left: 15px; bottom: 20px; width: 420px; display: flex; flex-direction: column; border-top: 5px solid var(--color-temporal); }
         .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
         
-        /* 1. IDENTIDAD CORPORATIVA: Sidebar Header */
+        /* IDENTIDAD CORPORATIVA: Sidebar Header */
         .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
         .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; }
         
@@ -105,7 +105,7 @@
         .status-count { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px; font-size: 10px; }
 
         .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
-        .local-row { padding: 8px 16px 8px 36px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .local-row { padding: 8px 16px 8px 24px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
         .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
         .sidebar-footer { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
@@ -305,7 +305,8 @@
             tipoGeometria: evento.layerType,
             capaLeaflet: evento.layer,
             colorPersonalizado: null, 
-            _modoPopup: 'edicion', // <-- NUEVO: Los registros nuevos abren directo en modo edición
+            _modoPopup: 'edicion',
+            visibleIndividual: true, // CAMBIO 2: Estado de visibilidad independiente en el Árbol
             datosGenerales: { 
                 "Contribuyente": "NUEVO ESTABLECIMIENTO", 
                 "RIF": "J-00000000-0",
@@ -327,18 +328,22 @@
         setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
     });
 
-    /* ==========================================================================
-       NUEVAS FUNCIONES MAESTRAS (ERRORES 1 Y 3 SOLUCIONADOS)
-       ========================================================================== */
-       
-    // FUNCIÓN SOLICITADA: Actualizar Nombre del Sector desde el Input
+    // FUNCIÓN DE ÁRBOL: Apagar/Encender contribuyentes individuales
+    function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
+        const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        if(reg) {
+            reg.visibleIndividual = isVisible;
+            actualizarUIYMapa();
+        }
+    }
+
+    // Funciones Maestras Sector
     function actualizarNombreSector(id, valor) {
         if(!STORE[id]) return;
         STORE[id].nombreSector = valor.toUpperCase();
         actualizarUIYMapa();
     }
 
-    // FUNCIÓN SOLICITADA: Cambiar el Color de TODO el bloque/sector
     function cambiarColorBloque(idSector, color) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
@@ -351,7 +356,6 @@
         });
         
         actualizarUIYMapa();
-        // Si hay un popup abierto de este sector, lo actualizamos para que refleje el nuevo color visualmente
         if (mapa._popup && mapa._popup._source) {
             const idFisicoPopup = L.stamp(mapa._popup._source);
             const exists = STORE[idSector].registros.find(r => r.idFisico === idFisicoPopup);
@@ -361,27 +365,40 @@
 
 
     /* ==========================================================================
-       FASE 2: EL MOTOR STATE-DRIVEN (RENDERIZADO FÍSICO Y LÓGICO)
+       FASE 2: EL MOTOR STATE-DRIVEN (MODIFICADO: GESTIÓN DE CAPAS INTELIGENTE)
        ========================================================================== */
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
         contenedor.innerHTML = "";
         
-        for(let id in STORE) {
-            if(mapa.hasLayer(STORE[id].grupoFisico)) {
-                mapa.removeLayer(STORE[id].grupoFisico);
-            }
-            STORE[id].grupoFisico.clearLayers(); 
-        }
-
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
             const gruposPorEstatus = {};
             let hayResultadosBusqueda = false;
 
+            // CAMBIO 1: INDEPENDENCIA DE CAPAS - Gestionar adición/eliminación del Grupo principal con Leaflet
+            if (sectorData.visible && !mapa.hasLayer(sectorData.grupoFisico)) {
+                mapa.addLayer(sectorData.grupoFisico);
+            } else if (!sectorData.visible && mapa.hasLayer(sectorData.grupoFisico)) {
+                mapa.removeLayer(sectorData.grupoFisico);
+            }
+
             sectorData.registros.forEach(reg => {
+                // Prevenir fallos en datos viejos
+                if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+
+                // CAMBIO 1: GESTIÓN INTELIGENTE - Sólo quitar/poner los marcadores necesarios SIN destruir todo
+                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && cumpleFiltro;
+                const hasLayer = sectorData.grupoFisico.hasLayer(reg.capaLeaflet);
+
+                if (isPhysicallyVisible && !hasLayer) {
+                    sectorData.grupoFisico.addLayer(reg.capaLeaflet);
+                } else if (!isPhysicallyVisible && hasLayer) {
+                    sectorData.grupoFisico.removeLayer(reg.capaLeaflet);
+                }
 
                 if(cumpleFiltro) {
                     hayResultadosBusqueda = true;
@@ -390,28 +407,21 @@
                     if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
                     gruposPorEstatus[estatus].conteo++;
                     gruposPorEstatus[estatus].lista.push(reg);
-
-                    if(sectorData.visible) {
-                        sectorData.grupoFisico.addLayer(reg.capaLeaflet);
-                    }
                 }
             });
 
-            if(sectorData.visible) mapa.addLayer(sectorData.grupoFisico);
-
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
-            // CONSTRUCCIÓN DEL PANEL (Modificaciones Errores 1 y 3 integradas)
+            // CONSTRUCCIÓN DEL PANEL
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
                 <div class="sector-header">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
                                ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
-                        <input type="checkbox" class="check-visible" title="Mostrar/Ocultar del Mapa"
+                        <input type="checkbox" class="check-visible" title="Mostrar/Ocultar todo el Sector"
                                ${sectorData.visible ? 'checked' : ''} onchange="toggleVisibilidadCapa('${idSector}', this.checked)">
                         
-                        <!-- 1. SOLUCIÓN: Input para editar nombre del sector -->
                         <input type="text" value="${sectorData.nombreSector}" 
                                title="Doble clic para enfocar sector en el mapa"
                                ondblclick="enfocarSector('${idSector}')"
@@ -420,7 +430,6 @@
                     </div>
                     
                     <div class="sector-controls">
-                        <!-- 3. SOLUCIÓN: Input de Color Masivo para todo el sector -->
                         <input type="color" title="Color Global del Sector" 
                                onchange="cambiarColorBloque('${idSector}', this.value)" 
                                style="width: 20px; height: 20px; border: none; cursor: pointer; background: transparent; padding: 0;">
@@ -444,14 +453,17 @@
                     </div>
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
+                // CAMBIO 2: Checkbox Individual en el Árbol
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', ${local.idFisico}, true)">
                             <div style="flex:1; display:flex; align-items:center; gap:8px;">
+                                <input type="checkbox" title="Ocultar individualmente" 
+                                       ${local.visibleIndividual ? 'checked' : ''} 
+                                       onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', ${local.idFisico}, this.checked)">
                                 <i class="fas fa-caret-right" style="opacity:0.5"></i> 
                                 ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                             </div>
-                            <!-- 3. SOLUCIÓN: Botón de eliminación individual desde el menú lateral -->
                             <i class="fas fa-trash sector-trash" style="font-size:11px;" title="Borrar Registro" onclick="event.stopPropagation(); borrarRegistroIndividual('${idSector}', ${local.idFisico})"></i>
                         </div>`;
                 });
@@ -493,6 +505,7 @@
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
+        // CAMBIO 3: POPUP PERSISTENTE. Actualiza el contenido en lugar de destruirlo
         if(mapa._popup && mapa._popup._source === capaMapa) {
             mapa._popup.setContent(htmlContenido);
         } else {
@@ -506,7 +519,7 @@
         }
     }
 
-    // FUNCIÓN SOLICITADA: Alternador de Vista (Doble Capa en Popup)
+    // Alternador de Vista (Doble Capa en Popup)
     function alternarVistaPopup(idFisico, modo) {
         let idSectorEncontrado = null;
         for(let idSec in STORE) {
@@ -518,20 +531,19 @@
         if(!idSectorEncontrado) return;
         
         const reg = STORE[idSectorEncontrado].registros.find(r => r.idFisico === idFisico);
-        reg._modoPopup = modo; // Actualizamos el estado interno del registro a 'lectura' o 'edicion'
+        reg._modoPopup = modo;
         
-        // Refrescamos in-situ el HTML del popup abierto
         if(mapa._popup) {
             mapa._popup.setContent(generarContenidoHTMLPopup(idSectorEncontrado, idFisico));
         }
     }
 
-    // EL GENERADOR DE STRINGS HTML CON LÓGICA DE DOBLE CAPA (SOLUCIÓN ERROR 2)
+    // EL GENERADOR DE STRINGS HTML CON LÓGICA DE DOBLE CAPA
     function generarContenidoHTMLPopup(idSector, idFisico) {
         const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         let html = `<div class="pop-wrapper">`;
 
-        // SI ES POLÍGONO (AUDITORÍA) - Esto se mantiene igual
+        // SI ES POLÍGONO (AUDITORÍA)
         if(registro.tipoGeometria === 'polygon') {
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
@@ -551,10 +563,9 @@
             const colorFinal = registro.colorPersonalizado || confEst.color;
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
-            // Verificamos en qué modo está el popup (por defecto lo empujamos a lectura si no existe)
             const modoVistaActual = registro._modoPopup || 'lectura';
 
-            // PORTADA UNIVERSAL (Se ve en ambos modos)
+            // PORTADA UNIVERSAL
             html += `
             <div class="pop-cover">
                 ${imgUrl && imgUrl.length > 10 ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
@@ -567,7 +578,7 @@
                 for(let clave in registro.datosGenerales) {
                     if(clave === "Estatus" || clave === "Link Fotografía") continue;
                     const isOculto = registro.camposOcultos.includes(clave);
-                    if(isOculto) continue; // Si es un campo sensible, no lo mostramos en lectura limpia
+                    if(isOculto) continue; 
                     
                     html += `
                     <div style="margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px;">
@@ -576,7 +587,6 @@
                     </div>`;
                 }
                 
-                // Botón para pasar al modo edición (siempre que no esté activado el Candado Maestro)
                 if(!modoLecturaGlobal) {
                     html += `<button class="btn-popup-action btn-edit" onclick="alternarVistaPopup(${idFisico}, 'edicion')"><i class="fas fa-edit"></i> MODO EDICIÓN</button>`;
                 }
@@ -598,7 +608,6 @@
                     </div>`;
                 }
 
-                // Selectores y Color Personalizado Individual
                 html += `
                 <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
                     <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
@@ -614,11 +623,9 @@
 
                 <div class="form-group">
                     <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
-                    <!-- El link de foto es ahora password ofuscado -->
                     <input type="password" class="form-input input-oculto" value="${registro.datosGenerales['Link Fotografía'] || ''}" onchange="actualizarDatoCampo('${idSector}', ${idFisico}, 'Link Fotografía', this.value)">
                 </div>
                 
-                <!-- Controles Finales de la Vista Edición -->
                 <button class="btn-popup-action btn-save" onclick="alternarVistaPopup(${idFisico}, 'lectura')"><i class="fas fa-save"></i> GUARDAR Y VER</button>
                 <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR ESTE REGISTRO</button>
                 `;
@@ -661,7 +668,7 @@
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
         STORE[idSector].registros.find(r => r.idFisico === idFisico).datosGenerales[clave] = valor;
         actualizarUIYMapa(); 
-        if(clave === 'Link Fotografía' && mapa._popup) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
+        if(mapa._popup) mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
     }
 
     function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
@@ -736,7 +743,9 @@
         if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
         
         const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
-        STORE[idSector].grupoFisico.removeLayer(reg.capaLeaflet);
+        if(reg && STORE[idSector].grupoFisico.hasLayer(reg.capaLeaflet)) {
+            STORE[idSector].grupoFisico.removeLayer(reg.capaLeaflet);
+        }
         
         STORE[idSector].registros = STORE[idSector].registros.filter(r => r.idFisico !== idFisico);
         
@@ -862,7 +871,8 @@
                             if(k !== cCo && k !== cNo && k !== cEs && k !== cIm) dg[k] = diccionario[k];
                         }
 
-                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, _modoPopup: 'lectura', datosGenerales: dg, camposOcultos: [] });
+                        // CAMBIO 2: Inyección masiva incluye visibleIndividual
+                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, _modoPopup: 'lectura', visibleIndividual: true, datosGenerales: dg, camposOcultos: [] });
                     } else fails++;
                 } else fails++;
             } else fails++;
