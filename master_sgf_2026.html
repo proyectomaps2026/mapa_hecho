@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
+    <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
     <style>
         /* ==========================================================================
            1. VARIABLES MAESTRAS Y RESETEO (UI CORPORATIVA MUNICIPAL)
@@ -682,28 +685,43 @@
 </head>
 <body>
 
-<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB) -->
+<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
 <div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
-    <div class="glass-panel modal-box" style="text-align: center; width: 400px;">
-        <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
-        <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
-        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
         
-        <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-        <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema">
-        
-        <div id="github-credentials" style="display: none;">
-            <p style="font-size: 10px; color: var(--color-temporal); margin-bottom: 10px;">Requiere vinculación con GitHub</p>
-            <input type="text" id="login-repo-owner" class="modal-input" placeholder="Usuario GitHub (Propietario Repo)">
-            <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
+        <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
+        <div id="login-form-container">
+            <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
+            <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
+            <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+            
+            <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
+            <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema">
+            
+            <div id="github-credentials" style="display: none;">
+                <p style="font-size: 10px; color: var(--color-temporal); margin-bottom: 10px;">Requiere vinculación con GitHub</p>
+                <input type="text" id="login-repo-owner" class="modal-input" placeholder="Usuario GitHub (Propietario Repo)">
+                <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
+            </div>
+
+            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
+            
+            <div style="margin-top: 15px;">
+                <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
+            </div>
         </div>
 
-        <button class="btn btn-save" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
-        
-        <!-- BOTÓN RECUPERAR CORREO -->
-        <div style="margin-top: 15px;">
-            <span style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="recuperarAcceso()">¿Olvidó sus datos?</span>
+        <!-- CONTENEDOR 2: MENSAJE DE ÉXITO DE CORREO -->
+        <div id="recovery-success-container" style="display: none;">
+            <i class="fas fa-envelope-circle-check" style="font-size: 50px; color: var(--color-vigente); margin-bottom: 20px;"></i>
+            <h2 class="modal-title" style="color: var(--color-vigente); font-size: 20px;">¡CORREO ENVIADO CON ÉXITO!</h2>
+            <p style="font-size: 12px; color: #f0f3f6; line-height: 1.6; margin-bottom: 30px;">
+                Se han enviado sus credenciales de seguridad al correo vinculado del Administrador de Hacienda.<br><br>
+                <span style="color: var(--color-temporal); font-weight: bold;">Revise su bandeja de entrada (y carpeta de Spam).</span>
+            </p>
+            <button class="btn btn-outline" style="width: 100%; padding: 15px;" onclick="volverAlLogin()">REGRESAR AL LOGIN</button>
         </div>
+
     </div>
 </div>
 
@@ -758,10 +776,23 @@
             <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
             <i class="fas fa-chevron-down"></i>
         </div>
-        <div id="ajustes-cuenta" style="display: none;">
+        <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
             <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario">
             <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave">
             <button class="btn btn-save" style="width: 100%; padding: 8px; font-size: 10px;" onclick="cambiarCredenciales()">ACTUALIZAR Y GUARDAR NUBE</button>
+        </div>
+    </div>
+
+    <!-- MÓDULO DE CONFIGURACIÓN DE SERVIDOR (NUEVO) -->
+    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
+        <div style="font-size: 11px; font-weight: 800; color: var(--color-temporal); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
+            <span><i class="fas fa-server"></i> CONFIG. DE SERVIDOR</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
+            <input type="text" id="ajuste-repo-owner" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Usuario GitHub">
+            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token GitHub (ghp_...)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarConfiguracionServidor()">GUARDAR TOKEN LOCAL</button>
         </div>
     </div>
 
@@ -816,8 +847,18 @@
 
 <script>
     /* ==========================================================================
-       FASE 0: VARIABLES DE GITHUB API Y SEGURIDAD
+       FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD
        ========================================================================== */
+    // CREDENCIALES EMAILJS (Reemplazar con tus datos reales de emailjs.com)
+    const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY"; 
+    const EMAILJS_SERVICE_ID = "TU_SERVICE_ID";
+    const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID";
+
+    // Inicializar EmailJS
+    (function(){
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+    })();
+
     const REPO_NAME = 'proyectomaps2026';
     const FILE_PATH = 'config.json';
     let fileSha = null;
@@ -1677,11 +1718,34 @@
        ========================================================================== */
     
     // Función de recuperación (Botón de pánico/correo)
-    function recuperarAcceso() {
-        const fecha = new Date().toLocaleString();
-        const asunto = encodeURIComponent("RECUPERACIÓN DE ACCESO - HACIENDA AYACUCHO");
-        const cuerpo = encodeURIComponent(`Solicitud de recuperación de credenciales de sistema.\n\nFecha y Hora del intento: ${fecha}\n\nPor favor, envíeme las instrucciones para restablecer mi acceso administrativo.`);
-        window.location.href = `mailto:proyecto.maps2026@gmail.com?subject=${asunto}&body=${cuerpo}`;
+    function enviarCredenciales() {
+        const btnOlvidar = document.getElementById('btn-olvido');
+        const originalText = btnOlvidar.innerText;
+        btnOlvidar.innerText = "ENVIANDO CORREO...";
+        
+        const parametros_plantilla = {
+            usuario: SYSTEM_AUTH.user,
+            clave: SYSTEM_AUTH.pass,
+            fecha: new Date().toLocaleString()
+        };
+
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, parametros_plantilla)
+        .then(function() {
+            document.getElementById('login-form-container').style.display = 'none';
+            document.getElementById('recovery-success-container').style.display = 'block';
+            btnOlvidar.innerText = originalText;
+        }, function(error) {
+            console.error("Error EmailJS:", error);
+            alert("Hubo un error al intentar enviar el correo. Por favor verifique la configuración de EmailJS o intente de nuevo más tarde.");
+            btnOlvidar.innerText = originalText;
+        });
+    }
+    
+    function volverAlLogin() {
+        document.getElementById('recovery-success-container').style.display = 'none';
+        document.getElementById('login-form-container').style.display = 'block';
+        document.getElementById('login-user').value = '';
+        document.getElementById('login-pass').value = '';
     }
 
     // Módulo Sidebar para cambio de credenciales
@@ -1702,10 +1766,36 @@
         guardarEnServidor();
     }
     
+    // Módulo Sidebar Config Servidor
+    function toggleConfigServidor() {
+        const div = document.getElementById('ajustes-servidor');
+        if (div.style.display === 'none') {
+            div.style.display = 'block';
+            document.getElementById('ajuste-repo-owner').value = localStorage.getItem('github_owner') || '';
+            document.getElementById('ajuste-repo-token').value = localStorage.getItem('github_token') || '';
+        } else {
+            div.style.display = 'none';
+        }
+    }
+    
+    function guardarConfiguracionServidor() {
+        const owner = document.getElementById('ajuste-repo-owner').value.trim();
+        const token = document.getElementById('ajuste-repo-token').value.trim();
+        if(!owner || !token) return alert("Ingrese ambos campos para la configuración del servidor.");
+        
+        localStorage.setItem('github_owner', owner);
+        localStorage.setItem('github_token', token);
+        alert("Configuración de Servidor guardada localmente.");
+    }
+    
     async function intentarLogin() {
         const u = document.getElementById('login-user').value;
         const p = document.getElementById('login-pass').value;
         
+        if (u !== 'hacienda' || p !== 'admin2026') {
+            return alert("Credenciales de sistema inválidas. \n\n(Pista: hacienda / admin2026)");
+        }
+
         const tokenInput = document.getElementById('login-token').value;
         const ownerInput = document.getElementById('login-repo-owner').value;
 
@@ -1724,7 +1814,7 @@
             return alert("Para conectar por primera vez, ingrese los datos de sincronización de GitHub.");
         }
 
-        const btnAuth = document.getElementById('login-overlay').querySelector('.btn-save');
+        const btnAuth = document.getElementById('btn-autenticar');
         const oldText = btnAuth.innerText;
         btnAuth.innerText = "VERIFICANDO EN NUBE...";
 
