@@ -682,17 +682,23 @@
 </head>
 <body>
 
-<!-- OVERLAY DE SEGURIDAD (AUTO-LOGIN / GITHUB) -->
+<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB) -->
 <div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
     <div class="glass-panel modal-box" style="text-align: center; width: 400px;">
         <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
         <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
         <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+        
         <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema (ej: hacienda)">
         <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema (ej: admin2026)">
-        <input type="text" id="login-repo-owner" class="modal-input" placeholder="Usuario GitHub (Propietario Repo)">
-        <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
-        <button class="btn btn-save" style="width: 100%; padding: 15px;" onclick="iniciarSesion()">AUTENTICAR</button>
+        
+        <div id="github-credentials" style="display: none;">
+            <p style="font-size: 10px; color: var(--color-temporal); margin-bottom: 10px;">Requiere vinculación con GitHub</p>
+            <input type="text" id="login-repo-owner" class="modal-input" placeholder="Usuario GitHub (Propietario Repo)">
+            <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
+        </div>
+
+        <button class="btn btn-save" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
     </div>
 </div>
 
@@ -749,7 +755,7 @@
             <i class="fas fa-database"></i> IMPORTAR RAW
         </button>
         
-        <!-- BOTÓN DE CERRAR SESIÓN -->
+        <!-- BOTÓN DE CERRAR SESIÓN (BOTÓN DE PÁNICO) -->
         <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 2; border-color: var(--color-vencida); color: var(--color-vencida); margin-top: 5px;">
             <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
         </button>
@@ -1645,58 +1651,72 @@
        FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API
        ========================================================================== */
     
-    async function verificarSesion() {
-        const token = localStorage.getItem('github_token');
-        const owner = localStorage.getItem('github_owner');
-
-        if(token && owner) {
-            const btnAuth = document.getElementById('login-overlay').querySelector('.btn-save');
-            btnAuth.innerText = "VERIFICANDO...";
-            
-            try {
-                const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                
-                if(res.ok) {
-                    const data = await res.json();
-                    fileSha = data.sha;
-                    // Decodificar Base64 respetando tildes y caracteres latinos
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    reconstruirDesdeJSON(JSON.parse(decodedContent));
-                    
-                    document.getElementById('login-overlay').style.display = 'none';
-                } else if (res.status === 404) {
-                    // El archivo no existe aún, pero el token podría ser válido para crearlo luego.
-                    document.getElementById('login-overlay').style.display = 'none';
-                    actualizarUIYMapa();
-                } else {
-                    throw new Error("Token inválido o expirado");
-                }
-            } catch(e) {
-                console.error(e);
-                localStorage.clear();
-                document.getElementById('login-overlay').style.display = 'flex';
-                btnAuth.innerText = "AUTENTICAR";
-            }
-        } else {
-            document.getElementById('login-overlay').style.display = 'flex';
-        }
-    }
-
-    function iniciarSesion() {
+    async function intentarLogin() {
         const u = document.getElementById('login-user').value;
         const p = document.getElementById('login-pass').value;
-        const o = document.getElementById('login-repo-owner').value;
-        const t = document.getElementById('login-token').value;
+        
+        if (u !== 'hacienda' || p !== 'admin2026') {
+            return alert("Credenciales de sistema inválidas. \n\n(Pista: hacienda / admin2026)");
+        }
 
-        // Validación Básica (Modificable según el entorno)
-        if(u === 'hacienda' && p === 'admin2026' && o && t) { 
-            localStorage.setItem('github_token', t);
-            localStorage.setItem('github_owner', o);
-            verificarSesion();
-        } else {
-            alert("Credenciales inválidas o campos incompletos. \n\n(Pista: hacienda / admin2026)");
+        const tokenInput = document.getElementById('login-token').value;
+        const ownerInput = document.getElementById('login-repo-owner').value;
+
+        let token = localStorage.getItem('github_token');
+        let owner = localStorage.getItem('github_owner');
+
+        // Si el usuario escribió un token nuevo, úsalo en vez del guardado
+        if (tokenInput && ownerInput) {
+            token = tokenInput;
+            owner = ownerInput;
+        }
+
+        // Si no hay token en caché ni en el input, muestra los campos de Github
+        if (!token || !owner) {
+            document.getElementById('github-credentials').style.display = 'block';
+            return alert("Por favor, ingrese los datos de GitHub para sincronizar con la nube.");
+        }
+
+        const btnAuth = document.getElementById('login-overlay').querySelector('.btn-save');
+        const oldText = btnAuth.innerText;
+        btnAuth.innerText = "VERIFICANDO...";
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                fileSha = data.sha;
+                // Decodificar Base64 respetando tildes y caracteres latinos
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                reconstruirDesdeJSON(JSON.parse(decodedContent));
+                
+                // Guardar la llave válida
+                localStorage.setItem('github_token', token);
+                localStorage.setItem('github_owner', owner);
+                
+                document.getElementById('login-overlay').style.display = 'none';
+            } else if (res.status === 404) {
+                // El repo existe pero el archivo config.json aún no. Es válido para iniciar desde cero.
+                localStorage.setItem('github_token', token);
+                localStorage.setItem('github_owner', owner);
+                document.getElementById('login-overlay').style.display = 'none';
+                actualizarUIYMapa();
+            } else if (res.status === 401 || res.status === 403) {
+                throw new Error("Token inválido o expirado");
+            } else {
+                throw new Error("Error de conexión con GitHub");
+            }
+        } catch(e) {
+            console.error(e);
+            localStorage.removeItem('github_token');
+            localStorage.removeItem('github_owner');
+            document.getElementById('github-credentials').style.display = 'block';
+            alert("El token de GitHub es inválido o expiró. Ingréselo nuevamente.");
+        } finally {
+            btnAuth.innerText = oldText;
         }
     }
 
@@ -1824,7 +1844,19 @@
     }
 
     // ARRANQUE INICIAL DEL SISTEMA
-    verificarSesion();
+    function initSecurity() {
+        // Bloqueo Obligatorio Inicial
+        document.getElementById('login-overlay').style.display = 'flex';
+        const token = localStorage.getItem('github_token');
+        const owner = localStorage.getItem('github_owner');
+        
+        // Si no hay persistencia parcial, revelar los campos de GitHub para sincronización
+        if (!token || !owner) {
+            document.getElementById('github-credentials').style.display = 'block';
+        }
+    }
+    
+    initSecurity();
 
 </script>
 </body>
