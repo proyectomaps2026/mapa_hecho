@@ -323,6 +323,31 @@
             background: var(--cyan-neon); 
             border-radius: 50%; 
         }
+        
+        .check-visible { 
+            appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #6e7681; 
+            border-radius: 4px; 
+            outline: none; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        
+        .check-visible:checked { 
+            background: var(--color-vigente); 
+            border-color: var(--color-vigente); 
+        }
+        
+        .check-visible:checked::after { 
+            content: '✔'; 
+            position: absolute; 
+            color: white; 
+            font-size: 10px; 
+            top: -1px; 
+            left: 2px; 
+        }
 
         .sector-title { 
             font-size: 13px; 
@@ -657,6 +682,20 @@
 </head>
 <body>
 
+<!-- OVERLAY DE SEGURIDAD (AUTO-LOGIN / GITHUB) -->
+<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+    <div class="glass-panel modal-box" style="text-align: center; width: 400px;">
+        <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
+        <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+        <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema (ej: hacienda)">
+        <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema (ej: admin2026)">
+        <input type="text" id="login-repo-owner" class="modal-input" placeholder="Usuario GitHub (Propietario Repo)">
+        <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
+        <button class="btn btn-save" style="width: 100%; padding: 15px;" onclick="iniciarSesion()">AUTENTICAR</button>
+    </div>
+</div>
+
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
@@ -680,6 +719,12 @@
         <button class="btn tool-btn" id="btn-draw-poly" title="Auditar Área" onclick="activarHerramienta('poligono')">
             <i class="fas fa-draw-polygon"></i>
         </button>
+        
+        <!-- BOTÓN GUARDAR NUBE (GITHUB API) -->
+        <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
+            <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
+        </button>
+
         <button class="btn tool-btn" title="Descargar Respaldo JSON" onclick="exportarBaseDatos()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white;">
             <i class="fas fa-download" style="margin-right: 8px;"></i> RESPALDO JSON
         </button>
@@ -702,6 +747,11 @@
         </button>
         <button class="btn btn-solid-yellow" onclick="abrirModalImportacion()">
             <i class="fas fa-database"></i> IMPORTAR RAW
+        </button>
+        
+        <!-- BOTÓN DE CERRAR SESIÓN -->
+        <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 2; border-color: var(--color-vencida); color: var(--color-vencida); margin-top: 5px;">
+            <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
         </button>
     </div>
 </aside>
@@ -741,6 +791,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
+    /* ==========================================================================
+       FASE 0: VARIABLES DE GITHUB API Y SEGURIDAD
+       ========================================================================== */
+    const REPO_NAME = 'proyectomaps2026';
+    const FILE_PATH = 'config.json';
+    let fileSha = null;
+
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
        ========================================================================== */
@@ -1143,10 +1200,13 @@
             
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
-            // PORTADA UNIVERSAL HACIENDA MUNICIPAL
+            // Verificamos si la foto está oculta (CASCADA)
+            const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
+            
+            // PORTADA UNIVERSAL HACIENDA MUNICIPAL (Respeta el Ojito de Link Fotografía)
             html += `
             <div class="pop-cover">
-                ${imgUrl && imgUrl.length > 10 ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
                 <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
             </div>
             <div class="pop-content">`;
@@ -1204,8 +1264,9 @@
             </div>
 
             <div class="form-group">
+                <i class="fas ${isFotoOculta ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', 'Link Fotografía')"></i>
                 <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
-                <input type="password" class="form-input input-oculto" value="${registro.datosGenerales['Link Fotografía'] || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
+                <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
             </div>
             
             <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>
@@ -1221,18 +1282,30 @@
     
     function cambiarColorPin(idSector, idFisico, colorHex) {
         if(modoLecturaGlobal) return;
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!reg) return;
-        
-        reg.colorPersonalizado = colorHex;
-        
-        if (reg.tipoGeometria === 'marker') {
-            reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-            reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-        }
+        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!regOrigen) return;
 
-        // Actualizar visualmente la placa del estatus en el HTML estático sin cerrar popup
+        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+
+        // SINCRONIZACIÓN EN CASCADA: Guardar en la configuración del sector
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
+
+        // Aplicar a todos los registros de la misma categoría en este sector
+        STORE[idSector].registros.forEach(reg => {
+            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            if (estActual === estatusTarget) {
+                reg.colorPersonalizado = colorHex;
+                if (reg.tipoGeometria === 'marker') {
+                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+                }
+            }
+        });
+
+        // Refresco visual y HTML estático
+        actualizarUIYMapa();
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) badge.style.background = colorHex;
     }
@@ -1241,14 +1314,36 @@
         eventoClick.stopPropagation(); 
         if(modoLecturaGlobal) return;
 
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        const idx = reg.camposOcultos.indexOf(claveCampo);
-        if(idx > -1) reg.camposOcultos.splice(idx, 1);
-        else reg.camposOcultos.push(claveCampo);
+        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!regOrigen) return;
 
-        // Si se cambia visibilidad (ojo), refrescamos rápido y volvemos a vista de edición
-        const capaMapa = reg.capaLeaflet;
-        capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
+        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
+
+        // SINCRONIZACIÓN EN CASCADA: Aplicar a todos los de la misma categoría
+        STORE[idSector].registros.forEach(reg => {
+            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            if (estActual === estatusTarget) {
+                if (isCurrentlyHidden) {
+                    // Lo mostramos (lo quitamos de camposOcultos)
+                    const idx = reg.camposOcultos.indexOf(claveCampo);
+                    if (idx > -1) reg.camposOcultos.splice(idx, 1);
+                } else {
+                    // Lo ocultamos (lo agregamos a camposOcultos)
+                    if (!reg.camposOcultos.includes(claveCampo)) {
+                        reg.camposOcultos.push(claveCampo);
+                    }
+                }
+            }
+        });
+
+        actualizarUIYMapa(); // Asegura consistencia en UI
+
+        // Refrescamos rápido el popup y volvemos a vista de edición para no interrumpir
+        if(mapa._popup) {
+            const capaMapa = regOrigen.capaLeaflet;
+            capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
+        }
     }
 
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
@@ -1511,13 +1606,33 @@
     }
 
     /* ==========================================================================
-       FASE 6: EXPORTACIÓN Y BACKUP DATA
+       FASE 6: EXPORTACIÓN Y BACKUP DATA CON EXTRACCIÓN DE COORDENADAS
        ========================================================================== */
-    function exportarBaseDatos() {
-        const payload = JSON.stringify(STORE, (key, val) => {
-            if(key === 'capaLeaflet') return undefined; // Omitimos Objeto Leaflet Crudo
+    function extraerDatosGeometria() {
+        // Clona el STORE profundamente, omitiendo referencias problemáticas a Leaflet
+        const storeCopia = JSON.parse(JSON.stringify(STORE, (key, val) => {
+            if (key === 'capaLeaflet' || key === 'grupoFisico') return undefined;
             return val;
-        }, 2);
+        }));
+
+        // Inyectar coordenadas físicas antes de guardar
+        for (let idSec in STORE) {
+            STORE[idSec].registros.forEach((reg, i) => {
+                if (reg.tipoGeometria === 'marker') {
+                    const ll = reg.capaLeaflet.getLatLng();
+                    storeCopia[idSec].registros[i].coords = { lat: ll.lat, lng: ll.lng };
+                } else {
+                    const lls = reg.capaLeaflet.getLatLngs();
+                    storeCopia[idSec].registros[i].coords = lls;
+                }
+            });
+        }
+        return storeCopia;
+    }
+
+    function exportarBaseDatos() {
+        const datosCompletos = extraerDatosGeometria();
+        const payload = JSON.stringify(datosCompletos, null, 2);
         
         const blob = new Blob([payload], { type: "application/json" });
         const a = document.createElement('a');
@@ -1526,7 +1641,190 @@
         a.click();
     }
 
-    actualizarUIYMapa();
+    /* ==========================================================================
+       FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API
+       ========================================================================== */
+    
+    async function verificarSesion() {
+        const token = localStorage.getItem('github_token');
+        const owner = localStorage.getItem('github_owner');
+
+        if(token && owner) {
+            const btnAuth = document.getElementById('login-overlay').querySelector('.btn-save');
+            btnAuth.innerText = "VERIFICANDO...";
+            
+            try {
+                const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                
+                if(res.ok) {
+                    const data = await res.json();
+                    fileSha = data.sha;
+                    // Decodificar Base64 respetando tildes y caracteres latinos
+                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                    reconstruirDesdeJSON(JSON.parse(decodedContent));
+                    
+                    document.getElementById('login-overlay').style.display = 'none';
+                } else if (res.status === 404) {
+                    // El archivo no existe aún, pero el token podría ser válido para crearlo luego.
+                    document.getElementById('login-overlay').style.display = 'none';
+                    actualizarUIYMapa();
+                } else {
+                    throw new Error("Token inválido o expirado");
+                }
+            } catch(e) {
+                console.error(e);
+                localStorage.clear();
+                document.getElementById('login-overlay').style.display = 'flex';
+                btnAuth.innerText = "AUTENTICAR";
+            }
+        } else {
+            document.getElementById('login-overlay').style.display = 'flex';
+        }
+    }
+
+    function iniciarSesion() {
+        const u = document.getElementById('login-user').value;
+        const p = document.getElementById('login-pass').value;
+        const o = document.getElementById('login-repo-owner').value;
+        const t = document.getElementById('login-token').value;
+
+        // Validación Básica (Modificable según el entorno)
+        if(u === 'hacienda' && p === 'admin2026' && o && t) { 
+            localStorage.setItem('github_token', t);
+            localStorage.setItem('github_owner', o);
+            verificarSesion();
+        } else {
+            alert("Credenciales inválidas o campos incompletos. \n\n(Pista: hacienda / admin2026)");
+        }
+    }
+
+    function cerrarSesionSeguridad() {
+        localStorage.clear();
+        location.reload();
+    }
+
+    async function guardarEnServidor() {
+        const token = localStorage.getItem('github_token');
+        const owner = localStorage.getItem('github_owner');
+        if(!token || !owner) return alert("No hay sesión activa o el token expiró.");
+
+        const btn = document.getElementById('btn-save-server');
+        const btnOriginalText = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
+
+        try {
+            // Empaquetado completo de geometrías
+            const datosLimpios = extraerDatosGeometria();
+            const jsonStr = JSON.stringify(datosLimpios, null, 2);
+            // Codificación segura para JSON a Base64
+            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
+
+            const payload = {
+                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
+                content: contentEncoded,
+                branch: "main"
+            };
+            
+            if(fileSha) payload.sha = fileSha; // Vital para actualizar y no duplicar
+
+            const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if(!res.ok) throw new Error(await res.text());
+            
+            const data = await res.json();
+            fileSha = data.content.sha; // Renovar SHA para futuros guardados
+            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error crítico al guardar en GitHub: " + e.message);
+        } finally {
+            btn.innerHTML = btnOriginalText;
+        }
+    }
+    
+    function reconstruirDesdeJSON(datosCargados) {
+        STORE = {};
+        for(let id in capasSectores) {
+            if(mapa.hasLayer(capasSectores[id])) mapa.removeLayer(capasSectores[id]);
+        }
+        
+        for(let idSector in datosCargados) {
+            const sec = datosCargados[idSector];
+            capasSectores[idSector] = new L.FeatureGroup();
+            
+            STORE[idSector] = {
+                nombreSector: sec.nombreSector,
+                visible: sec.visible !== false,
+                visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
+                coloresPorEstatus: sec.coloresPorEstatus || {},
+                colorPrincipal: sec.colorPrincipal || '#00f2ff',
+                registros: []
+            };
+
+            sec.registros.forEach(reg => {
+                let capa;
+                const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                
+                // Prioridad de color: Registro Individual -> Color Categoria (Sector) -> Estatus General
+                let colorBase = confEst.color;
+                if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
+                    colorBase = STORE[idSector].coloresPorEstatus[estActual];
+                }
+                const colorAUsar = reg.colorPersonalizado || colorBase;
+                
+                if (reg.tipoGeometria === 'marker' && reg.coords) {
+                    capa = L.marker([reg.coords.lat, reg.coords.lng], { 
+                        icon: crearPinFiscal(colorAUsar), 
+                        draggable: !modoLecturaGlobal 
+                    });
+                    capa.on('dragend', () => actualizarUIYMapa());
+                } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                    capa = L.polygon(reg.coords, { 
+                        color: colorAUsar, 
+                        fillColor: colorAUsar, 
+                        fillOpacity: 0.2, 
+                        weight: 3, 
+                        dashArray: '5, 5' 
+                    });
+                    if (!modoLecturaGlobal) capa.editing.enable();
+                    capa.on('edit', () => actualizarUIYMapa());
+                }
+
+                if(capa) {
+                    const newIdFisico = L.stamp(capa); // Forzar nueva ID física válida para esta sesión
+                    
+                    const nuevoReg = {
+                        idFisico: newIdFisico,
+                        tipoGeometria: reg.tipoGeometria,
+                        capaLeaflet: capa,
+                        colorPersonalizado: reg.colorPersonalizado,
+                        visibleIndividual: reg.visibleIndividual !== false,
+                        _modoPopup: 'lectura',
+                        datosGenerales: reg.datosGenerales,
+                        camposOcultos: reg.camposOcultos || []
+                    };
+
+                    STORE[idSector].registros.push(nuevoReg);
+                    vincularEventosCapa(capa, idSector, newIdFisico);
+                }
+            });
+        }
+        
+        actualizarUIYMapa();
+    }
+
+    // ARRANQUE INICIAL DEL SISTEMA
+    verificarSesion();
 
 </script>
 </body>
