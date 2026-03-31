@@ -758,7 +758,7 @@
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 }).addTo(mapa);
 
-    // SOLUCIÓN 1: OBJETO GLOBAL DE CAPAS INDEPENDIENTES (Evita borrados globales)
+    // OBJETO GLOBAL DE CAPAS INDEPENDIENTES (Evita borrados globales)
     const capasSectores = {};
 
     // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
@@ -844,6 +844,14 @@
         }
     }
 
+    // NUEVO: VISIBILIDAD POR CATEGORÍA
+    function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
+        if (!STORE[idSector]) return;
+        if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
+        STORE[idSector].visibilidadPorEstatus[estatus] = isVisible;
+        actualizarUIYMapa();
+    }
+
     // Funciones Maestras Sector
     function actualizarNombreSector(id, valor) {
         if(!STORE[id]) return;
@@ -851,18 +859,21 @@
         actualizarUIYMapa();
     }
 
-    // SOLUCIÓN 2: SELECTOR DE COLOR A NIVEL INTERMEDIO (SECTOR)
-    function cambiarColorSector(idSector, color) {
+    // NUEVO: SELECTOR DE COLOR POR CATEGORÍA DENTRO DEL SECTOR
+    function cambiarColorEstatusSector(idSector, estatus, colorHex) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
         
-        STORE[idSector].colorPrincipal = color;
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatus] = colorHex;
         
-        // Aplica el color a todos los registros físicos del sector
         STORE[idSector].registros.forEach(reg => {
-            reg.colorPersonalizado = color;
-            if (reg.tipoGeometria === 'marker') {
-                reg.capaLeaflet.setIcon(crearPinFiscal(color));
+            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            if (estActual === estatus) {
+                reg.colorPersonalizado = colorHex;
+                if (reg.tipoGeometria === 'marker') {
+                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+                }
             }
         });
         
@@ -893,19 +904,28 @@
 
             sectorData.registros.forEach(reg => {
                 if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+                
+                const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                
+                // Chequear visibilidad de la categoría completa
+                if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
+                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; // true por defecto
 
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                // Si el marcador debe verse, se añade A SU PROPIO FeatureGroup
-                if (sectorData.visible && reg.visibleIndividual && cumpleFiltro) {
+                // GESTIÓN INDEPENDIENTE A NIVEL MARCADOR Y CATEGORÍA
+                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
+                const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
+
+                if (isPhysicallyVisible && !hasLayer) {
                     capasSectores[idSector].addLayer(reg.capaLeaflet);
+                } else if (!isPhysicallyVisible && hasLayer) {
+                    capasSectores[idSector].removeLayer(reg.capaLeaflet);
                 }
 
                 if(cumpleFiltro) {
                     hayResultadosBusqueda = true;
-                    const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                    
                     if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
                     gruposPorEstatus[estatus].conteo++;
                     gruposPorEstatus[estatus].lista.push(reg);
@@ -927,8 +947,6 @@
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
             // RENDERIZADO DEL PANEL DEL SECTOR
-            const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
-            
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
                 <div class="sector-header">
@@ -943,11 +961,6 @@
                                ondblclick="enfocarSector('${idSector}')"
                                onchange="actualizarNombreSector('${idSector}', this.value)" 
                                style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 140px; outline:none; text-transform:uppercase;">
-                        
-                        <!-- SOLUCIÓN 2: SELECTOR DE COLOR POR GRUPO A NIVEL INTERMEDIO -->
-                        <input type="color" title="Cambiar color a todo el sector" value="${colorGlobalActual}"
-                               onchange="cambiarColorSector('${idSector}', this.value)" 
-                               style="width: 20px; height: 20px; border: none; cursor: pointer; background: transparent; padding: 0; margin-left: 5px;">
                     </div>
                     
                     <div class="sector-controls">
@@ -956,16 +969,38 @@
                 </div>
                 <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
+            // ITERACIÓN DE CATEGORÍAS DENTRO DEL SECTOR
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                
+                // Validar visibilidad y color por estatus
+                if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+                if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
+                
+                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
+                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; // true por defecto
+
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
 
                 htmlSector += `
                 <div class="status-group">
-                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
-                        <div class="status-info">
-                            <div class="status-dot" style="background: ${confEst.color}; color: ${confEst.color}"></div>
-                            ${estatus}
+                    <div class="status-header">
+                        <div class="status-info" style="display:flex; align-items:center; gap:8px;">
+                            <!-- VISIBILIDAD POR CAPA (Solo apaga los de esta categoría) -->
+                            <input type="checkbox" title="Mostrar/Ocultar Categoría" class="check-visible" style="width:14px; height:14px; margin:0;" 
+                                   ${estatusVisible ? 'checked' : ''} 
+                                   onclick="event.stopPropagation();"
+                                   onchange="toggleVisibilidadEstatus('${idSector}', '${estatus}', this.checked)">
+                            
+                            <!-- SELECTOR DE COLOR POR SUB-MENÚ (Afecta solo a esta categoría) -->
+                            <input type="color" title="Color de esta Categoría" value="${colorActual}"
+                                   onclick="event.stopPropagation();"
+                                   onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
+                                   style="width: 16px; height: 16px; border: none; cursor: pointer; background: transparent; padding: 0;">
+                            
+                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; flex:1;">
+                                ${estatus}
+                            </div>
                         </div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
                     </div>
@@ -1002,11 +1037,15 @@
 
 
     /* ==========================================================================
-       FASE 3: DOBLE VISTA EN POPUP (SOLUCIÓN 3: SIN CIERRES NI BLOQUEOS)
+       FASE 3: DOBLE VISTA EN POPUP (REPARACIÓN DE APERTURA ANTI-BLOQUEOS)
        ========================================================================== */
     
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
-        capaFisica.on('click', () => abrirPopupDinamico(idSector, idFisico, false));
+        capaFisica.on('click', () => {
+            const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+            if(reg) reg._modoPopup = 'lectura';
+            abrirPopupDinamico(idSector, idFisico, false);
+        });
     }
 
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
@@ -1022,21 +1061,19 @@
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
-        // Se usa setContent una vez al abrir o enfocar, asegurando que Leaflet asocie la estructura correcta
-        if(mapa._popup && mapa._popup._source === capaMapa) {
-            mapa._popup.setContent(htmlContenido);
-        } else {
-            const coords = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
-            L.popup({ minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' })
-                .setLatLng(coords)
-                .setContent(htmlContenido)
-                .openOn(mapa);
-            
-            mapa._popup._source = capaMapa; 
-        }
+        // REPARACIÓN: UNBIND + BIND + OPEN. Fuerza a Leaflet a refrescar el evento sin trabarse
+        capaMapa.unbindPopup();
+        capaMapa.bindPopup(htmlContenido, { 
+            minWidth: 320, 
+            closeButton: true, 
+            className: modoLecturaGlobal ? 'readonly-mode' : '' 
+        }).openPopup();
+        
+        mapa._popup = capaMapa.getPopup();
+        mapa._popup._source = capaMapa; 
     }
 
-    // SOLUCIÓN 3: ALTERNADOR LIGERO DOM (Evita recargar Leaflet y bloqueos de setContent)
+    // ALTERNADOR LIGERO DOM (Evita recargar Leaflet y bloqueos de setContent)
     function toggleModoPopup(idFisico, modo) {
         const divRead = document.getElementById(`view-mode-${idFisico}`);
         const divEdit = document.getElementById(`edit-mode-${idFisico}`);
@@ -1053,7 +1090,7 @@
     }
 
     // EL GENERADOR DE STRINGS HTML CON LA TÉCNICA DE DOBLE CONTENEDOR (DOM ESTÁTICO)
-    function generarContenidoHTMLPopup(idSector, idFisico) {
+    function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
         let html = `<div class="pop-wrapper">`;
 
@@ -1074,7 +1111,10 @@
             const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
-            const colorFinal = registro.colorPersonalizado || confEst.color;
+            // Evaluar de dónde hereda el color (Personalizado > Sector > Estatus Global)
+            const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
+            const colorFinal = registro.colorPersonalizado || colorSector;
+            
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
             // PORTADA UNIVERSAL HACIENDA MUNICIPAL
@@ -1161,7 +1201,7 @@
         reg.colorPersonalizado = colorHex;
         if(reg.tipoGeometria === 'marker') reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
 
-        // Actualizar visualmente la placa del estatus en el HTML estático para no usar setContent
+        // Actualizar visualmente la placa del estatus en el HTML estático sin cerrar popup
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) badge.style.background = colorHex;
     }
@@ -1175,18 +1215,16 @@
         if(idx > -1) reg.camposOcultos.splice(idx, 1);
         else reg.camposOcultos.push(claveCampo);
 
-        // Ojo: Si cambia la estructura de visibilidad, sí debemos hacer setContent, 
-        // pero luego devolvemos directamente la vista de edición llamando a toggleModoPopup
-        if(mapa._popup) {
-            mapa._popup.setContent(generarContenidoHTMLPopup(idSector, idFisico));
-            toggleModoPopup(idFisico, 'edit');
-        }
+        // Si se cambia visibilidad (ojo), refrescamos rápido y volvemos a vista de edición
+        const capaMapa = reg.capaLeaflet;
+        capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
+        toggleModoPopup(idFisico, 'edit');
     }
 
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
         STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
         actualizarUIYMapa(); 
-        // Cero uso de setContent aquí, el DOM ya se actualizó dinámicamente en el onChange del input HTML
+        // Cero recargas de Leaflet aquí. Todo es DOM fluido.
     }
 
     function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
@@ -1194,16 +1232,17 @@
         reg.datosGenerales["Estatus"] = nuevoEst;
         
         const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-        const colorAUsar = reg.colorPersonalizado || conf.color;
+        const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : conf.color;
         
-        reg.capaLeaflet.setIcon(crearPinFiscal(colorAUsar));
+        reg.colorPersonalizado = colorSector; // Adopta el color de su nueva categoría
+        reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
         actualizarUIYMapa();
 
-        // Actualizar etiqueta sin recargar
+        // Actualizar etiqueta en vivo
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) {
             badge.innerText = nuevoEst;
-            badge.style.background = colorAUsar;
+            badge.style.background = colorSector;
         }
     }
 
@@ -1250,7 +1289,7 @@
         const id = 'sec_' + Date.now();
         
         capasSectores[id] = new L.FeatureGroup();
-        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, colorPrincipal: '#00f2ff', registros: [] };
+        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
         capaActivaId = id;
         actualizarUIYMapa();
     }
@@ -1407,7 +1446,7 @@
             } else fails++;
         });
 
-        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, colorPrincipal: '#00f2ff', registros: regArr };
+        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: regArr };
         capaActivaId = idNuevo;
         cerrarModal('modal-importar');
         actualizarUIYMapa();
