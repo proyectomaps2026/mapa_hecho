@@ -689,8 +689,8 @@
         <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
         <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
         
-        <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema (ej: hacienda)">
-        <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema (ej: admin2026)">
+        <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
+        <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema">
         
         <div id="github-credentials" style="display: none;">
             <p style="font-size: 10px; color: var(--color-temporal); margin-bottom: 10px;">Requiere vinculación con GitHub</p>
@@ -699,6 +699,11 @@
         </div>
 
         <button class="btn btn-save" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
+        
+        <!-- BOTÓN RECUPERAR CORREO -->
+        <div style="margin-top: 15px;">
+            <span style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="recuperarAcceso()">¿Olvidó sus datos?</span>
+        </div>
     </div>
 </div>
 
@@ -747,6 +752,19 @@
     <div class="layers-container" id="arbol-datos">
         </div>
     
+    <!-- MÓDULO DE CAMBIO DE CLAVE EN SIDEBAR -->
+    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
+        <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('ajustes-cuenta').style.display = document.getElementById('ajustes-cuenta').style.display === 'none' ? 'block' : 'none'">
+            <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div id="ajustes-cuenta" style="display: none;">
+            <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario">
+            <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave">
+            <button class="btn btn-save" style="width: 100%; padding: 8px; font-size: 10px;" onclick="cambiarCredenciales()">ACTUALIZAR Y GUARDAR NUBE</button>
+        </div>
+    </div>
+
     <div class="sidebar-footer">
         <button class="btn btn-outline" onclick="crearNuevoSector()">
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
@@ -803,6 +821,9 @@
     const REPO_NAME = 'proyectomaps2026';
     const FILE_PATH = 'config.json';
     let fileSha = null;
+    
+    // Validacion Dinámica: Almacena credenciales en memoria (sobreescritas por JSON en Nube)
+    let SYSTEM_AUTH = { user: 'hacienda', pass: 'admin2026' };
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
@@ -1638,7 +1659,11 @@
 
     function exportarBaseDatos() {
         const datosCompletos = extraerDatosGeometria();
-        const payload = JSON.stringify(datosCompletos, null, 2);
+        const objetoMaestro = {
+            credentials: SYSTEM_AUTH,
+            store: datosCompletos
+        };
+        const payload = JSON.stringify(objetoMaestro, null, 2);
         
         const blob = new Blob([payload], { type: "application/json" });
         const a = document.createElement('a');
@@ -1651,21 +1676,43 @@
        FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API
        ========================================================================== */
     
+    // Función de recuperación (Botón de pánico/correo)
+    function recuperarAcceso() {
+        const fecha = new Date().toLocaleString();
+        const asunto = encodeURIComponent("RECUPERACIÓN DE ACCESO - HACIENDA AYACUCHO");
+        const cuerpo = encodeURIComponent(`Solicitud de recuperación de credenciales de sistema.\n\nFecha y Hora del intento: ${fecha}\n\nPor favor, envíeme las instrucciones para restablecer mi acceso administrativo.`);
+        window.location.href = `mailto:proyecto.maps2026@gmail.com?subject=${asunto}&body=${cuerpo}`;
+    }
+
+    // Módulo Sidebar para cambio de credenciales
+    function cambiarCredenciales() {
+        const nu = document.getElementById('ajuste-user').value.trim();
+        const np = document.getElementById('ajuste-pass').value.trim();
+        
+        if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
+        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de acceso?\n\nDeberá usar estas nuevas credenciales la próxima vez que entre al sistema.")) return;
+        
+        SYSTEM_AUTH.user = nu;
+        SYSTEM_AUTH.pass = np;
+        
+        document.getElementById('ajuste-user').value = "";
+        document.getElementById('ajuste-pass').value = "";
+        
+        alert("Credenciales actualizadas en memoria.\n\nGuardando en la Nube...");
+        guardarEnServidor();
+    }
+    
     async function intentarLogin() {
         const u = document.getElementById('login-user').value;
         const p = document.getElementById('login-pass').value;
         
-        if (u !== 'hacienda' || p !== 'admin2026') {
-            return alert("Credenciales de sistema inválidas. \n\n(Pista: hacienda / admin2026)");
-        }
-
         const tokenInput = document.getElementById('login-token').value;
         const ownerInput = document.getElementById('login-repo-owner').value;
 
         let token = localStorage.getItem('github_token');
         let owner = localStorage.getItem('github_owner');
 
-        // Si el usuario escribió un token nuevo, úsalo en vez del guardado
+        // Si el usuario escribió un token nuevo manualmente, úsalo
         if (tokenInput && ownerInput) {
             token = tokenInput;
             owner = ownerInput;
@@ -1674,14 +1721,15 @@
         // Si no hay token en caché ni en el input, muestra los campos de Github
         if (!token || !owner) {
             document.getElementById('github-credentials').style.display = 'block';
-            return alert("Por favor, ingrese los datos de GitHub para sincronizar con la nube.");
+            return alert("Para conectar por primera vez, ingrese los datos de sincronización de GitHub.");
         }
 
         const btnAuth = document.getElementById('login-overlay').querySelector('.btn-save');
         const oldText = btnAuth.innerText;
-        btnAuth.innerText = "VERIFICANDO...";
+        btnAuth.innerText = "VERIFICANDO EN NUBE...";
 
         try {
+            // Validamos primero contra GitHub para saber la clave real
             const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
@@ -1689,38 +1737,63 @@
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.sha;
-                // Decodificar Base64 respetando tildes y caracteres latinos
                 const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                reconstruirDesdeJSON(JSON.parse(decodedContent));
+                const jsonParsed = JSON.parse(decodedContent);
+                
+                // Si la nube tiene credenciales propias, sobreescriben las locales
+                if (jsonParsed.credentials) {
+                    SYSTEM_AUTH.user = jsonParsed.credentials.user;
+                    SYSTEM_AUTH.pass = jsonParsed.credentials.pass;
+                }
+
+                // Validación Estricta Local vs Nube
+                if (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass) {
+                    throw new Error("CREDENCIALES_INVALIDAS");
+                }
                 
                 // Guardar la llave válida
                 localStorage.setItem('github_token', token);
                 localStorage.setItem('github_owner', owner);
                 
                 document.getElementById('login-overlay').style.display = 'none';
+                
+                // Cargar Store
+                const storeData = jsonParsed.store || jsonParsed;
+                reconstruirDesdeJSON(storeData);
+                
             } else if (res.status === 404) {
                 // El repo existe pero el archivo config.json aún no. Es válido para iniciar desde cero.
+                if (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass) {
+                    throw new Error("CREDENCIALES_INVALIDAS");
+                }
+                
                 localStorage.setItem('github_token', token);
                 localStorage.setItem('github_owner', owner);
                 document.getElementById('login-overlay').style.display = 'none';
                 actualizarUIYMapa();
             } else if (res.status === 401 || res.status === 403) {
-                throw new Error("Token inválido o expirado");
+                throw new Error("TOKEN_INVALIDO");
             } else {
-                throw new Error("Error de conexión con GitHub");
+                throw new Error("ERROR_CONEXION");
             }
         } catch(e) {
             console.error(e);
-            localStorage.removeItem('github_token');
-            localStorage.removeItem('github_owner');
-            document.getElementById('github-credentials').style.display = 'block';
-            alert("El token de GitHub es inválido o expiró. Ingréselo nuevamente.");
+            
+            if (e.message === "CREDENCIALES_INVALIDAS") {
+                alert("Usuario o clave incorrectos. Verifique sus datos.");
+            } else {
+                localStorage.removeItem('github_token');
+                localStorage.removeItem('github_owner');
+                document.getElementById('github-credentials').style.display = 'block';
+                alert("El token de GitHub es inválido o expiró. Ingréselo nuevamente.");
+            }
         } finally {
             btnAuth.innerText = oldText;
         }
     }
 
     function cerrarSesionSeguridad() {
+        // Botón de pánico total
         localStorage.clear();
         location.reload();
     }
@@ -1735,9 +1808,14 @@
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
 
         try {
-            // Empaquetado completo de geometrías
+            // Empaquetado completo de geometrías + Credenciales dinámicas
             const datosLimpios = extraerDatosGeometria();
-            const jsonStr = JSON.stringify(datosLimpios, null, 2);
+            const objetoMaestro = {
+                credentials: SYSTEM_AUTH,
+                store: datosLimpios
+            };
+            
+            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
             // Codificación segura para JSON a Base64
             const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
 
@@ -1845,12 +1923,13 @@
 
     // ARRANQUE INICIAL DEL SISTEMA
     function initSecurity() {
-        // Bloqueo Obligatorio Inicial
+        // Bloqueo Obligatorio Inicial siempre
         document.getElementById('login-overlay').style.display = 'flex';
+        
         const token = localStorage.getItem('github_token');
         const owner = localStorage.getItem('github_owner');
         
-        // Si no hay persistencia parcial, revelar los campos de GitHub para sincronización
+        // Si no hay persistencia parcial en localStorage, revelar los campos de GitHub
         if (!token || !owner) {
             document.getElementById('github-credentials').style.display = 'block';
         }
