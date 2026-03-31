@@ -323,31 +323,6 @@
             background: var(--cyan-neon); 
             border-radius: 50%; 
         }
-        
-        .check-visible { 
-            appearance: none; 
-            width: 16px; 
-            height: 16px; 
-            border: 2px solid #6e7681; 
-            border-radius: 4px; 
-            outline: none; 
-            cursor: pointer; 
-            position: relative; 
-        }
-        
-        .check-visible:checked { 
-            background: var(--color-vigente); 
-            border-color: var(--color-vigente); 
-        }
-        
-        .check-visible:checked::after { 
-            content: '✔'; 
-            position: absolute; 
-            color: white; 
-            font-size: 10px; 
-            top: -1px; 
-            left: 2px; 
-        }
 
         .sector-title { 
             font-size: 13px; 
@@ -653,7 +628,21 @@
         .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
 
         /* ==========================================================================
-           4. MODALES Y REPORTES
+           5. ESTÉTICA PROFESIONAL DE VÉRTICES (PUNTOS BLANCOS EN EDICIÓN)
+           ========================================================================== */
+        .leaflet-editing-icon {
+            border-radius: 50% !important;
+            border: 2px solid var(--border-color) !important;
+            background-color: #fff !important;
+            width: 12px !important;
+            height: 12px !important;
+            margin-left: -6px !important;
+            margin-top: -6px !important;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* ==========================================================================
+           6. MODALES Y REPORTES
            ========================================================================== */
         .audit-report { background: #f8f9fa; padding: 20px; }
         .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
@@ -782,10 +771,10 @@
         className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
     });
 
-    // Herramientas Leaflet Draw
+    // Herramientas Leaflet Draw - Inicializando polígonos con un fondo translúcido estético
     const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
     const herramientaPoligono = new L.Draw.Polygon(mapa, { 
-        shapeOptions: { color: '#00f2ff', fillOpacity: 0.25, weight: 3, dashArray: '5, 5' }
+        shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
     });
 
     function activarHerramienta(tipo) {
@@ -796,13 +785,18 @@
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
 
-    // EVENTO DE CREACIÓN MANUAL (DIBUJO)
+    // EVENTO DE CREACIÓN MANUAL (DIBUJO DE POLÍGONOS Y MARCADORES)
     mapa.on(L.Draw.Event.CREATED, (evento) => {
         const idFisico = L.stamp(evento.layer);
         
+        // Configuración estética y de edición al nacer
         if(evento.layer instanceof L.Marker) {
-            evento.layer.options.draggable = true;
+            if (!modoLecturaGlobal) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
+        } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
+            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
+            if (!modoLecturaGlobal) evento.layer.editing.enable();
+            evento.layer.on('edit', () => actualizarUIYMapa());
         }
 
         const nuevoRegistro = {
@@ -835,16 +829,16 @@
         setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
     });
 
-    // FUNCIÓN DE ÁRBOL: Apagar/Encender contribuyentes individuales
+    // FUNCIÓN DE ÁRBOL: Apagar/Encender contribuyentes individuales usando Ojitos
     function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
-        const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(reg) {
             reg.visibleIndividual = isVisible;
             actualizarUIYMapa();
         }
     }
 
-    // NUEVO: VISIBILIDAD POR CATEGORÍA
+    // VISIBILIDAD POR CATEGORÍA COMPLETA (Polígonos y Marcadores mediante Ojito)
     function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
         if (!STORE[idSector]) return;
         if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
@@ -859,7 +853,7 @@
         actualizarUIYMapa();
     }
 
-    // NUEVO: SELECTOR DE COLOR POR CATEGORÍA DENTRO DEL SECTOR
+    // SINCRONIZACIÓN DE COLOR TOTAL (Afecta Marcadores y Polígonos de una Categoría)
     function cambiarColorEstatusSector(idSector, estatus, colorHex) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
@@ -871,9 +865,31 @@
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatus) {
                 reg.colorPersonalizado = colorHex;
+                // Diferenciar entre Marcador y Polígono para aplicar la estética correcta
                 if (reg.tipoGeometria === 'marker') {
                     reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
                 }
+            }
+        });
+        
+        actualizarUIYMapa();
+    }
+
+    // Cambiar Color a nivel Sector General
+    function cambiarColorSector(idSector, colorHex) {
+        if (modoLecturaGlobal) return alert("Modo lectura activo.");
+        if (!STORE[idSector]) return;
+        
+        STORE[idSector].colorPrincipal = colorHex;
+        
+        STORE[idSector].registros.forEach(reg => {
+            reg.colorPersonalizado = colorHex;
+            if (reg.tipoGeometria === 'marker') {
+                reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+            } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
             }
         });
         
@@ -907,14 +923,14 @@
                 
                 const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
                 
-                // Chequear visibilidad de la categoría completa
+                // Chequear visibilidad de la categoría completa (Ojito de sub-menú)
                 if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
-                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; // true por defecto
+                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
 
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                // GESTIÓN INDEPENDIENTE A NIVEL MARCADOR Y CATEGORÍA
+                // GESTIÓN INDEPENDIENTE: Si pasa los filtros de Ojitos, se añade a su grupo
                 const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
                 const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
 
@@ -932,7 +948,7 @@
                 }
             });
 
-            // CONTROL DE CAPA EN EL MAPA: ADD o REMOVE de forma 100% aislada
+            // CONTROL DE CAPA EN EL MAPA: ADD o REMOVE de forma aislada
             if (sectorData.visible) {
                 if (!mapa.hasLayer(capasSectores[idSector])) {
                     capasSectores[idSector].addTo(mapa);
@@ -947,14 +963,20 @@
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
             // RENDERIZADO DEL PANEL DEL SECTOR
+            const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
+            
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
                 <div class="sector-header">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
                                ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
-                        <input type="checkbox" class="check-visible" title="Mostrar/Ocultar todo el Sector"
-                               ${sectorData.visible ? 'checked' : ''} onchange="toggleVisibilidadCapa('${idSector}', this.checked)">
+                        
+                        <!-- OJITO DE SECTOR COMPLETO -->
+                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
+                           title="Mostrar/Ocultar todo el Sector" 
+                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
+                           onclick="toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
                         
                         <input type="text" value="${sectorData.nombreSector}" 
                                title="Doble clic para enfocar sector en el mapa"
@@ -973,12 +995,11 @@
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
                 
-                // Validar visibilidad y color por estatus
                 if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
                 if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
                 
                 const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
-                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; // true por defecto
+                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
 
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
 
@@ -986,13 +1007,14 @@
                 <div class="status-group">
                     <div class="status-header">
                         <div class="status-info" style="display:flex; align-items:center; gap:8px;">
-                            <!-- VISIBILIDAD POR CAPA (Solo apaga los de esta categoría) -->
-                            <input type="checkbox" title="Mostrar/Ocultar Categoría" class="check-visible" style="width:14px; height:14px; margin:0;" 
-                                   ${estatusVisible ? 'checked' : ''} 
-                                   onclick="event.stopPropagation();"
-                                   onchange="toggleVisibilidadEstatus('${idSector}', '${estatus}', this.checked)">
                             
-                            <!-- SELECTOR DE COLOR POR SUB-MENÚ (Afecta solo a esta categoría) -->
+                            <!-- OJITO DE CATEGORÍA INTERNA -->
+                            <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
+                               title="Mostrar/Ocultar Categoría" 
+                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
+                               onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
+                            
+                            <!-- SELECTOR DE COLOR POR SUB-MENÚ (Afecta a polígonos y pines de esta categoría) -->
                             <input type="color" title="Color de esta Categoría" value="${colorActual}"
                                    onclick="event.stopPropagation();"
                                    onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
@@ -1008,15 +1030,18 @@
 
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
-                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', ${local.idFisico}, true)">
+                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
                             <div style="flex:1; display:flex; align-items:center; gap:8px;">
-                                <input type="checkbox" title="Ocultar individualmente" 
-                                       ${local.visibleIndividual ? 'checked' : ''} 
-                                       onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', ${local.idFisico}, this.checked)">
+                                <!-- OJITO INDIVIDUAL DE CONTRIBUYENTE -->
+                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
+                                   title="Ocultar individualmente" 
+                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
+                                   onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
+                                   
                                 <i class="fas fa-caret-right" style="opacity:0.5"></i> 
                                 ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                             </div>
-                            <i class="fas fa-trash sector-trash" style="font-size:11px;" title="Borrar Registro" onclick="event.stopPropagation(); borrarRegistroIndividual('${idSector}', ${local.idFisico})"></i>
+                            <i class="fas fa-trash sector-trash" style="font-size:11px;" title="Borrar Registro" onclick="event.stopPropagation(); borrarRegistroIndividual('${idSector}', '${local.idFisico}')"></i>
                         </div>`;
                 });
                 htmlSector += `</div></div>`;
@@ -1042,14 +1067,14 @@
     
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
         capaFisica.on('click', () => {
-            const reg = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+            const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
             if(reg) reg._modoPopup = 'lectura';
             abrirPopupDinamico(idSector, idFisico, false);
         });
     }
 
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
-        const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!registro) return;
 
         const capaMapa = registro.capaLeaflet;
@@ -1057,11 +1082,12 @@
         if(centrarMapa) {
             const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
             mapa.flyTo(destino, 19, { duration: 0.5 });
+            registro._modoPopup = 'lectura';
         }
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
-        // REPARACIÓN: UNBIND + BIND + OPEN. Fuerza a Leaflet a refrescar el evento sin trabarse
+        // REPARACIÓN MAESTRA: Evita bloqueos forzando a Leaflet a desligar y reenganchar el Popup fresco
         capaMapa.unbindPopup();
         capaMapa.bindPopup(htmlContenido, { 
             minWidth: 320, 
@@ -1091,15 +1117,15 @@
 
     // EL GENERADOR DE STRINGS HTML CON LA TÉCNICA DE DOBLE CONTENEDOR (DOM ESTÁTICO)
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
-        const registro = STORE[idSector].registros.find(r => r.idFisico === idFisico);
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         let html = `<div class="pop-wrapper">`;
 
-        // SI ES POLÍGONO (AUDITORÍA)
-        if(registro.tipoGeometria === 'polygon') {
+        // SI ES POLÍGONO (AUDITORÍA MUNICIPAL)
+        if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
             <div class="audit-report">
-                <h3 class="audit-title"><i class="fas fa-chart-area"></i> AUDITORÍA ESPACIAL</h3>
+                <h3 class="audit-title"><i class="fas fa-chart-area"></i> HACIENDA MUNICIPAL - AUDITORÍA</h3>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}"><span>Vigentes:</span> <span>${rep.v}</span></div>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}"><span>Vencidas:</span> <span>${rep.x}</span></div>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
@@ -1128,7 +1154,7 @@
             // ==========================================
             // CONTENEDOR 1: LECTURA PROFESIONAL ESTÁTICA
             // ==========================================
-            html += `<div id="view-mode-${idFisico}" style="display: block;">`;
+            html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
                 const isOculto = registro.camposOcultos.includes(clave);
@@ -1148,12 +1174,12 @@
             // ==========================================
             // CONTENEDOR 2: EDICIÓN PROFUNDA (INPUTS)
             // ==========================================
-            html += `<div id="edit-mode-${idFisico}" style="display: none;">`;
+            html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 
-                // Actualizamos el STORE y también inyectamos directamente al Contenedor 1 para que al volver se vea el cambio sin recargar Leaflet
+                // Actualizamos el STORE y también inyectamos directamente al Contenedor 1 para que al volver se vea el cambio sin recargar
                 html += `
                 <div class="form-group">
                     <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
@@ -1183,7 +1209,7 @@
             </div>
             
             <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>
-            <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', ${idFisico})">ELIMINAR REGISTRO</button>
+            <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>
             </div>`;
         }
         
@@ -1199,7 +1225,12 @@
         if(!reg) return;
         
         reg.colorPersonalizado = colorHex;
-        if(reg.tipoGeometria === 'marker') reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+        
+        if (reg.tipoGeometria === 'marker') {
+            reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+            reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+        }
 
         // Actualizar visualmente la placa del estatus en el HTML estático sin cerrar popup
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
@@ -1217,8 +1248,7 @@
 
         // Si se cambia visibilidad (ojo), refrescamos rápido y volvemos a vista de edición
         const capaMapa = reg.capaLeaflet;
-        capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
-        toggleModoPopup(idFisico, 'edit');
+        capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
     }
 
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
@@ -1235,7 +1265,13 @@
         const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : conf.color;
         
         reg.colorPersonalizado = colorSector; // Adopta el color de su nueva categoría
-        reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
+        
+        if (reg.tipoGeometria === 'marker') {
+            reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
+        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+            reg.capaLeaflet.setStyle({ color: colorSector, fillColor: colorSector, fillOpacity: 0.2 });
+        }
+        
         actualizarUIYMapa();
 
         // Actualizar etiqueta en vivo
@@ -1248,7 +1284,7 @@
 
 
     /* ==========================================================================
-       FASE 4: FUNCIONES DE SISTEMA (BÚSQUEDA, UI, ELIMINACIÓN)
+       FASE 4: FUNCIONES DE SISTEMA Y VÉRTICES DE EDICIÓN
        ========================================================================== */
     
     function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
@@ -1265,6 +1301,25 @@
         } else {
             bMarker.style.opacity = "1"; bMarker.style.pointerEvents = "auto";
             bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
+        }
+
+        // Habilitar/Deshabilitar Puntos Blancos Profesionales de Vértices en Polígonos
+        for(let id in STORE) {
+            STORE[id].registros.forEach(reg => {
+                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    if (modoLecturaGlobal) {
+                        if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.disable();
+                    } else {
+                        if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.enable();
+                    }
+                } else if (reg.tipoGeometria === 'marker') {
+                    if (modoLecturaGlobal) {
+                        if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.disable();
+                    } else {
+                        if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.enable();
+                    }
+                }
+            });
         }
     }
 
