@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
+    <!-- IDENTIDAD CORPORATIVA -->
     <title>PROYECTO HACIENDA 2026</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
-    
-    <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <style>
         /* ==========================================================================
@@ -85,11 +82,18 @@
             transform: translateY(-1px); 
         }
 
+        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE */
+        .leaflet-top.leaflet-right {
+            z-index: 2000 !important;
+            margin-top: 15px;
+            margin-right: 15px;
+        }
+
         /* BARRA SUPERIOR */
         .top-nav { 
             top: 15px; 
             left: 15px; 
-            right: 15px; 
+            right: 70px; /* Modificado para dejar libre el Control de Capas de Leaflet */
             height: 64px; 
             display: flex; 
             align-items: center; 
@@ -449,7 +453,7 @@
         .sidebar-footer { 
             padding: 20px; 
             display: grid; 
-            grid-template-columns: 1fr 1fr; 
+            grid-template-columns: 1fr; 
             gap: 12px; 
             border-top: 1px solid var(--border-color); 
             background: rgba(0,0,0,0.2); 
@@ -467,14 +471,6 @@
         .btn-outline:hover { 
             border-color: white; 
             background: rgba(255,255,255,0.05); 
-        }
-        
-        .btn-solid-yellow { 
-            background: var(--color-temporal); 
-            color: #000; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 11px; 
         }
 
         /* ==========================================================================
@@ -687,12 +683,6 @@
         .audit-report { background: #f8f9fa; padding: 20px; }
         .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
-
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
-        .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
-        .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; }
-        .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -730,10 +720,6 @@
         <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
             <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
         </button>
-
-        <button class="btn tool-btn" title="Descargar Respaldo JSON" onclick="exportarBaseDatos()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white;">
-            <i class="fas fa-download" style="margin-right: 8px;"></i> RESPALDO JSON
-        </button>
     </div>
 </nav>
 
@@ -756,45 +742,11 @@
         </div>
 
     <div class="sidebar-footer">
-        <button class="btn btn-outline" onclick="crearNuevoSector()">
+        <button class="btn btn-outline" onclick="crearNuevoSector()" style="grid-column: span 1;">
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
-        </button>
-        <button class="btn btn-solid-yellow" onclick="abrirModalImportacion()">
-            <i class="fas fa-database"></i> IMPORTAR RAW
         </button>
     </div>
 </aside>
-
-<div class="modal-overlay" id="modal-importar">
-    <div class="glass-panel modal-box">
-        <h2 class="modal-title"><i class="fas fa-cloud-download-alt"></i> Inyección Masiva (Sheets/CSV)</h2>
-        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Pegue el enlace de su Google Sheets (CSV). El sistema procesará las coordenadas y las imágenes automáticamente.</p>
-        
-        <input type="text" id="input-url-sheets" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
-        
-        <button class="btn btn-solid-yellow" style="width: 100%; margin-bottom: 15px;" id="btn-analizar-csv" onclick="analizarCabecerasCSV()">
-            1. LEER COLUMNAS DEL ARCHIVO
-        </button>
-
-        <div id="configuracion-columnas" style="display: none; padding-top: 15px; border-top: 1px solid var(--border-color);">
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">1. COORDENADAS (Lat, Lng):</label>
-            <select id="sel-coordenadas" class="modal-select"></select>
-            
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">2. NOMBRE COMERCIAL / CONTRIBUYENTE:</label>
-            <select id="sel-nombre" class="modal-select"></select>
-
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">3. ESTATUS FISCAL:</label>
-            <select id="sel-estatus" class="modal-select"></select>
-            
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">4. URL FOTOGRAFÍA FACHADA (Opcional):</label>
-            <select id="sel-imagen" class="modal-select"></select>
-
-            <button class="btn btn-save btn-popup-action" onclick="ejecutarInyeccionDatos()">2. PROCESAR CATASTRO</button>
-        </div>
-        
-        <button class="btn btn-popup-action" style="background: transparent; border: 1px solid var(--color-vencida); color: var(--color-vencida); margin-top: 10px;" onclick="cerrarModal('modal-importar')">CANCELAR Y CERRAR</button>
-    </div>
-</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
@@ -818,21 +770,29 @@
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026'); // Modificado
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026'); 
 
     // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
     const capaSatelite = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     capaSatelite.addTo(mapa);
-    const controlCapas = L.control.layers({"Satélite Google": capaSatelite}, {}).addTo(mapa);
+    
+    // CAPA MAESTRA SUPERPUESTA PARA LOS SECTORES
+    const capaMaestraSectores = L.featureGroup().addTo(mapa);
+    
+    // CONTROL DE CAPAS VISIBLE EN ESQUINA SUPERIOR DERECHA
+    L.control.layers(
+        {"Google Satélite (Híbrido)": capaSatelite}, 
+        {"Sectores Digitalizados": capaMaestraSectores}, 
+        {position: 'topright'}
+    ).addTo(mapa);
 
-    // OBJETO GLOBAL DE CAPAS INDEPENDIENTES (Evita borrados globales)
+    // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
     const capasSectores = {};
 
     // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
     let STORE = {}; 
     let capaActivaId = null; 
     let modoLecturaGlobal = false;
-    let cacheCSV = { data: [], cabeceras: [] };
     let textoFiltroGlobal = "";
 
     const DICCIONARIO_ESTATUS = {
@@ -927,13 +887,7 @@
     // Funciones Maestras Sector
     function actualizarNombreSector(id, valor) {
         if(!STORE[id]) return;
-        const oldName = STORE[id].nombreSector;
         STORE[id].nombreSector = valor.toUpperCase();
-        
-        if (capasSectores[id]) {
-            controlCapas.removeLayer(capasSectores[id]);
-            controlCapas.addOverlay(capasSectores[id], STORE[id].nombreSector);
-        }
         actualizarUIYMapa();
     }
 
@@ -994,7 +948,6 @@
             // 1. INICIALIZAR GRUPO DE CAPA INDEPENDIENTE SI NO EXISTE
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
-                controlCapas.addOverlay(capasSectores[idSector], sectorData.nombreSector);
             }
 
             // Vaciamos temporalmente ESTA capa exclusiva para reconstruirla con el filtro
@@ -1033,14 +986,14 @@
                 }
             });
 
-            // CONTROL DE CAPA EN EL MAPA: ADD o REMOVE de forma aislada
+            // CONTROL DE CAPA EN EL MAPA Y AGRUPACIÓN EN CAPA MAESTRA (DOBLE CAPA)
             if (sectorData.visible) {
-                if (!mapa.hasLayer(capasSectores[idSector])) {
-                    capasSectores[idSector].addTo(mapa);
+                if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.addLayer(capasSectores[idSector]);
                 }
             } else {
-                if (mapa.hasLayer(capasSectores[idSector])) {
-                    mapa.removeLayer(capasSectores[idSector]);
+                if (capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.removeLayer(capasSectores[idSector]);
                 }
             }
 
@@ -1455,8 +1408,8 @@
     
     function toggleVisibilidadCapa(idSector, isVisible) { 
         STORE[idSector].visible = isVisible;
-        if(isVisible) capasSectores[idSector].addTo(mapa);
-        else mapa.removeLayer(capasSectores[idSector]);
+        if(isVisible) capaMaestraSectores.addLayer(capasSectores[idSector]);
+        else capaMaestraSectores.removeLayer(capasSectores[idSector]);
         actualizarUIYMapa(); 
     }
 
@@ -1477,8 +1430,7 @@
         if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
         
         if (capasSectores[idSector]) {
-            mapa.removeLayer(capasSectores[idSector]);
-            controlCapas.removeLayer(capasSectores[idSector]);
+            capaMaestraSectores.removeLayer(capasSectores[idSector]);
             delete capasSectores[idSector];
         }
         delete STORE[idSector]; 
@@ -1524,116 +1476,6 @@
         return count;
     }
 
-
-    /* ==========================================================================
-       FASE 5: MÓDULO DE IMPORTACIÓN MASIVA (INTACTO)
-       ========================================================================== */
-       
-    function abrirModalImportacion() { document.getElementById('modal-importar').style.display = 'flex'; }
-    function cerrarModal(id) { document.getElementById(id).style.display = 'none'; document.getElementById('configuracion-columnas').style.display = 'none'; }
-
-    async function analizarCabecerasCSV() {
-        let url = document.getElementById('input-url-sheets').value;
-        if(!url) return alert("Inserte URL de Google Sheets");
-        if(url.includes('/edit')) url = url.replace(/\/edit.*$/, '/export?format=csv');
-        
-        const btn = document.getElementById('btn-analizar-csv');
-        btn.innerText = "⏳ CONECTANDO A GOOGLE...";
-        
-        try {
-            const resp = await fetch(url);
-            if(!resp.ok) throw new Error("Sin acceso");
-            const txt = await resp.text();
-            
-            const rows = txt.split('\n').map(l => l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
-            cacheCSV.cabeceras = rows[0];
-            cacheCSV.data = rows.slice(1).filter(r => r.length >= cacheCSV.cabeceras.length);
-
-            const options = cacheCSV.cabeceras.map(c => `<option value="${c}">${c}</option>`).join('');
-            
-            document.getElementById('sel-coordenadas').innerHTML = options;
-            document.getElementById('sel-nombre').innerHTML = options;
-            document.getElementById('sel-estatus').innerHTML = options;
-            
-            document.getElementById('sel-imagen').innerHTML = `<option value="NONE">NINGUNA (Dejar Vacío)</option>` + options;
-
-            document.getElementById('configuracion-columnas').style.display = 'block';
-            btn.innerText = "1. COLUMNAS DETECTADAS (OK)";
-        } catch(e) {
-            alert("❌ ERROR: El documento debe ser público ('Cualquier persona con el enlace').");
-            btn.innerText = "1. LEER COLUMNAS DEL ARCHIVO";
-        }
-    }
-
-    function homologarEstatus(txt) {
-        if(!txt) return "SIN CATEGORÍA";
-        const t = txt.toUpperCase();
-        if(t.includes("VIGENT")) return "VIGENTE";
-        if(t.includes("VENCID") || t.includes("NO RENOV")) return "VENCIDA";
-        if(t.includes("TEMP") || t.includes("PROV")) return "TEMPORAL";
-        if(t.includes("SIN LICEN")) return "SIN LICENCIA";
-        return "SIN CATEGORÍA";
-    }
-
-    function ejecutarInyeccionDatos() {
-        const idNuevo = 'imp_' + Date.now();
-        capasSectores[idNuevo] = new L.FeatureGroup();
-        
-        const cCo = document.getElementById('sel-coordenadas').value;
-        const cNo = document.getElementById('sel-nombre').value;
-        const cEs = document.getElementById('sel-estatus').value;
-        const cIm = document.getElementById('sel-imagen').value;
-
-        let regArr = [];
-        let fails = 0;
-
-        cacheCSV.data.forEach(filaArr => {
-            let diccionario = {};
-            cacheCSV.cabeceras.forEach((cab, i) => diccionario[cab] = filaArr[i]);
-
-            const strC = diccionario[cCo];
-            if(strC) {
-                const parts = strC.replace(/[^\d.,-]/g, ' ').trim().split(/\s+/);
-                if(parts.length >= 2) {
-                    const lat = parseFloat(parts[0].replace(',', '.'));
-                    const lng = parseFloat(parts[1].replace(',', '.'));
-
-                    if(!isNaN(lat) && !isNaN(lng)) {
-                        const estReal = homologarEstatus(diccionario[cEs]);
-                        const colHex = DICCIONARIO_ESTATUS[estReal].color;
-                        
-                        const mark = L.marker([lat, lng], { icon: crearPinFiscal(colHex), draggable: true });
-                        capasSectores[idNuevo].addLayer(mark);
-                        
-                        mark.on('dragend', () => actualizarUIYMapa());
-                        const idM = L.stamp(mark);
-                        vincularEventosCapa(mark, idNuevo, idM);
-
-                        let dg = {
-                            "Contribuyente": diccionario[cNo] || "SIN REGISTRO",
-                            "Estatus": estReal,
-                            "Link Fotografía": cIm !== "NONE" ? (diccionario[cIm] || "") : ""
-                        };
-                        
-                        for(let k in diccionario) {
-                            if(k !== cCo && k !== cNo && k !== cEs && k !== cIm) dg[k] = diccionario[k];
-                        }
-
-                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, visibleIndividual: true, datosGenerales: dg, camposOcultos: [] });
-                    } else fails++;
-                } else fails++;
-            } else fails++;
-        });
-
-        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: regArr };
-        capaActivaId = idNuevo;
-        cerrarModal('modal-importar');
-        actualizarUIYMapa();
-        
-        mapa.fitBounds(capasSectores[idNuevo].getBounds());
-        alert(`✅ Carga exitosa: ${regArr.length} marcadores.\n⚠️ Fallos de Coordenadas (Ignorados): ${fails}`);
-    }
-
     /* ==========================================================================
        FASE 6: EXPORTACIÓN Y BACKUP DATA CON EXTRACCIÓN DE COORDENADAS
        ========================================================================== */
@@ -1655,21 +1497,6 @@
             });
         }
         return storeCopia;
-    }
-
-    function exportarBaseDatos() {
-        const datosCompletos = extraerDatosGeometria();
-        const objetoMaestro = {
-            credentials: SYSTEM_AUTH,
-            store: datosCompletos
-        };
-        const payload = JSON.stringify(objetoMaestro, null, 2);
-        
-        const blob = new Blob([payload], { type: "application/json" });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `CATASTRO_MUNICIPAL_BACKUP_${Date.now()}.json`;
-        a.click();
     }
 
     /* ==========================================================================
@@ -1756,8 +1583,7 @@
     function reconstruirDesdeJSON(datosCargados) {
         STORE = {};
         for(let id in capasSectores) {
-            if(mapa.hasLayer(capasSectores[id])) mapa.removeLayer(capasSectores[id]);
-            controlCapas.removeLayer(capasSectores[id]);
+            if(capaMaestraSectores.hasLayer(capasSectores[id])) capaMaestraSectores.removeLayer(capasSectores[id]);
         }
         
         for(let idSector in datosCargados) {
@@ -1822,7 +1648,7 @@
         actualizarUIYMapa();
     }
 
-    // ARRANQUE DIRECTO SIN LOGIN
+    // ARRANQUE DIRECTO SIN LOGIN PARA LA ALCALDESA
     window.onload = () => {
         cargarDatosNube();
     };
