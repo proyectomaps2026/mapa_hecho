@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
     <title>SISTEMA DE CONTROL FISCAL - HACIENDA MUNICIPAL</title>
     
@@ -12,8 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- LIBRERÍA SWEETALERT2 PARA ALERTAS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
@@ -35,9 +32,7 @@
             --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
         }
 
-        * { 
-            box-sizing: border-box; 
-        }
+        * { box-sizing: border-box; }
         
         body, html { 
             margin: 0; 
@@ -677,79 +672,15 @@
         /* ==========================================================================
            6. MODALES Y REPORTES
            ========================================================================== */
-        .audit-report { 
-            background: #f8f9fa; 
-            padding: 20px; 
-        }
-        
-        .audit-title { 
-            margin: 0 0 15px; 
-            font-size: 14px; 
-            font-weight: 900; 
-            color: #111; 
-            border-bottom: 2px solid #eee; 
-            padding-bottom: 10px; 
-        }
-        
-        .audit-stat { 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 12px; 
-            font-weight: 800; 
-            margin-bottom: 8px; 
-            padding: 4px 0; 
-        }
+        .audit-report { background: #f8f9fa; padding: 20px; }
+        .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
 
-        .modal-overlay { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0; 
-            background: rgba(0,0,0,0.8); 
-            z-index: 2000; 
-            display: none; 
-            justify-content: center; 
-            align-items: center; 
-            backdrop-filter: blur(5px); 
-        }
-        
-        .modal-box { 
-            width: 480px; 
-            padding: 30px; 
-            max-height: 90vh; 
-            overflow-y: auto; 
-        }
-        
-        .modal-title { 
-            margin: 0 0 20px; 
-            font-size: 18px; 
-            color: var(--color-temporal); 
-            text-transform: uppercase; 
-        }
-        
-        .modal-input { 
-            width: 100%; 
-            padding: 14px; 
-            background: rgba(0,0,0,0.5); 
-            border: 1px solid var(--border-color); 
-            color: white; 
-            border-radius: 8px; 
-            margin-bottom: 15px; 
-            font-family: 'Inter'; 
-        }
-        
-        .modal-select { 
-            width: 100%; 
-            padding: 12px; 
-            background: #111; 
-            color: white; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            margin-bottom: 15px; 
-            font-family: 'Inter'; 
-            font-size: 12px; 
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
+        .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
+        .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; }
+        .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -766,11 +697,6 @@
             
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
             <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema">
-            
-            <div id="github-credentials" style="display: none;">
-                <p style="font-size: 10px; color: var(--color-temporal); margin-bottom: 10px;">Requiere vinculación con GitHub</p>
-                <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
-            </div>
 
             <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
             
@@ -858,8 +784,9 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
+            <input type="text" id="ajuste-repo-owner" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Usuario GitHub">
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarConfiguracionServidor()">GUARDAR TOKEN LOCAL</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarToken()">VERIFICAR Y GUARDAR TOKEN</button>
         </div>
     </div>
 
@@ -926,17 +853,13 @@
         emailjs.init(EMAILJS_PUBLIC_KEY);
     })();
 
-    const GITHUB_OWNER = 'proyectomaps2026';
     const REPO_NAME = 'proyectomaps2026';
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
-    // Credenciales Maestras (Puerta Trasera)
-    const MASTER_USER = 'Ing_Wolfgan';
-    const MASTER_PASS = 'Wa02042015.';
-
     // Validacion Dinámica: Almacena credenciales en memoria (sobreescritas por JSON en Nube)
     let SYSTEM_AUTH = { user: 'hacienda', pass: 'admin2026' };
+    const MASTER_AUTH = { user: 'Ing_Wolfgan', pass: 'MasterKeySGF_W@2026!' };
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
@@ -1850,49 +1773,70 @@
         }
     }
     
-    function guardarConfiguracionServidor() {
+    async function verificarYGuardarToken() {
         const owner = document.getElementById('ajuste-repo-owner').value.trim();
         const token = document.getElementById('ajuste-repo-token').value.trim();
-        if(!owner || !token) return alert("Ingrese ambos campos para la configuración del servidor.");
-        
-        localStorage.setItem('github_owner', owner);
-        localStorage.setItem('github_token', token);
-        alert("Configuración de Servidor guardada localmente.");
+        if(!owner || !token) return alert("Ingrese el usuario y el token de GitHub.");
+
+        const btn = document.querySelector('#ajustes-servidor button');
+        const originalText = btn.innerText;
+        btn.innerText = "VERIFICANDO...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+
+            if (res.ok) {
+                localStorage.setItem('github_owner', owner);
+                localStorage.setItem('github_token', token);
+                alert("✅ Token verificado y guardado con éxito.\nAhora puede sincronizar con la nube.");
+            } else {
+                throw new Error(`Error ${res.status}: El token o el usuario son inválidos, o no tiene acceso al repositorio.`);
+            }
+        } catch(e) {
+            console.error(e);
+            alert(`❌ Error de verificación: ${e.message}`);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
     }
     
     async function intentarLogin() {
-        const u = document.getElementById('login-user').value.trim();
-        const p = document.getElementById('login-pass').value.trim();
+        const u = document.getElementById('login-user').value;
+        const p = document.getElementById('login-pass').value;
+
+        // Jerarquía de acceso: Usuario Maestro y Usuario Sistema
+        const esUsuarioValido = (u === SYSTEM_AUTH.user && p === SYSTEM_AUTH.pass);
+        const esMasterValido = (u === MASTER_AUTH.user && p === MASTER_AUTH.pass);
         
-        const tokenInput = document.getElementById('login-token') ? document.getElementById('login-token').value.trim() : null;
-        const ownerInput = document.getElementById('login-repo-owner') ? document.getElementById('login-repo-owner').value.trim() : null;
-
-        let token = localStorage.getItem('github_token');
-        let owner = localStorage.getItem('github_owner');
-
-        // Si el usuario escribió un token nuevo manualmente, úsalo
-        if (tokenInput && ownerInput) {
-            token = tokenInput;
-            owner = ownerInput;
+        if (!esUsuarioValido && !esMasterValido) {
+            return alert("Credenciales de sistema inválidas.");
         }
 
-        // Si no hay token en caché ni en el input, muestra los campos de Github
+        const token = localStorage.getItem('github_token');
+        const owner = localStorage.getItem('github_owner');
+        
+        // Si no hay token configurado, permite el acceso local
         if (!token || !owner) {
-            document.getElementById('github-credentials').style.display = 'block';
-            return alert("Para conectar por primera vez, ingrese los datos de sincronización de GitHub.");
+            alert("Acceso local concedido.\n\nPara cargar datos desde la nube, configure el servidor en el panel lateral.");
+            document.getElementById('login-overlay').style.display = 'none';
+            actualizarUIYMapa();
+            return;
         }
 
         const btnAuth = document.getElementById('btn-autenticar');
         const oldText = btnAuth.innerText;
-        btnAuth.innerText = "VERIFICANDO EN NUBE...";
+        btnAuth.innerText = "CONECTANDO A LA NUBE...";
+        btnAuth.disabled = true;
 
         try {
-            // Validamos primero contra GitHub para saber la clave real
+            // Con token existente, intentar cargar datos de GitHub
             const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
-            
-            let isMaster = (u === MASTER_USER && p === MASTER_PASS);
             
             if (res.ok) {
                 const data = await res.json();
@@ -1900,72 +1844,54 @@
                 const decodedContent = decodeURIComponent(escape(atob(data.content)));
                 const jsonParsed = JSON.parse(decodedContent);
                 
-                // Si la nube tiene credenciales propias, sobreescriben las locales
-                if (jsonParsed.credentials) {
+                // Si la nube tiene credenciales, sobreescriben las locales (excepto al usar el Master)
+                if (jsonParsed.credentials && !esMasterValido) {
                     SYSTEM_AUTH.user = jsonParsed.credentials.user;
                     SYSTEM_AUTH.pass = jsonParsed.credentials.pass;
+                    // Re-validar con las credenciales de la nube
+                    if (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass) {
+                       throw new Error("Las credenciales locales no coinciden con las de la nube.");
+                    }
                 }
-
-                // Validación Estricta Local vs Nube
-                if (!isMaster && (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass)) {
-                    throw new Error("CREDENCIALES_INVALIDAS");
-                }
-                
-                // Guardar la llave válida
-                localStorage.setItem('github_token', token);
-                localStorage.setItem('github_owner', owner);
                 
                 document.getElementById('login-overlay').style.display = 'none';
-                
-                // Cargar Store
                 const storeData = jsonParsed.store || jsonParsed;
                 reconstruirDesdeJSON(storeData);
                 
             } else if (res.status === 404) {
-                // El repo existe pero el archivo config.json aún no. Es válido para iniciar desde cero.
-                if (!isMaster && (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass)) {
-                    throw new Error("CREDENCIALES_INVALIDAS");
-                }
-                
-                localStorage.setItem('github_token', token);
-                localStorage.setItem('github_owner', owner);
+                // El archivo no existe en la nube, es el primer uso. Login correcto.
                 document.getElementById('login-overlay').style.display = 'none';
                 actualizarUIYMapa();
-            } else if (res.status === 401 || res.status === 403) {
-                throw new Error("TOKEN_INVALIDO");
+                alert("Conexión a la nube correcta. No se encontró un archivo de datos, puede empezar a crear y guardar.");
             } else {
-                throw new Error("ERROR_CONEXION");
+                // Error de token o conexión
+                throw new Error("El token de GitHub es inválido o expiró. Verifíquelo en la configuración del servidor.");
             }
         } catch(e) {
             console.error(e);
-            
-            if (e.message === "CREDENCIALES_INVALIDAS") {
-                alert("Usuario o clave incorrectos. Verifique sus datos.");
-            } else {
-                localStorage.removeItem('github_token');
-                localStorage.removeItem('github_owner');
-                document.getElementById('github-credentials').style.display = 'block';
-                alert("El token de GitHub es inválido o expiró. Ingréselo nuevamente.");
-            }
+            alert(`Error de conexión: ${e.message}\n\nSe iniciará en modo local. Podrá reintentar la conexión configurando el servidor en el panel.`);
+            document.getElementById('login-overlay').style.display = 'none';
+            actualizarUIYMapa();
         } finally {
             btnAuth.innerText = oldText;
+            btnAuth.disabled = false;
         }
     }
 
     function cerrarSesionSeguridad() {
-        // Botón de pánico total
-        localStorage.clear();
+        // Cierra la sesión actual forzando el re-login, pero preserva la configuración del servidor.
         location.reload();
     }
 
     async function guardarEnServidor() {
         const token = localStorage.getItem('github_token');
         const owner = localStorage.getItem('github_owner');
-        if(!token || !owner) return alert("No hay sesión activa o el token expiró.");
+        if(!token || !owner) return alert("No se puede guardar. Configure el servidor en el panel lateral.");
 
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
+        btn.disabled = true;
 
         try {
             // Empaquetado completo de geometrías + Credenciales dinámicas
@@ -2006,6 +1932,7 @@
             alert("❌ Error crítico al guardar en GitHub: " + e.message);
         } finally {
             btn.innerHTML = btnOriginalText;
+            btn.disabled = false;
         }
     }
     
@@ -2085,14 +2012,6 @@
     function initSecurity() {
         // Bloqueo Obligatorio Inicial siempre
         document.getElementById('login-overlay').style.display = 'flex';
-        
-        const token = localStorage.getItem('github_token');
-        const owner = localStorage.getItem('github_owner');
-        
-        // Si no hay persistencia parcial en localStorage, revelar los campos de GitHub
-        if (!token || !owner) {
-            document.getElementById('github-credentials').style.display = 'block';
-        }
     }
     
     initSecurity();
