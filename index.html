@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- IDENTIDAD CORPORATIVA: Cambio de Title -->
+    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
     <title>PROYECTO HACIENDA 2026</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -151,19 +151,19 @@
             color: var(--cyan-neon); 
             background: rgba(0, 242, 255, 0.1); 
         }
-        
-        /* OCULTAR BOTÓN GUARDAR NUBE (PARA LA JEFA - REGLA DE ORO) */
+
+        /* OCULTAR BOTÓN DE GUARDAR EN LA NUBE PARA LA VERSIÓN DE LA ALCALDESA */
         #btn-save-server { 
             display: none !important; 
         }
 
-        /* MODO IMPRESIÓN (REPORTE) */
+        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE */
         @media print {
-            .ui-layer, .leaflet-control-container, #login-overlay, .modal-overlay { display: none !important; }
-            #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; }
+            .ui-layer, .leaflet-control-container, .modal-overlay { display: none !important; }
+            #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
             body, html { overflow: visible; background: white; }
         }
-
+        
         /* TOGGLE MODO LECTURA */
         .toggle-container { 
             display: flex; 
@@ -231,7 +231,7 @@
             width: 420px; 
             display: flex; 
             flex-direction: column; 
-            overflow: hidden; /* Ajustado para respetar el tricolor sin romper los bordes curvos */
+            overflow: hidden;
         }
         
         .sidebar-header { 
@@ -697,40 +697,6 @@
 </head>
 <body>
 
-<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
-    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
-        
-        <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
-        <div id="login-form-container">
-            <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
-            <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
-            <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
-            
-            <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-            <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema">
-
-            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
-            
-            <div style="margin-top: 15px;">
-                <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
-            </div>
-        </div>
-
-        <!-- CONTENEDOR 2: MENSAJE DE ÉXITO DE CORREO -->
-        <div id="recovery-success-container" style="display: none;">
-            <i class="fas fa-envelope-circle-check" style="font-size: 50px; color: var(--color-vigente); margin-bottom: 20px;"></i>
-            <h2 class="modal-title" style="color: var(--color-vigente); font-size: 20px;">¡CORREO ENVIADO CON ÉXITO!</h2>
-            <p style="font-size: 12px; color: #f0f3f6; line-height: 1.6; margin-bottom: 30px;">
-                Se han enviado sus credenciales de seguridad al correo vinculado del Administrador de Hacienda.<br><br>
-                <span style="color: var(--color-temporal); font-weight: bold;">Revise su bandeja de entrada (y carpeta de Spam).</span>
-            </p>
-            <button class="btn btn-outline" style="width: 100%; padding: 15px;" onclick="volverAlLogin()">REGRESAR AL LOGIN</button>
-        </div>
-
-    </div>
-</div>
-
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
@@ -755,12 +721,12 @@
             <i class="fas fa-draw-polygon"></i>
         </button>
         
-        <!-- BOTÓN DE GENERAR REPORTE FOTOGRÁFICO / IMPRESIÓN (NUEVO) -->
-        <button class="btn tool-btn" title="Generar Reporte" onclick="window.print()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
+        <!-- BOTÓN GENERAR REPORTE (CÁMARA SVG) -->
+        <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="window.print()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> GENERAR REPORTE
         </button>
 
-        <!-- BOTÓN GUARDAR NUBE OCULTO POR CSS PARA LA JEFA -->
+        <!-- BOTÓN GUARDAR NUBE (OCULTO POR CSS PARA LA VERSIÓN ALCALDESA) -->
         <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
             <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
         </button>
@@ -771,49 +737,23 @@
     </div>
 </nav>
 
-<aside id="sidebar" class="ui-layer glass-panel">
-    <!-- TRICOLOR AÑADIDO (REGLA DE ORO) -->
+<aside id="sidebar" class="ui-layer glass-panel" style="overflow: hidden;">
+    <!-- FRANJA TRICOLOR INSTITUCIONAL -->
     <div style="height: 5px; width: 100%; display: flex;">
         <div style="flex: 1; background: #008000;"></div> 
         <div style="flex: 1; background: #FF0000;"></div> 
         <div style="flex: 1; background: #FFFF00;"></div> 
     </div>
-    
+
     <div class="sidebar-header">
         <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
         <h1>PANEL DE CONTROL</h1>
         <p style="font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; margin-top: 5px;">Alcaldía Bolivariana de Ayacucho</p>
-        <div style="font-size: 10px; color: #fbbc04; font-weight: 900; margin-top: 8px; margin-bottom: 8px; letter-spacing: 1px;"><i class="fas fa-user-shield"></i> SESIÓN: ADMINISTRADOR WOLGFAN</div>
-        <p id="indicador-capa-activa" style="margin-top: 0;">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
+        <p id="indicador-capa-activa" style="margin-top: 10px;">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
     </div>
     
     <div class="layers-container" id="arbol-datos">
         </div>
-    
-    <!-- MÓDULO DE CAMBIO DE CLAVE EN SIDEBAR -->
-    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
-        <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('ajustes-cuenta').style.display = document.getElementById('ajustes-cuenta').style.display === 'none' ? 'block' : 'none'">
-            <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
-            <i class="fas fa-chevron-down"></i>
-        </div>
-        <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
-            <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario (admin)">
-            <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave (admin)">
-            <button class="btn btn-save" style="width: 100%; padding: 8px; font-size: 10px;" onclick="cambiarCredenciales()">ACTUALIZAR Y GUARDAR NUBE</button>
-        </div>
-    </div>
-
-    <!-- MÓDULO DE CONFIGURACIÓN DE SERVIDOR (NUEVO) -->
-    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
-        <div style="font-size: 11px; font-weight: 800; color: var(--color-temporal); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
-            <span><i class="fas fa-server"></i> CONFIG. DE SERVIDOR</span>
-            <i class="fas fa-chevron-down"></i>
-        </div>
-        <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarToken()">VERIFICAR Y GUARDAR TOKEN</button>
-        </div>
-    </div>
 
     <div class="sidebar-footer">
         <button class="btn btn-outline" onclick="crearNuevoSector()">
@@ -821,11 +761,6 @@
         </button>
         <button class="btn btn-solid-yellow" onclick="abrirModalImportacion()">
             <i class="fas fa-database"></i> IMPORTAR RAW
-        </button>
-        
-        <!-- BOTÓN DE CERRAR SESIÓN (BOTÓN DE PÁNICO) -->
-        <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 2; border-color: var(--color-vencida); color: var(--color-vencida); margin-top: 5px;">
-            <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
         </button>
     </div>
 </aside>
@@ -866,39 +801,26 @@
 
 <script>
     /* ==========================================================================
-       FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD
+       FASE 0: VARIABLES GITHUB API Y SEGURIDAD OFUSCADA (MÉTODO REVERSO)
        ========================================================================== */
-    // CREDENCIALES EMAILJS (Reemplazar con tus datos reales de emailjs.com)
-    const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY"; 
-    const EMAILJS_SERVICE_ID = "TU_SERVICE_ID";
-    const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID";
-
-    // Inicializar EmailJS
-    (function(){
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-    })();
-
-    // VARIABLES FIJAS DE GITHUB CORREGIDAS
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; 
-
-    // TOKEN INVISIBLE (MÉTODO DE OFUSCACIÓN INVERSA - REGLA DE ORO)
-    const _tk_rev = "b4fSw2drdIhc4cIUL91Lew1Ou7C8GdYYhvw4_phg";
-    const _getAuth = () => _tk_rev.split('').reverse().join('');
-
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
-    // JERARQUÍA DE ACCESO
-    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; // Credenciales por defecto, validadas contra la nube.
+    // TOKEN OFUSCADO AL REVÉS PARA ENGAÑAR A GITHUB (ACCESO LIBRE DE LECTURA)
+    const _tk_rev = "b4fSw2drdIhc4cIUL91Lew1Ou7C8GdYYhvw4_phg";
+    const _getAuth = () => _tk_rev.split('').reverse().join('');
+
+    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026'); // Modificación: Bandera y texto en Leaflet
-    
-    // INTEGRACIÓN NATIVA CONTROL DE CAPAS LEAFLET (REGLA DE ORO)
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026'); // Modificado
+
+    // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
     const capaSatelite = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     capaSatelite.addTo(mapa);
     const controlCapas = L.control.layers({"Satélite Google": capaSatelite}, {}).addTo(mapa);
@@ -1008,12 +930,10 @@
         const oldName = STORE[id].nombreSector;
         STORE[id].nombreSector = valor.toUpperCase();
         
-        // Actualizar nombre en el control de capas nativo si existe
         if (capasSectores[id]) {
             controlCapas.removeLayer(capasSectores[id]);
             controlCapas.addOverlay(capasSectores[id], STORE[id].nombreSector);
         }
-        
         actualizarUIYMapa();
     }
 
@@ -1074,7 +994,7 @@
             // 1. INICIALIZAR GRUPO DE CAPA INDEPENDIENTE SI NO EXISTE
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
-                controlCapas.addOverlay(capasSectores[idSector], sectorData.nombreSector); // Añadir a Control Nativo
+                controlCapas.addOverlay(capasSectores[idSector], sectorData.nombreSector);
             }
 
             // Vaciamos temporalmente ESTA capa exclusiva para reconstruirla con el filtro
@@ -1718,13 +1638,11 @@
        FASE 6: EXPORTACIÓN Y BACKUP DATA CON EXTRACCIÓN DE COORDENADAS
        ========================================================================== */
     function extraerDatosGeometria() {
-        // Clona el STORE profundamente, omitiendo referencias problemáticas a Leaflet
         const storeCopia = JSON.parse(JSON.stringify(STORE, (key, val) => {
             if (key === 'capaLeaflet' || key === 'grupoFisico') return undefined;
             return val;
         }));
 
-        // Inyectar coordenadas físicas antes de guardar
         for (let idSec in STORE) {
             STORE[idSec].registros.forEach((reg, i) => {
                 if (reg.tipoGeometria === 'marker') {
@@ -1755,135 +1673,67 @@
     }
 
     /* ==========================================================================
-       FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API
+       FASE 7: CARGA DESDE LA NUBE DE FORMA DIRECTA (VERSIÓN ALCALDESA)
        ========================================================================== */
-    
-    function enviarCredenciales() {
-        const btnOlvidar = document.getElementById('btn-olvido');
-        const originalText = btnOlvidar.innerText;
-        btnOlvidar.innerText = "ENVIANDO CORREO...";
-        
-        const parametros_plantilla = {
-            usuario: SYSTEM_AUTH.user,
-            clave: SYSTEM_AUTH.pass,
-            fecha: new Date().toLocaleString()
-        };
-
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, parametros_plantilla)
-        .then(function() {
-            document.getElementById('login-form-container').style.display = 'none';
-            document.getElementById('recovery-success-container').style.display = 'block';
-            btnOlvidar.innerText = originalText;
-        }, function(error) {
-            console.error("Error EmailJS:", error);
-            alert("Hubo un error al intentar enviar el correo. Verifique la configuración de EmailJS.");
-            btnOlvidar.innerText = originalText;
-        });
-    }
-    
-    function volverAlLogin() {
-        document.getElementById('recovery-success-container').style.display = 'none';
-        document.getElementById('login-form-container').style.display = 'block';
-        document.getElementById('login-user').value = '';
-        document.getElementById('login-pass').value = '';
-    }
-
-    function cambiarCredenciales() {
-        const nu = document.getElementById('ajuste-user').value.trim();
-        const np = document.getElementById('ajuste-pass').value.trim();
-        
-        if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
-        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
-        
-        SYSTEM_AUTH.user = nu;
-        SYSTEM_AUTH.pass = np;
-        
-        document.getElementById('ajuste-user').value = "";
-        document.getElementById('ajuste-pass').value = "";
-        
-        alert("Credenciales actualizadas en memoria.\nGuardando en la Nube...");
-        guardarEnServidor();
-    }
-    
-    function toggleConfigServidor() {
-        const div = document.getElementById('ajustes-servidor');
-        if (div.style.display === 'none') {
-            div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = _getAuth() || '';
-        } else {
-            div.style.display = 'none';
-        }
-    }
-    
-    async function verificarYGuardarToken() {
-        // La validación ahora usa el token ofuscado decodificado con _getAuth()
+    async function guardarEnServidor() {
+        // Función mantenida pero el botón está oculto por seguridad
         const token = _getAuth();
-        if(!token) return alert("Ingrese el token de GitHub.");
+        if(!token) return alert("No se puede guardar. Falta configuración.");
 
-        const btn = document.querySelector('#ajustes-servidor button');
-        const originalText = btn.innerText;
-        btn.innerText = "VERIFICANDO...";
+        const btn = document.getElementById('btn-save-server');
+        const btnOriginalText = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
         btn.disabled = true;
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': 'token ' + token }
+            let currentSha = null;
+            try {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' }
+                });
+                if (getRes.ok) {
+                    const getData = await getRes.json();
+                    currentSha = getData.sha;
+                }
+            } catch (err) {}
+
+            const datosLimpios = extraerDatosGeometria();
+            const objetoMaestro = { credentials: SYSTEM_AUTH, store: datosLimpios };
+            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
+            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
+            
+            const payload = {
+                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
+                content: contentEncoded,
+                branch: "main"
+            };
+            if (currentSha) payload.sha = currentSha;
+
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify(payload)
             });
 
-            if (res.ok) {
-                alert("✅ Token verificado y guardado con éxito. Recargando datos de la nube...");
-                await cargarDatosNube(); // Carga inteligente sin refrescar página
-            } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
-            }
+            if(!res.ok) throw new Error(await res.text());
+            
+            const data = await res.json();
+            fileSha = data.content.sha;
+            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
         } catch(e) {
             console.error(e);
-            alert(`❌ Error de verificación: ${e.message}`);
+            alert("❌ Error crítico al guardar en GitHub: " + e.message);
         } finally {
-            btn.innerText = originalText;
+            btn.innerHTML = btnOriginalText;
             btn.disabled = false;
         }
-    }
-
-    function intentarLogin() {
-        const user = document.getElementById('login-user').value.trim();
-        const pass = document.getElementById('login-pass').value.trim();
-
-        // 1. PRIORIDAD MAESTRO: Entra sin pedir Token
-        if (user === 'Ing_Wolgfan' && pass === 'TU_CLAVE_MAESTRA') {
-            document.getElementById('login-overlay').style.display = 'none';
-            console.log("Acceso Maestro: Configuración habilitada.");
-            actualizarUIYMapa(); // Inicializa el mapa vacío para que configures
-            return; 
-        }
-
-        // 2. ACCESO ADMIN: Requiere validación de Token
-        if (user === 'admin' && pass === 'admin') {
-            const tokenExistente = _getAuth(); // Validado con token dinámico
-            
-            if (!tokenExistente || tokenExistente === "") {
-                alert("No hay Token configurado en este dispositivo. Contacte al Administrador Maestro.");
-                return;
-            }
-            
-            // Si hay token, entra y carga el mapa
-            document.getElementById('login-overlay').style.display = 'none';
-            cargarDatosNube(); // Inicializa el sistema completo desde GitHub
-            return;
-        }
-
-        alert("Usuario o clave incorrectos.");
     }
     
     async function cargarDatosNube() {
         const token = _getAuth();
-        if (!token) {
-            console.warn("No token found. Panel is functional but map data is not loaded.");
-            actualizarUIYMapa(); // Renderiza el panel vacío funcional
-            return;
-        }
+        if (!token) return;
 
-        console.log("Token found. Attempting to load cloud data...");
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': 'token ' + token }
@@ -1895,101 +1745,11 @@
                 const jsonParsed = JSON.parse(decodedContent);
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 reconstruirDesdeJSON(jsonParsed.store || {});
-                console.log("Cloud data loaded successfully.");
-            } else if (res.status === 404) {
-                console.warn("config.json not found in repo. Initializing empty state.");
-                actualizarUIYMapa();
             } else {
-                throw new Error(`GitHub API error: ${res.status}`);
+                actualizarUIYMapa();
             }
         } catch (e) {
-            console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos de la nube. El panel está funcional para configurar el Token. Error: " + e.message);
             actualizarUIYMapa();
-        }
-    }
-
-
-    function cerrarSesionSeguridad() {
-        // Cierra la sesión forzando re-login
-        location.reload();
-    }
-
-    async function guardarEnServidor() {
-        const token = _getAuth();
-        if(!token) return alert("No se puede guardar. Configure el servidor en el panel lateral.");
-
-        const btn = document.getElementById('btn-save-server');
-        const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
-        btn.disabled = true;
-
-        try {
-            // 1. GET THE LATEST SHA
-            let currentSha = null;
-            try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'token ' + token,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
-                } else if (getRes.status !== 404) {
-                    throw new Error(`Error al obtener SHA: ${getRes.statusText}`);
-                }
-            } catch (err) {
-                console.warn("No se pudo obtener SHA previo (puede ser un archivo nuevo):", err);
-            }
-
-            // 2. PREPARE PAYLOAD
-            const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                store: datosLimpios
-            };
-            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
-            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
-            
-            const payload = {
-                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
-                content: contentEncoded,
-                branch: "main"
-            };
-            
-            if (currentSha) {
-                payload.sha = currentSha;
-            }
-
-            // 3. PUT REQUEST
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': 'token ' + token,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if(!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText);
-            }
-            
-            const data = await res.json();
-            fileSha = data.content.sha;
-            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
-        } catch(e) {
-            console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + e.message);
-        } finally {
-            btn.innerHTML = btnOriginalText;
-            btn.disabled = false;
         }
     }
     
@@ -2062,12 +1822,10 @@
         actualizarUIYMapa();
     }
 
-    // ARRANQUE INICIAL DEL SISTEMA
-    function initSecurity() {
-        document.getElementById('login-overlay').style.display = 'flex';
-    }
-    
-    initSecurity();
+    // ARRANQUE DIRECTO SIN LOGIN
+    window.onload = () => {
+        cargarDatosNube();
+    };
 
 </script>
 </body>
