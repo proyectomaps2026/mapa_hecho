@@ -771,8 +771,8 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
-            <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario">
-            <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave">
+            <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario (admin)">
+            <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave (admin)">
             <button class="btn btn-save" style="width: 100%; padding: 8px; font-size: 10px;" onclick="cambiarCredenciales()">ACTUALIZAR Y GUARDAR NUBE</button>
         </div>
     </div>
@@ -784,8 +784,7 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="text" id="ajuste-repo-owner" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Usuario GitHub">
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token GitHub (ghp_...)">
+            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
             <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarToken()">VERIFICAR Y GUARDAR TOKEN</button>
         </div>
     </div>
@@ -853,13 +852,14 @@
         emailjs.init(EMAILJS_PUBLIC_KEY);
     })();
 
+    const GITHUB_OWNER = 'proyectomaps2026';
     const REPO_NAME = 'proyectomaps2026';
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
-    // Validacion Dinámica: Almacena credenciales en memoria (sobreescritas por JSON en Nube)
-    let SYSTEM_AUTH = { user: 'hacienda', pass: 'admin2026' };
-    const MASTER_AUTH = { user: 'Ing_Wolfgan', pass: 'MasterKeySGF_W@2026!' };
+    // JERARQUÍA DE ACCESO
+    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; // Credenciales por defecto, validadas contra la nube.
+    const MASTER_AUTH = { user: 'Ing_Wolfgan', pass: 'MasterKeySGF_W@2026!' }; // Clave maestra con bypass.
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
@@ -1712,7 +1712,6 @@
        FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API
        ========================================================================== */
     
-    // Función de recuperación (Botón de pánico/correo)
     function enviarCredenciales() {
         const btnOlvidar = document.getElementById('btn-olvido');
         const originalText = btnOlvidar.innerText;
@@ -1731,7 +1730,7 @@
             btnOlvidar.innerText = originalText;
         }, function(error) {
             console.error("Error EmailJS:", error);
-            alert("Hubo un error al intentar enviar el correo. Por favor verifique la configuración de EmailJS o intente de nuevo más tarde.");
+            alert("Hubo un error al intentar enviar el correo. Verifique la configuración de EmailJS.");
             btnOlvidar.innerText = originalText;
         });
     }
@@ -1743,13 +1742,12 @@
         document.getElementById('login-pass').value = '';
     }
 
-    // Módulo Sidebar para cambio de credenciales
     function cambiarCredenciales() {
         const nu = document.getElementById('ajuste-user').value.trim();
         const np = document.getElementById('ajuste-pass').value.trim();
         
         if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
-        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de acceso?\n\nDeberá usar estas nuevas credenciales la próxima vez que entre al sistema.")) return;
+        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
         
         SYSTEM_AUTH.user = nu;
         SYSTEM_AUTH.pass = np;
@@ -1757,16 +1755,14 @@
         document.getElementById('ajuste-user').value = "";
         document.getElementById('ajuste-pass').value = "";
         
-        alert("Credenciales actualizadas en memoria.\n\nGuardando en la Nube...");
+        alert("Credenciales actualizadas en memoria.\nGuardando en la Nube...");
         guardarEnServidor();
     }
     
-    // Módulo Sidebar Config Servidor
     function toggleConfigServidor() {
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-owner').value = localStorage.getItem('github_owner') || '';
             document.getElementById('ajuste-repo-token').value = localStorage.getItem('github_token') || '';
         } else {
             div.style.display = 'none';
@@ -1774,9 +1770,8 @@
     }
     
     async function verificarYGuardarToken() {
-        const owner = document.getElementById('ajuste-repo-owner').value.trim();
         const token = document.getElementById('ajuste-repo-token').value.trim();
-        if(!owner || !token) return alert("Ingrese el usuario y el token de GitHub.");
+        if(!token) return alert("Ingrese el token de GitHub.");
 
         const btn = document.querySelector('#ajustes-servidor button');
         const originalText = btn.innerText;
@@ -1784,16 +1779,16 @@
         btn.disabled = true;
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
 
             if (res.ok) {
-                localStorage.setItem('github_owner', owner);
                 localStorage.setItem('github_token', token);
-                alert("✅ Token verificado y guardado con éxito.\nAhora puede sincronizar con la nube.");
+                localStorage.setItem('github_owner', GITHUB_OWNER); // Persiste el owner hardcodeado por consistencia
+                alert("✅ Token verificado y guardado con éxito. Ahora puede sincronizar con la nube.");
             } else {
-                throw new Error(`Error ${res.status}: El token o el usuario son inválidos, o no tiene acceso al repositorio.`);
+                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_OWNER}/${REPO_NAME}'.`);
             }
         } catch(e) {
             console.error(e);
@@ -1803,90 +1798,99 @@
             btn.disabled = false;
         }
     }
-    
+
     async function intentarLogin() {
         const u = document.getElementById('login-user').value;
         const p = document.getElementById('login-pass').value;
 
-        // Jerarquía de acceso: Usuario Maestro y Usuario Sistema
-        const esUsuarioValido = (u === SYSTEM_AUTH.user && p === SYSTEM_AUTH.pass);
-        const esMasterValido = (u === MASTER_AUTH.user && p === MASTER_AUTH.pass);
-        
-        if (!esUsuarioValido && !esMasterValido) {
-            return alert("Credenciales de sistema inválidas.");
+        // PRIORIDAD 1: LOGIN MAESTRO (BYPASS DE NUBE PARA AUTENTICACIÓN)
+        if (u === MASTER_AUTH.user && p === MASTER_AUTH.pass) {
+            console.log("Master access granted.");
+            await grantAccessAndLoadData();
+            return;
         }
 
+        // PRIORIDAD 2: LOGIN ESTÁNDAR (VALIDADO CONTRA NUBE)
         const token = localStorage.getItem('github_token');
-        const owner = localStorage.getItem('github_owner');
-        
-        // Si no hay token configurado, permite el acceso local
-        if (!token || !owner) {
-            alert("Acceso local concedido.\n\nPara cargar datos desde la nube, configure el servidor en el panel lateral.");
-            document.getElementById('login-overlay').style.display = 'none';
-            actualizarUIYMapa();
-            return;
+        if (!token) {
+            return alert("Error: No hay un Token de Servidor configurado. Un Administrador Maestro debe iniciar sesión para configurar la conexión.");
         }
 
         const btnAuth = document.getElementById('btn-autenticar');
         const oldText = btnAuth.innerText;
-        btnAuth.innerText = "CONECTANDO A LA NUBE...";
+        btnAuth.innerText = "VALIDANDO EN NUBE...";
         btnAuth.disabled = true;
 
         try {
-            // Con token existente, intentar cargar datos de GitHub
-            const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
-            
+
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.sha;
                 const decodedContent = decodeURIComponent(escape(atob(data.content)));
                 const jsonParsed = JSON.parse(decodedContent);
-                
-                // Si la nube tiene credenciales, sobreescriben las locales (excepto al usar el Master)
-                if (jsonParsed.credentials && !esMasterValido) {
-                    SYSTEM_AUTH.user = jsonParsed.credentials.user;
-                    SYSTEM_AUTH.pass = jsonParsed.credentials.pass;
-                    // Re-validar con las credenciales de la nube
-                    if (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass) {
-                       throw new Error("Las credenciales locales no coinciden con las de la nube.");
-                    }
+                const cloudCreds = jsonParsed.credentials;
+
+                if (!cloudCreds) throw new Error("El archivo en la nube no contiene credenciales.");
+
+                if (u === cloudCreds.user && p === cloudCreds.pass) {
+                    SYSTEM_AUTH = cloudCreds;
+                    document.getElementById('login-overlay').style.display = 'none';
+                    reconstruirDesdeJSON(jsonParsed.store || {});
+                } else {
+                    throw new Error("Usuario o clave de Hacienda incorrectos.");
                 }
-                
-                document.getElementById('login-overlay').style.display = 'none';
-                const storeData = jsonParsed.store || jsonParsed;
-                reconstruirDesdeJSON(storeData);
-                
+
             } else if (res.status === 404) {
-                // El archivo no existe en la nube, es el primer uso. Login correcto.
-                document.getElementById('login-overlay').style.display = 'none';
-                actualizarUIYMapa();
-                alert("Conexión a la nube correcta. No se encontró un archivo de datos, puede empezar a crear y guardar.");
+                throw new Error("El archivo de configuración no existe en la nube. Un Administrador Maestro debe crearlo con un primer guardado.");
             } else {
-                // Error de token o conexión
-                throw new Error("El token de GitHub es inválido o expiró. Verifíquelo en la configuración del servidor.");
+                throw new Error("Token de GitHub inválido o repositorio no accesible. Un Administrador Maestro debe verificar la configuración.");
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
-            alert(`Error de conexión: ${e.message}\n\nSe iniciará en modo local. Podrá reintentar la conexión configurando el servidor en el panel.`);
-            document.getElementById('login-overlay').style.display = 'none';
-            actualizarUIYMapa();
+            alert(`Error de autenticación: ${e.message}`);
         } finally {
             btnAuth.innerText = oldText;
             btnAuth.disabled = false;
         }
     }
 
+    async function grantAccessAndLoadData() {
+        document.getElementById('login-overlay').style.display = 'none';
+        const token = localStorage.getItem('github_token');
+        if (token) {
+            console.log("Master user logged in. Attempting to load data...");
+            try {
+                const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                    headers: { 'Authorization': `token ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    fileSha = data.sha;
+                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                    const jsonParsed = JSON.parse(decodedContent);
+                    if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+                    reconstruirDesdeJSON(jsonParsed.store || {});
+                    return;
+                }
+            } catch (e) {
+                console.error("Failed to load cloud data for master user:", e);
+                alert("No se pudieron cargar los datos de la nube. Iniciando sesión local.");
+            }
+        }
+        actualizarUIYMapa();
+    }
+
     function cerrarSesionSeguridad() {
-        // Cierra la sesión actual forzando el re-login, pero preserva la configuración del servidor.
+        // Cierra la sesión forzando re-login, pero preserva el Token en localStorage.
         location.reload();
     }
 
     async function guardarEnServidor() {
         const token = localStorage.getItem('github_token');
-        const owner = localStorage.getItem('github_owner');
-        if(!token || !owner) return alert("No se puede guardar. Configure el servidor en el panel lateral.");
+        if(!token) return alert("No se puede guardar. Configure el servidor en el panel lateral.");
 
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
@@ -1894,26 +1898,21 @@
         btn.disabled = true;
 
         try {
-            // Empaquetado completo de geometrías + Credenciales dinámicas
             const datosLimpios = extraerDatosGeometria();
             const objetoMaestro = {
                 credentials: SYSTEM_AUTH,
                 store: datosLimpios
             };
-            
             const jsonStr = JSON.stringify(objetoMaestro, null, 2);
-            // Codificación segura para JSON a Base64
             const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
-
             const payload = {
                 message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
                 content: contentEncoded,
                 branch: "main"
             };
-            
-            if(fileSha) payload.sha = fileSha; // Vital para actualizar y no duplicar
+            if(fileSha) payload.sha = fileSha;
 
-            const res = await fetch(`https://api.github.com/repos/${owner}/${REPO_NAME}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `token ${token}`,
@@ -1925,7 +1924,7 @@
             if(!res.ok) throw new Error(await res.text());
             
             const data = await res.json();
-            fileSha = data.content.sha; // Renovar SHA para futuros guardados
+            fileSha = data.content.sha;
             alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
         } catch(e) {
             console.error(e);
@@ -1960,7 +1959,6 @@
                 const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
                 const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
                 
-                // Prioridad de color: Registro Individual -> Color Categoria (Sector) -> Estatus General
                 let colorBase = confEst.color;
                 if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
                     colorBase = STORE[idSector].coloresPorEstatus[estActual];
@@ -1986,8 +1984,7 @@
                 }
 
                 if(capa) {
-                    const newIdFisico = L.stamp(capa); // Forzar nueva ID física válida para esta sesión
-                    
+                    const newIdFisico = L.stamp(capa);
                     const nuevoReg = {
                         idFisico: newIdFisico,
                         tipoGeometria: reg.tipoGeometria,
@@ -1998,19 +1995,16 @@
                         datosGenerales: reg.datosGenerales,
                         camposOcultos: reg.camposOcultos || []
                     };
-
                     STORE[idSector].registros.push(nuevoReg);
                     vincularEventosCapa(capa, idSector, newIdFisico);
                 }
             });
         }
-        
         actualizarUIYMapa();
     }
 
     // ARRANQUE INICIAL DEL SISTEMA
     function initSecurity() {
-        // Bloqueo Obligatorio Inicial siempre
         document.getElementById('login-overlay').style.display = 'flex';
     }
     
