@@ -852,8 +852,9 @@
         emailjs.init(EMAILJS_PUBLIC_KEY);
     })();
 
-    const GITHUB_OWNER = 'proyectomaps2026';
-    const REPO_NAME = 'proyectomaps2026';
+    // VARIABLES FIJAS DE GITHUB CORREGIDAS
+    const GITHUB_USER = 'proyectomaps2026';
+    const GITHUB_REPO = 'proyectomaps2026.github.io'; 
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
@@ -1778,17 +1779,17 @@
         btn.disabled = true;
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
 
             if (res.ok) {
                 localStorage.setItem('github_token', token);
-                localStorage.setItem('github_owner', GITHUB_OWNER); 
+                localStorage.setItem('github_owner', GITHUB_USER); 
                 alert("✅ Token verificado y guardado con éxito. Recargando datos de la nube...");
                 await cargarDatosNube(); // Carga inteligente sin refrescar página
             } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_OWNER}/${REPO_NAME}'.`);
+                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
             }
         } catch(e) {
             console.error(e);
@@ -1839,7 +1840,7 @@
 
         console.log("Token found. Attempting to load cloud data...");
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': `token ${token}` }
             });
             if (res.ok) {
@@ -1893,7 +1894,7 @@
             };
             if(fileSha) payload.sha = fileSha;
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `token ${token}`,
