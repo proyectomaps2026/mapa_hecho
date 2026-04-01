@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
+    <title>SGF 2026 - Panel de Control Superior</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ==========================================================================
+           1. VARIABLES MAESTRAS Y RESETEO (UI CORPORATIVA MUNICIPAL)
+           ========================================================================== */
+        :root { 
+            --cyan-neon: #00f2ff; 
+            --bg-dark: #07090d; 
+            --panel-bg: rgba(18, 22, 29, 0.95); 
+            --text-main: #f0f3f6; 
+            --border-color: #2a313a; 
+            --color-vigente: #238636;
+            --color-vencida: #da3633;
+            --color-temporal: #fbbc04;
+            --color-censo: #00f2ff;
+            --color-nulo: #6e7681;
+            --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
+        }
+
+        * { box-sizing: border-box; }
+        
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-main); 
+            overflow: hidden; 
+        }
+        
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            z-index: 1; 
+        }
+
+        /* ==========================================================================
+           2. COMPONENTES DE INTERFAZ (UI)
+           ========================================================================== */
+        .ui-layer { 
+            position: absolute; 
+            z-index: 1000; 
+            pointer-events: auto; 
+        }
+        
+        .glass-panel { 
+            background: var(--panel-bg); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            box-shadow: var(--shadow-heavy); 
+        }
+        
+        .btn { 
+            border: none; 
+            font-family: 'Inter', sans-serif; 
+            font-weight: 900; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .btn:hover { 
+            filter: brightness(1.2); 
+            transform: translateY(-1px); 
+        }
+
+        /* BARRA SUPERIOR */
+        .top-nav { 
+            top: 15px; 
+            left: 15px; 
+            right: 15px; 
+            height: 64px; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 20px; 
+            gap: 15px; 
+            justify-content: space-between; 
+        }
+        
+        .search-container { 
+            flex: 1; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            background: rgba(0,0,0,0.4); 
+            padding: 12px 18px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            transition: 0.3s; 
+        }
+        
+        .search-container:focus-within { 
+            border-color: var(--cyan-neon); 
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); 
+        }
+        
+        .search-container input { 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            outline: none; 
+            width: 100%; 
+            font-size: 14px; 
+            font-weight: 600; 
+        }
+        
+        .header-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,242,255,0.5);
+            margin-right: 20px;
+        }
+
+        /* SIDEBAR (PANEL MAESTRO) */
+        #sidebar { 
+            top: 95px; 
+            left: 15px; 
+            bottom: 20px; 
+            width: 420px; 
+            display: flex; 
+            flex-direction: column; 
+            border-top: none; /* Eliminado para usar el pseudo-elemento */
+            position: relative; /* Requerido para el pseudo-elemento */
+        }
+
+        #sidebar:before {
+            content: '';
+            position: absolute;
+            top: -1px; /* Ajuste para que se alinee con el borde */
+            left: -1px;
+            right: -1px;
+            height: 5px; /* Ancho de la franja */
+            background: linear-gradient(to right, var(--color-vigente) 33.3%, var(--color-vencida) 33.3%, var(--color-vencida) 66.6%, var(--color-temporal) 66.6%);
+            border-radius: 12px 12px 0 0; /* Coincidir con el border-radius del panel */
+        }
+        
+        .sidebar-header { 
+            padding: 25px 20px; 
+            border-bottom: 1px solid var(--border-color); 
+            background: rgba(255,255,255,0.02); 
+        }
+        
+        /* IDENTIDAD CORPORATIVA: Sidebar Header */
+        .sidebar-header h1 { 
+            margin: 0; 
+            font-size: 16px; 
+            font-weight: 900; 
+            letter-spacing: 0.5px; 
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+        
+        .sidebar-header p { 
+            margin: 4px 0 0; 
+            font-size: 10px; 
+            color: var(--cyan-neon); 
+            font-weight: 800; 
+            letter-spacing: 0.5px;
+        }
+        
+        .layers-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+        }
+        
+        .layers-container::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        
+        .layers-container::-webkit-scrollbar-thumb { 
+            background: var(--border-color); 
+            border-radius: 4px; 
+        }
+
+        /* TARJETAS DE SECTOR Y CONTROLES DUALES */
+        .sector-card { 
+            margin-bottom: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            background: rgba(0,0,0,0.3); 
+            overflow: hidden; 
+            transition: all 0.3s ease; 
+        }
+        
+        .sector-card.is-active { 
+            border-color: var(--cyan-neon); 
+            background: rgba(0, 242, 255, 0.03); 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
+        }
+        
+        .sector-header { 
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-bottom: 1px solid transparent; 
+        }
+        
+        .sector-header:hover { 
+            background: rgba(255,255,255,0.05); 
+        }
+        
+        .sector-title-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        
+        .sector-controls { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        
+        .radio-active { 
+            appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #6e7681; 
+            border-radius: 50%; 
+            outline: none; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        
+        .radio-active:checked { 
+            border-color: var(--cyan-neon); 
+        }
+        
+        .radio-active:checked::after { 
+            content: ''; 
+            position: absolute; 
+            top: 3px; 
+            left: 3px; 
+            width: 6px; 
+            height: 6px; 
+            background: var(--cyan-neon); 
+            border-radius: 50%; 
+        }
+        
+        .sector-title { 
+            font-size: 13px; 
+            font-weight: 800; 
+            color: var(--text-main); 
+            cursor: pointer;
+        }
+
+        /* ACORDEÓN DE ESTATUS Y LISTA */
+        .status-group { 
+            border-top: 1px solid var(--border-color); 
+            background: rgba(255,255,255,0.01); 
+        }
+        
+        .status-header { 
+            padding: 10px 16px; 
+            font-size: 11px; 
+            font-weight: 800; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            cursor: pointer; 
+        }
+        
+        .status-header:hover { 
+            background: rgba(255,255,255,0.04); 
+        }
+        
+        .status-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        
+        .status-dot { 
+            width: 10px; 
+            height: 10px; 
+            border-radius: 50%; 
+            box-shadow: 0 0 8px currentColor; 
+        }
+        
+        .status-count { 
+            background: rgba(255,255,255,0.1); 
+            padding: 2px 8px; 
+            border-radius: 12px; 
+            font-size: 10px; 
+        }
+
+        .local-list { 
+            background: rgba(0,0,0,0.5); 
+            max-height: 250px; 
+            overflow-y: auto; 
+        }
+        
+        .local-row { 
+            padding: 8px 16px 8px 24px; 
+            font-size: 11px; 
+            color: #a5b0bfff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            cursor: pointer; 
+            border-bottom: 1px solid rgba(255,255,255,0.02); 
+        }
+        
+        .local-row:hover { 
+            color: white; 
+            background: rgba(255,255,255,0.08); 
+        }
+
+        /* ==========================================================================
+           3. POPUPS Y VISOR DE DATOS
+           ========================================================================== */
+        .leaflet-popup-content-wrapper { 
+            padding: 0; 
+            overflow: hidden; 
+            border-radius: 12px; 
+            background: #fff; 
+            width: 340px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+        }
+        
+        .leaflet-popup-tip { 
+            background: #fff; 
+        }
+        
+        .leaflet-popup-content { 
+            margin: 0; 
+        } 
+        
+        .pop-cover { 
+            width: 100%; 
+            height: 160px; 
+            background: #111; 
+            position: relative; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+        
+        .pop-cover img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            opacity: 0.9; 
+        }
+        
+        .pop-badge { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 10px; 
+            font-weight: 900; 
+            color: white; 
+            text-transform: uppercase; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            border: 2px solid rgba(255,255,255,0.5); 
+        }
+        
+        .pop-content { 
+            padding: 20px; 
+            color: #111; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        
+        .read-field { 
+            margin-bottom: 12px; 
+            border-bottom: 1px solid #eaeaea; 
+            padding-bottom: 8px; 
+        }
+        
+        .read-label { 
+            display: block; 
+            font-size: 9px; 
+            font-weight: 900; 
+            color: #888; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+        }
+        
+        .read-value { 
+            font-size: 13px; 
+            font-weight: 700; 
+            color: #111; 
+            word-break: break-word; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<nav class="ui-layer glass-panel top-nav">
+    <div class="header-title">PROYECTO HACIENDA 2026</div>
+    <div class="search-container">
+        <i class="fas fa-search" style="color: var(--cyan-neon);"></i>
+        <input type="text" id="buscador-global" placeholder="Filtrado Profundo: Buscar por Contribuyente, RIF o Estatus..." oninput="ejecutarMotorBusqueda()">
+    </div>
+</nav>
+
+<aside id="sidebar" class="ui-layer glass-panel">
+    <div class="sidebar-header">
+        <h1>SGF 2026 - Panel de Control Superior (Alcaldía Bolivariana de Ayacucho)</h1>
+        <p id="indicador-capa-activa">VISOR DE DATOS FISCALES</p>
+    </div>
+    
+    <div class="layers-container" id="arbol-datos">
+    </div>
+    
+</aside>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+<script>
+    /* ==========================================================================
+       FASE 0: VARIABLES GITHUB API (MODO VISOR)
+       ========================================================================== */
+    // TOKEN DE ACCESO DE SOLO LECTURA (REEMPLAZAR POR EL TOKEN REAL)
+    const READ_ONLY_TOKEN = 'ghp_...'; // PEGAR AQUÍ EL TOKEN DE ACCESO
+
+    // VARIABLES FIJAS DE GITHUB
+    const GITHUB_USER = 'proyectomaps2026';
+    const GITHUB_REPO = 'mapa_hecho'; 
+    const FILE_PATH = 'config.json';
+    
+    /* ==========================================================================
+       FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
+       ========================================================================== */
+    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
+    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 }).addTo(mapa);
+
+    // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
+    const capasSectores = {};
+
+    // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
+    let STORE = {}; 
+    let capaActivaId = null; 
+    let modoLecturaGlobal = true; // Forzar modo lectura permanente
+    let textoFiltroGlobal = "";
+
+    const DICCIONARIO_ESTATUS = {
+        "VIGENTE": { color: "#238636" },
+        "VENCIDA": { color: "#da3633" },
+        "TEMPORAL": { color: "#fbbc04" },
+        "CENSO / NUEVO": { color: "#00f2ff" },
+        "SIN LICENCIA": { color: "#da3633" },
+        "SIN CATEGORÍA": { color: "#6e7681" }
+    };
+
+    const crearPinFiscal = (color) => L.divIcon({ 
+        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
+        className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
+    });
+    
+    /* ==========================================================================
+       FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
+       ========================================================================== */
+    function actualizarUIYMapa() {
+        const contenedor = document.getElementById('arbol-datos');
+        contenedor.innerHTML = "";
+        
+        for(let idSector in STORE) {
+            const sectorData = STORE[idSector];
+
+            if (!capasSectores[idSector]) {
+                capasSectores[idSector] = new L.FeatureGroup();
+            }
+
+            capasSectores[idSector].clearLayers();
+
+            const gruposPorEstatus = {};
+            let hayResultadosBusqueda = false;
+
+            sectorData.registros.forEach(reg => {
+                if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+                
+                const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                
+                if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
+                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
+
+                const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
+                const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+
+                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
+                const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
+
+                if (isPhysicallyVisible && !hasLayer) {
+                    capasSectores[idSector].addLayer(reg.capaLeaflet);
+                } else if (!isPhysicallyVisible && hasLayer) {
+                    capasSectores[idSector].removeLayer(reg.capaLeaflet);
+                }
+
+                if(cumpleFiltro) {
+                    hayResultadosBusqueda = true;
+                    if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
+                    gruposPorEstatus[estatus].conteo++;
+                    gruposPorEstatus[estatus].lista.push(reg);
+                }
+            });
+
+            if (sectorData.visible) {
+                if (!mapa.hasLayer(capasSectores[idSector])) {
+                    capasSectores[idSector].addTo(mapa);
+                }
+            } else {
+                if (mapa.hasLayer(capasSectores[idSector])) {
+                    mapa.removeLayer(capasSectores[idSector]);
+                }
+            }
+
+            if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
+            
+            let htmlSector = `
+            <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
+                <div class="sector-header">
+                    <div class="sector-title-group">
+                        <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa Activa" 
+                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
+                        
+                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
+                           title="Mostrar/Ocultar todo el Sector" 
+                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
+                           onclick="toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                        
+                        <span class="sector-title" title="Doble clic para enfocar sector en el mapa" ondblclick="enfocarSector('${idSector}')">
+                            ${sectorData.nombreSector}
+                        </span>
+                    </div>
+                </div>
+                <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+
+            for(let estatus in gruposPorEstatus) {
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                
+                if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+                if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
+                
+                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
+                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
+
+                const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
+
+                htmlSector += `
+                <div class="status-group">
+                    <div class="status-header">
+                        <div class="status-info" style="display:flex; align-items:center; gap:8px;">
+                            
+                            <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
+                               title="Mostrar/Ocultar Categoría" 
+                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
+                               onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
+                            
+                            <span class="status-dot" style="background-color: ${colorActual};"></span>
+                            
+                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; flex:1;">
+                                ${estatus}
+                            </div>
+                        </div>
+                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
+                    </div>
+                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+
+                gruposPorEstatus[estatus].lista.forEach(local => {
+                    htmlSector += `
+                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
+                            <div style="flex:1; display:flex; align-items:center; gap:8px;">
+                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
+                                   title="Ocultar individualmente" 
+                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
+                                   onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
+                                   
+                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
+                                ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
+                            </div>
+                        </div>`;
+                });
+                htmlSector += `</div></div>`;
+            }
+            htmlSector += `</div></div>`;
+            contenedor.insertAdjacentHTML('beforeend', htmlSector);
+        }
+
+        const indicador = document.getElementById('indicador-capa-activa');
+        if(capaActivaId && STORE[capaActivaId]) {
+            indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector;
+            indicador.style.color = varCSS('--cyan-neon');
+        } else {
+            indicador.innerText = "SELECCIONE UNA CAPA";
+            indicador.style.color = "#6e7681";
+        }
+    }
+
+
+    /* ==========================================================================
+       FASE 3: DOBLE VISTA EN POPUP (MODO SOLO LECTURA)
+       ========================================================================== */
+    
+    function vincularEventosCapa(capaFisica, idSector, idFisico) {
+        capaFisica.on('click', () => {
+            abrirPopupDinamico(idSector, idFisico, false);
+        });
+    }
+
+    function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!registro) return;
+
+        const capaMapa = registro.capaLeaflet;
+        
+        if(centrarMapa) {
+            const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
+            mapa.flyTo(destino, 19, { duration: 0.5 });
+        }
+
+        const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
+
+        capaMapa.unbindPopup();
+        capaMapa.bindPopup(htmlContenido, { 
+            minWidth: 320, 
+            closeButton: true, 
+        }).openPopup();
+        
+        mapa._popup = capaMapa.getPopup();
+        mapa._popup._source = capaMapa; 
+    }
+
+    function generarContenidoHTMLPopup(idSector, idFisico) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        let html = `<div class="pop-wrapper">`;
+
+        if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
+            const rep = calcularAuditoria(registro.capaLeaflet);
+            html += `
+            <div class="audit-report">
+                <h3 class="audit-title"><i class="fas fa-chart-area"></i> HACIENDA MUNICIPAL - AUDITORÍA</h3>
+                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}"><span>Vigentes:</span> <span>${rep.v}</span></div>
+                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}"><span>Vencidas:</span> <span>${rep.x}</span></div>
+                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
+                <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
+            </div>`;
+        } 
+        else {
+            const estActual = registro.datosGenerales["Estatus"];
+            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+            
+            const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
+            const colorFinal = registro.colorPersonalizado || colorSector;
+            
+            const imgUrl = registro.datosGenerales["Link Fotografía"];
+            
+            const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
+            
+            html += `
+            <div class="pop-cover">
+                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
+            </div>
+            <div class="pop-content">`;
+
+            for(let clave in registro.datosGenerales) {
+                if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                const isOculto = registro.camposOcultos.includes(clave);
+                if(isOculto) continue; 
+                
+                html += `
+                <div class="read-field">
+                    <span class="read-label">${clave}</span>
+                    <div class="read-value">${registro.datosGenerales[clave] || '-'}</div>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+        
+        html += `</div></div>`;
+        return html;
+    }
+
+    /* ==========================================================================
+       FASE 4: FUNCIONES DE SISTEMA (MODO VISOR)
+       ========================================================================== */
+    
+    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+    function ejecutarMotorBusqueda() {
+        textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase();
+        actualizarUIYMapa();
+    }
+
+    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
+    
+    function toggleVisibilidadCapa(idSector, isVisible) { 
+        STORE[idSector].visible = isVisible;
+        if(isVisible) capasSectores[idSector].addTo(mapa);
+        else mapa.removeLayer(capasSectores[idSector]);
+        actualizarUIYMapa(); 
+    }
+    
+    function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
+        if (!STORE[idSector]) return;
+        if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
+        STORE[idSector].visibilidadPorEstatus[estatus] = isVisible;
+        actualizarUIYMapa();
+    }
+    
+    function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(reg) {
+            reg.visibleIndividual = isVisible;
+            actualizarUIYMapa();
+        }
+    }
+
+    function enfocarSector(idSector) {
+        if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
+        const limites = capasSectores[idSector].getBounds();
+        if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] });
+    }
+
+    function calcularAuditoria(poligonoActivo) {
+        let count = { v: 0, x: 0, t: 0, total: 0 };
+        const box = poligonoActivo.getBounds();
+        for(let id in STORE) {
+            STORE[id].registros.forEach(r => {
+                if(r.tipoGeometria === 'marker' && box.contains(r.capaLeaflet.getLatLng())) {
+                    count.total++;
+                    const e = r.datosGenerales["Estatus"];
+                    if(e === "VIGENTE") count.v++;
+                    else if(e === "VENCIDA" || e === "SIN LICENCIA") count.x++;
+                    else if(e === "TEMPORAL") count.t++;
+                }
+            });
+        }
+        return count;
+    }
+    
+    /* ==========================================================================
+       FASE 5: CARGA DE DATOS Y RECONSTRUCCIÓN
+       ========================================================================== */
+    
+    async function cargarDatosNube() {
+        if (!READ_ONLY_TOKEN || READ_ONLY_TOKEN === 'ghp_...') {
+            console.error("TOKEN DE ACCESO NO CONFIGURADO. El visor no puede cargar datos.");
+            alert("Error de configuración: No se ha proporcionado un Token de acceso para el visor.");
+            return;
+        }
+
+        console.log("Visor: Intentando cargar datos desde la nube...");
+        try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                headers: { 'Authorization': `token ${READ_ONLY_TOKEN}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                const jsonParsed = JSON.parse(decodedContent);
+                reconstruirDesdeJSON(jsonParsed.store || {});
+                console.log("Visor: Datos cargados con éxito.");
+            } else {
+                throw new Error(`Error en la API de GitHub: ${res.status}`);
+            }
+        } catch (e) {
+            console.error("Fallo crítico al cargar datos para el visor:", e);
+            alert("No se pudieron cargar los datos del sistema. Verifique la conexión o la configuración del Token. Error: " + e.message);
+        }
+    }
+    
+    function reconstruirDesdeJSON(datosCargados) {
+        STORE = {};
+        for(let id in capasSectores) {
+            if(mapa.hasLayer(capasSectores[id])) mapa.removeLayer(capasSectores[id]);
+        }
+        
+        for(let idSector in datosCargados) {
+            const sec = datosCargados[idSector];
+            capasSectores[idSector] = new L.FeatureGroup();
+            
+            STORE[idSector] = {
+                nombreSector: sec.nombreSector,
+                visible: sec.visible !== false,
+                visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
+                coloresPorEstatus: sec.coloresPorEstatus || {},
+                colorPrincipal: sec.colorPrincipal || '#00f2ff',
+                registros: []
+            };
+
+            sec.registros.forEach(reg => {
+                let capa;
+                const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                
+                let colorBase = confEst.color;
+                if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
+                    colorBase = STORE[idSector].coloresPorEstatus[estActual];
+                }
+                const colorAUsar = reg.colorPersonalizado || colorBase;
+                
+                if (reg.tipoGeometria === 'marker' && reg.coords) {
+                    capa = L.marker([reg.coords.lat, reg.coords.lng], { 
+                        icon: crearPinFiscal(colorAUsar), 
+                        draggable: false // Modo lectura
+                    });
+                } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                    capa = L.polygon(reg.coords, { 
+                        color: colorAUsar, 
+                        fillColor: colorAUsar, 
+                        fillOpacity: 0.2, 
+                        weight: 3, 
+                        dashArray: '5, 5' 
+                    });
+                }
+
+                if(capa) {
+                    const newIdFisico = L.stamp(capa);
+                    const nuevoReg = {
+                        idFisico: newIdFisico,
+                        tipoGeometria: reg.tipoGeometria,
+                        capaLeaflet: capa,
+                        colorPersonalizado: reg.colorPersonalizado,
+                        visibleIndividual: reg.visibleIndividual !== false,
+                        datosGenerales: reg.datosGenerales,
+                        camposOcultos: reg.camposOcultos || []
+                    };
+                    STORE[idSector].registros.push(nuevoReg);
+                    vincularEventosCapa(capa, idSector, newIdFisico);
+                }
+            });
+        }
+        actualizarUIYMapa();
+    }
+
+    // ARRANQUE INICIAL DEL SISTEMA
+    cargarDatosNube();
+
+</script>
+</body>
+</html>
