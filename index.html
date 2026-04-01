@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- IDENTIDAD CORPORATIVA -->
+    <!-- IDENTIDAD CORPORATIVA: Título -->
     <title>PROYECTO HACIENDA 2026</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <style>
         /* ==========================================================================
@@ -82,18 +85,18 @@
             transform: translateY(-1px); 
         }
 
-        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE */
+        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE (REGLA DE ORO) */
         .leaflet-top.leaflet-right {
-            z-index: 2000 !important;
-            margin-top: 15px;
-            margin-right: 15px;
+            margin-top: 80px !important;
+            z-index: 10001 !important;
+            margin-right: 15px !important;
         }
 
         /* BARRA SUPERIOR */
         .top-nav { 
             top: 15px; 
             left: 15px; 
-            right: 70px; /* Modificado para dejar libre el Control de Capas de Leaflet */
+            right: 15px; 
             height: 64px; 
             display: flex; 
             align-items: center; 
@@ -773,18 +776,23 @@
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026'); 
 
     // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
-    const capaSatelite = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
-    capaSatelite.addTo(mapa);
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    
+    googleSat.addTo(mapa); // Capa por defecto
     
     // CAPA MAESTRA SUPERPUESTA PARA LOS SECTORES
     const capaMaestraSectores = L.featureGroup().addTo(mapa);
     
     // CONTROL DE CAPAS VISIBLE EN ESQUINA SUPERIOR DERECHA
-    L.control.layers(
-        {"Google Satélite (Híbrido)": capaSatelite}, 
-        {"Sectores Digitalizados": capaMaestraSectores}, 
-        {position: 'topright'}
-    ).addTo(mapa);
+    const baseMaps = {
+        "Vista Satélite": googleSat,
+        "Vista Mapa Urbano": googleStreets
+    };
+    const overlayMaps = {
+        "Sectores Digitalizados": capaMaestraSectores
+    };
+    L.control.layers(baseMaps, overlayMaps, {position: 'topright'}).addTo(mapa);
 
     // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
     const capasSectores = {};
