@@ -1804,17 +1804,18 @@
         const u = document.getElementById('login-user').value;
         const p = document.getElementById('login-pass').value;
 
-        // PRIORIDAD 1: LOGIN MAESTRO (BYPASS DE NUBE PARA AUTENTICACIÓN)
+        // PRIORIDAD ABSOLUTA AL MAESTRO: Bypass de Nube y Token
         if (u === MASTER_AUTH.user && p === MASTER_AUTH.pass) {
-            console.log("Master access granted.");
-            await grantAccessAndLoadData();
+            document.getElementById('login-overlay').style.display = 'none';
+            // Se carga la UI vacía por defecto (funcional), y si hay token se trae la data
+            await cargarDatosNube();
             return;
         }
 
-        // PRIORIDAD 2: LOGIN ESTÁNDAR (VALIDADO CONTRA NUBE)
+        // BLOQUEO SELECTIVO PARA EL RESTO: (Usuario admin)
         const token = localStorage.getItem('github_token');
         if (!token) {
-            alert("Error: No hay un Token de Servidor configurado. El usuario 'admin' está bloqueado. Un Administrador Maestro debe iniciar sesión para configurar la conexión.");
+            alert("No hay Token, contacte al Administrador Maestro.");
             return;
         }
 
@@ -1858,17 +1859,12 @@
             btnAuth.disabled = false;
         }
     }
-
-    async function grantAccessAndLoadData() {
-        document.getElementById('login-overlay').style.display = 'none';
-        await cargarDatosNube();
-    }
     
     async function cargarDatosNube() {
         const token = localStorage.getItem('github_token');
         if (!token) {
             console.warn("No token found. Panel is functional but map data is not loaded.");
-            actualizarUIYMapa(); // Renderiza el panel vacío
+            actualizarUIYMapa(); // Renderiza el panel vacío funcional
             return;
         }
 
