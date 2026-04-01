@@ -1785,8 +1785,9 @@
 
             if (res.ok) {
                 localStorage.setItem('github_token', token);
-                localStorage.setItem('github_owner', GITHUB_OWNER); // Persiste el owner hardcodeado por consistencia
-                alert("✅ Token verificado y guardado con éxito. Ahora puede sincronizar con la nube.");
+                localStorage.setItem('github_owner', GITHUB_OWNER); 
+                alert("✅ Token verificado y guardado con éxito. Recargando datos de la nube...");
+                await cargarDatosNube(); // Carga inteligente sin refrescar página
             } else {
                 throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_OWNER}/${REPO_NAME}'.`);
             }
@@ -1813,7 +1814,8 @@
         // PRIORIDAD 2: LOGIN ESTÁNDAR (VALIDADO CONTRA NUBE)
         const token = localStorage.getItem('github_token');
         if (!token) {
-            return alert("Error: No hay un Token de Servidor configurado. Un Administrador Maestro debe iniciar sesión para configurar la conexión.");
+            alert("Error: No hay un Token de Servidor configurado. El usuario 'admin' está bloqueado. Un Administrador Maestro debe iniciar sesión para configurar la conexión.");
+            return;
         }
 
         const btnAuth = document.getElementById('btn-autenticar');
@@ -1859,29 +1861,43 @@
 
     async function grantAccessAndLoadData() {
         document.getElementById('login-overlay').style.display = 'none';
-        const token = localStorage.getItem('github_token');
-        if (token) {
-            console.log("Master user logged in. Attempting to load data...");
-            try {
-                const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    fileSha = data.sha;
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    const jsonParsed = JSON.parse(decodedContent);
-                    if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
-                    reconstruirDesdeJSON(jsonParsed.store || {});
-                    return;
-                }
-            } catch (e) {
-                console.error("Failed to load cloud data for master user:", e);
-                alert("No se pudieron cargar los datos de la nube. Iniciando sesión local.");
-            }
-        }
-        actualizarUIYMapa();
+        await cargarDatosNube();
     }
+    
+    async function cargarDatosNube() {
+        const token = localStorage.getItem('github_token');
+        if (!token) {
+            console.warn("No token found. Panel is functional but map data is not loaded.");
+            actualizarUIYMapa(); // Renderiza el panel vacío
+            return;
+        }
+
+        console.log("Token found. Attempting to load cloud data...");
+        try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
+                headers: { 'Authorization': `token ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                fileSha = data.sha;
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                const jsonParsed = JSON.parse(decodedContent);
+                if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+                reconstruirDesdeJSON(jsonParsed.store || {});
+                console.log("Cloud data loaded successfully.");
+            } else if (res.status === 404) {
+                console.warn("config.json not found in repo. Initializing empty state.");
+                actualizarUIYMapa();
+            } else {
+                throw new Error(`GitHub API error: ${res.status}`);
+            }
+        } catch (e) {
+            console.error("Failed to load cloud data:", e);
+            alert("No se pudieron cargar los datos de la nube. El panel está funcional para configurar el Token. Error: " + e.message);
+            actualizarUIYMapa();
+        }
+    }
+
 
     function cerrarSesionSeguridad() {
         // Cierra la sesión forzando re-login, pero preserva el Token en localStorage.
