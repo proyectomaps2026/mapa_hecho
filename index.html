@@ -6,7 +6,6 @@
     <title>Panel de Control - Alcaldía Bolivariana de Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
@@ -94,6 +93,15 @@
             justify-content: space-between; 
         }
         
+        .header-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,242,255,0.5);
+            margin-right: 20px;
+        }
+
         .search-container { 
             flex: 1; 
             display: flex; 
@@ -119,15 +127,6 @@
             width: 100%; 
             font-size: 14px; 
             font-weight: 600; 
-        }
-        
-        .header-title {
-            font-size: 18px;
-            font-weight: 900;
-            color: var(--text-main);
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0,242,255,0.5);
-            margin-right: 20px;
         }
 
         /* SIDEBAR (PANEL MAESTRO) */
@@ -425,10 +424,6 @@
             color: #111; 
             word-break: break-word; 
         }
-
-        .leaflet-draw-toolbar {
-            display: none !important;
-        }
     </style>
 </head>
 <body>
@@ -454,7 +449,8 @@
 
     <div class="sidebar-footer">
         <button id="btnCaptura" class="btn btn-capture" onclick="window.print()">
-            📸 GENERAR REPORTE
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            GENERAR REPORTE (PDF/IMG)
         </button>
     </div>
 </aside>
@@ -488,13 +484,15 @@
         position: 'bottomright' 
     }).addTo(mapa);
 
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
         subdomains:['mt0','mt1','mt2','mt3'], 
         maxZoom: 21 
     }).addTo(mapa);
 
     // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
     const capasSectores = {};
+    const overlayMaps = {};
+    let layersControl;
 
     // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
     let STORE = {}; 
@@ -546,12 +544,9 @@
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
                 const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
-                const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
-
-                if (isPhysicallyVisible && !hasLayer) {
+                
+                if (isPhysicallyVisible) {
                     capasSectores[idSector].addLayer(reg.capaLeaflet);
-                } else if (!isPhysicallyVisible && hasLayer) {
-                    capasSectores[idSector].removeLayer(reg.capaLeaflet);
                 }
 
                 if(cumpleFiltro) {
@@ -562,29 +557,14 @@
                 }
             });
 
-            if (sectorData.visible) {
-                if (!mapa.hasLayer(capasSectores[idSector])) {
-                    capasSectores[idSector].addTo(mapa);
-                }
-            } else {
-                if (mapa.hasLayer(capasSectores[idSector])) {
-                    mapa.removeLayer(capasSectores[idSector]);
-                }
-            }
-
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
             
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
-                <div class="sector-header">
+                <div class="sector-header" onclick="setCapaActiva('${idSector}')">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa Activa" 
-                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
-                        
-                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
-                           title="Mostrar/Ocultar todo el Sector" 
-                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
-                           onclick="toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                               ${idSector === capaActivaId ? 'checked' : ''}>
                         
                         <span class="sector-title" title="Doble clic para enfocar sector en el mapa" ondblclick="enfocarSector('${idSector}')">
                             ${sectorData.nombreSector}
@@ -600,25 +580,15 @@
                 if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
                 
                 const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
-                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
 
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
 
                 htmlSector += `
                 <div class="status-group">
-                    <div class="status-header">
-                        <div class="status-info" style="display:flex; align-items:center; gap:8px;">
-                            
-                            <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
-                               title="Mostrar/Ocultar Categoría" 
-                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
-                               onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                            
+                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                        <div class="status-info">
                             <span class="status-dot" style="background-color: ${colorActual};"></span>
-                            
-                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; flex:1;">
-                                ${estatus}
-                            </div>
+                            <div>${estatus}</div>
                         </div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
                     </div>
@@ -627,15 +597,8 @@
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
-                            <div style="flex:1; display:flex; align-items:center; gap:8px;">
-                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
-                                   title="Ocultar individualmente" 
-                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
-                                   onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
-                                   
-                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
-                                ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
-                            </div>
+                            <i class="fas fa-caret-right" style="opacity:0.5; margin-right: 8px;"></i> 
+                            ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                         </div>`;
                 });
                 htmlSector += `</div></div>`;
@@ -734,8 +697,6 @@
        FASE 4: FUNCIONES DE SISTEMA (MODO VISOR)
        ========================================================================== */
     
-    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
-
     function ejecutarMotorBusqueda() {
         textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase();
         actualizarUIYMapa();
@@ -743,30 +704,8 @@
 
     function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
     
-    function toggleVisibilidadCapa(idSector, isVisible) { 
-        STORE[idSector].visible = isVisible;
-        if(isVisible) capasSectores[idSector].addTo(mapa);
-        else mapa.removeLayer(capasSectores[idSector]);
-        actualizarUIYMapa(); 
-    }
-    
-    function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
-        if (!STORE[idSector]) return;
-        if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
-        STORE[idSector].visibilidadPorEstatus[estatus] = isVisible;
-        actualizarUIYMapa();
-    }
-    
-    function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(reg) {
-            reg.visibleIndividual = isVisible;
-            actualizarUIYMapa();
-        }
-    }
-
     function enfocarSector(idSector) {
-        if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
+        if(!capasSectores[idSector]) return;
         const limites = capasSectores[idSector].getBounds();
         if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] });
     }
@@ -793,7 +732,7 @@
        ========================================================================== */
     
     async function cargarDatosNube() {
-        if (!_0xkey || _0xkey === atob('')) {
+        if (!_0xkey || _0xkey === atob('Z2hwXzBIWWJjYjROaVI0WHd2TXBsNU43cW9oOW9PdTI5MEVuYTBF'.substring(0,10))) {
             console.error("TOKEN DE ACCESO NO CONFIGURADO. El visor no puede cargar datos.");
             alert("Error de configuración: No se ha proporcionado un Token de acceso para el visor.");
             return;
@@ -824,7 +763,13 @@
         for(let id in capasSectores) {
             if(mapa.hasLayer(capasSectores[id])) mapa.removeLayer(capasSectores[id]);
         }
-        
+        if(layersControl) {
+            layersControl.remove();
+        }
+
+        const baseMaps = {"Satélite": googleSat};
+        const overlayMaps = {};
+
         for(let idSector in datosCargados) {
             const sec = datosCargados[idSector];
             capasSectores[idSector] = new L.FeatureGroup();
@@ -851,8 +796,7 @@
                 
                 if (reg.tipoGeometria === 'marker' && reg.coords) {
                     capa = L.marker([reg.coords.lat, reg.coords.lng], { 
-                        icon: crearPinFiscal(colorAUsar), 
-                        draggable: false 
+                        icon: crearPinFiscal(colorAUsar)
                     });
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
                     capa = L.polygon(reg.coords, { 
@@ -877,9 +821,18 @@
                     };
                     STORE[idSector].registros.push(nuevoReg);
                     vincularEventosCapa(capa, idSector, newIdFisico);
+                    capasSectores[idSector].addLayer(capa);
                 }
             });
+            
+            overlayMaps[sec.nombreSector] = capasSectores[idSector];
+            if(sec.visible !== false) {
+                 capasSectores[idSector].addTo(mapa);
+            }
         }
+        
+        layersControl = L.control.layers(baseMaps, overlayMaps).addTo(mapa);
+        
         actualizarUIYMapa();
     }
 
