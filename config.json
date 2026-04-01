@@ -3,46 +3,5 @@
     "user": "admin",
     "pass": "admin"
   },
-  "store": {
-    "sec_1775018926806": {
-      "nombreSector": "ASD",
-      "visible": true,
-      "visibilidadPorEstatus": {},
-      "coloresPorEstatus": {},
-      "registros": [
-        {
-          "idFisico": 125,
-          "tipoGeometria": "polygon",
-          "colorPersonalizado": null,
-          "visibleIndividual": true,
-          "datosGenerales": {
-            "Contribuyente": "NUEVO ESTABLECIMIENTO",
-            "RIF": "J-00000000-0",
-            "Teléfono": "0414-0000000",
-            "Metros Cuadrados": "0 m2",
-            "Fecha Fiscalización": "2026-04-01",
-            "Estatus": "CENSO / NUEVO",
-            "Link Fotografía": ""
-          },
-          "camposOcultos": [],
-          "coords": [
-            [
-              {
-                "lat": 8.033266121171827,
-                "lng": -72.25763797760011
-              },
-              {
-                "lat": 8.029800949481544,
-                "lng": -72.25396871566774
-              },
-              {
-                "lat": 8.033606259130355,
-                "lng": -72.25122213363649
-              }
-            ]
-          ]
-        }
-      ]
-    }
-  }
+  "store": {}
 }
