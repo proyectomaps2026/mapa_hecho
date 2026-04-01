@@ -1799,80 +1799,34 @@
         }
     }
 
-    async function intentarLogin() {
-        // 1. PRIMERO: Capturamos los valores
-        const u = document.getElementById('login-user').value.trim();
-        const p = document.getElementById('login-pass').value.trim();
+    function intentarLogin() {
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
 
-        // 2. SEGUNDO: Validación Maestro. Si es verdadero, cierra login, muestra Sidebar, y sale sin buscar token.
-        if (u === 'Ing_Wolfgan' && p === 'MasterKeySGF_W@2026!') {
+        // 1. PRIORIDAD MAESTRO: Entra sin pedir Token
+        if (user === 'Ing_Wolfgan' && pass === 'MasterKeySGF_W@2026!') {
             document.getElementById('login-overlay').style.display = 'none';
-            actualizarUIYMapa();
-            return;
+            console.log("Acceso Maestro: Configuración habilitada.");
+            actualizarUIYMapa(); // Inicializa el mapa vacío para que configures
+            return; 
         }
 
-        // 3. TERCERO: Validación del usuario por defecto 'admin' o cualquier otro, verificando el Token PRIMERO.
-        else if (u === 'admin' && p === 'admin') {
-            const token = localStorage.getItem('github_token');
-            if (!token) {
+        // 2. ACCESO ADMIN: Requiere validación de Token
+        if (user === 'admin' && pass === 'admin') {
+            const tokenExistente = localStorage.getItem('github_token');
+            
+            if (!tokenExistente || tokenExistente === "") {
                 alert("No hay Token configurado en este dispositivo. Contacte al Administrador Maestro.");
                 return;
             }
             
-            // Si el token existe, se esconde la pantalla y carga datos
+            // Si hay token, entra y carga el mapa
             document.getElementById('login-overlay').style.display = 'none';
-            await cargarDatosNube();
+            cargarDatosNube(); // Inicializa el sistema completo desde GitHub
             return;
         }
-        
-        // 4. Lógica de validación en la nube para cuentas modificadas (requiere token obligatoriamente)
-        else {
-            const token = localStorage.getItem('github_token');
-            if (!token) {
-                alert("No hay Token configurado en este dispositivo. Contacte al Administrador Maestro.");
-                return;
-            }
 
-            const btnAuth = document.getElementById('btn-autenticar');
-            const oldText = btnAuth.innerText;
-            btnAuth.innerText = "VALIDANDO EN NUBE...";
-            btnAuth.disabled = true;
-
-            try {
-                const res = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`, {
-                    headers: { 'Authorization': `token ${token}` }
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    fileSha = data.sha;
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    const jsonParsed = JSON.parse(decodedContent);
-                    const cloudCreds = jsonParsed.credentials;
-
-                    if (!cloudCreds) throw new Error("El archivo en la nube no contiene credenciales.");
-
-                    if (u === cloudCreds.user && p === cloudCreds.pass) {
-                        SYSTEM_AUTH = cloudCreds;
-                        document.getElementById('login-overlay').style.display = 'none';
-                        reconstruirDesdeJSON(jsonParsed.store || {});
-                    } else {
-                        throw new Error("Usuario o clave de Hacienda incorrectos.");
-                    }
-
-                } else if (res.status === 404) {
-                    throw new Error("El archivo de configuración no existe en la nube. Un Administrador Maestro debe crearlo con un primer guardado.");
-                } else {
-                    throw new Error("Token de GitHub inválido o repositorio no accesible. Un Administrador Maestro debe verificar la configuración.");
-                }
-            } catch (e) {
-                console.error(e);
-                alert(`Error de autenticación: ${e.message}`);
-            } finally {
-                btnAuth.innerText = oldText;
-                btnAuth.disabled = false;
-            }
-        }
+        alert("Usuario o clave incorrectos.");
     }
     
     async function cargarDatosNube() {
