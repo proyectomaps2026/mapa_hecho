@@ -6,6 +6,7 @@
     <title>Panel de Control - Alcaldía Bolivariana de Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
@@ -431,7 +432,6 @@
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
-    <div class="header-title">PROYECTO HACIENDA 2026</div>
     <div class="search-container">
         <i class="fas fa-search" style="color: var(--cyan-neon);"></i>
         <input type="text" id="buscador-global" placeholder="Filtrado Profundo: Buscar por Contribuyente, RIF o Estatus..." oninput="ejecutarMotorBusqueda()">
@@ -449,8 +449,7 @@
 
     <div class="sidebar-footer">
         <button id="btnCaptura" class="btn btn-capture" onclick="window.print()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            GENERAR REPORTE (PDF/IMG)
+            📸 GENERAR REPORTE
         </button>
     </div>
 </aside>
@@ -491,7 +490,6 @@
 
     // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
     const capasSectores = {};
-    const overlayMaps = {};
     let layersControl;
 
     // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
@@ -537,13 +535,10 @@
                 
                 const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
                 
-                if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
-                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
-
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
+                const isPhysicallyVisible = reg.visibleIndividual && cumpleFiltro;
                 
                 if (isPhysicallyVisible) {
                     capasSectores[idSector].addLayer(reg.capaLeaflet);
@@ -575,11 +570,7 @@
 
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                
-                if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-                if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
-                
-                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
+                const colorActual = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estatus]) ? STORE[idSector].coloresPorEstatus[estatus] : confEst.color;
 
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
 
@@ -741,7 +732,7 @@
         console.log("Visor: Intentando cargar datos desde la nube...");
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                headers: { 'Authorization': 'token ' + _0xkey }
+                headers: { 'Authorization': 'token ' + _0xkey.trim() }
             });
             if (res.ok) {
                 const data = await res.json();
