@@ -758,6 +758,7 @@
     <div class="sidebar-header">
         <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
         <h1>SISTEMA DE CONTROL FISCAL</h1>
+        <div style="font-size: 10px; color: #fbbc04; font-weight: 900; margin-top: 5px; margin-bottom: 8px; letter-spacing: 1px;"><i class="fas fa-user-shield"></i> SESIÓN: ADMINISTRADOR WOLGFAN</div>
         <p id="indicador-capa-activa">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
     </div>
     
@@ -854,7 +855,7 @@
 
     // VARIABLES FIJAS DE GITHUB CORREGIDAS
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'proyectomaps2026.github.io'; 
+    const GITHUB_REPO = 'mapa_hecho'; 
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
@@ -1805,7 +1806,7 @@
         const pass = document.getElementById('login-pass').value.trim();
 
         // 1. PRIORIDAD MAESTRO: Entra sin pedir Token
-        if (user === 'Ing_Wolfgan' && pass === 'MasterKeySGF_W@2026!') {
+        if (user === 'Ing_Wolgfan' && pass === 'TU_CLAVE_MAESTRA') {
             document.getElementById('login-overlay').style.display = 'none';
             console.log("Acceso Maestro: Configuración habilitada.");
             actualizarUIYMapa(); // Inicializa el mapa vacío para que configures
