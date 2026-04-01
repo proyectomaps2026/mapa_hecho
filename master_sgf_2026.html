@@ -859,7 +859,6 @@
     
     // JERARQUÍA DE ACCESO
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; // Credenciales por defecto, validadas contra la nube.
-    const MASTER_AUTH = { user: 'Ing_Wolfgan', pass: 'MasterKeySGF_W@2026!' }; // Clave maestra con bypass.
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
@@ -1801,24 +1800,34 @@
     }
 
     async function intentarLogin() {
-        const u = document.getElementById('login-user').value;
-        const p = document.getElementById('login-pass').value;
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value.trim();
 
-        // PRIORIDAD ABSOLUTA AL MAESTRO: Bypass de Nube y Token
-        if (u === MASTER_AUTH.user && p === MASTER_AUTH.pass) {
+        // 1. PRIORIDAD ABSOLUTA AL MAESTRO (CON O SIN TOKEN)
+        if (u === 'Ing_Wolfgan' && p === 'MasterKeySGF_W@2026!') {
             document.getElementById('login-overlay').style.display = 'none';
-            // Se carga la UI vacía por defecto (funcional), y si hay token se trae la data
-            await cargarDatosNube();
+            
+            // Liberamos el Sidebar inmediatamente
+            actualizarUIYMapa();
+            
+            const currentToken = localStorage.getItem('github_token');
+            if (!currentToken) {
+                alert("Bienvenido Administrador Maestro.\n\nEl sistema está en blanco. Por favor, diríjase a 'CONFIG. DE SERVIDOR' en el menú lateral y configure el Token de GitHub para sincronizar la base de datos.");
+            } else {
+                // Si hay token, intentamos cargar los datos silenciosamente
+                await cargarDatosNube();
+            }
             return;
         }
 
-        // BLOQUEO SELECTIVO PARA EL RESTO: (Usuario admin)
+        // 2. BLOQUEO SELECTIVO PARA USUARIOS NORMALES (admin u otros)
         const token = localStorage.getItem('github_token');
         if (!token) {
             alert("No hay Token, contacte al Administrador Maestro.");
             return;
         }
 
+        // 3. LÓGICA DE VALIDACIÓN EN LA NUBE PARA USUARIO ESTÁNDAR
         const btnAuth = document.getElementById('btn-autenticar');
         const oldText = btnAuth.innerText;
         btnAuth.innerText = "VALIDANDO EN NUBE...";
