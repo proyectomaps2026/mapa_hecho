@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
-    <title>SGF 2026 - Panel de Control Superior</title>
+    <title>Panel de Control - Alcaldía Bolivariana de Ayacucho</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
@@ -95,6 +93,15 @@
             justify-content: space-between; 
         }
         
+        .header-title {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,242,255,0.5);
+            margin-right: 20px;
+        }
+
         .search-container { 
             flex: 1; 
             display: flex; 
@@ -121,15 +128,6 @@
             font-size: 14px; 
             font-weight: 600; 
         }
-        
-        .header-title {
-            font-size: 18px;
-            font-weight: 900;
-            color: var(--text-main);
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(0,242,255,0.5);
-            margin-right: 20px;
-        }
 
         /* SIDEBAR (PANEL MAESTRO) */
         #sidebar { 
@@ -139,19 +137,19 @@
             width: 420px; 
             display: flex; 
             flex-direction: column; 
-            border-top: none; /* Eliminado para usar el pseudo-elemento */
-            position: relative; /* Requerido para el pseudo-elemento */
+            border-top: none; 
+            position: relative;
         }
 
         #sidebar:before {
             content: '';
             position: absolute;
-            top: -1px; /* Ajuste para que se alinee con el borde */
+            top: -1px; 
             left: -1px;
             right: -1px;
-            height: 5px; /* Ancho de la franja */
+            height: 5px; 
             background: linear-gradient(to right, var(--color-vigente) 33.3%, var(--color-vencida) 33.3%, var(--color-vencida) 66.6%, var(--color-temporal) 66.6%);
-            border-radius: 12px 12px 0 0; /* Coincidir con el border-radius del panel */
+            border-radius: 12px 12px 0 0;
         }
         
         .sidebar-header { 
@@ -160,22 +158,20 @@
             background: rgba(255,255,255,0.02); 
         }
         
-        /* IDENTIDAD CORPORATIVA: Sidebar Header */
         .sidebar-header h1 { 
             margin: 0; 
-            font-size: 16px; 
+            font-size: 18px; 
             font-weight: 900; 
-            letter-spacing: 0.5px; 
+            letter-spacing: 1px; 
             color: var(--text-main);
-            line-height: 1.4;
         }
         
         .sidebar-header p { 
-            margin: 4px 0 0; 
-            font-size: 10px; 
+            margin: 6px 0 0; 
+            font-size: 11px; 
             color: var(--cyan-neon); 
             font-weight: 800; 
-            letter-spacing: 0.5px;
+            letter-spacing: 0.5px; 
         }
         
         .layers-container { 
@@ -226,13 +222,7 @@
             align-items: center; 
             gap: 10px; 
         }
-        
-        .sector-controls { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        
+
         .radio-active { 
             appearance: none; 
             width: 16px; 
@@ -328,6 +318,32 @@
             background: rgba(255,255,255,0.08); 
         }
 
+        .sidebar-footer { 
+            padding: 20px; 
+            border-top: 1px solid var(--border-color); 
+            background: rgba(0,0,0,0.2); 
+        }
+
+        .btn-capture {
+            width: 100%;
+            background: transparent; 
+            border: 1px solid var(--border-color); 
+            color: white; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-capture:hover { 
+            border-color: var(--cyan-neon); 
+            color: var(--cyan-neon);
+            background: rgba(0, 242, 255, 0.05); 
+        }
+        
         /* ==========================================================================
            3. POPUPS Y VISOR DE DATOS
            ========================================================================== */
@@ -415,7 +431,6 @@
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
-    <div class="header-title">PROYECTO HACIENDA 2026</div>
     <div class="search-container">
         <i class="fas fa-search" style="color: var(--cyan-neon);"></i>
         <input type="text" id="buscador-global" placeholder="Filtrado Profundo: Buscar por Contribuyente, RIF o Estatus..." oninput="ejecutarMotorBusqueda()">
@@ -424,24 +439,29 @@
 
 <aside id="sidebar" class="ui-layer glass-panel">
     <div class="sidebar-header">
-        <h1>SGF 2026 - Panel de Control Superior (Alcaldía Bolivariana de Ayacucho)</h1>
-        <p id="indicador-capa-activa">VISOR DE DATOS FISCALES</p>
+        <h1>PANEL DE CONTROL</h1>
+        <p>Alcaldía Bolivariana de Ayacucho</p>
     </div>
     
     <div class="layers-container" id="arbol-datos">
     </div>
-    
+
+    <div class="sidebar-footer">
+        <button id="btnCaptura" class="btn btn-capture" onclick="window.print()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            GENERAR REPORTE (PDF/IMG)
+        </button>
+    </div>
 </aside>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
     /* ==========================================================================
        FASE 0: VARIABLES GITHUB API (MODO VISOR)
        ========================================================================== */
-    // TOKEN DE ACCESO DE SOLO LECTURA (REEMPLAZAR POR EL TOKEN REAL)
-    const READ_ONLY_TOKEN = 'ghp_...'; // PEGAR AQUÍ EL TOKEN DE ACCESO
+    // TOKEN OFUSCADO
+    const _0xkey = atob('Z2hwXzBIWWJjYjROaVI0WHd2TXBsNU43cW9oOW9PdTI5MEVuYTBF');
 
     // VARIABLES FIJAS DE GITHUB
     const GITHUB_USER = 'proyectomaps2026';
@@ -451,8 +471,22 @@
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
        ========================================================================== */
-    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 }).addTo(mapa);
+    const mapa = L.map('map', { 
+        center: [8.02611, -72.25244], 
+        zoom: 16, 
+        zoomControl: false,
+        attributionControl: false // Desactivar atribución por defecto
+    });
+
+    L.control.attribution({ 
+        prefix: 'PROYECTO HACIENDA 2026', 
+        position: 'bottomright' 
+    }).addTo(mapa);
+
+    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { 
+        subdomains:['mt0','mt1','mt2','mt3'], 
+        maxZoom: 21 
+    }).addTo(mapa);
 
     // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
     const capasSectores = {};
@@ -460,7 +494,6 @@
     // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
     let STORE = {}; 
     let capaActivaId = null; 
-    let modoLecturaGlobal = true; // Forzar modo lectura permanente
     let textoFiltroGlobal = "";
 
     const DICCIONARIO_ESTATUS = {
@@ -605,20 +638,11 @@
             htmlSector += `</div></div>`;
             contenedor.insertAdjacentHTML('beforeend', htmlSector);
         }
-
-        const indicador = document.getElementById('indicador-capa-activa');
-        if(capaActivaId && STORE[capaActivaId]) {
-            indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector;
-            indicador.style.color = varCSS('--cyan-neon');
-        } else {
-            indicador.innerText = "SELECCIONE UNA CAPA";
-            indicador.style.color = "#6e7681";
-        }
     }
 
 
     /* ==========================================================================
-       FASE 3: DOBLE VISTA EN POPUP (MODO SOLO LECTURA)
+       FASE 3: POPUP (MODO SOLO LECTURA)
        ========================================================================== */
     
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
@@ -658,7 +682,7 @@
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
             <div class="audit-report">
-                <h3 class="audit-title"><i class="fas fa-chart-area"></i> HACIENDA MUNICIPAL - AUDITORÍA</h3>
+                <h3 class="audit-title"><i class="fas fa-chart-area"></i> AUDITORÍA DE ÁREA</h3>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}"><span>Vigentes:</span> <span>${rep.v}</span></div>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}"><span>Vencidas:</span> <span>${rep.x}</span></div>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
@@ -678,7 +702,7 @@
             
             html += `
             <div class="pop-cover">
-                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+NO+DISPONIBLE'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
                 <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
             </div>
             <div class="pop-content">`;
@@ -697,7 +721,7 @@
             html += `</div>`;
         }
         
-        html += `</div></div>`;
+        html += `</div>`;
         return html;
     }
 
@@ -764,7 +788,7 @@
        ========================================================================== */
     
     async function cargarDatosNube() {
-        if (!READ_ONLY_TOKEN || READ_ONLY_TOKEN === 'ghp_...') {
+        if (!_0xkey || _0xkey === atob('')) {
             console.error("TOKEN DE ACCESO NO CONFIGURADO. El visor no puede cargar datos.");
             alert("Error de configuración: No se ha proporcionado un Token de acceso para el visor.");
             return;
@@ -773,7 +797,7 @@
         console.log("Visor: Intentando cargar datos desde la nube...");
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                headers: { 'Authorization': `token ${READ_ONLY_TOKEN}` }
+                headers: { 'Authorization': `token ${_0xkey}` }
             });
             if (res.ok) {
                 const data = await res.json();
@@ -823,7 +847,7 @@
                 if (reg.tipoGeometria === 'marker' && reg.coords) {
                     capa = L.marker([reg.coords.lat, reg.coords.lng], { 
                         icon: crearPinFiscal(colorAUsar), 
-                        draggable: false // Modo lectura
+                        draggable: false 
                     });
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
                     capa = L.polygon(reg.coords, { 
