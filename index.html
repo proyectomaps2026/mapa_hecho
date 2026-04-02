@@ -687,9 +687,56 @@
         .audit-report { background: #f8f9fa; padding: 20px; }
         .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
+
+        /* MODALES DEL NUEVO FLUJO DE CAPTURA */
+        .notif-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(18, 22, 29, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--cyan-neon);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            z-index: 999999;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
+            text-align: center;
+            display: none; /* Oculto por defecto */
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .footer-protegido {
+            position: fixed;
+            bottom: 5px;
+            right: 15px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+            z-index: 9999;
+            pointer-events: none;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+
+<!-- SELLO PROTECTOR INFERIOR -->
+<div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
+
+<!-- MODALES DEL FLUJO DE CAPTURA -->
+<div id="capture-modal" class="notif-modal">
+    <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
+    <span>🔄 ENCUADRANDO REPORTE...<br><small style="color: #a5b0bf; font-size: 12px;">Por favor, no mueva el mapa ni cierre esta ventana.</small></span>
+</div>
+
+<div id="success-modal" class="notif-modal" style="border-color: var(--color-vigente); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(35, 134, 54, 0.4);">
+    <i class="fas fa-check-circle" style="font-size: 30px; color: var(--color-vigente);"></i>
+    <span>✅ Reporte Generado con Éxito.</span>
+</div>
 
 <div id="map"></div>
 
@@ -715,9 +762,12 @@
             <i class="fas fa-draw-polygon"></i>
         </button>
         
-        <!-- BOTÓN GENERAR REPORTE (FOTOGRÁFICO EXACTO CON HTML2CANVAS) -->
+        <!-- BOTÓN GENERAR REPORTE (CON NUEVO SVG DE CÁMARA PROFESIONAL) -->
         <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
-            📸 GENERAR REPORTE
+            <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                <circle cx="12" cy="13" r="3"></circle>
+            </svg> GENERAR REPORTE
         </button>
 
         <!-- BOTÓN GUARDAR NUBE (OCULTO POR CSS PARA LA VERSIÓN ALCALDESA) -->
@@ -752,6 +802,32 @@
     </div>
 </aside>
 
+<script>
+    /* ==========================================================================
+       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
+       ========================================================================== */
+    // Bloquear Clic Derecho
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    // Bloquear Combinaciones de Teclas de Inspección
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
+            e.preventDefault();
+        }
+    });
+
+    // Detector Profundo de DevTools
+    setInterval(function() {
+        const widthThreshold = window.outerWidth - window.innerWidth > 160;
+        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+        if(widthThreshold || heightThreshold) {
+            console.clear();
+            document.getElementById('map').style.display = 'none';
+            document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+        }
+    }, 1000);
+</script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
@@ -771,23 +847,43 @@
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
 
     /* ==========================================================================
-       MÓDULO NUEVO: CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN (HTML2CANVAS)
+       MÓDULO NUEVO: CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN Y MARCA DE AGUA
        ========================================================================== */
     function previsualizarCaptura() {
-        // CENTRADOR FORZADO para asegurar que Leaflet sabe dónde está parado y actualiza su matriz de offset local
+        const modalCapture = document.getElementById('capture-modal');
+        const modalSuccess = document.getElementById('success-modal');
+        
+        // 1. Mostrar Mensaje de Procesamiento
+        modalCapture.style.display = 'flex';
+        
+        // CENTRADOR FORZADO
         mapa.invalidateSize();
 
-        // Pequeño retardo para dar tiempo a que los tiles se rendericen correctamente y se asienten
+        // 2. Inyectar la Marca de Agua Oficial de la Alcaldía en el Mapa
+        const watermark = document.createElement('div');
+        watermark.id = 'report-watermark';
+        watermark.innerHTML = `
+            <div style="border-left: 4px solid #da3633; padding-left: 12px;">
+                <strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br>
+                <span style="color: #444; font-size: 11px;">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</span><br>
+                <span style="color: #444; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
+                <em style="color: #238636; font-size: 11px; font-weight: 900;">PORQUE CON TRABAJO SE PRODUCE</em><br>
+                <strong style="color: #111; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
+            </div>
+        `;
+        watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); font-family:Inter,sans-serif; text-align:left; line-height:1.5; border: 1px solid rgba(0,0,0,0.1);';
+        document.getElementById('map').appendChild(watermark);
+
+        // Pequeño retardo para dar tiempo a que los tiles se rendericen y la marca de agua se fije
         setTimeout(() => {
             // CORRECCIÓN DE OFFSET DE MAPA - Obtenemos la posición local estricta
             const mapElement = document.getElementById('map');
             const mapCanvas = mapElement.getBoundingClientRect();
 
-            // Ocultamos las capas de Interfaz (Sidebar y menús) para ignorarlas por completo en la foto
+            // Ocultamos las capas de Interfaz (Sidebar y menús)
             const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container');
             uiLayers.forEach(el => el.style.visibility = 'hidden');
 
-            // Configuramos html2canvas limitando a la lectura estricta de las coordenadas y anulando el scroll global
             html2canvas(document.body, {
                 x: mapCanvas.left,
                 y: mapCanvas.top,
@@ -797,22 +893,42 @@
                 scrollY: 0,
                 scroll: false,
                 useCORS: true,
-                allowTaint: false
+                allowTaint: false,
+                scale: 2 // Mayor resolución para el PDF/Imagen
             }).then(canvas => {
                 // Restauramos la UI
                 uiLayers.forEach(el => el.style.visibility = 'visible');
+                
+                // Limpiamos la marca de agua del DOM vivo
+                if(document.getElementById('report-watermark')) {
+                    document.getElementById('report-watermark').remove();
+                }
 
-                // Forzamos la descarga automática de la imagen perfecta
+                // Ocultamos el modal de "Encuadrando"
+                modalCapture.style.display = 'none';
+
+                // Forzamos la descarga de la imagen perfecta
                 const imageLink = document.createElement('a');
-                imageLink.download = `REPORTE_HACIENDA_MUNICIPAL_${Date.now()}.png`;
+                imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
                 imageLink.href = canvas.toDataURL("image/png");
                 imageLink.click();
+
+                // 3. Mostrar Mensaje de Éxito
+                modalSuccess.style.display = 'flex';
+                setTimeout(() => {
+                    modalSuccess.style.display = 'none';
+                }, 3000);
+
             }).catch(err => {
                 uiLayers.forEach(el => el.style.visibility = 'visible');
+                if(document.getElementById('report-watermark')) {
+                    document.getElementById('report-watermark').remove();
+                }
+                modalCapture.style.display = 'none';
                 console.error("Fallo al generar reporte:", err);
                 alert("Error al intentar capturar la imagen del mapa. Revise la consola.");
             });
-        }, 500);
+        }, 1500); // 1.5s para apreciar la alerta y encuadrar
     }
 
     /* ==========================================================================
@@ -1554,10 +1670,9 @@
     }
 
     /* ==========================================================================
-       FASE 7: CARGA DESDE LA NUBE DE FORMA DIRECTA (VERSIÓN ALCALDESA)
+       FASE 7: CARGA DESDE LA NUBE DE FORMA DIRECTA CON PRECISIÓN MILIMÉTRICA
        ========================================================================== */
     async function guardarEnServidor() {
-        // Función mantenida pero el botón está oculto por seguridad
         const token = _getAuth();
         if(!token) return alert("No se puede guardar. Falta configuración.");
 
@@ -1633,6 +1748,16 @@
             actualizarUIYMapa();
         }
     }
+
+    // MAPEO RECURSIVO PARA PRECISIÓN DE PINCHETAS (Mantiene todos los decimales)
+    const analizarCoordenadasProfundas = (coords) => {
+        if (Array.isArray(coords)) {
+            return coords.map(analizarCoordenadasProfundas);
+        } else if (coords && coords.lat !== undefined && coords.lng !== undefined) {
+            return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
+        }
+        return coords;
+    };
     
     function reconstruirDesdeJSON(datosCargados) {
         STORE = {};
@@ -1665,13 +1790,16 @@
                 const colorAUsar = reg.colorPersonalizado || colorBase;
                 
                 if (reg.tipoGeometria === 'marker' && reg.coords) {
-                    capa = L.marker([reg.coords.lat, reg.coords.lng], { 
+                    const latParseada = parseFloat(reg.coords.lat);
+                    const lngParseada = parseFloat(reg.coords.lng);
+                    capa = L.marker([latParseada, lngParseada], { 
                         icon: crearPinFiscal(colorAUsar), 
                         draggable: !modoLecturaGlobal 
                     });
                     capa.on('dragend', () => actualizarUIYMapa());
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                    capa = L.polygon(reg.coords, { 
+                    const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
+                    capa = L.polygon(coordenadasPoligono, { 
                         color: colorAUsar, 
                         fillColor: colorAUsar, 
                         fillOpacity: 0.2, 
