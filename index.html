@@ -54,17 +54,17 @@
             z-index: 1; 
         }
 
-        /* BANNER DE ALERTA PREVENTIVA DE LICENCIA */
+        /* BANNER DE ALERTA PREVENTIVA DE LICENCIA (NARANJA TRÁFICO) */
         #license-banner {
             display: none;
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            background: #ff9800;
-            color: #000;
+            background: #FF8C00;
+            color: #ffffff;
             text-align: center;
-            padding: 10px;
+            padding: 12px;
             font-size: 14px;
             font-weight: 900;
             z-index: 999999;
@@ -741,7 +741,7 @@
 
 <!-- BANNER DE ALERTA PREVENTIVA LICENCIA -->
 <div id="license-banner">
-    ⚠️ AVISO: Su licencia de uso vence en <span id="dias-restantes"></span> días. Por favor, contacte al Administrador para evitar interrupciones.
+    ⚠️ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> días. Gestione la renovación para evitar la suspensión del servicio.
 </div>
 
 <!-- SELLO PROTECTOR INFERIOR -->
@@ -842,14 +842,32 @@
         if(widthThreshold || heightThreshold) {
             console.clear();
             document.getElementById('map').style.display = 'none';
-            document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE COLÓN</div>';
-            window.stop();
+            bloquearSistemaPorLicencia();
         }
     }, 1000);
 
-    // Función global para bloquear el sistema por Licencia Vencida
+    // Función global para bloquear el sistema con Estilo de Error de Servidor (Status 402)
     function bloquearSistemaPorLicencia() {
-        document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ LICENCIA DE USO VENCIDA, POR FAVOR CONTACTA CON EL ADMINISTRADOR</div>';
+        document.body.innerHTML = `
+        <div style="display:flex; height:100vh; width: 100vw; justify-content:center; align-items:center; background:#121212; font-family:'Inter',sans-serif; z-index:999999; position:fixed; top:0; left:0;">
+            <div style="background: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-width: 600px; width: 90%; text-align: center; border-top: 6px solid #da3633;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 50px; color: #da3633; margin-bottom: 20px;"></i>
+                <h1 style="color: #111; font-size: 22px; font-weight: 900; margin: 0 0 10px 0; text-transform: uppercase;">SGF-CLOUD INFRASTRUCTURE: ACCESS DENIED</h1>
+                <div style="background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px; margin-bottom: 20px;">
+                    <code style="color: #da3633; font-weight: bold; font-size: 14px;">Status Code: 402 (Payment Required)</code>
+                </div>
+                <p style="color: #555; font-size: 15px; line-height: 1.6; margin-bottom: 20px; font-weight: 500;">
+                    La suscripción de servicios GeoJSON y API de Mapas para la Alcaldía del Municipio Ayacucho ha expirado o ha sido suspendida por falta de pago de la anualidad.
+                </p>
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 30px; text-align: left;">
+                    <strong style="color: #856404; font-size: 14px; display: block; margin-bottom: 5px;">Acción Requerida:</strong>
+                    <span style="color: #333; font-size: 13px; line-height: 1.5;">Por favor, póngase en contacto con el Administrador de Sistemas (Proveedor Local) para procesar la renovación de la licencia de infraestructura y servidores GitHub/Google.</span>
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 15px; font-size: 11px; color: #888; font-family: monospace; letter-spacing: 0.5px;">
+                    ID del Cliente: AYACUCHO-VEN-2026 | Server Status: Suspended
+                </div>
+            </div>
+        </div>`;
         window.stop();
     }
 </script>
@@ -1787,7 +1805,7 @@
                 const diffTime = fechaVence.getTime() - hoy.getTime();
                 const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                // Validación 2: BLOQUEO TOTAL (ROJO/NEGRO) si expiró
+                // Validación 2: BLOQUEO TOTAL (STATUS 402 SERVER ERROR) si expiró
                 if (diasRestantes <= 0) {
                     bloquearSistemaPorLicencia();
                     return; 
