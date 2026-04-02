@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- IDENTIDAD CORPORATIVA: Título -->
     <title>PROYECTO HACIENDA 2026</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -11,7 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     
     <style>
@@ -85,9 +83,9 @@
             transform: translateY(-1px); 
         }
 
-        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE (REGLA DE ORO) */
+        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE A 100px */
         .leaflet-top.leaflet-right {
-            margin-top: 80px !important;
+            margin-top: 100px !important;
             z-index: 10001 !important;
             margin-right: 15px !important;
         }
@@ -159,16 +157,26 @@
             background: rgba(0, 242, 255, 0.1); 
         }
 
-        /* OCULTAR BOTÓN DE GUARDAR EN LA NUBE PARA LA VERSIÓN DE LA ALCALDESA */
+        /* REGLA DE ORO: OCULTAR BOTÓN DE GUARDAR EN LA NUBE PARA LA ALCALDESA */
         #btn-save-server { 
             display: none !important; 
         }
 
-        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE */
+        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE EXACTO (CENTRO DE VISIÓN) */
         @media print {
+            @page { size: landscape; margin: 0; }
+            body, html { width: 100%; height: 100%; margin: 0; padding: 0; background: white; }
             .ui-layer, .leaflet-control-container, .modal-overlay { display: none !important; }
-            #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
-            body, html { overflow: visible; background: white; }
+            #map { 
+                position: absolute; 
+                width: 100vw !important; 
+                height: 100vh !important; 
+                top: 0; 
+                left: 0; 
+                right: 0; 
+                bottom: 0; 
+                z-index: 9999; 
+            }
         }
         
         /* TOGGLE MODO LECTURA */
@@ -253,7 +261,7 @@
             font-size: 17px; 
             font-weight: 900; 
             letter-spacing: 1px; 
-            color: var(--color-temporal); 
+            color: white; 
         }
         
         .sidebar-header p { 
@@ -714,8 +722,13 @@
             <i class="fas fa-draw-polygon"></i>
         </button>
         
-        <!-- BOTÓN GENERAR REPORTE (CÁMARA SVG) -->
-        <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="window.print()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
+        <!-- NUEVO BOTÓN: GPS DE ALTA PRECISIÓN -->
+        <button class="btn tool-btn" id="btn-gps" title="Mi Ubicación Exacta (GPS)" onclick="marcarUbicacionGPS()">
+            <i class="fas fa-crosshairs"></i>
+        </button>
+
+        <!-- BOTÓN GENERAR REPORTE FOTOGRÁFICO CON FUNCIÓN DE CENTRADO EXACTO -->
+        <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="generarReporteCentrado()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> GENERAR REPORTE
         </button>
 
@@ -784,9 +797,9 @@
     // CAPA MAESTRA SUPERPUESTA PARA LOS SECTORES
     const capaMaestraSectores = L.featureGroup().addTo(mapa);
     
-    // CONTROL DE CAPAS VISIBLE EN ESQUINA SUPERIOR DERECHA
+    // CONTROL DE CAPAS VISIBLE EN ESQUINA SUPERIOR DERECHA (CONECTADO A LA DOBLE CAPA)
     const baseMaps = {
-        "Vista Satélite": googleSat,
+        "Vista Satélite (Híbrido)": googleSat,
         "Vista Mapa Urbano": googleStreets
     };
     const overlayMaps = {
@@ -874,6 +887,87 @@
         // Forzamos abrir en modo edición automáticamente por ser nuevo
         setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
     });
+
+    // SISTEMA GPS DE ALTA PRECISIÓN (PINCHETA EXACTA)
+    function marcarUbicacionGPS() {
+        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para registrar con GPS.");
+        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo.");
+        if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada.");
+        
+        if (!navigator.geolocation) {
+            return alert("Su navegador o dispositivo no soporta geolocalización satelital.");
+        }
+
+        const btn = document.getElementById('btn-gps');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                btn.innerHTML = '<i class="fas fa-crosshairs"></i>';
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                
+                // Mover mapa a la posición del fiscal
+                mapa.setView([lat, lng], 19);
+                
+                const colorCenso = DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
+                const marcadorGPS = L.marker([lat, lng], { icon: crearPinFiscal(colorCenso), draggable: true });
+                
+                // Si la capa maestra no tiene la capa actual, no pasará nada grave, pero aseguramos la inyección
+                const idFisico = L.stamp(marcadorGPS);
+                marcadorGPS.on('dragend', () => actualizarUIYMapa());
+                
+                const nuevoRegistro = {
+                    idFisico: idFisico,
+                    tipoGeometria: 'marker',
+                    capaLeaflet: marcadorGPS,
+                    colorPersonalizado: null, 
+                    visibleIndividual: true,
+                    datosGenerales: { 
+                        "Contribuyente": "NUEVO ESTABLECIMIENTO (GPS)", 
+                        "RIF": "J-00000000-0",
+                        "Teléfono": "0414-0000000",
+                        "Metros Cuadrados": "0 m2",
+                        "Fecha Fiscalización": new Date().toISOString().split('T')[0],
+                        "Estatus": "CENSO / NUEVO",
+                        "Link Fotografía": ""
+                    },
+                    camposOcultos: []
+                };
+
+                STORE[capaActivaId].registros.push(nuevoRegistro);
+                vincularEventosCapa(marcadorGPS, capaActivaId, idFisico);
+                
+                actualizarUIYMapa();
+                
+                setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico, true), 200);
+                setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
+            },
+            (err) => {
+                btn.innerHTML = '<i class="fas fa-crosshairs"></i>';
+                alert("Error obteniendo el GPS (Asegúrese de dar permisos de Ubicación): " + err.message);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+
+    // FUNCIÓN IMPRESIÓN CENTRO DE VISIÓN EXACTA
+    function generarReporteCentrado() {
+        const centroActual = mapa.getCenter();
+        const zoomActual = mapa.getZoom();
+        
+        // Forzar a Leaflet a recalcular el tamaño antes de invocar la impresora web
+        mapa.invalidateSize();
+        mapa.setView(centroActual, zoomActual, {animate: false});
+        
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    }
 
     // FUNCIÓN DE ÁRBOL: Apagar/Encender contribuyentes individuales usando Ojitos
     function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
