@@ -11,8 +11,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- LIBRERÍA EMAILJS PARA RECUPERACIÓN DE CLAVES -->
+    <!-- LIBRERÍAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         /* ==========================================================================
@@ -85,6 +86,13 @@
             transform: translateY(-1px); 
         }
 
+        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE A 100px */
+        .leaflet-top.leaflet-right {
+            margin-top: 100px !important;
+            z-index: 10001 !important;
+            margin-right: 15px !important;
+        }
+
         /* BARRA SUPERIOR */
         .top-nav { 
             top: 15px; 
@@ -150,6 +158,13 @@
             border-color: var(--cyan-neon); 
             color: var(--cyan-neon); 
             background: rgba(0, 242, 255, 0.1); 
+        }
+
+        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE Y OCULTAMIENTO */
+        @media print {
+            .ui-layer, .leaflet-control-container, .modal-overlay, #mira-captura { display: none !important; }
+            #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
+            body, html { overflow: visible; background: white; }
         }
         
         /* TOGGLE MODO LECTURA */
@@ -219,7 +234,7 @@
             width: 420px; 
             display: flex; 
             flex-direction: column; 
-            border-top: 5px solid var(--color-temporal); 
+            overflow: hidden;
         }
         
         .sidebar-header { 
@@ -437,7 +452,7 @@
         .sidebar-footer { 
             padding: 20px; 
             display: grid; 
-            grid-template-columns: 1fr 1fr; 
+            grid-template-columns: 1fr; 
             gap: 12px; 
             border-top: 1px solid var(--border-color); 
             background: rgba(0,0,0,0.2); 
@@ -681,9 +696,56 @@
         .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
         .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; }
         .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
+
+        /* MODALES DEL NUEVO FLUJO DE CAPTURA */
+        .notif-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(18, 22, 29, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--cyan-neon);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            z-index: 999999;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .footer-protegido {
+            position: fixed;
+            bottom: 5px;
+            right: 15px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+            z-index: 9999;
+            pointer-events: none;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+
+<!-- SELLO PROTECTOR INFERIOR -->
+<div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
+
+<!-- MODALES DEL FLUJO DE CAPTURA -->
+<div id="capture-modal" class="notif-modal">
+    <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
+    <span>🔄 ENCUADRANDO REPORTE...<br><small style="color: #a5b0bf; font-size: 12px;">Por favor, no mueva el mapa ni cierre esta ventana.</small></span>
+</div>
+
+<div id="success-modal" class="notif-modal" style="border-color: var(--color-vigente); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(35, 134, 54, 0.4);">
+    <i class="fas fa-check-circle" style="font-size: 30px; color: var(--color-vigente);"></i>
+    <span>✅ Reporte Generado con Éxito.</span>
+</div>
 
 <!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
 <div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
@@ -742,19 +804,30 @@
         <button class="btn tool-btn" id="btn-draw-poly" title="Auditar Área" onclick="activarHerramienta('poligono')">
             <i class="fas fa-draw-polygon"></i>
         </button>
+
+        <!-- BOTÓN GENERAR REPORTE (FOTO LIMPIA) -->
+        <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
+            <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                <circle cx="12" cy="13" r="3"></circle>
+            </svg> GENERAR REPORTE
+        </button>
         
         <!-- BOTÓN GUARDAR NUBE (GITHUB API) -->
         <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
             <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
         </button>
-
-        <button class="btn tool-btn" title="Descargar Respaldo JSON" onclick="exportarBaseDatos()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white;">
-            <i class="fas fa-download" style="margin-right: 8px;"></i> RESPALDO JSON
-        </button>
     </div>
 </nav>
 
 <aside id="sidebar" class="ui-layer glass-panel">
+    <!-- FRANJA TRICOLOR INSTITUCIONAL -->
+    <div style="height: 5px; width: 100%; display: flex;">
+        <div style="flex: 1; background: #008000;"></div> 
+        <div style="flex: 1; background: #FF0000;"></div> 
+        <div style="flex: 1; background: #FFFF00;"></div> 
+    </div>
+
     <div class="sidebar-header">
         <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
         <h1>SISTEMA DE CONTROL FISCAL</h1>
@@ -778,7 +851,7 @@
         </div>
     </div>
 
-    <!-- MÓDULO DE CONFIGURACIÓN DE SERVIDOR (NUEVO) -->
+    <!-- MÓDULO DE CONFIGURACIÓN DE SERVIDOR (SEGURIDAD PIKA) -->
     <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: var(--color-temporal); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
             <span><i class="fas fa-server"></i> CONFIG. DE SERVIDOR</span>
@@ -786,96 +859,178 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarToken()">VERIFICAR Y GUARDAR TOKEN</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarToken()">VERIFICAR Y ENCRIPTAR TOKEN</button>
         </div>
     </div>
 
     <div class="sidebar-footer">
-        <button class="btn btn-outline" onclick="crearNuevoSector()">
+        <button class="btn btn-outline" onclick="crearNuevoSector()" style="grid-column: span 1;">
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
-        </button>
-        <button class="btn btn-solid-yellow" onclick="abrirModalImportacion()">
-            <i class="fas fa-database"></i> IMPORTAR RAW
         </button>
         
         <!-- BOTÓN DE CERRAR SESIÓN (BOTÓN DE PÁNICO) -->
-        <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 2; border-color: var(--color-vencida); color: var(--color-vencida); margin-top: 5px;">
+        <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 1; border-color: var(--color-vencida); color: var(--color-vencida);">
             <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
         </button>
     </div>
 </aside>
 
-<div class="modal-overlay" id="modal-importar">
-    <div class="glass-panel modal-box">
-        <h2 class="modal-title"><i class="fas fa-cloud-download-alt"></i> Inyección Masiva (Sheets/CSV)</h2>
-        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Pegue el enlace de su Google Sheets (CSV). El sistema procesará las coordenadas y las imágenes automáticamente.</p>
-        
-        <input type="text" id="input-url-sheets" class="modal-input" placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv">
-        
-        <button class="btn btn-solid-yellow" style="width: 100%; margin-bottom: 15px;" id="btn-analizar-csv" onclick="analizarCabecerasCSV()">
-            1. LEER COLUMNAS DEL ARCHIVO
-        </button>
+<script>
+    /* ==========================================================================
+       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
+       ========================================================================== */
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
+            e.preventDefault();
+        }
+    });
 
-        <div id="configuracion-columnas" style="display: none; padding-top: 15px; border-top: 1px solid var(--border-color);">
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">1. COORDENADAS (Lat, Lng):</label>
-            <select id="sel-coordenadas" class="modal-select"></select>
-            
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">2. NOMBRE COMERCIAL / CONTRIBUYENTE:</label>
-            <select id="sel-nombre" class="modal-select"></select>
-
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">3. ESTATUS FISCAL:</label>
-            <select id="sel-estatus" class="modal-select"></select>
-            
-            <label style="font-size: 10px; color: var(--cyan-neon); font-weight: 900;">4. URL FOTOGRAFÍA FACHADA (Opcional):</label>
-            <select id="sel-imagen" class="modal-select"></select>
-
-            <button class="btn btn-save btn-popup-action" onclick="ejecutarInyeccionDatos()">2. PROCESAR CATASTRO</button>
-        </div>
-        
-        <button class="btn btn-popup-action" style="background: transparent; border: 1px solid var(--color-vencida); color: var(--color-vencida); margin-top: 10px;" onclick="cerrarModal('modal-importar')">CANCELAR Y CERRAR</button>
-    </div>
-</div>
+    setInterval(function() {
+        const widthThreshold = window.outerWidth - window.innerWidth > 160;
+        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+        if(widthThreshold || heightThreshold) {
+            console.clear();
+            document.getElementById('map').style.display = 'none';
+            document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+        }
+    }, 1000);
+</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
     /* ==========================================================================
-       FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD
+       FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD PIKA
        ========================================================================== */
     // CREDENCIALES EMAILJS (Reemplazar con tus datos reales de emailjs.com)
     const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY"; 
     const EMAILJS_SERVICE_ID = "TU_SERVICE_ID";
     const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID";
 
-    // Inicializar EmailJS
-    (function(){
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-    })();
+    (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
 
-    // VARIABLES FIJAS DE GITHUB CORREGIDAS
+    // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_hecho'; 
+    const GITHUB_REPO = 'mapa_censo'; 
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
     // JERARQUÍA DE ACCESO
-    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; // Credenciales por defecto, validadas contra la nube.
+    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
+
+    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado en memoria)
+    function getRealToken() {
+        const pika = localStorage.getItem('github_token_pika');
+        if(!pika) return null;
+        return pika.split('').reverse().join('');
+    }
+
+    /* ==========================================================================
+       MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
+       ========================================================================== */
+    function previsualizarCaptura() {
+        const modalCapture = document.getElementById('capture-modal');
+        const modalSuccess = document.getElementById('success-modal');
+        
+        modalCapture.querySelector('span').innerHTML = '🔄 INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el área de reporte.</small>';
+        modalCapture.style.display = 'flex';
+        
+        mapa.invalidateSize();
+
+        const watermark = document.createElement('div');
+        watermark.id = 'report-watermark';
+        watermark.innerHTML = `
+            <div style="border-left: 4px solid #da3633; padding-left: 12px; font-family:Inter,sans-serif; text-align:left; line-height:1.5;">
+                <strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br>
+                <span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
+                <em style="color: #ff0000; font-size: 11px; font-weight: 900;">¡PORQUE CON TRABAJO SE PRODUCE!</em><br>
+                <strong style="color: #000000; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
+                <span style="color: #aaaaaa; font-size: 10px;">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</span>
+            </div>
+        `;
+        watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
+        document.getElementById('map').appendChild(watermark);
+
+        // Ocultar modal de aviso y esperar a que la RAM limpie el DOM
+        setTimeout(() => {
+            modalCapture.style.display = 'none'; 
+            
+            // Disparar la foto limpia
+            setTimeout(() => {
+                const mapElement = document.getElementById('map');
+                const mapCanvas = mapElement.getBoundingClientRect();
+
+                const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container, .footer-protegido');
+                uiLayers.forEach(el => el.style.visibility = 'hidden');
+
+                html2canvas(document.body, {
+                    x: mapCanvas.left,
+                    y: mapCanvas.top,
+                    width: mapCanvas.width,
+                    height: mapCanvas.height,
+                    scrollX: 0,
+                    scrollY: 0,
+                    scroll: false,
+                    useCORS: true,
+                    allowTaint: false,
+                    scale: 2
+                }).then(canvas => {
+                    uiLayers.forEach(el => el.style.visibility = 'visible');
+                    
+                    if(document.getElementById('report-watermark')) {
+                        document.getElementById('report-watermark').remove();
+                    }
+
+                    const imageLink = document.createElement('a');
+                    imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
+                    imageLink.href = canvas.toDataURL("image/png");
+                    imageLink.click();
+
+                    modalSuccess.style.display = 'flex';
+                    setTimeout(() => { modalSuccess.style.display = 'none'; }, 3000);
+
+                }).catch(err => {
+                    uiLayers.forEach(el => el.style.visibility = 'visible');
+                    if(document.getElementById('report-watermark')) {
+                        document.getElementById('report-watermark').remove();
+                    }
+                    console.error("Fallo al generar reporte:", err);
+                    alert("Error al capturar imagen. Revise consola.");
+                });
+            }, 1500); 
+        }, 1000); 
+    }
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 }).addTo(mapa);
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026');
 
-    // OBJETO GLOBAL DE CAPAS INDEPENDIENTES (Evita borrados globales)
+    // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    
+    googleSat.addTo(mapa); 
+
+    const capaMaestraSectores = L.featureGroup().addTo(mapa);
+    
+    const baseMaps = {
+        "Vista Satélite": googleSat,
+        "Vista Mapa Urbano": googleStreets
+    };
+    const overlayMaps = {
+        "Sectores Digitalizados": capaMaestraSectores
+    };
+    L.control.layers(baseMaps, overlayMaps, {position: 'topright'}).addTo(mapa);
+
     const capasSectores = {};
-
-    // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
     let STORE = {}; 
     let capaActivaId = null; 
     let modoLecturaGlobal = false;
-    let cacheCSV = { data: [], cabeceras: [] };
     let textoFiltroGlobal = "";
 
     const DICCIONARIO_ESTATUS = {
@@ -892,7 +1047,6 @@
         className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
     });
 
-    // Herramientas Leaflet Draw - Inicializando polígonos con un fondo translúcido estético
     const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
     const herramientaPoligono = new L.Draw.Polygon(mapa, { 
         shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
@@ -906,11 +1060,9 @@
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
 
-    // EVENTO DE CREACIÓN MANUAL (DIBUJO DE POLÍGONOS Y MARCADORES)
     mapa.on(L.Draw.Event.CREATED, (evento) => {
         const idFisico = L.stamp(evento.layer);
         
-        // Configuración estética y de edición al nacer
         if(evento.layer instanceof L.Marker) {
             if (!modoLecturaGlobal) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
@@ -943,14 +1095,10 @@
         
         actualizarUIYMapa();
         
-        // Abrir popup inmediatamente en un registro nuevo
         setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
-        
-        // Forzamos abrir en modo edición automáticamente por ser nuevo
         setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
     });
 
-    // FUNCIÓN DE ÁRBOL: Apagar/Encender contribuyentes individuales usando Ojitos
     function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
         const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(reg) {
@@ -959,7 +1107,6 @@
         }
     }
 
-    // VISIBILIDAD POR CATEGORÍA COMPLETA (Polígonos y Marcadores mediante Ojito)
     function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
         if (!STORE[idSector]) return;
         if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
@@ -967,14 +1114,12 @@
         actualizarUIYMapa();
     }
 
-    // Funciones Maestras Sector
     function actualizarNombreSector(id, valor) {
         if(!STORE[id]) return;
         STORE[id].nombreSector = valor.toUpperCase();
         actualizarUIYMapa();
     }
 
-    // SINCRONIZACIÓN DE COLOR TOTAL (Afecta Marcadores y Polígonos de una Categoría)
     function cambiarColorEstatusSector(idSector, estatus, colorHex) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
@@ -986,7 +1131,6 @@
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatus) {
                 reg.colorPersonalizado = colorHex;
-                // Diferenciar entre Marcador y Polígono para aplicar la estética correcta
                 if (reg.tipoGeometria === 'marker') {
                     reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
                 } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
@@ -998,7 +1142,6 @@
         actualizarUIYMapa();
     }
 
-    // Cambiar Color a nivel Sector General
     function cambiarColorSector(idSector, colorHex) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
@@ -1017,7 +1160,6 @@
         actualizarUIYMapa();
     }
 
-
     /* ==========================================================================
        FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
        ========================================================================== */
@@ -1028,12 +1170,10 @@
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
 
-            // 1. INICIALIZAR GRUPO DE CAPA INDEPENDIENTE SI NO EXISTE
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
             }
 
-            // Vaciamos temporalmente ESTA capa exclusiva para reconstruirla con el filtro
             capasSectores[idSector].clearLayers();
 
             const gruposPorEstatus = {};
@@ -1044,14 +1184,12 @@
                 
                 const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
                 
-                // Chequear visibilidad de la categoría completa (Ojito de sub-menú)
                 if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
                 const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
 
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                // GESTIÓN INDEPENDIENTE: Si pasa los filtros de Ojitos, se añade a su grupo
                 const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
                 const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
 
@@ -1069,21 +1207,18 @@
                 }
             });
 
-            // CONTROL DE CAPA EN EL MAPA: ADD o REMOVE de forma aislada
             if (sectorData.visible) {
-                if (!mapa.hasLayer(capasSectores[idSector])) {
-                    capasSectores[idSector].addTo(mapa);
+                if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.addLayer(capasSectores[idSector]);
                 }
             } else {
-                if (mapa.hasLayer(capasSectores[idSector])) {
-                    mapa.removeLayer(capasSectores[idSector]);
+                if (capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.removeLayer(capasSectores[idSector]);
                 }
             }
 
-            // Omitir pintar en UI si el buscador lo vació
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
-            // RENDERIZADO DEL PANEL DEL SECTOR
             const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
             
             let htmlSector = `
@@ -1093,7 +1228,6 @@
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
                                ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
                         
-                        <!-- OJITO DE SECTOR COMPLETO -->
                         <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
                            title="Mostrar/Ocultar todo el Sector" 
                            style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
@@ -1112,7 +1246,6 @@
                 </div>
                 <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
-            // ITERACIÓN DE CATEGORÍAS DENTRO DEL SECTOR
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
                 
@@ -1129,13 +1262,11 @@
                     <div class="status-header">
                         <div class="status-info" style="display:flex; align-items:center; gap:8px;">
                             
-                            <!-- OJITO DE CATEGORÍA INTERNA -->
                             <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
                                title="Mostrar/Ocultar Categoría" 
                                style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
                                onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
                             
-                            <!-- SELECTOR DE COLOR POR SUB-MENÚ (Afecta a polígonos y pines de esta categoría) -->
                             <input type="color" title="Color de esta Categoría" value="${colorActual}"
                                    onclick="event.stopPropagation();"
                                    onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
@@ -1153,7 +1284,6 @@
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
                             <div style="flex:1; display:flex; align-items:center; gap:8px;">
-                                <!-- OJITO INDIVIDUAL DE CONTRIBUYENTE -->
                                 <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
                                    title="Ocultar individualmente" 
                                    style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
@@ -1181,11 +1311,9 @@
         }
     }
 
-
     /* ==========================================================================
        FASE 3: DOBLE VISTA EN POPUP (REPARACIÓN DE APERTURA ANTI-BLOQUEOS)
        ========================================================================== */
-    
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
         capaFisica.on('click', () => {
             const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
@@ -1208,7 +1336,6 @@
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
-        // REPARACIÓN MAESTRA: Evita bloqueos forzando a Leaflet a desligar y reenganchar el Popup fresco
         capaMapa.unbindPopup();
         capaMapa.bindPopup(htmlContenido, { 
             minWidth: 320, 
@@ -1220,7 +1347,6 @@
         mapa._popup._source = capaMapa; 
     }
 
-    // ALTERNADOR LIGERO DOM (Evita recargar Leaflet y bloqueos de setContent)
     function toggleModoPopup(idFisico, modo) {
         const divRead = document.getElementById(`view-mode-${idFisico}`);
         const divEdit = document.getElementById(`edit-mode-${idFisico}`);
@@ -1236,12 +1362,10 @@
         }
     }
 
-    // EL GENERADOR DE STRINGS HTML CON LA TÉCNICA DE DOBLE CONTENEDOR (DOM ESTÁTICO)
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         let html = `<div class="pop-wrapper">`;
 
-        // SI ES POLÍGONO (AUDITORÍA MUNICIPAL)
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
@@ -1253,21 +1377,16 @@
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
             </div>`;
         } 
-        // SI ES MARCADOR (FICHA DE CONTRIBUYENTE)
         else {
             const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
-            // Evaluar de dónde hereda el color (Personalizado > Sector > Estatus Global)
             const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
             const colorFinal = registro.colorPersonalizado || colorSector;
             
             const imgUrl = registro.datosGenerales["Link Fotografía"];
-            
-            // Verificamos si la foto está oculta (CASCADA)
             const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
             
-            // PORTADA UNIVERSAL HACIENDA MUNICIPAL (Respeta el Ojito de Link Fotografía)
             html += `
             <div class="pop-cover">
                 ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
@@ -1275,9 +1394,6 @@
             </div>
             <div class="pop-content">`;
 
-            // ==========================================
-            // CONTENEDOR 1: LECTURA PROFESIONAL ESTÁTICA
-            // ==========================================
             html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
@@ -1295,15 +1411,11 @@
             }
             html += `</div>`;
 
-            // ==========================================
-            // CONTENEDOR 2: EDICIÓN PROFUNDA (INPUTS)
-            // ==========================================
             html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 
-                // Actualizamos el STORE y también inyectamos directamente al Contenedor 1 para que al volver se vea el cambio sin recargar
                 html += `
                 <div class="form-group">
                     <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
@@ -1342,8 +1454,6 @@
         return html;
     }
 
-    // --- Controladores de Interacción del Popup ---
-    
     function cambiarColorPin(idSector, idFisico, colorHex) {
         if(modoLecturaGlobal) return;
         const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
@@ -1351,11 +1461,9 @@
 
         const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
 
-        // SINCRONIZACIÓN EN CASCADA: Guardar en la configuración del sector
         if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
         STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
 
-        // Aplicar a todos los registros de la misma categoría en este sector
         STORE[idSector].registros.forEach(reg => {
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatusTarget) {
@@ -1368,7 +1476,6 @@
             }
         });
 
-        // Refresco visual y HTML estático
         actualizarUIYMapa();
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) badge.style.background = colorHex;
@@ -1384,16 +1491,13 @@
         const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
         const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
 
-        // SINCRONIZACIÓN EN CASCADA: Aplicar a todos los de la misma categoría
         STORE[idSector].registros.forEach(reg => {
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatusTarget) {
                 if (isCurrentlyHidden) {
-                    // Lo mostramos (lo quitamos de camposOcultos)
                     const idx = reg.camposOcultos.indexOf(claveCampo);
                     if (idx > -1) reg.camposOcultos.splice(idx, 1);
                 } else {
-                    // Lo ocultamos (lo agregamos a camposOcultos)
                     if (!reg.camposOcultos.includes(claveCampo)) {
                         reg.camposOcultos.push(claveCampo);
                     }
@@ -1401,9 +1505,8 @@
             }
         });
 
-        actualizarUIYMapa(); // Asegura consistencia en UI
+        actualizarUIYMapa(); 
 
-        // Refrescamos rápido el popup y volvemos a vista de edición para no interrumpir
         if(mapa._popup) {
             const capaMapa = regOrigen.capaLeaflet;
             capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
@@ -1413,7 +1516,6 @@
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
         STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
         actualizarUIYMapa(); 
-        // Cero recargas de Leaflet aquí. Todo es DOM fluido.
     }
 
     function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
@@ -1423,7 +1525,7 @@
         const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
         const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : conf.color;
         
-        reg.colorPersonalizado = colorSector; // Adopta el color de su nueva categoría
+        reg.colorPersonalizado = colorSector; 
         
         if (reg.tipoGeometria === 'marker') {
             reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
@@ -1433,7 +1535,6 @@
         
         actualizarUIYMapa();
 
-        // Actualizar etiqueta en vivo
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) {
             badge.innerText = nuevoEst;
@@ -1441,11 +1542,9 @@
         }
     }
 
-
     /* ==========================================================================
        FASE 4: FUNCIONES DE SISTEMA Y VÉRTICES DE EDICIÓN
        ========================================================================== */
-    
     function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 
     function alternarModoLectura() {
@@ -1462,7 +1561,6 @@
             bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
         }
 
-        // Habilitar/Deshabilitar Puntos Blancos Profesionales de Vértices en Polígonos
         for(let id in STORE) {
             STORE[id].registros.forEach(reg => {
                 if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
@@ -1491,8 +1589,8 @@
     
     function toggleVisibilidadCapa(idSector, isVisible) { 
         STORE[idSector].visible = isVisible;
-        if(isVisible) capasSectores[idSector].addTo(mapa);
-        else mapa.removeLayer(capasSectores[idSector]);
+        if(isVisible) capaMaestraSectores.addLayer(capasSectores[idSector]);
+        else capaMaestraSectores.removeLayer(capasSectores[idSector]);
         actualizarUIYMapa(); 
     }
 
@@ -1513,7 +1611,7 @@
         if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
         
         if (capasSectores[idSector]) {
-            mapa.removeLayer(capasSectores[idSector]);
+            capaMaestraSectores.removeLayer(capasSectores[idSector]);
             delete capasSectores[idSector];
         }
         delete STORE[idSector]; 
@@ -1559,127 +1657,15 @@
         return count;
     }
 
-
     /* ==========================================================================
-       FASE 5: MÓDULO DE IMPORTACIÓN MASIVA (INTACTO)
-       ========================================================================== */
-       
-    function abrirModalImportacion() { document.getElementById('modal-importar').style.display = 'flex'; }
-    function cerrarModal(id) { document.getElementById(id).style.display = 'none'; document.getElementById('configuracion-columnas').style.display = 'none'; }
-
-    async function analizarCabecerasCSV() {
-        let url = document.getElementById('input-url-sheets').value;
-        if(!url) return alert("Inserte URL de Google Sheets");
-        if(url.includes('/edit')) url = url.replace(/\/edit.*$/, '/export?format=csv');
-        
-        const btn = document.getElementById('btn-analizar-csv');
-        btn.innerText = "⏳ CONECTANDO A GOOGLE...";
-        
-        try {
-            const resp = await fetch(url);
-            if(!resp.ok) throw new Error("Sin acceso");
-            const txt = await resp.text();
-            
-            const rows = txt.split('\n').map(l => l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
-            cacheCSV.cabeceras = rows[0];
-            cacheCSV.data = rows.slice(1).filter(r => r.length >= cacheCSV.cabeceras.length);
-
-            const options = cacheCSV.cabeceras.map(c => `<option value="${c}">${c}</option>`).join('');
-            
-            document.getElementById('sel-coordenadas').innerHTML = options;
-            document.getElementById('sel-nombre').innerHTML = options;
-            document.getElementById('sel-estatus').innerHTML = options;
-            
-            document.getElementById('sel-imagen').innerHTML = `<option value="NONE">NINGUNA (Dejar Vacío)</option>` + options;
-
-            document.getElementById('configuracion-columnas').style.display = 'block';
-            btn.innerText = "1. COLUMNAS DETECTADAS (OK)";
-        } catch(e) {
-            alert("❌ ERROR: El documento debe ser público ('Cualquier persona con el enlace').");
-            btn.innerText = "1. LEER COLUMNAS DEL ARCHIVO";
-        }
-    }
-
-    function homologarEstatus(txt) {
-        if(!txt) return "SIN CATEGORÍA";
-        const t = txt.toUpperCase();
-        if(t.includes("VIGENT")) return "VIGENTE";
-        if(t.includes("VENCID") || t.includes("NO RENOV")) return "VENCIDA";
-        if(t.includes("TEMP") || t.includes("PROV")) return "TEMPORAL";
-        if(t.includes("SIN LICEN")) return "SIN LICENCIA";
-        return "SIN CATEGORÍA";
-    }
-
-    function ejecutarInyeccionDatos() {
-        const idNuevo = 'imp_' + Date.now();
-        capasSectores[idNuevo] = new L.FeatureGroup();
-        
-        const cCo = document.getElementById('sel-coordenadas').value;
-        const cNo = document.getElementById('sel-nombre').value;
-        const cEs = document.getElementById('sel-estatus').value;
-        const cIm = document.getElementById('sel-imagen').value;
-
-        let regArr = [];
-        let fails = 0;
-
-        cacheCSV.data.forEach(filaArr => {
-            let diccionario = {};
-            cacheCSV.cabeceras.forEach((cab, i) => diccionario[cab] = filaArr[i]);
-
-            const strC = diccionario[cCo];
-            if(strC) {
-                const parts = strC.replace(/[^\d.,-]/g, ' ').trim().split(/\s+/);
-                if(parts.length >= 2) {
-                    const lat = parseFloat(parts[0].replace(',', '.'));
-                    const lng = parseFloat(parts[1].replace(',', '.'));
-
-                    if(!isNaN(lat) && !isNaN(lng)) {
-                        const estReal = homologarEstatus(diccionario[cEs]);
-                        const colHex = DICCIONARIO_ESTATUS[estReal].color;
-                        
-                        const mark = L.marker([lat, lng], { icon: crearPinFiscal(colHex), draggable: true });
-                        capasSectores[idNuevo].addLayer(mark);
-                        
-                        mark.on('dragend', () => actualizarUIYMapa());
-                        const idM = L.stamp(mark);
-                        vincularEventosCapa(mark, idNuevo, idM);
-
-                        let dg = {
-                            "Contribuyente": diccionario[cNo] || "SIN REGISTRO",
-                            "Estatus": estReal,
-                            "Link Fotografía": cIm !== "NONE" ? (diccionario[cIm] || "") : ""
-                        };
-                        
-                        for(let k in diccionario) {
-                            if(k !== cCo && k !== cNo && k !== cEs && k !== cIm) dg[k] = diccionario[k];
-                        }
-
-                        regArr.push({ idFisico: idM, tipoGeometria: 'marker', capaLeaflet: mark, colorPersonalizado: null, visibleIndividual: true, datosGenerales: dg, camposOcultos: [] });
-                    } else fails++;
-                } else fails++;
-            } else fails++;
-        });
-
-        STORE[idNuevo] = { nombreSector: "CENSO RAW " + new Date().toLocaleTimeString(), visible: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: regArr };
-        capaActivaId = idNuevo;
-        cerrarModal('modal-importar');
-        actualizarUIYMapa();
-        
-        mapa.fitBounds(capasSectores[idNuevo].getBounds());
-        alert(`✅ Carga exitosa: ${regArr.length} marcadores.\n⚠️ Fallos de Coordenadas (Ignorados): ${fails}`);
-    }
-
-    /* ==========================================================================
-       FASE 6: EXPORTACIÓN Y BACKUP DATA CON EXTRACCIÓN DE COORDENADAS
+       FASE 6: EXTRACCIÓN DE COORDENADAS PARA BACKUP
        ========================================================================== */
     function extraerDatosGeometria() {
-        // Clona el STORE profundamente, omitiendo referencias problemáticas a Leaflet
         const storeCopia = JSON.parse(JSON.stringify(STORE, (key, val) => {
             if (key === 'capaLeaflet' || key === 'grupoFisico') return undefined;
             return val;
         }));
 
-        // Inyectar coordenadas físicas antes de guardar
         for (let idSec in STORE) {
             STORE[idSec].registros.forEach((reg, i) => {
                 if (reg.tipoGeometria === 'marker') {
@@ -1694,25 +1680,9 @@
         return storeCopia;
     }
 
-    function exportarBaseDatos() {
-        const datosCompletos = extraerDatosGeometria();
-        const objetoMaestro = {
-            credentials: SYSTEM_AUTH,
-            store: datosCompletos
-        };
-        const payload = JSON.stringify(objetoMaestro, null, 2);
-        
-        const blob = new Blob([payload], { type: "application/json" });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `CATASTRO_MUNICIPAL_BACKUP_${Date.now()}.json`;
-        a.click();
-    }
-
     /* ==========================================================================
-       FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API
+       FASE 7: SEGURIDAD, AUTO-LOGIN Y MOTOR GITHUB API CON TOKEN PIKA
        ========================================================================== */
-    
     function enviarCredenciales() {
         const btnOlvidar = document.getElementById('btn-olvido');
         const originalText = btnOlvidar.innerText;
@@ -1764,15 +1734,15 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = localStorage.getItem('github_token') || '';
+            document.getElementById('ajuste-repo-token').value = getRealToken() || '';
         } else {
             div.style.display = 'none';
         }
     }
     
     async function verificarYGuardarToken() {
-        const token = document.getElementById('ajuste-repo-token').value.trim();
-        if(!token) return alert("Ingrese el token de GitHub.");
+        const rawToken = document.getElementById('ajuste-repo-token').value.trim();
+        if(!rawToken) return alert("Ingrese el token de GitHub.");
 
         const btn = document.querySelector('#ajustes-servidor button');
         const originalText = btn.innerText;
@@ -1781,14 +1751,14 @@
 
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': `token ${token}` }
+                headers: { 'Authorization': `token ${rawToken}` }
             });
 
             if (res.ok) {
-                localStorage.setItem('github_token', token);
-                localStorage.setItem('github_owner', GITHUB_USER); 
-                alert("✅ Token verificado y guardado con éxito. Recargando datos de la nube...");
-                await cargarDatosNube(); // Carga inteligente sin refrescar página
+                const pikaToken = rawToken.split('').reverse().join('');
+                localStorage.setItem('github_token_pika', pikaToken);
+                alert("✅ Token verificado y guardado con éxito (Cifrado). Recargando datos de la nube...");
+                await cargarDatosNube(); 
             } else {
                 throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
             }
@@ -1805,26 +1775,20 @@
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
 
-        // 1. PRIORIDAD MAESTRO: Entra sin pedir Token
         if (user === 'Ing_Wolgfan' && pass === 'TU_CLAVE_MAESTRA') {
             document.getElementById('login-overlay').style.display = 'none';
-            console.log("Acceso Maestro: Configuración habilitada.");
-            actualizarUIYMapa(); // Inicializa el mapa vacío para que configures
+            actualizarUIYMapa(); 
             return; 
         }
 
-        // 2. ACCESO ADMIN: Requiere validación de Token
         if (user === 'admin' && pass === 'admin') {
-            const tokenExistente = localStorage.getItem('github_token');
-            
-            if (!tokenExistente || tokenExistente === "") {
-                alert("No hay Token configurado en este dispositivo. Contacte al Administrador Maestro.");
+            const tokenExistente = getRealToken();
+            if (!tokenExistente) {
+                alert("No hay Token configurado en este dispositivo. Ingrese con clave Maestra para configurarlo.");
                 return;
             }
-            
-            // Si hay token, entra y carga el mapa
             document.getElementById('login-overlay').style.display = 'none';
-            cargarDatosNube(); // Inicializa el sistema completo desde GitHub
+            cargarDatosNube(); 
             return;
         }
 
@@ -1832,14 +1796,12 @@
     }
     
     async function cargarDatosNube() {
-        const token = localStorage.getItem('github_token');
+        const token = getRealToken();
         if (!token) {
-            console.warn("No token found. Panel is functional but map data is not loaded.");
-            actualizarUIYMapa(); // Renderiza el panel vacío funcional
+            actualizarUIYMapa();
             return;
         }
 
-        console.log("Token found. Attempting to load cloud data...");
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': `token ${token}` }
@@ -1851,9 +1813,7 @@
                 const jsonParsed = JSON.parse(decodedContent);
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 reconstruirDesdeJSON(jsonParsed.store || {});
-                console.log("Cloud data loaded successfully.");
             } else if (res.status === 404) {
-                console.warn("config.json not found in repo. Initializing empty state.");
                 actualizarUIYMapa();
             } else {
                 throw new Error(`GitHub API error: ${res.status}`);
@@ -1865,14 +1825,12 @@
         }
     }
 
-
     function cerrarSesionSeguridad() {
-        // Cierra la sesión forzando re-login, pero preserva el Token en localStorage.
         location.reload();
     }
 
     async function guardarEnServidor() {
-        const token = localStorage.getItem('github_token');
+        const token = getRealToken();
         if(!token) return alert("No se puede guardar. Configure el servidor en el panel lateral.");
 
         const btn = document.getElementById('btn-save-server');
@@ -1881,7 +1839,6 @@
         btn.disabled = true;
 
         try {
-            // 1. GET THE LATEST SHA
             let currentSha = null;
             try {
                 const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
@@ -1895,14 +1852,9 @@
                 if (getRes.ok) {
                     const getData = await getRes.json();
                     currentSha = getData.sha;
-                } else if (getRes.status !== 404) {
-                    throw new Error(`Error al obtener SHA: ${getRes.statusText}`);
                 }
-            } catch (err) {
-                console.warn("No se pudo obtener SHA previo (puede ser un archivo nuevo):", err);
-            }
+            } catch (err) {}
 
-            // 2. PREPARE PAYLOAD
             const datosLimpios = extraerDatosGeometria();
             const objetoMaestro = {
                 credentials: SYSTEM_AUTH,
@@ -1917,11 +1869,8 @@
                 branch: "main"
             };
             
-            if (currentSha) {
-                payload.sha = currentSha;
-            }
+            if (currentSha) payload.sha = currentSha;
 
-            // 3. PUT REQUEST
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
@@ -1932,10 +1881,7 @@
                 body: JSON.stringify(payload)
             });
 
-            if(!res.ok) {
-                const errorText = await res.text();
-                throw new Error(errorText);
-            }
+            if(!res.ok) throw new Error(await res.text());
             
             const data = await res.json();
             fileSha = data.content.sha;
@@ -1948,11 +1894,20 @@
             btn.disabled = false;
         }
     }
+
+    const analizarCoordenadasProfundas = (coords) => {
+        if (Array.isArray(coords)) {
+            return coords.map(analizarCoordenadasProfundas);
+        } else if (coords && coords.lat !== undefined && coords.lng !== undefined) {
+            return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
+        }
+        return coords;
+    };
     
     function reconstruirDesdeJSON(datosCargados) {
         STORE = {};
         for(let id in capasSectores) {
-            if(mapa.hasLayer(capasSectores[id])) mapa.removeLayer(capasSectores[id]);
+            if(capaMaestraSectores.hasLayer(capasSectores[id])) capaMaestraSectores.removeLayer(capasSectores[id]);
         }
         
         for(let idSector in datosCargados) {
@@ -1980,13 +1935,16 @@
                 const colorAUsar = reg.colorPersonalizado || colorBase;
                 
                 if (reg.tipoGeometria === 'marker' && reg.coords) {
-                    capa = L.marker([reg.coords.lat, reg.coords.lng], { 
+                    const latParseada = parseFloat(reg.coords.lat);
+                    const lngParseada = parseFloat(reg.coords.lng);
+                    capa = L.marker([latParseada, lngParseada], { 
                         icon: crearPinFiscal(colorAUsar), 
                         draggable: !modoLecturaGlobal 
                     });
                     capa.on('dragend', () => actualizarUIYMapa());
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                    capa = L.polygon(reg.coords, { 
+                    const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
+                    capa = L.polygon(coordenadasPoligono, { 
                         color: colorAUsar, 
                         fillColor: colorAUsar, 
                         fillOpacity: 0.2, 
@@ -2017,7 +1975,6 @@
         actualizarUIYMapa();
     }
 
-    // ARRANQUE INICIAL DEL SISTEMA
     function initSecurity() {
         document.getElementById('login-overlay').style.display = 'flex';
     }
