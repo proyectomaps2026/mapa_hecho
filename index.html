@@ -853,82 +853,83 @@
         const modalCapture = document.getElementById('capture-modal');
         const modalSuccess = document.getElementById('success-modal');
         
-        // 1. Mostrar Mensaje de Procesamiento
+        // 1. Mostrar Mensaje de Procesamiento inicial modificado
+        modalCapture.querySelector('span').innerHTML = '🔄 INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el área de reporte.</small>';
         modalCapture.style.display = 'flex';
         
         // CENTRADOR FORZADO
         mapa.invalidateSize();
 
-        // 2. Inyectar la Marca de Agua Oficial de la Alcaldía en el Mapa
+        // 2. Inyectar la Marca de Agua Oficial de la Alcaldía en el Mapa con Estilos Específicos
         const watermark = document.createElement('div');
         watermark.id = 'report-watermark';
         watermark.innerHTML = `
-            <div style="border-left: 4px solid #da3633; padding-left: 12px;">
+            <div style="border-left: 4px solid #da3633; padding-left: 12px; font-family:Inter,sans-serif; text-align:left; line-height:1.5;">
                 <strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br>
-                <span style="color: #444; font-size: 11px;">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</span><br>
-                <span style="color: #444; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
-                <em style="color: #238636; font-size: 11px; font-weight: 900;">PORQUE CON TRABAJO SE PRODUCE</em><br>
-                <strong style="color: #111; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
+                <span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
+                <em style="color: #ff0000; font-size: 11px; font-weight: 900;">¡PORQUE CON TRABAJO SE PRODUCE!</em><br>
+                <strong style="color: #000000; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
+                <span style="color: #aaaaaa; font-size: 10px;">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</span>
             </div>
         `;
-        watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); font-family:Inter,sans-serif; text-align:left; line-height:1.5; border: 1px solid rgba(0,0,0,0.1);';
+        watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
         document.getElementById('map').appendChild(watermark);
 
-        // Pequeño retardo para dar tiempo a que los tiles se rendericen y la marca de agua se fije
+        // 3. Ocultar modal de aviso y esperar 1.5 segundos a que la RAM limpie el render
         setTimeout(() => {
-            // CORRECCIÓN DE OFFSET DE MAPA - Obtenemos la posición local estricta
-            const mapElement = document.getElementById('map');
-            const mapCanvas = mapElement.getBoundingClientRect();
+            modalCapture.style.display = 'none'; // OCULTAR ANTES DE LA CAPTURA DEFINITIVAMENTE
+            
+            setTimeout(() => {
+                // CORRECCIÓN DE OFFSET DE MAPA - Obtenemos la posición local estricta
+                const mapElement = document.getElementById('map');
+                const mapCanvas = mapElement.getBoundingClientRect();
 
-            // Ocultamos las capas de Interfaz (Sidebar y menús)
-            const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container');
-            uiLayers.forEach(el => el.style.visibility = 'hidden');
+                // Ocultamos las capas de Interfaz (Sidebar y menús)
+                const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container');
+                uiLayers.forEach(el => el.style.visibility = 'hidden');
 
-            html2canvas(document.body, {
-                x: mapCanvas.left,
-                y: mapCanvas.top,
-                width: mapCanvas.width,
-                height: mapCanvas.height,
-                scrollX: 0,
-                scrollY: 0,
-                scroll: false,
-                useCORS: true,
-                allowTaint: false,
-                scale: 2 // Mayor resolución para el PDF/Imagen
-            }).then(canvas => {
-                // Restauramos la UI
-                uiLayers.forEach(el => el.style.visibility = 'visible');
-                
-                // Limpiamos la marca de agua del DOM vivo
-                if(document.getElementById('report-watermark')) {
-                    document.getElementById('report-watermark').remove();
-                }
+                html2canvas(document.body, {
+                    x: mapCanvas.left,
+                    y: mapCanvas.top,
+                    width: mapCanvas.width,
+                    height: mapCanvas.height,
+                    scrollX: 0,
+                    scrollY: 0,
+                    scroll: false,
+                    useCORS: true,
+                    allowTaint: false,
+                    scale: 2 // Mayor resolución para el PDF/Imagen
+                }).then(canvas => {
+                    // Restauramos la UI
+                    uiLayers.forEach(el => el.style.visibility = 'visible');
+                    
+                    // Limpiamos la marca de agua del DOM vivo
+                    if(document.getElementById('report-watermark')) {
+                        document.getElementById('report-watermark').remove();
+                    }
 
-                // Ocultamos el modal de "Encuadrando"
-                modalCapture.style.display = 'none';
+                    // Forzamos la descarga de la imagen perfecta limpia
+                    const imageLink = document.createElement('a');
+                    imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
+                    imageLink.href = canvas.toDataURL("image/png");
+                    imageLink.click();
 
-                // Forzamos la descarga de la imagen perfecta
-                const imageLink = document.createElement('a');
-                imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
-                imageLink.href = canvas.toDataURL("image/png");
-                imageLink.click();
+                    // 4. Mostrar Mensaje de Éxito por 3 segundos
+                    modalSuccess.style.display = 'flex';
+                    setTimeout(() => {
+                        modalSuccess.style.display = 'none';
+                    }, 3000);
 
-                // 3. Mostrar Mensaje de Éxito
-                modalSuccess.style.display = 'flex';
-                setTimeout(() => {
-                    modalSuccess.style.display = 'none';
-                }, 3000);
-
-            }).catch(err => {
-                uiLayers.forEach(el => el.style.visibility = 'visible');
-                if(document.getElementById('report-watermark')) {
-                    document.getElementById('report-watermark').remove();
-                }
-                modalCapture.style.display = 'none';
-                console.error("Fallo al generar reporte:", err);
-                alert("Error al intentar capturar la imagen del mapa. Revise la consola.");
-            });
-        }, 1500); // 1.5s para apreciar la alerta y encuadrar
+                }).catch(err => {
+                    uiLayers.forEach(el => el.style.visibility = 'visible');
+                    if(document.getElementById('report-watermark')) {
+                        document.getElementById('report-watermark').remove();
+                    }
+                    console.error("Fallo al generar reporte:", err);
+                    alert("Error al intentar capturar la imagen del mapa. Revise la consola.");
+                });
+            }, 1500); // Esperar 1.5s post-ocultamiento para disparar la foto limpia
+        }, 1000); // Mantener el cartel de "Iniciando captura..." un momento antes de esconderlo
     }
 
     /* ==========================================================================
