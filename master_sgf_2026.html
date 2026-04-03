@@ -794,7 +794,7 @@
             <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
             
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-            <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema">
+            <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema o Licencia SGF">
 
             <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
             
@@ -989,10 +989,19 @@
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
-        // Formato esperado: SGF - USUARIO - TOKEN_INVERTIDO - YYYYMMDD
-        if(parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true, days: 0 };
+        // Formato esperado: SGF-[USUARIO]-[TOKEN_REVERTIDO]-[FECHA_BASE64]
+        if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
 
-        const dateStr = parts[3];
+        const usuario = parts[1];
+        const tokenRev = parts[2];
+        let dateStr;
+        
+        try {
+            dateStr = atob(parts[3]); // Decodificamos la fecha en Base64
+        } catch(e) {
+            return { valid: false, expired: true, days: 0 };
+        }
+
         if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
         
         const expYear = parseInt(dateStr.substring(0,4));
@@ -1008,7 +1017,8 @@
             valid: true, 
             expired: diffDays <= 0, 
             days: diffDays,
-            tokenRev: parts[2]
+            tokenRev: tokenRev,
+            usuario: usuario
         };
     }
 
@@ -1055,7 +1065,25 @@
         }
 
         // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
-        if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+        let isLicenseLogin = pass.startsWith('SGF-');
+        let authSuccess = false;
+        let licenseObj = null;
+
+        // Si intenta entrar pegando directamente la licencia en el campo clave
+        if(isLicenseLogin) {
+            licenseObj = analizarLicenciaSGF(pass);
+            if(licenseObj.valid && licenseObj.usuario === user) {
+                authSuccess = true;
+                localStorage.setItem('sgf_license', pass);
+            }
+        } else if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+            // Si entra con usuario/clave tradicional, busca si ya tiene licencia guardada
+            authSuccess = true;
+            const storedLic = localStorage.getItem('sgf_license');
+            if(storedLic) licenseObj = analizarLicenciaSGF(storedLic);
+        }
+
+        if (authSuccess) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
@@ -1072,7 +1100,7 @@
             return;
         }
 
-        alert("Usuario o clave incorrectos.");
+        alert("Usuario, clave o Licencia SGF incorrectos.");
     }
 
     /* ==========================================================================
@@ -2207,6 +2235,20 @@
     }
 
     function initSecurity() {
+        const savedLicense = localStorage.getItem('sgf_license');
+        
+        // AUTO-LOGIN PARA EL ADMINISTRADOR SI TIENE LICENCIA VÁLIDA
+        if(savedLicense) {
+            const parsed = analizarLicenciaSGF(savedLicense);
+            if(parsed.valid && !parsed.expired) {
+                // Auto-rellenar y lanzar
+                document.getElementById('login-user').value = parsed.usuario;
+                document.getElementById('login-pass').value = savedLicense;
+                intentarLogin(); 
+                return;
+            }
+        }
+        
         document.getElementById('login-overlay').style.display = 'flex';
     }
     
