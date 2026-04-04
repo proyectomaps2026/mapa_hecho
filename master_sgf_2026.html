@@ -1213,54 +1213,44 @@
             allRecords.push(...sector.registros);
         });
 
-        const tableRows = [];
-        
-        // Define header row
-        const headerRow = new TableRow({
+        const tableHeader = new TableRow({
             children: [
-                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "UBICACIÓN", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTADO FISCAL", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "DOCUMENTACIÓN", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "REGISTRO", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "CONTROL", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTATUS ECONÓMICO", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RESPONSABLE", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 1000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "TRAZABILIDAD", bold: true, size: 16 })] })] }),
             ],
             tableHeader: true,
         });
-        tableRows.push(headerRow);
 
-        // Create data rows
-        allRecords.forEach(reg => {
+        const dataRows = allRecords.map(reg => {
             const d = reg.datosGenerales;
+            
+            const identidad = d["Razón Social"] || d["Nombre Comercial"] || "Sin Identificar";
+            const registro = d["RIF / Registro"] || "N/A";
+            const control = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || "N/A"}`;
+            const estatusEcon = d["Licencia Act. Econ."] || "N/A";
+            const responsable = d["Fiscal"] || "N/A";
+            const trazabilidad = d["ID_Auditoria"] || "N/A";
 
-            // Mapeo de Datos con lógica de precisión
-            const identidad = d["Razón Social"] || d["Nombre Comercial"] || d["Contribuyente"] || "Sin Identificar";
-            const registro = d["RIF / Registro"] || d["RIF"] || "N/A";
-            
-            const latLng = reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
-            const coordsText = `GPS: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
-            const ubicacion = `${d["Dirección (Referencia Manual)"] || "No especificada."}\n${coordsText}`;
-            
-            const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}\nAuditoría: ${d["ID_Auditoria"] || "N/A"}`;
-            
-            const estadoFiscal = `Validación: ${d["Validación Fiscal"] || d["Estatus"] || "N/A"}\nLicencia: ${d["Situación Sin Licencia"] || "N/A"}\nPago: ${d["Semáforo de Acuerdo de Pago"] || "N/A"}`;
-
-            const dataRow = new TableRow({
+            return new TableRow({
                 children: [
-                    new TableCell({ children: [
-                        new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 18 })] }),
-                        new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] }),
-                    ]}),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ubicacion, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: identidad, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: control, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estatusEcon, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: responsable, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: trazabilidad, size: 16 })] })] }),
                 ],
             });
-            tableRows.push(dataRow);
         });
 
         const table = new Table({
-            rows: tableRows,
+            rows: [tableHeader, ...dataRows],
             width: { size: 100, type: WidthType.PERCENTAGE },
-            columnWidths: [2500, 3000, 2000, 2000],
+            columnWidths: [2500, 1500, 1500, 1500, 1500, 1000],
         });
 
         const doc = new Document({
@@ -1270,7 +1260,6 @@
                         children: [new Paragraph({
                             text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO",
                             alignment: AlignmentType.CENTER,
-                            style: "Header"
                         })],
                     }),
                 },
@@ -1295,17 +1284,17 @@
                     new Paragraph({
                         children: [
                             new TextRun({
-                                text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ",
+                                text: "CERTIFICACIÓN DE REGISTRO FISCAL: ",
                                 bold: true,
                                 size: 20,
                                 break: 1,
                             }),
                             new TextRun({
-                                text: "El presente documento constituye un Respaldo Maestro de Fiscalización, emitido bajo los estándares de la Ley Orgánica de la Contraloría General de la República (Arts. 7, 9, 77 y 91), la Ley de Infogobierno (Art. 4) y la Constitución de la República (Arts. 168 y 174). ",
+                                text: "El presente documento constituye el respaldo oficial del Censo de Actividades Económicas, emitido bajo los estándares de la Ley Orgánica de la Contraloría (Arts. 7, 9, 77 y 91) y la Constitución de la República (Arts. 168 y 174). ",
                                 size: 20,
                             }),
                             new TextRun({
-                                text: "Se hace constar que la información aquí detallada (RIF, Expediente, Censo y Validación) ha sido recolectada y validada en campo por el Fiscal Responsable asignado. Este reporte goza de presunción de veracidad para efectos de recaudación municipal. Cualquier modificación no autorizada de este soporte digital o físico anula su validez ante la Dirección de Hacienda.",
+                                text: "Se certifica que la información aquí detallada (RIF, Expediente, Censo y Estatus de Licencia) ha sido procesada por el Fiscal responsable identificado en este reporte. Este documento digital es el soporte fidedigno del sistema SGF-CLOUD.",
                                 size: 20,
                             }),
                         ],
@@ -1316,7 +1305,7 @@
         });
 
         Packer.toBlob(doc).then(blob => {
-            saveAs(blob, `Respaldo_Maestro_Fiscal_Ayacucho_${Date.now()}.docx`);
+            saveAs(blob, `Respaldo_Oficial_Censo_Ayacucho_${Date.now()}.docx`);
         });
     }
 
