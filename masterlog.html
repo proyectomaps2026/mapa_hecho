@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGF MASTER | Auditoría de Transparencia</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #0062ff; 
+            --dark: #0a0a0c; 
+            --card: #151518; 
+            --text: #e0e0e0; 
+            --success: #00c853; 
+            --warning: #ffcc00; 
+            --danger: #ff3333; 
+            --blue-pro: #1976d2;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--dark); color: var(--text); margin: 0; display: flex; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--card); height: 100vh; border-right: 1px solid #222; padding: 20px; position: fixed; box-sizing: border-box; }
+        .logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .nav-item { padding: 14px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; transition: 0.3s; color: #888; display: flex; align-items: center; gap: 12px; font-size: 13px; font-weight: 600; }
+        .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
+        .nav-log { background: rgba(0, 200, 83, 0.05); color: var(--success); border: 1px solid rgba(0, 200, 83, 0.1); }
+
+        /* Main Content */
+        .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+        
+        /* Table */
+        .table-container { background: var(--card); border-radius: 12px; border: 1px solid #222; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #111; padding: 18px 20px; text-align: left; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #222; }
+        td { padding: 18px 20px; border-bottom: 1px solid #222; font-size: 13px; }
+        tr:hover td { background: #1a1a1f; }
+        
+        .status-pill { padding: 6px 12px; border-radius: 6px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-legal { background: rgba(0, 200, 83, 0.1); color: var(--success); border: 1px solid rgba(0, 200, 83, 0.2); }
+        
+        .btn { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; font-size: 12px; }
+        .btn-primary { background: var(--primary); color: white; }
+        
+        #legal-banner { background: rgba(255, 204, 0, 0.05); border: 1px solid rgba(255, 204, 0, 0.2); color: var(--warning); padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 12px; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="logo"><i class="fa-solid fa-shield-check"></i> SGF AUDITOR</div>
+    <div class="nav-item" onclick="location.href='.mastercobrolisto.html'"><i class="fa-solid fa-arrow-left"></i> Volver al Master</div>
+    <div class="nav-item active nav-log"><i class="fa-solid fa-clipboard-list"></i> MasterLog Fiscal</div>
+    <div style="margin-top: auto; padding: 10px; font-size: 10px; color: #555;">SUPER ADMIN ID: WOLGFAN-2026</div>
+</div>
+
+<div class="main">
+    <div class="header">
+        <h1>MasterLog de Transparencia</h1>
+        <button class="btn btn-primary" onclick="descargarExcelAuditoria()">
+            <i class="fa-solid fa-file-arrow-down"></i> EXPORTAR ACTA DE CONTROL
+        </button>
+    </div>
+
+    <div id="legal-banner">
+        <i class="fa-solid fa-gavel"></i> <b>PROTOCOLO DE TRANSPARENCIA:</b> Este registro es fidedigno e inalterable. 
+        En cumplimiento con los <b>Arts. 7, 9, 77 y 91 de la Ley Orgánica de la Contraloría General</b>, toda acción de depuración de datos 
+        queda grabada para asegurar la integridad de la base de datos matriz.
+    </div>
+
+    <div class="table-container">
+        <table id="tablaAuditoria">
+            <thead>
+                <tr>
+                    <th>FECHA / HORA</th>
+                    <th>AUTORIDAD RESPONSABLE</th>
+                    <th>ACCIÓN REALIZADA</th>
+                    <th>CONTRIBUYENTE / SECTOR</th>
+                    <th style="text-align: right;">ESTADO FISCAL</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoMasterLog">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Impedir clic derecho para proteger la vista
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // El MasterLog se recupera del almacenamiento global del sistema
+    let MASTER_LOG = JSON.parse(localStorage.getItem('sgf_masterlog_auditoria')) || [
+        { fecha: "2026-04-03 10:00:15", usuario: "SUPER_ADMIN", accion: "INICIO DE SISTEMA", detalle: "SGF-CLOUD-ACTIVO", zona: "SISTEMA", estatus: "ACTIVO" }
+    ];
+
+    function cargarMasterLog() {
+        const cuerpo = document.getElementById('cuerpoMasterLog');
+        cuerpo.innerHTML = "";
+
+        // Mostramos de lo más nuevo a lo más viejo
+        [...MASTER_LOG].reverse().forEach(log => {
+            cuerpo.innerHTML += `
+                <tr>
+                    <td style="color:#888;">${log.fecha}</td>
+                    <td><b style="color:white;">${log.usuario.toUpperCase()}</b></td>
+                    <td><span style="color:var(--primary); font-weight:bold;">${log.accion}</span></td>
+                    <td><b>${log.detalle}</b> <br> <small style="color:#666;">${log.zona}</small></td>
+                    <td style="text-align: right;">
+                        <span class="status-pill badge-legal"><i class="fa-solid fa-lock"></i> AUDITADO</span>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function descargarExcelAuditoria() {
+        const confirmacion = confirm("¿Confirmar descarga de Acta Legal para la Contraloría?");
+        if(!confirmacion) return;
+
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "FECHA,AUTORIDAD,ACCION,DETALLE,ZONA,ESTADO\n";
+        
+        MASTER_LOG.forEach(row => {
+            csvContent += `${row.fecha},${row.usuario},${row.accion},${row.detalle},${row.zona},FIRMADO\n`;
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `MasterLog_Ayacucho_Auditoria_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Inicializar
+    cargarMasterLog();
+
+    // Sincronización: Si el Admin borra algo en el otro archivo, se refresca aquí
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'sgf_masterlog_auditoria') {
+            MASTER_LOG = JSON.parse(e.newValue);
+            cargarMasterLog();
+        }
+    });
+</script>
+
+</body>
+</html>
