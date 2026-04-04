@@ -729,12 +729,14 @@
        ========================================================================== */
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; 
-    const FILE_PATH = 'config.json';
+    const FILE_PATH = 'mapa_censo/config.json';
     
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' };
-    let _decon_token = null; // Variable global para el token reconstruido
+    let _decon_token = null; 
     
-    // La llave de acceso ahora se obtiene de la variable de memoria _decon_token
+    // El visor es estrictamente LECTURA
+    const modoLecturaGlobal = true;
+    
     const _getAuth = () => _decon_token;
 
     function intentarLogin() {
@@ -1382,6 +1384,12 @@
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (!res.ok) {
+                const status = res.status;
+                let msg = `ERROR ${status}`;
+                if (status === 404) msg = "ERROR 404: Ruta no encontrada";
+                if (status === 401) msg = "ERROR 401: Token Inválido";
+                
+                alert(msg);
                 bloquearSistemaPorLicencia();
                 return;
             }
@@ -1403,6 +1411,7 @@
                         }
                         
                         reconstruirDesdeJSON(config.store || {});
+                        console.log("SINCRO EXITOSA: DATA EN LA NUBE");
                     }
                 } else {
                     // Si la licencia del config no es válida, probamos con el master_token si existe
@@ -1410,6 +1419,7 @@
                         _decon_token = config.master_token.split('').reverse().join('');
                         eliminarBloqueoForense();
                         reconstruirDesdeJSON(config.store || {});
+                        console.log("SINCRO EXITOSA: DATA EN LA NUBE (MASTER)");
                     } else {
                         bloquearSistemaPorLicencia();
                     }
@@ -1418,11 +1428,13 @@
                 _decon_token = config.master_token.split('').reverse().join('');
                 eliminarBloqueoForense();
                 reconstruirDesdeJSON(config.store || {});
+                console.log("SINCRO EXITOSA: DATA EN LA NUBE (MASTER)");
             } else {
                 bloquearSistemaPorLicencia();
             }
         } catch (e) {
             console.error(e);
+            alert("ERROR CRÍTICO: Fallo de red");
             bloquearSistemaPorLicencia();
         }
     }
