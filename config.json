@@ -8,9 +8,11 @@
     "imp_1775020690572": {
       "nombreSector": "CENSO RAW 1:18:10",
       "visible": true,
+      "isMaster": true,
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {},
       "colorPrincipal": "#00f2ff",
+      "isExpanded": true,
       "registros": [
         {
           "idFisico": 83,
