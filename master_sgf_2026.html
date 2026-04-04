@@ -14,6 +14,8 @@
     <!-- LIBRERÍAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- LIBRERÍA XLSX PARA EXPORTACIÓN A EXCEL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <style>
         /* ==========================================================================
@@ -780,7 +782,7 @@
     <div style="width: 400px;">
         <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional">
         <button class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 15px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
-        <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
+        <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
     </div>
 </div>
 
@@ -925,7 +927,7 @@
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
             <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
-            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
+            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
     </div>
 
@@ -1157,43 +1159,44 @@
         validarLicenciaYBloqueo();
     }
 
-    // Rescate de Datos de Emergencia y Rutina (Excel)
-    function exportarExcelRespaldo() {
+    /* ==========================================================================
+       NUEVO BLOQUE: EXPORTACIÓN A EXCEL (SECTORIZACIÓN POR COORDENADAS)
+       ========================================================================== */
+    function exportarExcelInstitucional() {
         if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
+        const wb = XLSX.utils.book_new();
+        let datosParaExcel = [];
         
-        let csvContent = "\uFEFF"; // BOM para Excel para evitar fallos con acentos
-        csvContent += "SECTOR,ID_FISICO,TIPO,ESTATUS,CONTRIBUYENTE,RIF,TELEFONO,METROS_CUADRADOS,FECHA_FISCAL,COORDENADAS\n";
+        // Recorremos los registros que están cargados en el mapa
+        Object.keys(STORE).forEach(idCapa => {
+            STORE[idCapa].registros.forEach(reg => {
+                const d = reg.datosGenerales;
+                // IMPORTANTE: El nombre del sector se toma del contenedor donde está el punto
+                const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
 
-        for (let idSector in STORE) {
-            const secNombre = STORE[idSector].nombreSector.replace(/,/g, '');
-            STORE[idSector].registros.forEach(reg => {
-                const idF = reg.idFisico;
-                const tipo = reg.tipoGeometria;
-                const est = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                const contri = (reg.datosGenerales["Contribuyente"] || "N/A").replace(/,/g, ' ');
-                const rif = (reg.datosGenerales["RIF"] || "N/A").replace(/,/g, ' ');
-                const tlf = (reg.datosGenerales["Teléfono"] || "N/A").replace(/,/g, ' ');
-                const mts = (reg.datosGenerales["Metros Cuadrados"] || "N/A").replace(/,/g, ' ');
-                const fec = (reg.datosGenerales["Fecha Fiscalización"] || "N/A").replace(/,/g, ' ');
-                
-                let coordsStr = "Poligono/Area";
-                if(tipo === 'marker' && reg.capaLeaflet.getLatLng) {
-                    const ll = reg.capaLeaflet.getLatLng();
-                    coordsStr = `${ll.lat} | ${ll.lng}`;
-                }
-
-                csvContent += `${secNombre},${idF},${tipo},${est},${contri},${rif},${tlf},${mts},${fec},${coordsStr}\n`;
+                datosParaExcel.push({
+                    "SECTOR": nombreSector, 
+                    "RIF/CÉDULA": d["RIF"] || d["Cédula"] || d["Identificacion"] || "S/D",
+                    "CONTRIBUYENTE": d["Contribuyente"] || d["Razon Social"] || "Sin Nombre",
+                    "ESTADO FISCAL": d["Estatus"] || "Pendiente",
+                });
             });
-        }
+        });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `RESPALDO_HACIENDA_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Ordenar por Sector y luego por Nombre
+        datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
+
+        const ws = XLSX.utils.json_to_sheet(datosParaExcel);
+        
+        // PIE DE PÁGINA LEGAL CON LOS ARTÍCULOS SOLICITADOS
+        const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
+        
+        const filaFinal = datosParaExcel.length + 3;
+        XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
+        XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
+        
+        XLSX.utils.book_append_sheet(wb, ws, "Reporte Fiscal");
+        XLSX.writeFile(wb, "Reporte_Fiscal_Ayacucho.xlsx");
     }
 
     /* ==========================================================================
@@ -1428,10 +1431,28 @@
         actualizarUIYMapa();
     }
     
+    // REPARACIÓN DEL ÁRBOL (CLIC MANUAL OBLIGATORIO)
     function toggleSectorBodyManual(e, idSector) {
         if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
-        if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = (idSector === capaActivaId);
+        if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = true;
         STORE[idSector].isExpanded = !STORE[idSector].isExpanded;
+        actualizarUIYMapa();
+    }
+
+    // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
+    function eliminarDelClon(idSector, idFisico) {
+        if(modoLecturaGlobal) return;
+        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
+        if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
+        
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(reg && capasSectores[idSector].hasLayer(reg.capaLeaflet)) {
+            capasSectores[idSector].removeLayer(reg.capaLeaflet);
+        }
+        
+        STORE[idSector].registros = STORE[idSector].registros.filter(r => String(r.idFisico) !== String(idFisico));
+        
+        if(mapa._popup) mapa.closePopup();
         actualizarUIYMapa();
     }
 
@@ -1573,7 +1594,7 @@
                                 ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                             </div>
                             ${!sectorData.isMaster ? `
-                            <i class="fas fa-trash sector-trash" style="font-size:11px;" title="Borrar Registro" onclick="event.stopPropagation(); borrarRegistroIndividual('${idSector}', '${local.idFisico}')"></i>
+                            <i class="fas fa-trash sector-trash" style="color:red; cursor:pointer; float:right;" title="Borrar Registro" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>
                             ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>`}
                         </div>`;
                 });
@@ -1731,7 +1752,7 @@
             <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
             
             if(!sectorData.isMaster) {
-                html += `<button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
+                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
             }
             
             html += `</div>`;
@@ -1970,22 +1991,6 @@
         }
         delete STORE[idSector]; 
         if(capaActivaId === idSector) capaActivaId = null;
-        actualizarUIYMapa();
-    }
-
-    function borrarRegistroIndividual(idSector, idFisico) {
-        if(modoLecturaGlobal) return;
-        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
-        if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
-        
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(reg && capasSectores[idSector].hasLayer(reg.capaLeaflet)) {
-            capasSectores[idSector].removeLayer(reg.capaLeaflet);
-        }
-        
-        STORE[idSector].registros = STORE[idSector].registros.filter(r => String(r.idFisico) !== String(idFisico));
-        
-        mapa.closePopup();
         actualizarUIYMapa();
     }
 
