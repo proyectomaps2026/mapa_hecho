@@ -797,7 +797,7 @@
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE (MODO VISOR)
        ========================================================================== */
-    const mapa = L.map('map', { center: [7.917, -72.233], zoom: 15, zoomControl: false });
+    const mapa = L.map('map', { center: [8.9950, -71.7450], zoom: 15, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - COLÓN (MODO VISOR)'); 
 
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
@@ -1358,20 +1358,24 @@
     // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT
     // ==========================================================================
     async function sync_sys_buffer() {
-        // --- NUEVA LÓGICA: INTENTO DE AUTO-CARGA ---
-        // Primero intentamos cargar sin pedir nada, por si ya hay licencia en config.json
-        const autoCarga = await cargarDatosNube();
+        console.log("SGF: Iniciando sincronización de búfer...");
         
-        if (autoCarga.success && autoCarga.autoLoaded) {
-            console.log("SGF: Licencia detectada en Config. Acceso Automático concedido.");
-            eliminarBloqueoForense();
-            if (autoCarga.validacion && autoCarga.validacion.dias <= 7) {
-                alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${autoCarga.validacion.usuario}] vencerá en ${autoCarga.validacion.dias} días.`);
+        // --- NUEVA LÓGICA DE CARGA FORZADA ---
+        try {
+            const autoCarga = await cargarDatosNube();
+            if (autoCarga.success && autoCarga.autoLoaded) {
+                console.log("SGF: Licencia detectada en Config. Acceso Automático concedido.");
+                eliminarBloqueoForense();
+                if (autoCarga.validacion && autoCarga.validacion.dias <= 7) {
+                    alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${autoCarga.validacion.usuario}] vencerá en ${autoCarga.validacion.dias} días.`);
+                }
+                return; // SALIDA EXITOSA: No se pide prompt
             }
-            return; // Acceso concedido, no pedimos prompt
+        } catch (e) {
+            console.error("SGF: Error en auto-carga inicial:", e);
         }
 
-        // Si la auto-carga falla o no hay licencia, pedimos el prompt normal
+        // Si falló la auto-carga (no hay licencia en config o el repo no es accesible), pedimos prompt
         const licenseKey = prompt("SGF-CLOUD REQUIERE AUTENTICACIÓN\n\nIngrese su Licencia de Acceso:", "");
 
         if (!licenseKey) {
