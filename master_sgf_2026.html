@@ -1213,44 +1213,47 @@
             allRecords.push(...sector.registros);
         });
 
-        const tableHeader = new TableRow({
+        const tableRows = [];
+        
+        // Estructura de Tabla (Orden Final)
+        const headerRow = new TableRow({
             children: [
-                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "REGISTRO", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "CONTROL", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTATUS ECONÓMICO", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RESPONSABLE", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 1000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "TRAZABILIDAD", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "CONTRIBUYENTE", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RIF / REGISTRO", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "CONTROL", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTATUS", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "FISCAL", bold: true, size: 16 })] })] }),
             ],
             tableHeader: true,
         });
+        tableRows.push(headerRow);
 
-        const dataRows = allRecords.map(reg => {
+        // Mapeo de Columnas Exactas
+        allRecords.forEach(reg => {
             const d = reg.datosGenerales;
             
-            const identidad = d["Razón Social"] || d["Nombre Comercial"] || "Sin Identificar";
+            const contribuyente = d["Razón Social"] || d["Nombre Comercial"] || "Sin Identificar";
             const registro = d["RIF / Registro"] || "N/A";
             const control = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || "N/A"}`;
-            const estatusEcon = d["Licencia Act. Econ."] || "N/A";
-            const responsable = d["Fiscal"] || "N/A";
-            const trazabilidad = d["ID_Auditoria"] || "N/A";
+            const estatus = d["Licencia Act. Econ."] || "EN TRÁMITE";
+            const fiscal = d["Fiscal"] || "N/A";
 
-            return new TableRow({
+            const dataRow = new TableRow({
                 children: [
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: identidad, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: contribuyente, size: 16 })] })] }),
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] })] }),
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: control, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estatusEcon, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: responsable, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: trazabilidad, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estatus, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: fiscal, size: 16 })] })] }),
                 ],
             });
+            tableRows.push(dataRow);
         });
 
         const table = new Table({
-            rows: [tableHeader, ...dataRows],
+            rows: tableRows,
             width: { size: 100, type: WidthType.PERCENTAGE },
-            columnWidths: [2500, 1500, 1500, 1500, 1500, 1000],
+            columnWidths: [3000, 2000, 2000, 1500, 2000],
         });
 
         const doc = new Document({
