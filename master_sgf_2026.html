@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -779,7 +778,7 @@
     <p style="color: #a5b0bf; font-size: 13px; margin-bottom: 30px; text-align: center;">Su período de acceso al Sistema de Control Fiscal ha finalizado.<br>Actualice su Licencia o genere un respaldo de sus datos.</p>
     
     <div style="width: 400px;">
-        <input type="text" id="lock-new-license" class="modal-input" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
+        <input type="password" id="lock-new-license" class="modal-input" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
         <button class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 15px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
         <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
     </div>
@@ -796,8 +795,10 @@
             <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
             
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
+            
             <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional (SGF-CLOUD)</label>
-            <input type="password" id="login-pass" class="modal-input" placeholder="Pegue la licencia: SGF-CLOUD">
+            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 10px; text-align: left; font-weight: bold;">Solicítela a su director o directora de Hacienda.</p>
+            <input type="password" id="login-pass" class="modal-input" placeholder="Pegue la licencia: SGF-CLOUD-XXXX">
 
             <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
             
@@ -920,7 +921,7 @@
         </div>
         <div id="ajustes-licencia" style="display: none; padding-top: 5px;">
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
-            <input type="text" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
+            <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
             <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
@@ -1442,10 +1443,9 @@
     
     function toggleSectorBodyManual(e, idSector) {
         if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
-        const body = document.getElementById(`sector-body-${idSector}`);
-        if(body) {
-            body.style.display = body.style.display === 'none' ? 'block' : 'none';
-        }
+        if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = (idSector === capaActivaId);
+        STORE[idSector].isExpanded = !STORE[idSector].isExpanded;
+        actualizarUIYMapa();
     }
 
     /* ==========================================================================
@@ -1531,11 +1531,13 @@
                     
                     <div class="sector-controls">
                         <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
+                        ${!sectorData.isMaster ? `
                         <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
                         <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
+                        ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
                     </div>
                 </div>
-                <div class="sector-body" id="sector-body-${idSector}" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+                <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded || idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
@@ -1583,7 +1585,9 @@
                                 <i class="fas fa-caret-right" style="opacity:0.5"></i> 
                                 ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                             </div>
+                            ${!sectorData.isMaster ? `
                             <i class="fas fa-trash sector-trash" style="font-size:11px;" title="Borrar Registro" onclick="event.stopPropagation(); borrarRegistroIndividual('${idSector}', '${local.idFisico}')"></i>
+                            ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>`}
                         </div>`;
                 });
                 htmlSector += `</div></div>`;
@@ -1654,7 +1658,8 @@
     }
 
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
-        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        const sectorData = STORE[idSector];
+        const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
         let html = `<div class="pop-wrapper">`;
 
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
@@ -1736,9 +1741,13 @@
                 <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
             </div>
             
-            <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>
-            <button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>
-            </div>`;
+            <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
+            
+            if(!sectorData.isMaster) {
+                html += `<button class="btn-popup-action btn-del" onclick="borrarRegistroIndividual('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
+            }
+            
+            html += `</div>`;
         }
         
         html += `</div></div>`;
@@ -1892,7 +1901,15 @@
         const id = 'sec_' + Date.now();
         
         capasSectores[id] = new L.FeatureGroup();
-        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
+        STORE[id] = { 
+            nombreSector: nombre.toUpperCase(), 
+            visible: true, 
+            isMaster: false,
+            isExpanded: true,
+            visibilidadPorEstatus: {}, 
+            coloresPorEstatus: {}, 
+            registros: [] 
+        };
         capaActivaId = id;
         actualizarUIYMapa();
     }
@@ -1909,6 +1926,8 @@
         STORE[newId] = {
             nombreSector: nombre.toUpperCase(),
             visible: true,
+            isMaster: false,
+            isExpanded: true,
             visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus)),
             coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus)),
             colorPrincipal: sectorOriginal.colorPrincipal,
@@ -1943,6 +1962,7 @@
     
     function limpiarSector(idSector) {
         if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede limpiar.");
         if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}" eliminando todos sus registros internos?`)) return;
         
         if (capasSectores[idSector]) {
@@ -1954,6 +1974,7 @@
 
     function eliminarSectorDefinitivo(idSector) {
         if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
         if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
         
         if (capasSectores[idSector]) {
@@ -1967,6 +1988,7 @@
 
     function borrarRegistroIndividual(idSector, idFisico) {
         if(modoLecturaGlobal) return;
+        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
         if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
         
         const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
@@ -2248,6 +2270,7 @@
             STORE[idSector] = {
                 nombreSector: sec.nombreSector,
                 visible: sec.visible !== false,
+                isMaster: sec.isMaster !== false, // Protect original layers by default
                 visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
                 coloresPorEstatus: sec.coloresPorEstatus || {},
                 colorPrincipal: sec.colorPrincipal || '#00f2ff',
