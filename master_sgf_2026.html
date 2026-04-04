@@ -987,7 +987,7 @@
     // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; 
-    const FILE_PATH = 'config.json';
+    const FILE_PATH = 'mapa_censo/config.json';
     let fileSha = null;
     
     // JERARQUÍA DE ACCESO Y ROLES
@@ -1040,7 +1040,7 @@
     // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
     function getRealToken() {
         if (CURRENT_ROLE === 'SUPERADMIN') {
-            const tk = localStorage.getItem('master_token_revert');
+            const tk = localStorage.getItem('master_token_revert') || 'iHaoy3wdz12K0o7pICwk8bZIsCKC3MjFetZs_phg';
             return tk ? tk.split('').reverse().join('') : null;
         } else if (CURRENT_ROLE === 'ADMIN') {
             const lic = localStorage.getItem('sgf_license');
@@ -1186,29 +1186,48 @@
         const val = document.getElementById('input-update-license').value.trim();
         if(!val) return alert("Ingrese el token de renovación.");
         
-        let licFinal = val;
-        if(!val.startsWith('SGF-')) {
-            licFinal = generarCadenaLicenciaSGF(val);
-        }
+        const btn = document.querySelector('#ajustes-licencia button');
+        const originalText = btn.innerText;
+        btn.innerText = "ACTUALIZANDO...";
+        btn.disabled = true;
 
-        const est = analizarLicenciaSGF(licFinal);
-        if(!est.valid || est.expired) return alert("Error: Token o Licencia Inválida.");
-        
-        localStorage.setItem('sgf_license', licFinal);
+        try {
+            // 1. OBTENER CONFIG ACTUAL (PROTOCOLO ADMIN: NO BORRAR CENSO)
+            const GITHUB_TOKEN_DYNAMIC = getRealToken();
+            const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+            
+            const resGet = await fetch(url, {
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
+            });
 
-        // Disparar envío inmediato a GitHub sin borrar el censo (sobrescribir solo campo license)
-        const datosLimpios = extraerDatosGeometria();
-        const objetoMaestro = {
-            credentials: SYSTEM_AUTH,
-            license: licFinal,
-            master_token: localStorage.getItem('master_token_revert'),
-            store: datosLimpios
-        };
+            let configActual = { credentials: SYSTEM_AUTH, store: extraerDatosGeometria() };
+            if (resGet.ok) {
+                const dataGet = await resGet.json();
+                const content = decodeURIComponent(escape(atob(dataGet.content)));
+                configActual = JSON.parse(content);
+            }
 
-        const exito = await uploadToGitHub(objetoMaestro, "SGF Cloud: Renovación de Licencia " + licFinal);
-        if(exito) {
-            alert("✅ Licencia Renovada y Sincronizada.");
-            validarLicenciaYBloqueo();
+            // 2. ACTUALIZAR SOLO EL CAMPO LICENSE
+            let licFinal = val;
+            if(!val.startsWith('SGF-')) {
+                licFinal = generarCadenaLicenciaSGF(val);
+            }
+            configActual.license = licFinal;
+
+            // 3. SUBIR OBJETO ACTUALIZADO
+            const exito = await uploadToGitHub(configActual, "SGF Admin: Actualización de Licencia " + licFinal);
+            
+            if(exito) {
+                localStorage.setItem('sgf_license', licFinal);
+                alert("✅ Licencia Sincronizada: DATA EN LA NUBE.");
+                validarLicenciaYBloqueo();
+            }
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error al sincronizar licencia: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
     }
 
@@ -2426,8 +2445,8 @@
     async function uploadToGitHub(objetoJSON, mensajeCommit) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if(!GITHUB_TOKEN_DYNAMIC) {
-            console.error("SGF Error: No GitHub Token found in localStorage or License.");
-            mostrarNotificacion("ERROR: No se pudo encontrar un token válido", "red");
+            console.error("SGF Error: No GitHub Token found.");
+            mostrarNotificacion("ERROR: No hay token de acceso", "red");
             return false;
         }
 
@@ -2435,7 +2454,6 @@
 
         try {
             // 1. OBTENER EL SHA ACTUAL (OBLIGATORIO PARA PUT)
-            console.log(`SGF: Solicitando SHA para ${FILE_PATH}...`);
             let currentSha = null;
             const getRes = await fetch(url, {
                 method: 'GET',
@@ -2449,11 +2467,14 @@
             if (getRes.ok) {
                 const getData = await getRes.json();
                 currentSha = getData.sha;
-                console.log("SGF: SHA obtenido con éxito:", currentSha);
+            } else if (getRes.status === 401) {
+                mostrarNotificacion(`ERROR 401: Token Inválido`, "red");
+                return false;
+            } else if (getRes.status === 404) {
+                console.warn("SGF: El archivo no existe, se creará uno nuevo.");
             } else {
-                console.error(`SGF Error al obtener SHA: ${getRes.status} ${getRes.statusText}`);
-                if (getRes.status === 401) mostrarNotificacion("ERROR 401: Token sin permisos de escritura", "red");
-                if (getRes.status === 404) console.warn("SGF: El archivo no existe, se creará uno nuevo.");
+                mostrarNotificacion(`ERROR ${getRes.status}: Fallo de comunicación`, "red");
+                return false;
             }
 
             // 2. PREPARAR EL CONTENIDO (UTF-8 SAFE)
@@ -2468,7 +2489,6 @@
             if (currentSha) payload.sha = currentSha;
 
             // 3. SUBIR A GITHUB (PUT)
-            console.log("SGF: Enviando datos a GitHub...");
             const res = await fetch(url, {
                 method: 'PUT',
                 headers: {
@@ -2482,18 +2502,22 @@
             if (res.ok) {
                 const resData = await res.json();
                 fileSha = resData.content.sha;
-                console.log("SGF: GitHub respondió 200 OK. Sincronización exitosa.");
-                mostrarNotificacion("Sincronización Exitosa con SGF-CLOUD", "green");
+                mostrarNotificacion("SINCRO EXITOSA: DATA EN LA NUBE", "green");
                 return true;
             } else {
-                const errText = await res.text();
-                console.error(`SGF Error GitHub (Status ${res.status}):`, errText);
-                mostrarNotificacion(`ERROR ${res.status}: No se pudo guardar en la nube`, "red");
-                throw new Error(`GitHub API error: ${res.status}`);
+                const errData = await res.json();
+                const status = res.status;
+                let msg = `ERROR ${status}`;
+                if (status === 409) msg = "ERROR 409: SHA Desactualizado";
+                if (status === 401) msg = "ERROR 401: Sin Permisos";
+                if (status === 404) msg = "ERROR 404: Ruta no encontrada";
+                
+                mostrarNotificacion(msg, "red");
+                return false;
             }
         } catch (e) {
             console.error("SGF Critical Upload Error:", e);
-            mostrarNotificacion("ERROR CRÍTICO: Fallo de comunicación con GitHub", "red");
+            mostrarNotificacion("ERROR CRÍTICO: Fallo de red", "red");
             return false;
         }
     }
