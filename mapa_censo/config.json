@@ -1,9 +1,8 @@
 {
-  "license": "SGF-LEAN-iHaoY3wdz12K0o7pICwk8bZIcsKC3MjFetZs_phg-MjAyNi0wNy0wMg",
-  "master_token": "iHaoy3wdz12K0o7pICwk8bZIsCKC3MjFetZs_phg",
   "credentials": {
     "user": "admin",
     "pass": "admin"
   },
-  "store": {}
+  "store": {},
+  "license": "SGF-DVDX-ObiaE3AM8v4kWlI7o7u70aiUUHOHsXH42R86_phg-MjAyNi0wNS0wNA"
 }
