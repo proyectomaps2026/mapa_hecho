@@ -1437,8 +1437,7 @@
             if (!res.ok) {
                 const status = res.status;
                 let msg = `ERROR ${status}`;
-                if (status === 404) msg = "ERROR 404: Ruta no encontrada";
-                if (status === 401) msg = "ERROR 401: Token Inválido";
+                if (status === 404) msg = "ERROR 404: Base de datos no encontrada";
                 
                 alert(msg);
                 bloquearSistemaPorLicencia();
@@ -1451,7 +1450,7 @@
                 
                 if (validacion.valid) {
                     if (validacion.expired) {
-                        bloquearSistemaModoForense();
+                        bloquearSistemaModoForense(); // Muestra Candado Rojo
                         reconstruirDesdeJSON(config.store || {});
                     } else {
                         eliminarBloqueoForense();
@@ -1465,23 +1464,12 @@
                         console.log("SINCRO EXITOSA: DATA EN LA NUBE");
                     }
                 } else {
-                    // Si la licencia del config no es válida, probamos con el master_token si existe
-                    if (config.master_token) {
-                        _decon_token = config.master_token.split('').reverse().join('');
-                        eliminarBloqueoForense();
-                        reconstruirDesdeJSON(config.store || {});
-                        console.log("SINCRO EXITOSA: DATA EN LA NUBE (MASTER)");
-                    } else {
-                        bloquearSistemaPorLicencia();
-                    }
+                    // Licencia en config no válida
+                    bloquearSistemaModoForense();
                 }
-            } else if (config.master_token) {
-                _decon_token = config.master_token.split('').reverse().join('');
-                eliminarBloqueoForense();
-                reconstruirDesdeJSON(config.store || {});
-                console.log("SINCRO EXITOSA: DATA EN LA NUBE (MASTER)");
             } else {
-                bloquearSistemaPorLicencia();
+                // Sin licencia en config
+                bloquearSistemaModoForense();
             }
         } catch (e) {
             console.error(e);
