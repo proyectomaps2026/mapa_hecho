@@ -815,8 +815,11 @@
         </div>
 
     <div class="sidebar-footer">
-        <button class="btn btn-outline" onclick="crearNuevoSector()" style="grid-column: span 1;">
+        <button class="btn btn-outline" onclick="crearNuevoSector()">
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
+        </button>
+        <button class="btn btn-outline" onclick="descargarRespaldoTotalWord()" style="background: #0d6efd; border-color:#0d6efd; color: white;">
+            📄 DESCARGAR RESPALDO CERTIFICADO (WORD)
         </button>
     </div>
 </aside>
@@ -825,6 +828,8 @@
     /* ==========================================================================
        MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
        ========================================================================== */
+    let _decon_token = null; // Variable global para el token reconstruido
+    
     // Bloquear Clic Derecho
     document.addEventListener('contextmenu', e => e.preventDefault());
     
@@ -841,6 +846,7 @@
         const heightThreshold = window.outerHeight - window.innerHeight > 160;
         if(widthThreshold || heightThreshold) {
             console.clear();
+            _decon_token = null; // Purga inmediata del token de la memoria
             document.getElementById('map').style.display = 'none';
             bloquearSistemaPorLicencia();
         }
@@ -873,6 +879,30 @@
         </div>`;
         window.stop();
     }
+    
+    // NUEVO MODO DE BLOQUEO FORENSE (LICENCIA EXPIRADA)
+    function bloquearSistemaModoForense() {
+        document.querySelectorAll('.ui-layer, #map').forEach(el => {
+            el.style.transition = 'filter 0.5s ease';
+            el.style.filter = 'blur(10px)';
+        });
+
+        const forensicOverlay = document.createElement('div');
+        forensicOverlay.innerHTML = `
+            <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999998; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center;">
+                <div style="background: #fff; color: #111; padding: 40px; border-radius: 12px; max-width: 500px; width: 90%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); border-top: 8px solid var(--color-vencida);">
+                    <i class="fas fa-lock" style="font-size: 40px; color: var(--color-vencida); margin-bottom: 20px;"></i>
+                    <h1 style="margin:0 0 10px; font-size: 20px; font-weight: 900;">LICENCIA SGF EXPIRADA</h1>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 30px;">El acceso a la plataforma ha sido suspendido. Aún puede acceder a la última copia de seguridad de sus datos.</p>
+                    <button onclick="descargarRespaldoTotalWord()" style="width:100%; padding: 18px; font-size: 15px; font-weight: 900; color: #fff; background: var(--color-vencida); border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+                        ⚠️ DESCARGAR RESPALDO ÚLTIMO (WORD)
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(forensicOverlay);
+        window.stop();
+    }
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -887,9 +917,8 @@
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
-    // TOKEN OFUSCADO AL REVÉS PARA ENGAÑAR A GITHUB (ACCESO LECTURA/ESCRITURA MANTENIDO)
-    const _tk_rev = "b4fSw2drdIhc4cIUL91Lew1Ou7C8GdYYhvw4_phg";
-    const _getAuth = () => _tk_rev.split('').reverse().join('');
+    // El token real ahora se reconstruye en tiempo de ejecución. Esta función lo recupera de la memoria.
+    const _getAuth = () => _decon_token;
 
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
 
@@ -1733,7 +1762,7 @@
        ========================================================================== */
     async function guardarEnServidor() {
         const token = _getAuth();
-        if(!token) return alert("No se puede guardar. Falta configuración.");
+        if(!token) return alert("No se puede guardar. Falta configuración de licencia.");
 
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
@@ -1787,14 +1816,12 @@
     
     async function cargarDatosNube() {
         const token = _getAuth();
-        // Validación 1: Si no hay token de procesamiento Pika, se bloquea directamente
         if (!token) {
             bloquearSistemaPorLicencia();
             return;
         }
 
         try {
-            // Incorporamos el bypass de caché (Date.now()) para validar en tiempo real
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
                 headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
             });
@@ -1804,44 +1831,14 @@
                 fileSha = data.sha;
                 const decodedContent = decodeURIComponent(escape(atob(data.content)));
                 const jsonParsed = JSON.parse(decodedContent);
-
-                // --- SISTEMA DE CÁLCULO DE LICENCIA MUNICIPAL ---
-                // Verifica en las distintas posibles estructuras del JSON o asume una fecha límite base
-                const fechaVenceStr = jsonParsed.fecha_vence || (jsonParsed.licencia && jsonParsed.licencia.fecha_vence) || '2026-12-31';
-                
-                const hoy = new Date();
-                hoy.setHours(0,0,0,0);
-                const fechaVence = new Date(fechaVenceStr);
-                fechaVence.setHours(0,0,0,0);
-                
-                const diffTime = fechaVence.getTime() - hoy.getTime();
-                const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                // Validación 2: BLOQUEO TOTAL (STATUS 402 SERVER ERROR) si expiró
-                if (diasRestantes <= 0) {
-                    bloquearSistemaPorLicencia();
-                    return; 
-                } 
-                // Validación 3: ALERTA PREVENTIVA NARANJA a los 5 días
-                else if (diasRestantes <= 5) {
-                    const banner = document.getElementById('license-banner');
-                    document.getElementById('dias-restantes').innerText = diasRestantes;
-                    banner.style.display = 'block';
-                    
-                    // Ajustamos el CSS dinámicamente para que no pise las herramientas
-                    document.querySelector('.top-nav').style.top = '45px';
-                    document.getElementById('sidebar').style.top = '125px';
-                }
-
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 reconstruirDesdeJSON(jsonParsed.store || {});
             } else {
-                // Si el archivo no existe o hay error de token (401/404) -> Bloqueo total
                 bloquearSistemaPorLicencia();
             }
         } catch (e) {
             console.error("Fallo de lectura de base de datos:", e);
-            bloquearSistemaPorLicencia(); // Si falla el parseo o la red rechaza
+            bloquearSistemaPorLicencia();
         }
     }
 
@@ -1994,8 +1991,13 @@
 
     function descargarRespaldoTotalWord() {
         if (!STORE || Object.keys(STORE).length === 0) {
-            alert("No hay datos en la memoria caché local para generar un respaldo.");
-            return;
+            alert("No hay datos en la memoria caché local para generar un respaldo. Cargue los datos primero.");
+            // Si el sistema está bloqueado, intentamos cargar desde el backup local final si existe
+            if(typeof last_known_store !== 'undefined' && last_known_store) {
+                 STORE = last_known_store;
+            } else {
+                return;
+            }
         }
 
         const fecha = new Date().toLocaleDateString('es-VE');
@@ -2066,10 +2068,60 @@
         link.click();
         document.body.removeChild(link);
     }
+    
+    // ==========================================================================
+    // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT
+    // ==========================================================================
+    function sync_sys_buffer() {
+        const licenseKey = prompt("SGF-CLOUD REQUIERE AUTENTICACIÓN\n\nIngrese su Licencia de Acceso:", "");
 
-    // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SAN JUAN DE COLÓN)
-    window.onload = () => {
+        if (!licenseKey) {
+            bloquearSistemaPorLicencia();
+            return;
+        }
+
+        const parts = licenseKey.split('-');
+        if (parts.length < 4 || parts[0] !== 'SGF') {
+            alert("Error: Formato de licencia no válido. Acceso denegado.");
+            bloquearSistemaPorLicencia();
+            return;
+        }
+
+        const user = parts[1];
+        const tokenRev = parts[2];
+        const fechaExpStr = parts.slice(3).join('-');
+
+        // 1. Reconstruir token en memoria
+        _decon_token = tokenRev.split('').reverse().join('');
+
+        // 2. Lógica de tiempo y alertas
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const fechaVence = new Date(fechaExpStr + 'T00:00:00'); // Asegura la fecha local
+        fechaVence.setHours(0, 0, 0, 0);
+
+        const diffTime = fechaVence.getTime() - hoy.getTime();
+        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diasRestantes < 0) {
+            bloquearSistemaModoForense();
+            // Intentamos cargar datos una última vez para el respaldo de contingencia
+            cargarDatosNube().then(() => {
+                window.last_known_store = JSON.parse(JSON.stringify(STORE));
+            });
+            return;
+        } else if (diasRestantes <= 7) {
+            alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${user}] vencerá en ${diasRestantes} día(s) el [${fechaVence.toLocaleDateString('es-VE')}]. Gestione su renovación.`);
+        }
+        
+        // Si todo es válido, proceder con la carga normal del sistema.
         cargarDatosNube();
+    }
+
+    // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SGF-DECONSTRUCT)
+    window.onload = () => {
+        sync_sys_buffer();
     };
 
 </script>
