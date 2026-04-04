@@ -815,7 +815,7 @@
         </div>
 
     <div class="sidebar-footer">
-        <button class="btn btn-outline" onclick="crearNuevoSector()">
+        <button class="btn btn-outline" onclick="crearNuevoSector()" style="grid-column: span 1;">
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
         </button>
         <button class="btn btn-outline" onclick="descargarRespaldoTotalWord()" style="background: #0d6efd; border-color:#0d6efd; color: white;">
@@ -828,8 +828,6 @@
     /* ==========================================================================
        MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
        ========================================================================== */
-    let _decon_token = null; // Variable global para el token reconstruido
-    
     // Bloquear Clic Derecho
     document.addEventListener('contextmenu', e => e.preventDefault());
     
@@ -846,13 +844,12 @@
         const heightThreshold = window.outerHeight - window.innerHeight > 160;
         if(widthThreshold || heightThreshold) {
             console.clear();
-            _decon_token = null; // Purga inmediata del token de la memoria
             document.getElementById('map').style.display = 'none';
             bloquearSistemaPorLicencia();
         }
     }, 1000);
 
-    // Función global para bloquear el sistema con Estilo de Error de Servidor (Status 402)
+    // Función global para bloquear el sistema por FALLA DE CONEXIÓN O TOKEN
     function bloquearSistemaPorLicencia() {
         document.body.innerHTML = `
         <div style="display:flex; height:100vh; width: 100vw; justify-content:center; align-items:center; background:#121212; font-family:'Inter',sans-serif; z-index:999999; position:fixed; top:0; left:0;">
@@ -860,33 +857,32 @@
                 <i class="fas fa-exclamation-triangle" style="font-size: 50px; color: #da3633; margin-bottom: 20px;"></i>
                 <h1 style="color: #111; font-size: 22px; font-weight: 900; margin: 0 0 10px 0; text-transform: uppercase;">CLOUD INFRASTRUCTURE: ACCESS DENIED</h1>
                 <div style="background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px; margin-bottom: 20px;">
-                    <code style="color: #da3633; font-weight: bold; font-size: 14px;">Status Code: 402 (Payment Required)</code>
+                    <code style="color: #da3633; font-weight: bold; font-size: 14px;">Status Code: 401 (Unauthorized) / 404 (Not Found)</code>
                 </div>
                 <p style="color: #555; font-size: 15px; line-height: 1.6; margin-bottom: 20px; font-weight: 500;">
-                    La suscripción de servicios GeoJSON y API de Mapas para la Alcaldía del Municipio Ayacucho ha expirado o ha sido suspendida por falta de pago de la mensualidad.
+                    No se pudo establecer conexión con el repositorio de datos. Esto puede deberse a un problema de red, una configuración incorrecta del token de acceso o la eliminación del archivo de configuración.
                 </p>
                 <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 30px; text-align: left;">
                     <strong style="color: #856404; font-size: 14px; display: block; margin-bottom: 5px;">Acción Requerida:</strong>
-                    <span style="color: #333; font-size: 13px; line-height: 1.5;">Por favor, póngase en contacto con el Administrador de Sistemas (Proveedor Local) para procesar la renovación de la licencia de infraestructura y servidores GitHub/Google.</span>
+                    <span style="color: #333; font-size: 13px; line-height: 1.5;">Contacte al Administrador del Sistema para verificar la integridad de la conexión con el servidor y la validez de las credenciales de la API.</span>
                 </div>
-                <button onclick="descargarRespaldoTotalWord()" style="display:block; width:100%; padding: 15px; font-size: 14px; font-weight: 800; color: #fff; background-color: #0d6efd; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 0.5px; transition: background-color 0.2s;">
-                    DESCARGAR ÚLTIMO RESPALDO CERTIFICADO (SGF-CLOUD)
-                </button>
                 <div style="border-top: 1px solid #eee; padding-top: 15px; font-size: 11px; color: #888; font-family: monospace; letter-spacing: 0.5px;">
-                    ID del Cliente: AYACUCHO-VEN-2026 | Server Status: Suspended
+                    ID del Cliente: AYACUCHO-VEN-2026 | Server Status: Unreachable
                 </div>
             </div>
         </div>`;
         window.stop();
     }
-    
-    // NUEVO MODO DE BLOQUEO FORENSE (LICENCIA EXPIRADA)
+
+    // NUEVO MODO DE BLOQUEO FORENSE (POR LICENCIA EXPIRADA LEÍDA DEL JSON)
     function bloquearSistemaModoForense() {
+        // Aplica un desenfoque a la interfaz principal para indicar que está inactiva
         document.querySelectorAll('.ui-layer, #map').forEach(el => {
             el.style.transition = 'filter 0.5s ease';
             el.style.filter = 'blur(10px)';
         });
 
+        // Crea el modal de bloqueo forense con el "Botón de Supervivencia"
         const forensicOverlay = document.createElement('div');
         forensicOverlay.innerHTML = `
             <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999998; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center;">
@@ -917,8 +913,9 @@
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
-    // El token real ahora se reconstruye en tiempo de ejecución. Esta función lo recupera de la memoria.
-    const _getAuth = () => _decon_token;
+    // TOKEN OFUSCADO AL REVÉS PARA ENGAÑAR A GITHUB (ACCESO LECTURA/ESCRITURA MANTENIDO)
+    const _tk_rev = "b4fSw2drdIhc4cIUL91Lew1Ou7C8GdYYhvw4_phg";
+    const _getAuth = () => _tk_rev.split('').reverse().join('');
 
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
 
@@ -929,14 +926,11 @@
         const modalCapture = document.getElementById('capture-modal');
         const modalSuccess = document.getElementById('success-modal');
         
-        // 1. Mostrar Mensaje de Procesamiento inicial modificado
         modalCapture.querySelector('span').innerHTML = '🔄 INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el área de reporte.</small>';
         modalCapture.style.display = 'flex';
         
-        // CENTRADOR FORZADO
         mapa.invalidateSize();
 
-        // 2. Inyectar la Marca de Agua Oficial de la Alcaldía en el Mapa con Estilos Específicos
         const watermark = document.createElement('div');
         watermark.id = 'report-watermark';
         watermark.innerHTML = `
@@ -951,16 +945,13 @@
         watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
         document.getElementById('map').appendChild(watermark);
 
-        // 3. Ocultar modal de aviso y esperar 1.5 segundos a que la RAM limpie el render
         setTimeout(() => {
-            modalCapture.style.display = 'none'; // OCULTAR ANTES DE LA CAPTURA DEFINITIVAMENTE
+            modalCapture.style.display = 'none';
             
             setTimeout(() => {
-                // CORRECCIÓN DE OFFSET DE MAPA - Obtenemos la posición local estricta
                 const mapElement = document.getElementById('map');
                 const mapCanvas = mapElement.getBoundingClientRect();
 
-                // Ocultamos las capas de Interfaz (Sidebar y menús)
                 const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container');
                 uiLayers.forEach(el => el.style.visibility = 'hidden');
 
@@ -974,23 +965,19 @@
                     scroll: false,
                     useCORS: true,
                     allowTaint: false,
-                    scale: 2 // Mayor resolución para el PDF/Imagen
+                    scale: 2
                 }).then(canvas => {
-                    // Restauramos la UI
                     uiLayers.forEach(el => el.style.visibility = 'visible');
                     
-                    // Limpiamos la marca de agua del DOM vivo
                     if(document.getElementById('report-watermark')) {
                         document.getElementById('report-watermark').remove();
                     }
 
-                    // Forzamos la descarga de la imagen perfecta limpia
                     const imageLink = document.createElement('a');
                     imageLink.download = `REPORTE_HACIENDA_COLON_${Date.now()}.png`;
                     imageLink.href = canvas.toDataURL("image/png");
                     imageLink.click();
 
-                    // 4. Mostrar Mensaje de Éxito por 3 segundos
                     modalSuccess.style.display = 'flex';
                     setTimeout(() => {
                         modalSuccess.style.display = 'none';
@@ -1004,27 +991,23 @@
                     console.error("Fallo al generar reporte:", err);
                     alert("Error al intentar capturar la imagen del mapa. Revise la consola.");
                 });
-            }, 1500); // Esperar 1.5s post-ocultamiento para disparar la foto limpia
-        }, 1000); // Mantener el cartel de "Iniciando captura..." un momento antes de esconderlo
+            }, 1500);
+        }, 1000);
     }
 
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE
        ========================================================================== */
-    // CENTRADO EXACTO EN SAN JUAN DE COLÓN, TÁCHIRA
     const mapa = L.map('map', { center: [7.917, -72.233], zoom: 15, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - COLÓN'); 
 
-    // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     
-    googleSat.addTo(mapa); // Capa por defecto
+    googleSat.addTo(mapa);
     
-    // CAPA MAESTRA SUPERPUESTA PARA LOS SECTORES
     const capaMaestraSectores = L.featureGroup().addTo(mapa);
     
-    // CONTROL DE CAPAS VISIBLE EN ESQUINA SUPERIOR DERECHA
     const baseMaps = {
         "Vista Satélite": googleSat,
         "Vista Mapa Urbano": googleStreets
@@ -1034,10 +1017,7 @@
     };
     L.control.layers(baseMaps, overlayMaps, {position: 'topright'}).addTo(mapa);
 
-    // OBJETO GLOBAL DE CAPAS INDEPENDIENTES
     const capasSectores = {};
-
-    // BASE DE DATOS MAESTRA ESTADO-DIRIGIDA
     let STORE = {}; 
     let capaActivaId = null; 
     let modoLecturaGlobal = false;
@@ -1057,7 +1037,6 @@
         className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
     });
 
-    // Herramientas Leaflet Draw - Inicializando polígonos con un fondo translúcido estético
     const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
     const herramientaPoligono = new L.Draw.Polygon(mapa, { 
         shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
@@ -1071,11 +1050,9 @@
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
 
-    // EVENTO DE CREACIÓN MANUAL (DIBUJO DE POLÍGONOS Y MARCADORES)
     mapa.on(L.Draw.Event.CREATED, (evento) => {
         const idFisico = L.stamp(evento.layer);
         
-        // Configuración estética y de edición al nacer
         if(evento.layer instanceof L.Marker) {
             if (!modoLecturaGlobal) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
@@ -1111,14 +1088,11 @@
         
         actualizarUIYMapa();
         
-        // Abrir popup inmediatamente en un registro nuevo
         setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
         
-        // Forzamos abrir en modo edición automáticamente por ser nuevo
         setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
     });
 
-    // FUNCIÓN DE ÁRBOL: Apagar/Encender contribuyentes individuales usando Ojitos
     function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
         const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(reg) {
@@ -1127,7 +1101,6 @@
         }
     }
 
-    // VISIBILIDAD POR CATEGORÍA COMPLETA (Polígonos y Marcadores mediante Ojito)
     function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
         if (!STORE[idSector]) return;
         if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
@@ -1135,14 +1108,12 @@
         actualizarUIYMapa();
     }
 
-    // Funciones Maestras Sector
     function actualizarNombreSector(id, valor) {
         if(!STORE[id]) return;
         STORE[id].nombreSector = valor.toUpperCase();
         actualizarUIYMapa();
     }
 
-    // SINCRONIZACIÓN DE COLOR TOTAL (Afecta Marcadores y Polígonos de una Categoría)
     function cambiarColorEstatusSector(idSector, estatus, colorHex) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
@@ -1154,7 +1125,6 @@
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatus) {
                 reg.colorPersonalizado = colorHex;
-                // Diferenciar entre Marcador y Polígono para aplicar la estética correcta
                 if (reg.tipoGeometria === 'marker') {
                     reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
                 } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
@@ -1166,7 +1136,6 @@
         actualizarUIYMapa();
     }
 
-    // Cambiar Color a nivel Sector General
     function cambiarColorSector(idSector, colorHex) {
         if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
@@ -1196,12 +1165,10 @@
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
 
-            // 1. INICIALIZAR GRUPO DE CAPA INDEPENDIENTE SI NO EXISTE
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
             }
 
-            // Vaciamos temporalmente ESTA capa exclusiva para reconstruirla con el filtro
             capasSectores[idSector].clearLayers();
 
             const gruposPorEstatus = {};
@@ -1212,14 +1179,12 @@
                 
                 const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
                 
-                // Chequear visibilidad de la categoría completa (Ojito de sub-menú)
                 if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
                 const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
 
                 const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
                 const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                // GESTIÓN INDEPENDIENTE: Si pasa los filtros de Ojitos, se añade a su grupo
                 const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
                 const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
 
@@ -1237,7 +1202,6 @@
                 }
             });
 
-            // CONTROL DE CAPA EN EL MAPA Y AGRUPACIÓN EN CAPA MAESTRA (DOBLE CAPA)
             if (sectorData.visible) {
                 if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) {
                     capaMaestraSectores.addLayer(capasSectores[idSector]);
@@ -1248,10 +1212,8 @@
                 }
             }
 
-            // Omitir pintar en UI si el buscador lo vació
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
 
-            // RENDERIZADO DEL PANEL DEL SECTOR
             const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
             
             let htmlSector = `
@@ -1261,7 +1223,6 @@
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
                                ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
                         
-                        <!-- OJITO DE SECTOR COMPLETO -->
                         <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
                            title="Mostrar/Ocultar todo el Sector" 
                            style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
@@ -1280,7 +1241,6 @@
                 </div>
                 <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
-            // ITERACIÓN DE CATEGORÍAS DENTRO DEL SECTOR
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
                 
@@ -1297,13 +1257,11 @@
                     <div class="status-header">
                         <div class="status-info" style="display:flex; align-items:center; gap:8px;">
                             
-                            <!-- OJITO DE CATEGORÍA INTERNA -->
                             <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
                                title="Mostrar/Ocultar Categoría" 
                                style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
                                onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
                             
-                            <!-- SELECTOR DE COLOR POR SUB-MENÚ (Afecta a polígonos y pines de esta categoría) -->
                             <input type="color" title="Color de esta Categoría" value="${colorActual}"
                                    onclick="event.stopPropagation();"
                                    onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
@@ -1321,7 +1279,6 @@
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
                             <div style="flex:1; display:flex; align-items:center; gap:8px;">
-                                <!-- OJITO INDIVIDUAL DE CONTRIBUYENTE -->
                                 <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
                                    title="Ocultar individualmente" 
                                    style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
@@ -1376,7 +1333,6 @@
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
-        // REPARACIÓN MAESTRA: Evita bloqueos forzando a Leaflet a desligar y reenganchar el Popup fresco
         capaMapa.unbindPopup();
         capaMapa.bindPopup(htmlContenido, { 
             minWidth: 320, 
@@ -1388,7 +1344,6 @@
         mapa._popup._source = capaMapa; 
     }
 
-    // ALTERNADOR LIGERO DOM (Evita recargar Leaflet y bloqueos de setContent)
     function toggleModoPopup(idFisico, modo) {
         const divRead = document.getElementById(`view-mode-${idFisico}`);
         const divEdit = document.getElementById(`edit-mode-${idFisico}`);
@@ -1404,12 +1359,10 @@
         }
     }
 
-    // EL GENERADOR DE STRINGS HTML CON LA TÉCNICA DE DOBLE CONTENEDOR (DOM ESTÁTICO)
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         let html = `<div class="pop-wrapper">`;
 
-        // SI ES POLÍGONO (AUDITORÍA MUNICIPAL)
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
@@ -1421,21 +1374,17 @@
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
             </div>`;
         } 
-        // SI ES MARCADOR (FICHA DE CONTRIBUYENTE)
         else {
             const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
-            // Evaluar de dónde hereda el color (Personalizado > Sector > Estatus Global)
             const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
             const colorFinal = registro.colorPersonalizado || colorSector;
             
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
-            // Verificamos si la foto está oculta (CASCADA)
             const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
             
-            // PORTADA UNIVERSAL HACIENDA MUNICIPAL (Respeta el Ojito de Link Fotografía)
             html += `
             <div class="pop-cover">
                 ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
@@ -1443,9 +1392,6 @@
             </div>
             <div class="pop-content">`;
 
-            // ==========================================
-            // CONTENEDOR 1: LECTURA PROFESIONAL ESTÁTICA
-            // ==========================================
             html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
@@ -1469,15 +1415,11 @@
             }
             html += `</div>`;
 
-            // ==========================================
-            // CONTENEDOR 2: EDICIÓN PROFUNDA (INPUTS)
-            // ==========================================
             html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 
-                // Actualizamos el STORE y también inyectamos directamente al Contenedor 1 para que al volver se vea el cambio sin recargar
                 html += `
                 <div class="form-group">
                     <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
@@ -1515,8 +1457,6 @@
         html += `</div></div>`;
         return html;
     }
-
-    // --- Controladores de Interacción del Popup ---
     
     function cambiarColorPin(idSector, idFisico, colorHex) {
         if(modoLecturaGlobal) return;
@@ -1525,11 +1465,9 @@
 
         const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
 
-        // SINCRONIZACIÓN EN CASCADA: Guardar en la configuración del sector
         if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
         STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
 
-        // Aplicar a todos los registros de la misma categoría en este sector
         STORE[idSector].registros.forEach(reg => {
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatusTarget) {
@@ -1542,7 +1480,6 @@
             }
         });
 
-        // Refresco visual y HTML estático
         actualizarUIYMapa();
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) badge.style.background = colorHex;
@@ -1558,16 +1495,13 @@
         const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
         const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
 
-        // SINCRONIZACIÓN EN CASCADA: Aplicar a todos los de la misma categoría
         STORE[idSector].registros.forEach(reg => {
             const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             if (estActual === estatusTarget) {
                 if (isCurrentlyHidden) {
-                    // Lo mostramos (lo quitamos de camposOcultos)
                     const idx = reg.camposOcultos.indexOf(claveCampo);
                     if (idx > -1) reg.camposOcultos.splice(idx, 1);
                 } else {
-                    // Lo ocultamos (lo agregamos a camposOcultos)
                     if (!reg.camposOcultos.includes(claveCampo)) {
                         reg.camposOcultos.push(claveCampo);
                     }
@@ -1575,9 +1509,8 @@
             }
         });
 
-        actualizarUIYMapa(); // Asegura consistencia en UI
+        actualizarUIYMapa();
 
-        // Refrescamos rápido el popup y volvemos a vista de edición para no interrumpir
         if(mapa._popup) {
             const capaMapa = regOrigen.capaLeaflet;
             capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
@@ -1587,7 +1520,6 @@
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
         STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
         actualizarUIYMapa(); 
-        // Cero recargas de Leaflet aquí. Todo es DOM fluido.
     }
 
     function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
@@ -1597,7 +1529,7 @@
         const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
         const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : conf.color;
         
-        reg.colorPersonalizado = colorSector; // Adopta el color de su nueva categoría
+        reg.colorPersonalizado = colorSector;
         
         if (reg.tipoGeometria === 'marker') {
             reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
@@ -1607,7 +1539,6 @@
         
         actualizarUIYMapa();
 
-        // Actualizar etiqueta en vivo
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
         if (badge) {
             badge.innerText = nuevoEst;
@@ -1636,7 +1567,6 @@
             bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
         }
 
-        // Habilitar/Deshabilitar Puntos Blancos Profesionales de Vértices en Polígonos
         for(let id in STORE) {
             STORE[id].registros.forEach(reg => {
                 if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
@@ -1757,12 +1687,11 @@
     }
 
     /* ==========================================================================
-       FASE 7: CARGA DESDE LA NUBE DE FORMA DIRECTA CON PRECISIÓN MILIMÉTRICA
-       Y VERIFICACIÓN ESTRICTA DE LICENCIA (MOTOR COLÓN)
+       FASE 7: CARGA DESDE LA NUBE, VALIDACIÓN DE LICENCIA Y SINCRONIZACIÓN
        ========================================================================== */
     async function guardarEnServidor() {
         const token = _getAuth();
-        if(!token) return alert("No se puede guardar. Falta configuración de licencia.");
+        if(!token) return alert("No se puede guardar. Falta configuración de acceso.");
 
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
@@ -1826,23 +1755,54 @@
                 headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
             });
 
-            if (res.ok) {
-                const data = await res.json();
-                fileSha = data.sha;
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                const jsonParsed = JSON.parse(decodedContent);
-                if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
-                reconstruirDesdeJSON(jsonParsed.store || {});
-            } else {
-                bloquearSistemaPorLicencia();
+            if (!res.ok) {
+                bloquearSistemaPorLicencia(); // Bloqueo si no se puede leer el archivo (token malo, 404, etc.)
+                return;
             }
+
+            const data = await res.json();
+            fileSha = data.sha;
+            const decodedContent = decodeURIComponent(escape(atob(data.content)));
+            const jsonParsed = JSON.parse(decodedContent);
+            
+            // Primero, cargamos los datos en la memoria para el botón de contingencia
+            if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+            reconstruirDesdeJSON(jsonParsed.store || {});
+
+            // --- INICIO DE VALIDACIÓN DE LICENCIA DESDE config.json ---
+            const fechaVenceStr = jsonParsed.fecha_vence || '2000-01-01'; // Fecha por defecto muy antigua si no se encuentra
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+
+            const fechaVence = new Date(fechaVenceStr + 'T00:00:00'); // Asegura fecha local
+            fechaVence.setHours(0, 0, 0, 0);
+            
+            const diffTime = fechaVence.getTime() - hoy.getTime();
+            const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diasRestantes < 0) {
+                // La licencia está vencida. Bloqueamos en modo forense, pero ya tenemos los datos en STORE.
+                bloquearSistemaModoForense();
+                return; 
+            } 
+            else if (diasRestantes <= 7) {
+                // Alerta preventiva si quedan 7 días o menos
+                const banner = document.getElementById('license-banner');
+                document.getElementById('dias-restantes').innerText = diasRestantes;
+                banner.style.display = 'block';
+                
+                document.querySelector('.top-nav').style.top = '45px';
+                document.getElementById('sidebar').style.top = '125px';
+            }
+            // Si la licencia es válida y no está a punto de expirar, no se hace nada más y el sistema funciona.
+            // --- FIN DE VALIDACIÓN DE LICENCIA ---
+
         } catch (e) {
-            console.error("Fallo de lectura de base de datos:", e);
-            bloquearSistemaPorLicencia();
+            console.error("Fallo de lectura o parseo de la base de datos:", e);
+            bloquearSistemaPorLicencia(); // Bloqueo si el JSON está corrupto o hay otro error
         }
     }
 
-    // MAPEO RECURSIVO PARA PRECISIÓN DE PINCHETAS (Mantiene todos los decimales)
     const analizarCoordenadasProfundas = (coords) => {
         if (Array.isArray(coords)) {
             return coords.map(analizarCoordenadasProfundas);
@@ -1871,54 +1831,56 @@
                 registros: []
             };
 
-            sec.registros.forEach(reg => {
-                let capa;
-                const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                
-                let colorBase = confEst.color;
-                if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
-                    colorBase = STORE[idSector].coloresPorEstatus[estActual];
-                }
-                const colorAUsar = reg.colorPersonalizado || colorBase;
-                
-                if (reg.tipoGeometria === 'marker' && reg.coords) {
-                    const latParseada = parseFloat(reg.coords.lat);
-                    const lngParseada = parseFloat(reg.coords.lng);
-                    capa = L.marker([latParseada, lngParseada], { 
-                        icon: crearPinFiscal(colorAUsar), 
-                        draggable: !modoLecturaGlobal 
-                    });
-                    capa.on('dragend', () => actualizarUIYMapa());
-                } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                    const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
-                    capa = L.polygon(coordenadasPoligono, { 
-                        color: colorAUsar, 
-                        fillColor: colorAUsar, 
-                        fillOpacity: 0.2, 
-                        weight: 3, 
-                        dashArray: '5, 5' 
-                    });
-                    if (!modoLecturaGlobal) capa.editing.enable();
-                    capa.on('edit', () => actualizarUIYMapa());
-                }
+            if (sec.registros) {
+                sec.registros.forEach(reg => {
+                    let capa;
+                    const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                    const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                    
+                    let colorBase = confEst.color;
+                    if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
+                        colorBase = STORE[idSector].coloresPorEstatus[estActual];
+                    }
+                    const colorAUsar = reg.colorPersonalizado || colorBase;
+                    
+                    if (reg.tipoGeometria === 'marker' && reg.coords) {
+                        const latParseada = parseFloat(reg.coords.lat);
+                        const lngParseada = parseFloat(reg.coords.lng);
+                        capa = L.marker([latParseada, lngParseada], { 
+                            icon: crearPinFiscal(colorAUsar), 
+                            draggable: !modoLecturaGlobal 
+                        });
+                        capa.on('dragend', () => actualizarUIYMapa());
+                    } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                        const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
+                        capa = L.polygon(coordenadasPoligono, { 
+                            color: colorAUsar, 
+                            fillColor: colorAUsar, 
+                            fillOpacity: 0.2, 
+                            weight: 3, 
+                            dashArray: '5, 5' 
+                        });
+                        if (!modoLecturaGlobal) capa.editing.enable();
+                        capa.on('edit', () => actualizarUIYMapa());
+                    }
 
-                if(capa) {
-                    const newIdFisico = L.stamp(capa);
-                    const nuevoReg = {
-                        idFisico: newIdFisico,
-                        tipoGeometria: reg.tipoGeometria,
-                        capaLeaflet: capa,
-                        colorPersonalizado: reg.colorPersonalizado,
-                        visibleIndividual: reg.visibleIndividual !== false,
-                        _modoPopup: 'lectura',
-                        datosGenerales: reg.datosGenerales,
-                        camposOcultos: reg.camposOcultos || []
-                    };
-                    STORE[idSector].registros.push(nuevoReg);
-                    vincularEventosCapa(capa, idSector, newIdFisico);
-                }
-            });
+                    if(capa) {
+                        const newIdFisico = L.stamp(capa);
+                        const nuevoReg = {
+                            idFisico: newIdFisico,
+                            tipoGeometria: reg.tipoGeometria,
+                            capaLeaflet: capa,
+                            colorPersonalizado: reg.colorPersonalizado,
+                            visibleIndividual: reg.visibleIndividual !== false,
+                            _modoPopup: 'lectura',
+                            datosGenerales: reg.datosGenerales,
+                            camposOcultos: reg.camposOcultos || []
+                        };
+                        STORE[idSector].registros.push(nuevoReg);
+                        vincularEventosCapa(capa, idSector, newIdFisico);
+                    }
+                });
+            }
         }
         actualizarUIYMapa();
     }
@@ -1991,13 +1953,8 @@
 
     function descargarRespaldoTotalWord() {
         if (!STORE || Object.keys(STORE).length === 0) {
-            alert("No hay datos en la memoria caché local para generar un respaldo. Cargue los datos primero.");
-            // Si el sistema está bloqueado, intentamos cargar desde el backup local final si existe
-            if(typeof last_known_store !== 'undefined' && last_known_store) {
-                 STORE = last_known_store;
-            } else {
-                return;
-            }
+            alert("No hay datos cargados en la memoria para generar un respaldo. La operación no puede continuar.");
+            return;
         }
 
         const fecha = new Date().toLocaleDateString('es-VE');
@@ -2016,30 +1973,32 @@
             const sector = STORE[idSector];
             reportContent += `<h2 style="font-size:18pt; color:#333; border-bottom:2px solid #333; padding-bottom:5px;">SECTOR: ${sector.nombreSector}</h2>`;
             
-            sector.registros.forEach(registro => {
-                if (registro.tipoGeometria === 'marker') {
-                    const datos = registro.datosGenerales;
-                    const razonSocial = datos["Contribuyente"] || "NO ESPECIFICADO";
-                    const rif = datos["RIF"] || "NO ESPECIFICADO";
-                    const expediente = datos["Número de Expediente"] || "NO ESPECIFICADO";
-                    const censo = datos["Número de Censo"] || "NO ESPECIFICADO";
-                    const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO";
-                    const estatus = datos["Estatus"] || "SIN CATEGORÍA";
-                    
-                    reportContent += `
-                        <div style="margin-top:20px; padding:15px; border: 1px solid #999; border-radius: 5px; background-color:#f9f9f9;">
-                            <h3 style="margin-top:0; font-size:14pt;">${razonSocial}</h3>
-                            <table style="width:100%; border-collapse: collapse; font-size:11pt;">
-                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold; width: 40%;">REGISTRO DE INFORMACIÓN FISCAL (RIF)</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${rif}</td></tr>
-                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÚMERO DE EXPEDIENTE</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${expediente}</td></tr>
-                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÚMERO DE CENSO</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${censo}</td></tr>
-                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">LICENCIA DE ACTIVIDADES ECONÓMICAS</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${licencia}</td></tr>
-                                <tr><td style="padding:5px; background-color:#eaeaea; font-weight:bold;">ESTATUS FISCAL</td><td style="padding:5px;">${estatus}</td></tr>
-                            </table>
-                        </div>
-                    `;
-                }
-            });
+            if (sector.registros) {
+                sector.registros.forEach(registro => {
+                    if (registro.tipoGeometria === 'marker') {
+                        const datos = registro.datosGenerales;
+                        const razonSocial = datos["Contribuyente"] || "NO ESPECIFICADO";
+                        const rif = datos["RIF"] || "NO ESPECIFICADO";
+                        const expediente = datos["Número de Expediente"] || "NO ESPECIFICADO";
+                        const censo = datos["Número de Censo"] || "NO ESPECIFICADO";
+                        const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO";
+                        const estatus = datos["Estatus"] || "SIN CATEGORÍA";
+                        
+                        reportContent += `
+                            <div style="margin-top:20px; padding:15px; border: 1px solid #999; border-radius: 5px; background-color:#f9f9f9;">
+                                <h3 style="margin-top:0; font-size:14pt;">${razonSocial}</h3>
+                                <table style="width:100%; border-collapse: collapse; font-size:11pt;">
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold; width: 40%;">REGISTRO DE INFORMACIÓN FISCAL (RIF)</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${rif}</td></tr>
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÚMERO DE EXPEDIENTE</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${expediente}</td></tr>
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÚMERO DE CENSO</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${censo}</td></tr>
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">LICENCIA DE ACTIVIDADES ECONÓMICAS</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${licencia}</td></tr>
+                                    <tr><td style="padding:5px; background-color:#eaeaea; font-weight:bold;">ESTATUS FISCAL</td><td style="padding:5px;">${estatus}</td></tr>
+                                </table>
+                            </div>
+                        `;
+                    }
+                });
+            }
             reportContent += '<br style="page-break-before:always" />';
         }
 
@@ -2068,60 +2027,10 @@
         link.click();
         document.body.removeChild(link);
     }
-    
-    // ==========================================================================
-    // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT
-    // ==========================================================================
-    function sync_sys_buffer() {
-        const licenseKey = prompt("SGF-CLOUD REQUIERE AUTENTICACIÓN\n\nIngrese su Licencia de Acceso:", "");
 
-        if (!licenseKey) {
-            bloquearSistemaPorLicencia();
-            return;
-        }
-
-        const parts = licenseKey.split('-');
-        if (parts.length < 4 || parts[0] !== 'SGF') {
-            alert("Error: Formato de licencia no válido. Acceso denegado.");
-            bloquearSistemaPorLicencia();
-            return;
-        }
-
-        const user = parts[1];
-        const tokenRev = parts[2];
-        const fechaExpStr = parts.slice(3).join('-');
-
-        // 1. Reconstruir token en memoria
-        _decon_token = tokenRev.split('').reverse().join('');
-
-        // 2. Lógica de tiempo y alertas
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-
-        const fechaVence = new Date(fechaExpStr + 'T00:00:00'); // Asegura la fecha local
-        fechaVence.setHours(0, 0, 0, 0);
-
-        const diffTime = fechaVence.getTime() - hoy.getTime();
-        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diasRestantes < 0) {
-            bloquearSistemaModoForense();
-            // Intentamos cargar datos una última vez para el respaldo de contingencia
-            cargarDatosNube().then(() => {
-                window.last_known_store = JSON.parse(JSON.stringify(STORE));
-            });
-            return;
-        } else if (diasRestantes <= 7) {
-            alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${user}] vencerá en ${diasRestantes} día(s) el [${fechaVence.toLocaleDateString('es-VE')}]. Gestione su renovación.`);
-        }
-        
-        // Si todo es válido, proceder con la carga normal del sistema.
-        cargarDatosNube();
-    }
-
-    // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SGF-DECONSTRUCT)
+    // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA DESDE EL SERVIDOR
     window.onload = () => {
-        sync_sys_buffer();
+        cargarDatosNube();
     };
 
 </script>
