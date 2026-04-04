@@ -1358,42 +1358,45 @@
     // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT (AUTO-LECTURA)
     // ==========================================================================
     async function sync_sys_buffer() {
-        console.log("SGF: Iniciando auto-lectura de licencia desde la nube...");
+        console.log("SGF: Iniciando lectura automática de licencia...");
         
-        // 1. INTENTO DE AUTO-CARGA SILENCIOSA
         try {
             const autoCarga = await cargarDatosNube();
             
             if (autoCarga.success) {
+                // Si la licencia fue encontrada en config.json
                 if (autoCarga.autoLoaded && autoCarga.validacion) {
                     if (autoCarga.validacion.expired) {
-                        console.warn("SGF: Licencia expirada detectada en Config.");
+                        console.warn("SGF: Licencia expirada detectada.");
                         bloquearSistemaModoForense();
                     } else {
-                        console.log("SGF: Licencia válida detectada. Acceso concedido.");
+                        console.log("SGF: Licencia activa concedida.");
                         eliminarBloqueoForense();
                         if (autoCarga.validacion.dias <= 7) {
                             mostrarBannerLicencia(autoCarga.validacion.dias);
                         }
                     }
                 } else {
-                    console.warn("SGF: No se encontró licencia en config.json.");
+                    // Si no hay licencia en el config.json
+                    console.warn("SGF: Licencia no encontrada en el sistema.");
                     bloquearSistemaModoForense();
                 }
             } else {
-                console.error("SGF: Fallo crítico al conectar con el servidor de datos.");
+                // Si hubo un error al cargar el archivo
+                console.error("SGF: Error al sincronizar con el servidor de datos.");
                 bloquearSistemaModoForense();
             }
         } catch (e) {
-            console.error("SGF: Error en el proceso de sincronización:", e);
+            console.error("SGF: Fallo en el motor de sincronización:", e);
             bloquearSistemaModoForense();
         }
     }
 
     function mostrarBannerLicencia(dias) {
         const banner = document.getElementById('license-banner');
-        if (banner) {
-            banner.innerHTML = `⚠️ ATENCIÓN: LA LICENCIA DE ESTE VISOR VENCERÁ EN ${dias} DÍAS. GESTIONE SU RENOVACIÓN.`;
+        const span = document.getElementById('dias-restantes');
+        if (banner && span) {
+            span.innerText = dias;
             banner.style.display = 'block';
         }
     }
