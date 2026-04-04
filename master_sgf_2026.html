@@ -72,22 +72,6 @@
             pointer-events: auto; 
         }
 
-        /* BARRA SUPERIOR - FLUIDA */
-        .top-nav { 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            height: 60px; 
-            display: flex; 
-            align-items: center; 
-            padding: 0 20px; 
-            gap: 15px; 
-            justify-content: space-between; 
-            background: rgba(18, 22, 29, 0.9);
-            border-bottom: 1px solid var(--border-color);
-            border-radius: 0;
-        }
-
         /* SIDEBAR (PANEL MAESTRO) - ESTILO IRIDIUM */
         #sidebar { 
             position: absolute;
@@ -776,11 +760,6 @@
 </head>
 <body>
 
-<!-- BOTÃ“N HAMBURGUESA MÃ“VIL (FUERA DEL SIDEBAR) -->
-<div id="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('is-open')">
-    <i class="fas fa-bars"></i>
-</div>
-
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">Â© 2026 - Sistema Protegido - AlcaldÃ­a Bolivariana de Ayacucho</div>
 
@@ -969,20 +948,6 @@
         </button>
     </div>
 </aside>
-
-<!-- TOGGLE AUTO-HIDE SIDEBAR ON MOBILE CLICK -->
-<script>
-    document.addEventListener('click', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const toggle = document.getElementById('mobile-toggle');
-        const isClickInsideSidebar = sidebar.contains(event.target);
-        const isClickOnToggle = toggle.contains(event.target);
-        
-        if (window.innerWidth <= 768 && !isClickInsideSidebar && !isClickOnToggle && sidebar.classList.contains('is-open')) {
-            sidebar.classList.remove('is-open');
-        }
-    });
-</script>
 
 <script>
     /* ==========================================================================
