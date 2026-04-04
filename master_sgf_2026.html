@@ -2374,6 +2374,7 @@
             const datosLimpios = extraerDatosGeometria();
             const objetoMaestro = {
                 credentials: SYSTEM_AUTH,
+                license: localStorage.getItem('sgf_license'), // <--- RESPALDO DE LICENCIA PARA EL INDEX
                 store: datosLimpios
             };
             const jsonStr = JSON.stringify(objetoMaestro, null, 2);
