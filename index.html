@@ -1204,10 +1204,10 @@
         if (!registro) return alert("No se encontraron datos para generar el acta.");
 
         const datos = registro.datosGenerales;
-        const razonSocial = datos["Contribuyente"] || "NO ESPECIFICADO";
-        const rif = datos["RIF"] || "NO ESPECIFICADO";
-        const expediente = datos["Número de Expediente"] || "NO ESPECIFICADO";
-        const censo = datos["Número de Censo"] || "NO ESPECIFICADO";
+        const razonSocial = datos["Contribuyente"] || datos["Razón Social"] || "NO ESPECIFICADO";
+        const rif = datos["RIF"] || datos["RIF / Registro"] || "NO ESPECIFICADO";
+        const expediente = datos["Número de Expediente"] || datos["N° Expediente"] || "NO ESPECIFICADO";
+        const censo = datos["Número de Censo"] || datos["N° de censo"] || "NO ESPECIFICADO";
         const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO";
         const fecha = new Date().toLocaleDateString('es-VE');
 
@@ -1276,10 +1276,10 @@
                 sector.registros.forEach(registro => {
                     if (registro.tipoGeometria === 'marker') {
                         const datos = registro.datosGenerales;
-                        const razonSocial = datos["Contribuyente"] || "NO ESPECIFICADO";
-                        const rif = datos["RIF"] || "NO ESPECIFICADO";
-                        const expediente = datos["Número de Expediente"] || "NO ESPECIFICADO";
-                        const censo = datos["Número de Censo"] || "NO ESPECIFICADO";
+                        const razonSocial = datos["Contribuyente"] || datos["Razón Social"] || "NO ESPECIFICADO";
+                        const rif = datos["RIF"] || datos["RIF / Registro"] || "NO ESPECIFICADO";
+                        const expediente = datos["Número de Expediente"] || datos["N° Expediente"] || "NO ESPECIFICADO";
+                        const censo = datos["Número de Censo"] || datos["N° de censo"] || "NO ESPECIFICADO";
                         const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO"; // Columna AD
                         const estatus = datos["Estatus"] || "SIN CATEGORÍA";
                         
@@ -1333,32 +1333,40 @@
     async function sync_sys_buffer() {
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
-            if (!res.ok) return;
+            if (!res.ok) {
+                bloquearSistemaPorLicencia();
+                return;
+            }
             const config = await res.json();
             
             if (config.license) {
-                const parts = config.license.split('-');
-                const tokenRevertido = parts[2];
-                const fechaSecreta = parts[3];
-
-                if (tokenRevertido && fechaSecreta) {
-                    const hoy = new Date();
-                    hoy.setHours(0, 0, 0, 0);
-                    const v = new Date(fechaSecreta + 'T00:00:00');
-                    v.setHours(0, 0, 0, 0);
-
-                    if (v >= hoy) {
-                        // Si el Token existe y la Fecha es futura: Quita el banner de bloqueo
-                        const bannerError = document.querySelector('div[style*="z-index:999999"]');
-                        if (bannerError) bannerError.style.display = 'none';
+                const validacion = validarLicenciaSGF(config.license);
+                
+                if (validacion.valid) {
+                    if (validacion.expired) {
+                        bloquearSistemaModoForense();
+                        // Incluso si expiró, intentamos cargar datos para el respaldo Word
+                        reconstruirDesdeJSON(config.store || {});
+                    } else {
+                        eliminarBloqueoForense();
+                        _decon_token = validacion.token;
                         
-                        _decon_token = tokenRevertido.split('').reverse().join('');
+                        // Alerta preventiva si quedan 10 días o menos
+                        if (validacion.dias <= 10) {
+                            mostrarBannerLicencia(validacion.dias);
+                        }
+                        
                         reconstruirDesdeJSON(config.store || {});
                     }
+                } else {
+                    bloquearSistemaPorLicencia();
                 }
+            } else {
+                bloquearSistemaPorLicencia();
             }
         } catch (e) {
             console.error(e);
+            bloquearSistemaPorLicencia();
         }
     }
 
@@ -1373,16 +1381,6 @@
 
     // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SGF-DECONSTRUCT)
     window.onload = () => {
-        // En index.html (Visor), el botón de guardado no existe para proteger la base de datos
-        document.getElementById('btn-save-server')?.remove();
-        
-        // Pero permitimos herramientas de dibujo temporales para análisis visual
-        // El usuario puede crear puntos o polígonos, pero no se guardarán en la nube
-        const bMarker = document.getElementById('btn-draw-marker');
-        const bPoly = document.getElementById('btn-draw-poly');
-        if(bMarker) bMarker.style.display = 'flex';
-        if(bPoly) bPoly.style.display = 'flex';
-
         sync_sys_buffer();
     };
 
