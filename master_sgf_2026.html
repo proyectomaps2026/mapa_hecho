@@ -2745,23 +2745,37 @@
         const p = document.getElementById('login-pass').value.trim();
         const msg = document.getElementById('login-error-msg');
         
-        if (u === SYSTEM_AUTH.user && p === SYSTEM_AUTH.pass) {
+        // 1. JERARQUÃA MAESTRA (SUPER ADMIN WOLGFAN)
+        if (u === 'Ing_Wolgfan' && p === 'SGF-AURA-2026-SUPREMA') {
             CURRENT_ROLE = 'SUPERADMIN';
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('panel-superadmin').style.display = 'block';
             document.getElementById('panel-admin-licencia').style.display = 'block';
-            document.getElementById('btn-cargar-raw').style.display = 'flex';
+            
+            // Muestra el botÃ³n RAW solo para SuperAdmin
+            const btnRaw = document.getElementById('btn-cargar-raw');
+            if(btnRaw) btnRaw.style.display = 'flex';
+            
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SUPER ADMIN (WOLGFAN)';
             mostrarNotificacion("BIENVENIDO SUPER ADMIN", "green");
             actualizarUIYMapa();
+            cargarDatosNube();
         } 
-        else if (u === "admin" && p === "admin2026") { // Admin institucional
+        else if (u === SYSTEM_AUTH.user && p === SYSTEM_AUTH.pass) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('login-overlay').style.display = 'none';
             document.getElementById('panel-admin-licencia').style.display = 'block';
+            
+            // LIMPIEZA DEL DOM ESTRICTA
+            const btnRaw = document.getElementById('btn-cargar-raw');
+            if(btnRaw) btnRaw.remove();
+            const pnlSup = document.getElementById('panel-superadmin');
+            if(pnlSup) pnlSup.remove();
+
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-tie"></i> ADMINISTRADOR HACIENDA';
             mostrarNotificacion("ACCESO ADMINISTRATIVO", "green");
             actualizarUIYMapa();
+            iniciarCicloLicenciaAdmin();
         }
         else {
             msg.innerText = "Credenciales incorrectas. Intente de nuevo.";
