@@ -2471,60 +2471,71 @@
             try {
                 let storeData = {};
                 
-                // 1. PRIORIDAD: DETECTOR DE URL (GOOGLE SHEETS / GITHUB RAW)
+                // 1. DETECTOR DE URLS (GOOGLE SHEETS O GITHUB RAW CSV)
                 if (rawInput.toLowerCase().startsWith('http')) {
-                    if (rawInput.includes("docs.google.com/spreadsheets")) {
-                        mostrarNotificacion("CONECTANDO A GOOGLE SHEETS...", "orange");
-                        let csvUrl = rawInput;
-                        if (csvUrl.includes("/edit")) {
-                            csvUrl = csvUrl.replace(/\/edit.*$/, "/export?format=csv");
+                    let url = rawInput;
+                    
+                    // Si es Google Sheets, convertimos a CSV Export
+                    if (url.includes("docs.google.com/spreadsheets")) {
+                        mostrarNotificacion("CONECTANDO A GOOGLE SHEETS (CSV)...", "orange");
+                        if (url.includes("/edit")) {
+                            url = url.replace(/\/edit.*$/, "/export?format=csv");
                         }
-                        const res = await fetch(csvUrl);
-                        const csvText = await res.text();
-                        storeData = convertirCSVStore(csvText);
                     } else {
-                        mostrarNotificacion("DESCARGANDO RAW...", "orange");
-                        const res = await fetch(rawInput);
-                        const json = await res.json();
-                        storeData = json.store || json;
+                        mostrarNotificacion("DESCARGANDO RAW CSV...", "orange");
+                    }
+
+                    const res = await fetch(url);
+                    const text = await res.text();
+
+                    // Intentamos procesar como CSV si tiene comas
+                    if (text.includes(",") || text.includes(";")) {
+                        storeData = convertirCSVStore(text);
+                    } else {
+                        // Si no parece CSV, intentamos como JSON (fallback)
+                        try {
+                            const json = JSON.parse(text);
+                            storeData = json.store || json;
+                        } catch(e) {
+                            throw new Error("El link no contiene un formato CSV o JSON válido.");
+                        }
                     }
                 } 
-                // 2. PRIORIDAD: EXTRACCIÓN DE TEXTO SUCIO (REGEX) - No rompe si hay palabras
+                // 2. TEXTO DIRECTO (PEGADO)
                 else {
-                    // Primero intentamos extraer coordenadas si hay números con comas/puntos
+                    // Primero extraemos coordenadas (Regex) del texto pegado
                     const extraidos = extraerCoordenadasDeTexto(rawInput);
-                    
                     if (extraidos["IMPORT_RAW"].registros.length > 0) {
-                        mostrarNotificacion("LIMPIANDO Y EXTRAYENDO TEXTO...", "orange");
+                        mostrarNotificacion("EXTRAYENDO PUNTOS DEL TEXTO...", "orange");
                         storeData = extraidos;
                     } else {
-                        // 3. ÚLTIMO RECURSO: INTENTAR JSON.PARSE
+                        // Fallback final a JSON si el texto pegado no tiene coordenadas claras
                         try {
                             const json = JSON.parse(rawInput);
                             storeData = json.store || json;
                         } catch(e) {
-                            throw new Error("No se detectaron coordenadas válidas ni formato JSON correcto.");
+                            throw new Error("No se detectaron coordenadas ni formato JSON en el texto.");
                         }
                     }
                 }
                 
-                // VALIDACIÓN FINAL Y AUTO-MASTER
-                if (Object.keys(storeData).length === 0) throw new Error("Datos vacíos o incompatibles.");
+                // VALIDACIÓN Y MARCA DE MAESTRO (IS MASTER)
+                if (Object.keys(storeData).length === 0) throw new Error("Datos vacíos.");
                 
                 for(let id in storeData) {
                     storeData[id].isMaster = true;
                 }
                 
                 reconstruirDesdeJSON(storeData);
-                mostrarNotificacion("SISTEMA TODO-EN-UNO: CARGA EXITOSA", "green");
+                mostrarNotificacion("CARGA EXITOSA: CAPA MAESTRA ACTIVADA", "green");
                 return; 
             } catch (e) {
                 console.error("SGF Loader Error:", e);
-                return alert("❌ Error de Carga: " + e.message);
+                return alert("❌ Error al cargar datos: " + e.message);
             }
         }
 
-        // Si no hay RAW, CARGA NORMAL DESDE NUBE (CONFIG.JSON)
+        // Si el campo está vacío, CARGA NORMAL DESDE CONFIG.JSON DE LA NUBE
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
@@ -2532,7 +2543,7 @@
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 if (jsonParsed.license) localStorage.setItem('sgf_license', jsonParsed.license);
                 reconstruirDesdeJSON(jsonParsed.store || {});
-                mostrarNotificacion("NUBE SINCRONIZADA", "green");
+                mostrarNotificacion("MAPA SINCRONIZADO", "green");
             }
         } catch (e) {
             mostrarNotificacion("ERROR DE RED", "red");
