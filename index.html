@@ -1489,7 +1489,28 @@
 
     // ARRANQUE DIRECTO CON CARGA DE CREDENCIALES
     window.onload = () => {
-        init_config_load();
+        // PROTOCOLO PORTABILIDAD TOTAL: Intentamos cargar config.json primero
+        fetch(`${FILE_PATH}?t=${Date.now()}`)
+        .then(res => res.json())
+        .then(config => {
+            if (config.credentials) SYSTEM_AUTH = config.credentials;
+            
+            // Si hay licencia válida, entramos directo
+            if (config.license) {
+                const validacion = validarLicenciaSGF(config.license);
+                if (validacion.valid && !validacion.expired) {
+                    document.getElementById('login-overlay').style.display = 'none';
+                    sync_sys_buffer(); 
+                    return;
+                }
+            }
+            // Si no hay licencia o expiró, el login overlay se queda (init_config_load ya lo maneja)
+            init_config_load();
+        })
+        .catch(e => {
+            console.error("Error en portabilidad:", e);
+            init_config_load();
+        });
     };
 
 </script>
