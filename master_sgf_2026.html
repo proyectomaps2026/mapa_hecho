@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -297,6 +298,7 @@
             align-items: center; 
             justify-content: space-between; 
             border-bottom: 1px solid transparent; 
+            cursor: pointer;
         }
         
         .sector-header:hover { 
@@ -777,7 +779,7 @@
     <p style="color: #a5b0bf; font-size: 13px; margin-bottom: 30px; text-align: center;">Su período de acceso al Sistema de Control Fiscal ha finalizado.<br>Actualice su Licencia o genere un respaldo de sus datos.</p>
     
     <div style="width: 400px;">
-        <input type="text" id="lock-new-license" class="modal-input" placeholder="Pegue aquí su nueva Licencia (SGF-USUARIO-...)">
+        <input type="text" id="lock-new-license" class="modal-input" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
         <button class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 15px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
         <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
     </div>
@@ -794,7 +796,8 @@
             <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
             
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-            <input type="password" id="login-pass" class="modal-input" placeholder="Clave Sistema o Licencia SGF">
+            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional (SGF-CLOUD)</label>
+            <input type="password" id="login-pass" class="modal-input" placeholder="Pegue la licencia: SGF-CLOUD">
 
             <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
             
@@ -917,7 +920,7 @@
         </div>
         <div id="ajustes-licencia" style="display: none; padding-top: 5px;">
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
-            <input type="text" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Pegue la licencia: SGF-USUARIO-TOKEN-FECHA">
+            <input type="text" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
             <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
@@ -1436,6 +1439,14 @@
         
         actualizarUIYMapa();
     }
+    
+    function toggleSectorBodyManual(e, idSector) {
+        if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
+        const body = document.getElementById(`sector-body-${idSector}`);
+        if(body) {
+            body.style.display = body.style.display === 'none' ? 'block' : 'none';
+        }
+    }
 
     /* ==========================================================================
        FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
@@ -1500,7 +1511,7 @@
             
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
-                <div class="sector-header">
+                <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
                                ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
@@ -1508,20 +1519,23 @@
                         <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
                            title="Mostrar/Ocultar todo el Sector" 
                            style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
-                           onclick="toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                           onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
                         
                         <input type="text" value="${sectorData.nombreSector}" 
                                title="Doble clic para enfocar sector en el mapa"
+                               onclick="event.stopPropagation();"
                                ondblclick="enfocarSector('${idSector}')"
                                onchange="actualizarNombreSector('${idSector}', this.value)" 
                                style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 140px; outline:none; text-transform:uppercase;">
                     </div>
                     
                     <div class="sector-controls">
-                        <i class="fas fa-trash-alt sector-trash" onclick="eliminarSectorDefinitivo('${idSector}')"></i>
+                        <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
+                        <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
+                        <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
                     </div>
                 </div>
-                <div class="sector-body" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+                <div class="sector-body" id="sector-body-${idSector}" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
@@ -1880,6 +1894,61 @@
         capasSectores[id] = new L.FeatureGroup();
         STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
         capaActivaId = id;
+        actualizarUIYMapa();
+    }
+
+    function clonarSector(idSectorOriginal) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        const sectorOriginal = STORE[idSectorOriginal];
+        const nombre = prompt("Nombre de la nueva capa clonada:", sectorOriginal.nombreSector + " (CLON)");
+        if(!nombre) return;
+        
+        const newId = 'sec_' + Date.now();
+        capasSectores[newId] = new L.FeatureGroup();
+        
+        STORE[newId] = {
+            nombreSector: nombre.toUpperCase(),
+            visible: true,
+            visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus)),
+            coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus)),
+            colorPrincipal: sectorOriginal.colorPrincipal,
+            registros: []
+        };
+        
+        sectorOriginal.registros.forEach(reg => {
+            let capaNueva;
+            if(reg.tipoGeometria === 'marker') {
+               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !modoLecturaGlobal});
+            } else {
+               capaNueva = L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
+            }
+            
+            const newIdFisico = L.stamp(capaNueva);
+            STORE[newId].registros.push({
+                idFisico: newIdFisico,
+                tipoGeometria: reg.tipoGeometria,
+                capaLeaflet: capaNueva,
+                colorPersonalizado: reg.colorPersonalizado,
+                visibleIndividual: reg.visibleIndividual,
+                _modoPopup: 'lectura',
+                datosGenerales: JSON.parse(JSON.stringify(reg.datosGenerales)),
+                camposOcultos: [...reg.camposOcultos]
+            });
+            vincularEventosCapa(capaNueva, newId, newIdFisico);
+        });
+        
+        capaActivaId = newId;
+        actualizarUIYMapa();
+    }
+    
+    function limpiarSector(idSector) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}" eliminando todos sus registros internos?`)) return;
+        
+        if (capasSectores[idSector]) {
+            capasSectores[idSector].clearLayers();
+        }
+        STORE[idSector].registros = [];
         actualizarUIYMapa();
     }
 
