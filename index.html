@@ -1099,57 +1099,31 @@
        ========================================================================== */
     async function cargarDatosNube(token = null) {
         // 1. INTENTO DE CARGA PRIORITARIA (Vía Web - Lee config.json directamente)
-        if (!token) {
-            try {
-                // El visor intenta leer config.json del servidor local/web de forma anónima
-                const resWeb = await fetch(`${FILE_PATH}?t=${Date.now()}`);
-                if (resWeb.ok) {
-                    const jsonParsed = await resWeb.json();
-                    if (jsonParsed.license) {
-                        const validacion = validarLicenciaSGF(jsonParsed.license);
-                        if (validacion.valid && !validacion.expired) {
-                            _decon_token = validacion.token;
-                            reconstruirDesdeJSON(jsonParsed.store || {});
-                            return { success: true, autoLoaded: true, validacion };
-                        }
-                    }
-                }
-            } catch (e) {
-                console.warn("SGF: Carga directa falló, intentando vía API de respaldo...");
-            }
-        }
-
-        // 2. INTENTO DE RESPALDO VÍA GITHUB API
-        const fetchUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`;
-        const headers = token ? { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' } 
-                              : { 'Accept': 'application/vnd.github.v3+json' };
-
+        const fetchUrl = `${FILE_PATH}?t=${Date.now()}`;
+        
         try {
-            const res = await fetch(fetchUrl, { headers });
+            const resWeb = await fetch(fetchUrl);
+            if (!resWeb.ok) throw new Error("Fallo de red");
 
-            if (!res.ok) {
-                if (!token) return { success: false, autoLoaded: false }; 
-                return { success: false, autoLoaded: false };
-            }
-
-            const data = await res.json();
-            const decodedContent = decodeURIComponent(escape(atob(data.content)));
-            const jsonParsed = JSON.parse(decodedContent);
+            const jsonParsed = await resWeb.json();
             
-            if (jsonParsed.license && !token) {
+            // Si hay una licencia en el config, intentamos usarla para validar
+            if (jsonParsed.license) {
                 const validacion = validarLicenciaSGF(jsonParsed.license);
                 if (validacion.valid && !validacion.expired) {
-                    _decon_token = validacion.token;
+                    _decon_token = validacion.token; // Descodificación exitosa
                     reconstruirDesdeJSON(jsonParsed.store || {});
                     return { success: true, autoLoaded: true, validacion };
+                } else if (validacion.expired) {
+                    return { success: true, autoLoaded: true, validacion, expired: true };
                 }
             }
-
-            reconstruirDesdeJSON(jsonParsed.store || {});
-            return { success: true, autoLoaded: !!token }; 
+            
+            // Si llegamos aquí, no había licencia válida en el config
+            return { success: false, autoLoaded: false };
 
         } catch (e) {
-            console.error("SGF: Fallo crítico de acceso a la base de datos:", e);
+            console.error("SGF: Error al leer base de datos:", e);
             return { success: false, autoLoaded: false };
         }
     }
@@ -1364,7 +1338,7 @@
             const autoCarga = await cargarDatosNube();
             
             if (autoCarga.success && autoCarga.autoLoaded && autoCarga.validacion) {
-                if (autoCarga.validacion.expired) {
+                if (autoCarga.expired) {
                     console.warn("SGF: Licencia expirada detectada en el servidor.");
                     bloquearSistemaModoForense();
                 } else {
