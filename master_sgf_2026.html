@@ -909,15 +909,15 @@
         </div>
     </div>
 
-    <!-- MÓDULO PRIVADO SUPER ADMIN (LLAVE GITHUB) -->
+    <!-- MÓDULO PRIVADO SUPER ADMIN (ELIMINADO CAMPO TOKEN) -->
     <div id="panel-superadmin" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: #8e44ad; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
-            <span><i class="fas fa-server"></i> LLAVE MAESTRA GITHUB (SUPER ADMIN)</span>
+            <span><i class="fas fa-server"></i> PANEL SUPER ADMIN (WOLGFAN)</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">ENCRIPTAR Y GUARDAR TOKEN</button>
+            <p style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Conexión directa vía Vercel Bridge (GITHUB_TOKEN).</p>
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; border-color: #8e44ad; color: #8e44ad;" onclick="cargarDatosNube()">REFRESCAR CONEXIÓN NUBE</button>
         </div>
     </div>
 
@@ -1037,19 +1037,9 @@
         };
     }
 
-    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
+    // OBTENEDOR DE TOKEN SEGURO (ELIMINADO: AHORA USAMOS VERCEL API)
     function getRealToken() {
-        if (CURRENT_ROLE === 'SUPERADMIN') {
-            const tk = localStorage.getItem('master_token_revert') || 'iHaoy3wdz12K0o7pICwk8bZIsCKC3MjFetZs_phg';
-            return tk ? tk.split('').reverse().join('') : null;
-        } else if (CURRENT_ROLE === 'ADMIN') {
-            const lic = localStorage.getItem('sgf_license');
-            const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired) {
-                return parsed.tokenRev.split('').reverse().join('');
-            }
-        }
-        return null;
+        return "VERCEL_BRIDGE_ACTIVE"; // Token dummy para evitar errores de validación local
     }
 
     /* ==========================================================================
@@ -1198,47 +1188,39 @@
 
     async function actualizarLicenciaInterna() {
         const val = document.getElementById('input-update-license').value.trim();
-        if(!val) return alert("Ingrese el token de renovación.");
+        if(!val) return alert("Ingrese la clave de autorización.");
         
         const btn = document.querySelector('#ajustes-licencia button');
         const originalText = btn.innerText;
-        btn.innerText = "ACTUALIZANDO...";
+        btn.innerText = "SINCRONIZANDO...";
         btn.disabled = true;
 
         try {
-            // 1. OBTENER CONFIG ACTUAL (PROTOCOLO ADMIN: NO BORRAR CENSO)
-            const GITHUB_TOKEN_DYNAMIC = getRealToken();
-            const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
-            
-            const resGet = await fetch(url, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
-            });
-
+            // 1. OBTENER CONFIG ACTUAL (LECTURA PÚBLICA)
+            const resGet = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             let configActual = { credentials: SYSTEM_AUTH, store: extraerDatosGeometria() };
             if (resGet.ok) {
-                const dataGet = await resGet.json();
-                const content = decodeURIComponent(escape(atob(dataGet.content)));
-                configActual = JSON.parse(content);
+                configActual = await resGet.json();
             }
 
-            // 2. ACTUALIZAR SOLO EL CAMPO LICENSE
+            // 2. ACTUALIZAR LICENCIA
             let licFinal = val;
             if(!val.startsWith('SGF-')) {
                 licFinal = generarCadenaLicenciaSGF(val);
             }
             configActual.license = licFinal;
 
-            // 3. SUBIR OBJETO ACTUALIZADO
-            const exito = await uploadToGitHub(configActual, "SGF Admin: Actualización de Licencia " + licFinal);
+            // 3. SUBIR VÍA VERCEL API (SIN TOKEN LOCAL)
+            const exito = await uploadToGitHub(configActual, "SGF Admin: Actualización de Licencia Institucional");
             
             if(exito) {
                 localStorage.setItem('sgf_license', licFinal);
-                alert("✅ Licencia Sincronizada: DATA EN LA NUBE.");
+                alert("✅ Licencia Actualizada: SINCRO EXITOSA.");
                 validarLicenciaYBloqueo();
             }
         } catch(e) {
             console.error(e);
-            alert("❌ Error al sincronizar licencia: " + e.message);
+            alert("❌ Fallo de Sincronización: " + e.message);
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
@@ -2419,35 +2401,26 @@
     }
     
     async function cargarDatosNube() {
-        const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if (!GITHUB_TOKEN_DYNAMIC) {
-            actualizarUIYMapa();
-            return;
-        }
-
+        // CARGA DIRECTA DESDE GITHUB PAGES (CONFIG.JSON PÚBLICO)
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
-            });
+            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
-                const data = await res.json();
-                fileSha = data.sha;
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                const jsonParsed = JSON.parse(decodedContent);
+                const jsonParsed = await res.json();
                 
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 if (jsonParsed.license) localStorage.setItem('sgf_license', jsonParsed.license);
-                if (jsonParsed.master_token) localStorage.setItem('master_token_revert', jsonParsed.master_token);
                 
                 reconstruirDesdeJSON(jsonParsed.store || {});
+                mostrarNotificacion("DATOS SINCRONIZADOS DESDE LA NUBE", "green");
             } else if (res.status === 404) {
+                mostrarNotificacion("AVISO: Archivo no encontrado en la nube", "orange");
                 actualizarUIYMapa();
             } else {
-                throw new Error(`GitHub API error: ${res.status}`);
+                throw new Error(`Error de red: ${res.status}`);
             }
         } catch (e) {
             console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos de la nube. Revise su conexión o Token. Error: " + e.message);
+            mostrarNotificacion("ERROR DE CARGA: " + e.message, "red");
             actualizarUIYMapa();
         }
     }
@@ -2521,17 +2494,20 @@
         btn.disabled = true;
 
         try {
+            // PROTOCOLO VERCEL: Obtener config actual para no pisar campos
+            const resGet = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            let configActual = { credentials: SYSTEM_AUTH, license: localStorage.getItem('sgf_license'), store: {} };
+            if (resGet.ok) {
+                configActual = await resGet.json();
+            }
+
             const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                license: localStorage.getItem('sgf_license'),
-                master_token: localStorage.getItem('master_token_revert'),
-                store: datosLimpios // Esto empaqueta todo el RAW del panel lateral (STORE)
-            };
+            configActual.store = datosLimpios;
             
-            await uploadToGitHub(objetoMaestro, "SGF Cloud: Guardar Censo y RAW " + new Date().toLocaleString());
+            await uploadToGitHub(configActual, "SGF Cloud: Guardar Censo y RAW " + new Date().toLocaleString());
         } catch(e) {
             console.error(e);
+            mostrarNotificacion("ERROR AL GUARDAR: " + e.message, "red");
         } finally {
             btn.innerHTML = btnOriginalText;
             btn.disabled = false;
