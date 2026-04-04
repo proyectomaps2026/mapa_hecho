@@ -863,6 +863,9 @@
                     <strong style="color: #856404; font-size: 14px; display: block; margin-bottom: 5px;">Acción Requerida:</strong>
                     <span style="color: #333; font-size: 13px; line-height: 1.5;">Por favor, póngase en contacto con el Administrador de Sistemas (Proveedor Local) para procesar la renovación de la licencia de infraestructura y servidores GitHub/Google.</span>
                 </div>
+                <button onclick="descargarRespaldoTotalWord()" style="display:block; width:100%; padding: 15px; font-size: 14px; font-weight: 800; color: #fff; background-color: #0d6efd; border: none; border-radius: 6px; cursor: pointer; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 0.5px; transition: background-color 0.2s;">
+                    DESCARGAR ÚLTIMO RESPALDO CERTIFICADO (SGF-CLOUD)
+                </button>
                 <div style="border-top: 1px solid #eee; padding-top: 15px; font-size: 11px; color: #888; font-family: monospace; letter-spacing: 0.5px;">
                     ID del Cliente: AYACUCHO-VEN-2026 | Server Status: Suspended
                 </div>
@@ -1062,6 +1065,9 @@
             datosGenerales: { 
                 "Contribuyente": "NUEVO ESTABLECIMIENTO", 
                 "RIF": "J-00000000-0",
+                "Número de Expediente": "N/A",
+                "Número de Censo": "N/A",
+                "Licencia Act. Econ.": "",
                 "Teléfono": "0414-0000000",
                 "Metros Cuadrados": "0 m2",
                 "Fecha Fiscalización": new Date().toISOString().split('T')[0],
@@ -1423,6 +1429,12 @@
                     <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
                 </div>`;
             }
+
+            const licenciaActiva = registro.datosGenerales["Licencia Act. Econ."] && registro.datosGenerales["Licencia Act. Econ."].trim() !== "";
+            if (licenciaActiva) {
+                html += `<button class="btn-popup-action btn-save" style="margin-top: 15px; background: #0d6efd;" onclick="generarActaWord('${idSector}', '${idFisico}')">📄 GENERAR ACTA DE RESPALDO</button>`;
+            }
+
             if(!modoLecturaGlobal) {
                 html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
             }
@@ -1912,6 +1924,147 @@
             });
         }
         actualizarUIYMapa();
+    }
+    
+    /* ==========================================================================
+       NUEVO MÓDULO: GENERACIÓN DE REPORTES WORD Y RESPALDO DE CONTINGENCIA
+       ========================================================================== */
+    function generarActaWord(idSector, idFisico) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if (!registro) return alert("No se encontraron datos para generar el acta.");
+
+        const datos = registro.datosGenerales;
+        const razonSocial = datos["Contribuyente"] || "NO ESPECIFICADO";
+        const rif = datos["RIF"] || "NO ESPECIFICADO";
+        const expediente = datos["Número de Expediente"] || "NO ESPECIFICADO";
+        const censo = datos["Número de Censo"] || "NO ESPECIFICADO";
+        const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO";
+        const fecha = new Date().toLocaleDateString('es-VE');
+
+        const footerLegal = `
+            <div style="text-align:justify; font-size:8pt; color:#555; border-top: 1px solid #000; padding-top:10px; margin-top: 50px;">
+                <strong>CERTIFICACIÓN LEGAL:</strong> El presente documento se emite en conformidad con las atribuciones conferidas a la Hacienda Pública Municipal,
+                según lo establecido en la Ley Orgánica del Poder Público Municipal (LOPPM) y las ordenanzas fiscales vigentes. Los datos aquí reflejados son
+                fiel copia de los registros del Sistema Georreferenciado Fiscal (SGF-CLOUD) y gozan de presunción de veracidad y legalidad para todos los
+                efectos administrativos y tributarios, en concordancia con los <strong>Artículos 7, 9 (Principio de Legalidad Tributaria), 77 (Potestad de Fiscalización)
+                y 91 (Deberes Formales del Contribuyente)</strong> del Código Orgánico Tributario, aplicable supletoriamente.
+            </div>`;
+
+        const contenidoHtml = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Acta de Respaldo Fiscal</title></head>
+            <body style="font-family: Arial, sans-serif; font-size: 12pt; margin: 40px;">
+                <div style="text-align:center; margin-bottom: 40px;">
+                    <h1 style="font-size:16pt; margin:0;">ALCALDÍA BOLIVARIANA DEL MUNICIPIO COLÓN</h1>
+                    <h2 style="font-size:14pt; margin:0; font-weight:normal;">HACIENDA MUNICIPAL</h2>
+                    <h3 style="font-size:14pt; margin:0;">ACTA DE RESPALDO DE REGISTRO FISCAL</h3>
+                </div>
+                <p>En San Juan de Colón, a la fecha de <strong>${fecha}</strong>, la Superintendencia de Hacienda Municipal, en uso de sus facultades,
+                deja constancia de la información registrada en el Sistema Georreferenciado Fiscal (SGF-CLOUD) para el siguiente contribuyente:</p>
+                
+                <table style="width:100%; border-collapse: collapse; border: 1px solid #ccc; margin-top:20px; margin-bottom:20px; font-size:11pt;">
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold; width: 35%;">RAZÓN SOCIAL / CONTRIBUYENTE</td><td style="padding:8px; border: 1px solid #ccc;">${razonSocial}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">REGISTRO DE INFORMACIÓN FISCAL (RIF)</td><td style="padding:8px; border: 1px solid #ccc;">${rif}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">NÚMERO DE EXPEDIENTE</td><td style="padding:8px; border: 1px solid #ccc;">${expediente}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">NÚMERO DE CENSO</td><td style="padding:8px; border: 1px solid #ccc;">${censo}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">LICENCIA DE ACTIVIDADES ECONÓMICAS</td><td style="padding:8px; border: 1px solid #ccc;">${licencia}</td></tr>
+                </table>
+
+                <p>Se emite la presente acta como respaldo y constancia de la situación del contribuyente en la base de datos maestra a la fecha de su generación.
+                Este documento tiene carácter informativo y de auditoría interna.</p>
+                <br><br><br><br>
+                <div style="text-align:center;">
+                    <p style="margin-bottom:0;">______________________________________</p>
+                    <p style="margin-top:5px;"><strong>Funcionario Autorizado</strong></p>
+                    <p style="margin-top:5px;">Hacienda Municipal de Colón</p>
+                </div>
+                ${footerLegal}
+            </body>
+            </html>`;
+        
+        const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(contenidoHtml);
+        const filename = `Acta_Respaldo_${rif.replace(/[^a-zA-Z0-9]/g, '')}.doc`;
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function descargarRespaldoTotalWord() {
+        if (!STORE || Object.keys(STORE).length === 0) {
+            alert("No hay datos en la memoria caché local para generar un respaldo.");
+            return;
+        }
+
+        const fecha = new Date().toLocaleDateString('es-VE');
+        const footerLegal = `
+            <div style="text-align:justify; font-size:8pt; color:#555; border-top: 1px solid #000; padding-top:10px; margin-top: 50px;">
+                <strong>CERTIFICACIÓN LEGAL:</strong> El presente documento se emite en conformidad con las atribuciones conferidas a la Hacienda Pública Municipal,
+                según lo establecido en la Ley Orgánica del Poder Público Municipal (LOPPM) y las ordenanzas fiscales vigentes. Los datos aquí reflejados son
+                fiel copia de los registros del Sistema Georreferenciado Fiscal (SGF-CLOUD) y gozan de presunción de veracidad y legalidad para todos los
+                efectos administrativos y tributarios, en concordancia con los <strong>Artículos 7, 9 (Principio de Legalidad Tributaria), 77 (Potestad de Fiscalización)
+                y 91 (Deberes Formales del Contribuyente)</strong> del Código Orgánico Tributario, aplicable supletoriamente.
+            </div>`;
+
+        let reportContent = '';
+        
+        for (const idSector in STORE) {
+            const sector = STORE[idSector];
+            reportContent += `<h2 style="font-size:18pt; color:#333; border-bottom:2px solid #333; padding-bottom:5px;">SECTOR: ${sector.nombreSector}</h2>`;
+            
+            sector.registros.forEach(registro => {
+                if (registro.tipoGeometria === 'marker') {
+                    const datos = registro.datosGenerales;
+                    const razonSocial = datos["Contribuyente"] || "NO ESPECIFICADO";
+                    const rif = datos["RIF"] || "NO ESPECIFICADO";
+                    const expediente = datos["Número de Expediente"] || "NO ESPECIFICADO";
+                    const censo = datos["Número de Censo"] || "NO ESPECIFICADO";
+                    const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO";
+                    const estatus = datos["Estatus"] || "SIN CATEGORÍA";
+                    
+                    reportContent += `
+                        <div style="margin-top:20px; padding:15px; border: 1px solid #999; border-radius: 5px; background-color:#f9f9f9;">
+                            <h3 style="margin-top:0; font-size:14pt;">${razonSocial}</h3>
+                            <table style="width:100%; border-collapse: collapse; font-size:11pt;">
+                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold; width: 40%;">REGISTRO DE INFORMACIÓN FISCAL (RIF)</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${rif}</td></tr>
+                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÚMERO DE EXPEDIENTE</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${expediente}</td></tr>
+                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÚMERO DE CENSO</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${censo}</td></tr>
+                                <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">LICENCIA DE ACTIVIDADES ECONÓMICAS</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${licencia}</td></tr>
+                                <tr><td style="padding:5px; background-color:#eaeaea; font-weight:bold;">ESTATUS FISCAL</td><td style="padding:5px;">${estatus}</td></tr>
+                            </table>
+                        </div>
+                    `;
+                }
+            });
+            reportContent += '<br style="page-break-before:always" />';
+        }
+
+        const contenidoHtml = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Respaldo Total SGF-CLOUD</title></head>
+            <body style="font-family: Arial, sans-serif; font-size: 12pt; margin: 40px;">
+                <div style="text-align:center; margin-bottom: 40px;">
+                    <h1 style="font-size:16pt; margin:0;">RESPALDO TOTAL CERTIFICADO</h1>
+                    <h2 style="font-size:14pt; margin:0; font-weight:normal;">SISTEMA GEOREFERENCIADO FISCAL (SGF-CLOUD)</h2>
+                    <h3 style="font-size:14pt; margin:0;">ALCALDÍA BOLIVARIANA DEL MUNICIPIO COLÓN</h3>
+                    <p>Generado en contingencia el <strong>${fecha}</strong></p>
+                </div>
+                ${reportContent}
+                ${footerLegal}
+            </body>
+            </html>`;
+
+        const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(contenidoHtml);
+        const filename = `Respaldo_Total_SGF-CLOUD_${new Date().toISOString().slice(0,10)}.doc`;
+        
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
     // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SAN JUAN DE COLÓN)
