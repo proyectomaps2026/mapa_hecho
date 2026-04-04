@@ -808,32 +808,40 @@
     </div>
 </div>
 
-<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÃ“N) -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
-    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
-        
-        <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
-        <div id="login-form-container">
-            <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
-            <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
-            <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+    <!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÃ“N) -->
+    <div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+        <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
             
-            <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-            
-            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
-            <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
-            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* SolicÃ­tela a su director o directora de Hacienda.</p>
+            <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
+            <div id="login-form-container">
+                <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
+                <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
+                <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+                
+                <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
+                
+                <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
+                <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
+                <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* SolicÃ­tela a su director o directora de Hacienda.</p>
 
-            <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
+                <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
 
-            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
-            
-            <div style="margin-top: 15px;">
-                <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">Â¿OlvidÃ³ sus datos?</span>
+                <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
+                
+                <div style="margin-top: 15px;">
+                    <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">Â¿OlvidÃ³ sus datos?</span>
+                </div>
+            </div>
+
+            <!-- CONTENEDOR 2: MENSAJE DE Ã‰XITO DE CORREO -->
+            <div id="recovery-success-container" style="display: none;">
+                <i class="fas fa-envelope-open-text" style="font-size: 40px; color: var(--color-vigente); margin-bottom: 20px;"></i>
+                <h2 class="modal-title" style="color: var(--color-vigente);">CORREO ENVIADO</h2>
+                <p style="font-size: 13px; color: white; margin-bottom: 25px;">Se han enviado las credenciales de acceso al correo institucional registrado en el sistema.</p>
+                <button class="btn btn-outline" style="width: 100%;" onclick="volverAlLogin()">VOLVER AL LOGIN</button>
             </div>
         </div>
-
-        <!-- CONTENEDOR 2: MENSAJE DE Ã‰XITO DE CORREO -->
+    </div>
         <!-- NOTIFICACIONES FLOTANTES (ESTILO GITHUB) -->
     <div id="notif-container" style="position: fixed; top: 20px; right: 20px; z-index: 10002; display: flex; flex-direction: column; gap: 10px;"></div>
 
@@ -2765,6 +2773,40 @@
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
+    }
+
+    function intentarLogin() {
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value.trim();
+        const msg = document.getElementById('login-error-msg');
+        
+        if (u === SYSTEM_AUTH.user && p === SYSTEM_AUTH.pass) {
+            CURRENT_ROLE = 'SUPERADMIN';
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('panel-superadmin').style.display = 'block';
+            document.getElementById('panel-admin-licencia').style.display = 'block';
+            document.getElementById('btn-cargar-raw').style.display = 'flex';
+            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SUPER ADMIN (WOLGFAN)';
+            mostrarNotificacion("BIENVENIDO SUPER ADMIN", "green");
+            actualizarUIYMapa();
+        } 
+        else if (u === "admin" && p === "admin2026") { // Admin institucional
+            CURRENT_ROLE = 'ADMIN';
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('panel-admin-licencia').style.display = 'block';
+            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-tie"></i> ADMINISTRADOR HACIENDA';
+            mostrarNotificacion("ACCESO ADMINISTRATIVO", "green");
+            actualizarUIYMapa();
+        }
+        else {
+            msg.innerText = "Credenciales incorrectas. Intente de nuevo.";
+            msg.style.display = 'block';
+        }
+    }
+
+    function cerrarSesionSeguridad() {
+        if(!confirm("Â¿Cerrar sesiÃ³n de seguridad?")) return;
+        location.reload();
     }
 
     function initSecurity() {
