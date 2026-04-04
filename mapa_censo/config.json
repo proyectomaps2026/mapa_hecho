@@ -5,5 +5,15 @@
   },
   "license": "SGF-DVDX-ObiaE3AM8v4kWlI7o7u70aiUUHOHsXH42R86_phg-MjAyNi0wNS0wNA",
   "master_token": null,
-  "store": {}
+  "store": {
+    "sec_1775334283652": {
+      "nombreSector": "PRUEBA DE GUARDADO",
+      "visible": true,
+      "isMaster": false,
+      "isExpanded": true,
+      "visibilidadPorEstatus": {},
+      "coloresPorEstatus": {},
+      "registros": []
+    }
+  }
 }
