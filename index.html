@@ -797,8 +797,8 @@
     /* ==========================================================================
        FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE (MODO VISOR)
        ========================================================================== */
-    const mapa = L.map('map', { center: [8.9950, -71.7450], zoom: 15, zoomControl: false });
-    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - COLÓN (MODO VISOR)'); 
+    const mapa = L.map('map', { center: [7.917, -72.233], zoom: 15, zoomControl: false });
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - AYACUCHO (MODO VISOR)'); 
 
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
@@ -1355,58 +1355,46 @@
     }
     
     // ==========================================================================
-    // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT
+    // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT (AUTO-LECTURA)
     // ==========================================================================
     async function sync_sys_buffer() {
-        console.log("SGF: Iniciando sincronización de búfer...");
+        console.log("SGF: Iniciando auto-lectura de licencia desde la nube...");
         
-        // --- NUEVA LÓGICA DE CARGA FORZADA ---
+        // 1. INTENTO DE AUTO-CARGA SILENCIOSA
         try {
             const autoCarga = await cargarDatosNube();
-            if (autoCarga.success && autoCarga.autoLoaded) {
-                console.log("SGF: Licencia detectada en Config. Acceso Automático concedido.");
-                eliminarBloqueoForense();
-                if (autoCarga.validacion && autoCarga.validacion.dias <= 7) {
-                    alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${autoCarga.validacion.usuario}] vencerá en ${autoCarga.validacion.dias} días.`);
+            
+            if (autoCarga.success) {
+                if (autoCarga.autoLoaded && autoCarga.validacion) {
+                    if (autoCarga.validacion.expired) {
+                        console.warn("SGF: Licencia expirada detectada en Config.");
+                        bloquearSistemaModoForense();
+                    } else {
+                        console.log("SGF: Licencia válida detectada. Acceso concedido.");
+                        eliminarBloqueoForense();
+                        if (autoCarga.validacion.dias <= 7) {
+                            mostrarBannerLicencia(autoCarga.validacion.dias);
+                        }
+                    }
+                } else {
+                    console.warn("SGF: No se encontró licencia en config.json.");
+                    bloquearSistemaModoForense();
                 }
-                return; // SALIDA EXITOSA: No se pide prompt
+            } else {
+                console.error("SGF: Fallo crítico al conectar con el servidor de datos.");
+                bloquearSistemaModoForense();
             }
         } catch (e) {
-            console.error("SGF: Error en auto-carga inicial:", e);
-        }
-
-        // Si falló la auto-carga (no hay licencia en config o el repo no es accesible), pedimos prompt
-        const licenseKey = prompt("SGF-CLOUD REQUIERE AUTENTICACIÓN\n\nIngrese su Licencia de Acceso:", "");
-
-        if (!licenseKey) {
-            bloquearSistemaPorLicencia();
-            return;
-        }
-
-        const validacion = validarLicenciaSGF(licenseKey);
-
-        if (!validacion.valid) {
-            alert("Error: Formato de licencia no válido. Acceso denegado.");
-            bloquearSistemaPorLicencia();
-            return;
-        }
-
-        // Reconstruir token en memoria solo si es válido
-        _decon_token = validacion.token;
-
-        // Cargar los datos oficialmente
-        const cargaFinal = await cargarDatosNube(_decon_token);
-        if (!cargaFinal.success) return;
-
-        // Lógica de tiempo y alertas
-        if (validacion.expired) {
+            console.error("SGF: Error en el proceso de sincronización:", e);
             bloquearSistemaModoForense();
-            return;
-        } else {
-            eliminarBloqueoForense(); 
-            if (validacion.dias <= 7) {
-                alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${validacion.usuario}] vencerá en ${validacion.dias} días.`);
-            }
+        }
+    }
+
+    function mostrarBannerLicencia(dias) {
+        const banner = document.getElementById('license-banner');
+        if (banner) {
+            banner.innerHTML = `⚠️ ATENCIÓN: LA LICENCIA DE ESTE VISOR VENCERÁ EN ${dias} DÍAS. GESTIONE SU RENOVACIÓN.`;
+            banner.style.display = 'block';
         }
     }
 
