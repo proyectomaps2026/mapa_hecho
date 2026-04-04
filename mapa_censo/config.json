@@ -1,1 +1,11 @@
-{"credentials":{"user":"admin","pass":"admin"},"license":"","store":{}}
+{
+    "license":  "SGF-TEST-2026",
+    "master_token":  "iHaoy3wdz12K0o7pICwk8bZIsCKC3MjFetZs_phg",
+    "credentials":  {
+                        "user":  "admin",
+                        "pass":  "admin"
+                    },
+    "store":  {
+
+              }
+}
