@@ -1171,11 +1171,9 @@
         const wb = XLSX.utils.book_new();
         let datosParaExcel = [];
         
-        // Recorremos los registros que están cargados en el mapa
         Object.keys(STORE).forEach(idCapa => {
             STORE[idCapa].registros.forEach(reg => {
                 const d = reg.datosGenerales;
-                // IMPORTANTE: El nombre del sector se toma del contenedor donde está el punto
                 const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
 
                 datosParaExcel.push({
@@ -1187,14 +1185,10 @@
             });
         });
 
-        // Ordenar por Sector y luego por Nombre
         datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
 
         const ws = XLSX.utils.json_to_sheet(datosParaExcel);
-        
-        // PIE DE PÁGINA LEGAL CON LOS ARTÍCULOS SOLICITADOS
         const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
-        
         const filaFinal = datosParaExcel.length + 3;
         XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
         XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
@@ -1211,79 +1205,120 @@
             return alert("No hay datos cargados para generar un respaldo.");
         }
 
-        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = docx;
+        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
+        const systemId = `SGF-CLOUD-${new Date().getFullYear()}`;
 
         const allRecords = [];
         Object.values(STORE).forEach(sector => {
             allRecords.push(...sector.registros);
         });
 
-        const tableHeader = new TableRow({
+        const tableRows = [];
+        
+        // Define header row
+        const headerRow = new TableRow({
             children: [
-                new TableCell({ text: "RIF / REGISTRO", width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RIF / REGISTRO", bold: true, size: 16 })] })] }),
-                new TableCell({ text: "RAZÓN SOCIAL", width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RAZÓN SOCIAL", bold: true, size: 16 })] })] }),
-                new TableCell({ text: "VALIDACIÓN FISCAL", width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "VALIDACIÓN FISCAL", bold: true, size: 16 })] })] }),
-                new TableCell({ text: "COORDENADAS GPS", width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "COORDENADAS GPS", bold: true, size: 16 })] })] }),
-                new TableCell({ text: "N° CENSO", width: { size: 1000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "N° CENSO", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "UBICACIÓN", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTADO FISCAL", bold: true, size: 16 })] })] }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "DOCUMENTACIÓN", bold: true, size: 16 })] })] }),
             ],
             tableHeader: true,
         });
+        tableRows.push(headerRow);
 
-        const dataRows = allRecords.map(reg => {
+        // Create data rows
+        allRecords.forEach(reg => {
             const d = reg.datosGenerales;
-            const latLng = reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
-            const coordsText = `${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
+
+            // Mapeo de Datos con lógica de precisión
+            const identidad = d["Razón Social"] || d["Nombre Comercial"] || d["Contribuyente"] || "Sin Identificar";
+            const registro = d["RIF / Registro"] || d["RIF"] || "N/A";
             
-            return new TableRow({
+            const latLng = reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
+            const coordsText = `GPS: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
+            const ubicacion = `${d["Dirección (Referencia Manual)"] || "No especificada."}\n${coordsText}`;
+            
+            const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}\nAuditoría: ${d["ID_Auditoria"] || "N/A"}`;
+            
+            const estadoFiscal = `Validación: ${d["Validación Fiscal"] || d["Estatus"] || "N/A"}\nLicencia: ${d["Situación Sin Licencia"] || "N/A"}\nPago: ${d["Semáforo de Acuerdo de Pago"] || "N/A"}`;
+
+            const dataRow = new TableRow({
                 children: [
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["RIF"] || "S/D", size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["Contribuyente"] || d["Razón Social"] || "S/D", size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["Estatus"] || "S/D", size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: coordsText, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["N° de censo"] || String(reg.idFisico), size: 16 })] })] }),
+                    new TableCell({ children: [
+                        new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 18 })] }),
+                        new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] }),
+                    ]}),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ubicacion, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 16 })] })] }),
                 ],
             });
+            tableRows.push(dataRow);
         });
 
         const table = new Table({
-            rows: [tableHeader, ...dataRows],
+            rows: tableRows,
             width: { size: 100, type: WidthType.PERCENTAGE },
-            columnWidths: [1500, 2500, 1500, 2000, 1000],
+            columnWidths: [2500, 3000, 2000, 2000],
         });
 
         const doc = new Document({
             sections: [{
+                headers: {
+                    default: new Header({
+                        children: [new Paragraph({
+                            text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO",
+                            alignment: AlignmentType.CENTER,
+                            style: "Header"
+                        })],
+                    }),
+                },
+                footers: {
+                    default: new Footer({
+                        children: [new Paragraph({
+                            alignment: AlignmentType.CENTER,
+                            children: [
+                                new TextRun(`Documento generado por SGF-CLOUD - ID Sistema: ${systemId} - Página `),
+                                new TextRun({
+                                    children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
+                                }),
+                            ],
+                        })],
+                    }),
+                },
                 children: [
-                    new Paragraph({ text: "ALCALDÍA BOLIVARIANA DEL MUNICIPIO AYACUCHO", heading: "Heading1", alignment: AlignmentType.CENTER }),
-                    new Paragraph({ text: "RESPALDO MAESTRO DE RECAUDACIÓN FISCAL", heading: "Heading2", alignment: AlignmentType.CENTER }),
-                    new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.CENTER, style: "WellSpaced" }),
-                    new Paragraph(" "), 
+                    new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.RIGHT }),
+                    new Paragraph(" "),
                     table,
                     new Paragraph(" "), 
                     new Paragraph({
                         children: [
                             new TextRun({
-                                text: "CERTIFICACIÓN LEGAL: ",
+                                text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ",
                                 bold: true,
-                                size: 18,
+                                size: 20,
+                                break: 1,
                             }),
                             new TextRun({
-                                text: "Este respaldo se emite conforme a la Ley Orgánica de la Contraloría (Arts. 7, 9, 77 y 91) y la Ley de Infogobierno. Se garantiza que la data es fidedigna y corresponde al corte realizado en la fecha indicada. Este documento digital tiene carácter de título administrativo para la fiscalización municipal de Ayacucho.",
-                                size: 18,
+                                text: "El presente documento constituye un Respaldo Maestro de Fiscalización, emitido bajo los estándares de la Ley Orgánica de la Contraloría General de la República (Arts. 7, 9, 77 y 91), la Ley de Infogobierno (Art. 4) y la Constitución de la República (Arts. 168 y 174). ",
+                                size: 20,
+                            }),
+                            new TextRun({
+                                text: "Se hace constar que la información aquí detallada (RIF, Expediente, Censo y Validación) ha sido recolectada y validada en campo por el Fiscal Responsable asignado. Este reporte goza de presunción de veracidad para efectos de recaudación municipal. Cualquier modificación no autorizada de este soporte digital o físico anula su validez ante la Dirección de Hacienda.",
+                                size: 20,
                             }),
                         ],
                         alignment: AlignmentType.JUSTIFIED,
-                        style: "WellSpaced"
                     }),
                 ],
             }],
         });
 
         Packer.toBlob(doc).then(blob => {
-            saveAs(blob, `Respaldo_Fiscal_Ayacucho_${Date.now()}.docx`);
+            saveAs(blob, `Respaldo_Maestro_Fiscal_Ayacucho_${Date.now()}.docx`);
         });
     }
-
 
     /* ==========================================================================
        MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
