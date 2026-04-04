@@ -525,6 +525,22 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Colón</div>
 
+<!-- OVERLAY DE SEGURIDAD (LOGIN VISOR) -->
+<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
+        <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
+        <h2 class="modal-title" style="margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase;">ACCESO AL VISOR FISCAL</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+        
+        <input type="text" id="login-user" class="modal-input" placeholder="Usuario Visor" style="width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold;">
+        <input type="password" id="login-pass" class="modal-input" placeholder="Clave de Acceso" style="width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold;">
+        
+        <div id="login-error-msg" style="color: #da3633; font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
+
+        <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px; background: var(--color-vigente); color: white; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase;" onclick="intentarLogin()">ACCEDER AL MAPA</button>
+    </div>
+</div>
+
 <!-- MODALES DEL FLUJO DE CAPTURA -->
 <div id="capture-modal" class="notif-modal">
     <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
@@ -713,10 +729,27 @@
        ========================================================================== */
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; 
-    const FILE_PATH = 'mapa_censo/config.json';
+    const FILE_PATH = 'config.json';
+    
+    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' };
+    let _decon_token = null; // Variable global para el token reconstruido
     
     // La llave de acceso ahora se obtiene de la variable de memoria _decon_token
     const _getAuth = () => _decon_token;
+
+    function intentarLogin() {
+        const user = document.getElementById('login-user').value.trim();
+        const pass = document.getElementById('login-pass').value.trim();
+        const errorDiv = document.getElementById('login-error-msg');
+
+        if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+            document.getElementById('login-overlay').style.display = 'none';
+            sync_sys_buffer(); // Arranca el sistema
+        } else {
+            errorDiv.innerText = "Usuario o clave incorrectos.";
+            errorDiv.style.display = 'block';
+        }
+    }
 
     /* ==========================================================================
        MÓDULO NUEVO: CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN Y MARCA DE AGUA
@@ -1330,6 +1363,21 @@
     // ==========================================================================
     // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT (AUTO-LECTURA)
     // ==========================================================================
+    async function init_config_load() {
+        try {
+            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if (res.ok) {
+                const config = await res.json();
+                if (config.credentials) SYSTEM_AUTH = config.credentials;
+                // Dejamos el login overlay visible
+            } else {
+                console.error("No se pudo cargar config.json inicial");
+            }
+        } catch (e) {
+            console.error("Error al cargar configuración:", e);
+        }
+    }
+
     async function sync_sys_buffer() {
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
@@ -1345,13 +1393,11 @@
                 if (validacion.valid) {
                     if (validacion.expired) {
                         bloquearSistemaModoForense();
-                        // Incluso si expiró, intentamos cargar datos para el respaldo Word
                         reconstruirDesdeJSON(config.store || {});
                     } else {
                         eliminarBloqueoForense();
                         _decon_token = validacion.token;
                         
-                        // Alerta preventiva si quedan 10 días o menos
                         if (validacion.dias <= 10) {
                             mostrarBannerLicencia(validacion.dias);
                         }
@@ -1359,8 +1405,19 @@
                         reconstruirDesdeJSON(config.store || {});
                     }
                 } else {
-                    bloquearSistemaPorLicencia();
+                    // Si la licencia del config no es válida, probamos con el master_token si existe
+                    if (config.master_token) {
+                        _decon_token = config.master_token.split('').reverse().join('');
+                        eliminarBloqueoForense();
+                        reconstruirDesdeJSON(config.store || {});
+                    } else {
+                        bloquearSistemaPorLicencia();
+                    }
                 }
+            } else if (config.master_token) {
+                _decon_token = config.master_token.split('').reverse().join('');
+                eliminarBloqueoForense();
+                reconstruirDesdeJSON(config.store || {});
             } else {
                 bloquearSistemaPorLicencia();
             }
@@ -1379,9 +1436,9 @@
         }
     }
 
-    // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SGF-DECONSTRUCT)
+    // ARRANQUE DIRECTO CON CARGA DE CREDENCIALES
     window.onload = () => {
-        sync_sys_buffer();
+        init_config_load();
     };
 
 </script>
