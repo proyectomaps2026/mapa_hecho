@@ -2407,7 +2407,8 @@
     
     async function cargarDatosNube() {
         // PROTOCOLO AURA: Primero intentamos cargar lo que esté pegado en el campo RAW
-        const rawInput = document.getElementById('ajuste-censo-raw').value.trim();
+        const elRaw = document.getElementById('ajuste-censo-raw');
+        const rawInput = elRaw ? elRaw.value.trim() : "";
         
         if (rawInput) {
             try {
@@ -2421,9 +2422,15 @@
                 
                 // Si es un objeto completo (con store), lo procesamos
                 const storeData = jsonParsed.store || jsonParsed;
+                
+                // Marcamos como Master al cargar manualmente desde RAW
+                for(let id in storeData) {
+                    storeData[id].isMaster = true;
+                }
+                
                 reconstruirDesdeJSON(storeData);
-                mostrarNotificacion("CENSO RAW CARGADO LOCALMENTE", "green");
-                return; // Detenemos aquí para que Aura revise antes de guardar
+                mostrarNotificacion("CENSO RAW CARGADO Y MARCADO COMO MASTER", "green");
+                return; 
             } catch (e) {
                 return alert("❌ Error al procesar RAW: " + e.message);
             }
