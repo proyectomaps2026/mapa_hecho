@@ -1139,28 +1139,75 @@
         }
     }
 
-    function guardarLicenciaDesdeBloqueo() {
-        const val = document.getElementById('lock-new-license').value.trim();
-        if(!val) return alert("Ingrese el código de licencia.");
-        const est = analizarLicenciaSGF(val);
-        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
-        
-        localStorage.setItem('sgf_license', val);
-        alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
-        document.getElementById('license-lock-overlay').style.display = 'none';
-        validarLicenciaYBloqueo();
-        cargarDatosNube();
+    function generarCadenaLicenciaSGF(token) {
+        // Formato: SGF-USUARIO-TOKEN-FECHA (Fecha en B64, 1 año desde hoy)
+        const usuario = SYSTEM_AUTH.user;
+        const fechaExp = new Date();
+        fechaExp.setFullYear(fechaExp.getFullYear() + 1);
+        const fechaStr = fechaExp.toISOString().split('T')[0].replace(/[-/]/g, '');
+        const fechaB64 = btoa(fechaStr);
+        return `SGF-${usuario}-${token}-${fechaB64}`;
     }
 
-    function actualizarLicenciaInterna() {
-        const val = document.getElementById('input-update-license').value.trim();
-        if(!val) return alert("Ingrese el código de licencia.");
-        const est = analizarLicenciaSGF(val);
-        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
+    async function guardarLicenciaDesdeBloqueo() {
+        const val = document.getElementById('lock-new-license').value.trim();
+        if(!val) return alert("Ingrese el token de activación.");
         
-        localStorage.setItem('sgf_license', val);
-        alert("Licencia Renovada con éxito.");
-        validarLicenciaYBloqueo();
+        let licFinal = val;
+        // Si no empieza con SGF-, asumimos que es un token y generamos la cadena completa
+        if(!val.startsWith('SGF-')) {
+            licFinal = generarCadenaLicenciaSGF(val);
+        }
+
+        const est = analizarLicenciaSGF(licFinal);
+        if(!est.valid || est.expired) return alert("Error: Token o Licencia Inválida.");
+        
+        localStorage.setItem('sgf_license', licFinal);
+        
+        // Disparar envío inmediato a GitHub (Motor de Escritura Reparado)
+        const datosLimpios = extraerDatosGeometria();
+        const objetoMaestro = {
+            credentials: SYSTEM_AUTH,
+            license: licFinal,
+            store: datosLimpios
+        };
+
+        const exito = await uploadToGitHub(objetoMaestro, "SGF Cloud: Activación de Licencia " + licFinal);
+        if(exito) {
+            alert("✅ Licencia Activada y Sincronizada con SGF-CLOUD.");
+            document.getElementById('license-lock-overlay').style.display = 'none';
+            validarLicenciaYBloqueo();
+            cargarDatosNube();
+        }
+    }
+
+    async function actualizarLicenciaInterna() {
+        const val = document.getElementById('input-update-license').value.trim();
+        if(!val) return alert("Ingrese el token de renovación.");
+        
+        let licFinal = val;
+        if(!val.startsWith('SGF-')) {
+            licFinal = generarCadenaLicenciaSGF(val);
+        }
+
+        const est = analizarLicenciaSGF(licFinal);
+        if(!est.valid || est.expired) return alert("Error: Token o Licencia Inválida.");
+        
+        localStorage.setItem('sgf_license', licFinal);
+
+        // Disparar envío inmediato a GitHub sin borrar el censo (sobrescribir solo campo license)
+        const datosLimpios = extraerDatosGeometria();
+        const objetoMaestro = {
+            credentials: SYSTEM_AUTH,
+            license: licFinal,
+            store: datosLimpios
+        };
+
+        const exito = await uploadToGitHub(objetoMaestro, "SGF Cloud: Renovación de Licencia " + licFinal);
+        if(exito) {
+            alert("✅ Licencia Renovada y Sincronizada.");
+            validarLicenciaYBloqueo();
+        }
     }
 
     /* ==========================================================================
@@ -1384,6 +1431,9 @@
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026');
+    
+    // CENTRAR MAPA EN AYACUCHO TÁCHIRA
+    mapa.setView([8.0310, -72.2628], 15);
 
     // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
@@ -2345,49 +2395,37 @@
         location.reload();
     }
 
-    async function guardarEnServidor() {
+    async function uploadToGitHub(objetoJSON, mensajeCommit) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
-
-        const btn = document.getElementById('btn-save-server');
-        const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
-        btn.disabled = true;
+        if(!GITHUB_TOKEN_DYNAMIC) {
+            mostrarNotificacion("ERROR: No se pudo encontrar un token válido", "red");
+            return false;
+        }
 
         try {
+            // 1. Obtener el SHA actual para evitar conflictos (409)
             let currentSha = null;
-            try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
-                }
-            } catch (err) {}
+            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
+            });
+            
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                currentSha = getData.sha;
+            }
 
-            const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                license: localStorage.getItem('sgf_license'), // <--- RESPALDO DE LICENCIA PARA EL INDEX
-                store: datosLimpios
-            };
-            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
+            // 2. Preparar el contenido (Base64)
+            const jsonStr = JSON.stringify(objetoJSON, null, 2);
             const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
             
             const payload = {
-                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
+                message: mensajeCommit || ("SGF Cloud Update " + new Date().toISOString()),
                 content: contentEncoded,
                 branch: "main"
             };
-            
             if (currentSha) payload.sha = currentSha;
 
+            // 3. Subir vía PUT
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
@@ -2398,14 +2436,59 @@
                 body: JSON.stringify(payload)
             });
 
-            if(!res.ok) throw new Error(await res.text());
+            if (res.ok) {
+                const resData = await res.json();
+                fileSha = resData.content.sha;
+                mostrarNotificacion("Sincronización Exitosa con SGF-CLOUD", "green");
+                return true;
+            } else {
+                const errText = await res.text();
+                throw new Error(`GitHub API error: ${res.status} - ${errText}`);
+            }
+        } catch (e) {
+            console.error("Upload failed:", e);
+            mostrarNotificacion("ERROR: No se pudo guardar en la nube", "red");
+            return false;
+        }
+    }
+
+    function mostrarNotificacion(mensaje, color) {
+        // Crear notificación flotante si no existe
+        let notif = document.getElementById('sgf-notificacion-flotante');
+        if (!notif) {
+            notif = document.createElement('div');
+            notif.id = 'sgf-notificacion-flotante';
+            notif.style.cssText = 'position:fixed; top:20px; right:20px; padding:15px 25px; border-radius:8px; color:white; font-weight:900; z-index:100000; font-family:Inter,sans-serif; box-shadow:0 10px 30px rgba(0,0,0,0.5); transition: 0.3s;';
+            document.body.appendChild(notif);
+        }
+        notif.style.background = color === 'red' ? 'var(--color-vencida)' : 'var(--color-vigente)';
+        notif.innerText = mensaje;
+        notif.style.display = 'block';
+        notif.style.opacity = '1';
+        
+        setTimeout(() => {
+            notif.style.opacity = '0';
+            setTimeout(() => { notif.style.display = 'none'; }, 300);
+        }, 4000);
+    }
+
+    async function guardarEnServidor() {
+        const btn = document.getElementById('btn-save-server');
+        const btnOriginalText = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
+        btn.disabled = true;
+
+        try {
+            const datosLimpios = extraerDatosGeometria();
+            const objetoMaestro = {
+                credentials: SYSTEM_AUTH,
+                license: localStorage.getItem('sgf_license'),
+                store: datosLimpios // Esto empaqueta todo el RAW del panel lateral (STORE)
+            };
             
-            const data = await res.json();
-            fileSha = data.content.sha;
-            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+            await uploadToGitHub(objetoMaestro, "SGF Cloud: Guardar Censo y RAW " + new Date().toLocaleString());
         } catch(e) {
             console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + e.message);
         } finally {
             btn.innerHTML = btnOriginalText;
             btn.disabled = false;
