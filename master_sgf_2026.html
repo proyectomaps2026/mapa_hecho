@@ -2398,23 +2398,37 @@
     async function uploadToGitHub(objetoJSON, mensajeCommit) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if(!GITHUB_TOKEN_DYNAMIC) {
+            console.error("SGF Error: No GitHub Token found in localStorage or License.");
             mostrarNotificacion("ERROR: No se pudo encontrar un token válido", "red");
             return false;
         }
 
+        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+
         try {
-            // 1. Obtener el SHA actual para evitar conflictos (409)
+            // 1. OBTENER EL SHA ACTUAL (OBLIGATORIO PARA PUT)
+            console.log(`SGF: Solicitando SHA para ${FILE_PATH}...`);
             let currentSha = null;
-            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
+            const getRes = await fetch(url, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Cache-Control': 'no-cache'
+                }
             });
             
             if (getRes.ok) {
                 const getData = await getRes.json();
                 currentSha = getData.sha;
+                console.log("SGF: SHA obtenido con éxito:", currentSha);
+            } else {
+                console.error(`SGF Error al obtener SHA: ${getRes.status} ${getRes.statusText}`);
+                if (getRes.status === 401) mostrarNotificacion("ERROR 401: Token sin permisos de escritura", "red");
+                if (getRes.status === 404) console.warn("SGF: El archivo no existe, se creará uno nuevo.");
             }
 
-            // 2. Preparar el contenido (Base64)
+            // 2. PREPARAR EL CONTENIDO (UTF-8 SAFE)
             const jsonStr = JSON.stringify(objetoJSON, null, 2);
             const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
             
@@ -2425,8 +2439,9 @@
             };
             if (currentSha) payload.sha = currentSha;
 
-            // 3. Subir vía PUT
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            // 3. SUBIR A GITHUB (PUT)
+            console.log("SGF: Enviando datos a GitHub...");
+            const res = await fetch(url, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2439,15 +2454,18 @@
             if (res.ok) {
                 const resData = await res.json();
                 fileSha = resData.content.sha;
+                console.log("SGF: GitHub respondió 200 OK. Sincronización exitosa.");
                 mostrarNotificacion("Sincronización Exitosa con SGF-CLOUD", "green");
                 return true;
             } else {
                 const errText = await res.text();
-                throw new Error(`GitHub API error: ${res.status} - ${errText}`);
+                console.error(`SGF Error GitHub (Status ${res.status}):`, errText);
+                mostrarNotificacion(`ERROR ${res.status}: No se pudo guardar en la nube`, "red");
+                throw new Error(`GitHub API error: ${res.status}`);
             }
         } catch (e) {
-            console.error("Upload failed:", e);
-            mostrarNotificacion("ERROR: No se pudo guardar en la nube", "red");
+            console.error("SGF Critical Upload Error:", e);
+            mostrarNotificacion("ERROR CRÍTICO: Fallo de comunicación con GitHub", "red");
             return false;
         }
     }
