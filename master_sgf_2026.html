@@ -778,7 +778,7 @@
     <p style="color: #a5b0bf; font-size: 13px; margin-bottom: 30px; text-align: center;">Su período de acceso al Sistema de Control Fiscal ha finalizado.<br>Actualice su Licencia o genere un respaldo de sus datos.</p>
     
     <div style="width: 400px;">
-        <input type="password" id="lock-new-license" class="modal-input" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
+        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional">
         <button class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 15px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
         <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
     </div>
@@ -797,8 +797,8 @@
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
             
             <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
-            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 10px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
-            <input type="password" id="login-pass" class="modal-input" placeholder="SGF-CLOUD-XXXX">
+            <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
+            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
 
             <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
 
@@ -923,7 +923,7 @@
         </div>
         <div id="ajustes-licencia" style="display: none; padding-top: 5px;">
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
-            <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="SGF-CLOUD: Ingrese la nueva clave de acceso proporcionada por su director o directora de Hacienda.">
+            <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
             <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelRespaldo()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
@@ -1076,29 +1076,7 @@
         }
 
         // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
-        let isLicenseLogin = pass.startsWith('SGF-');
-        let authSuccess = false;
-        let licenseObj = null;
-
-        // Si intenta entrar pegando directamente la licencia en el campo clave
-        if(isLicenseLogin) {
-            licenseObj = analizarLicenciaSGF(pass);
-            if(licenseObj.valid && !licenseObj.expired && licenseObj.usuario === user) {
-                authSuccess = true;
-                localStorage.setItem('sgf_license', pass);
-            }
-        } else if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
-            // Si entra con usuario/clave tradicional, busca si ya tiene licencia guardada
-            const storedLic = localStorage.getItem('sgf_license');
-            if(storedLic) {
-                licenseObj = analizarLicenciaSGF(storedLic);
-                if(licenseObj.valid && !licenseObj.expired) {
-                    authSuccess = true;
-                }
-            }
-        }
-
-        if (authSuccess) {
+        if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
@@ -1115,7 +1093,7 @@
             return;
         }
 
-        errorDiv.innerText = "Licencia Inválida o Vencida. Solicite una nueva a la Dirección de Hacienda.";
+        errorDiv.innerText = "Usuario o clave incorrectos.";
         errorDiv.style.display = 'block';
     }
 
@@ -2339,24 +2317,6 @@
     }
 
     function initSecurity() {
-        const savedLicense = localStorage.getItem('sgf_license');
-        
-        // AUTO-LOGIN PARA EL ADMINISTRADOR SI TIENE LICENCIA VÁLIDA
-        if(savedLicense) {
-            const parsed = analizarLicenciaSGF(savedLicense);
-            if(parsed.valid && !parsed.expired) {
-                // Auto-rellenar y lanzar
-                document.getElementById('login-user').value = parsed.usuario;
-                document.getElementById('login-pass').value = savedLicense;
-                intentarLogin(); 
-                return;
-            } else {
-                // Si la licencia está vencida, limpiamos para que el usuario pueda meter una nueva sin fallos visuales.
-                document.getElementById('login-user').value = '';
-                document.getElementById('login-pass').value = '';
-            }
-        }
-        
         document.getElementById('login-overlay').style.display = 'flex';
     }
     
