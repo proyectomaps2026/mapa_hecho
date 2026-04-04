@@ -974,7 +974,7 @@
 
     // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_censo'; 
+    const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
@@ -1001,6 +1001,9 @@
         } catch(e) {
             return { valid: false, expired: true, days: 0 };
         }
+
+        // LIMPIEZA DE GUIONES: Para que "2026-07-02" se vuelva "20260702"
+        dateStr = dateStr.replace(/[-/]/g, '');
 
         if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
         
@@ -2033,7 +2036,7 @@
         btn.disabled = true;
 
         try {
-            const res = await fetch(`https://api.github.com/repos/proyectomaps2026/mapa_censo`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
                 headers: { 'Authorization': 'token ' + rawToken }
             });
 
@@ -2043,7 +2046,7 @@
                 alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
                 await cargarDatosNube(); 
             } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio 'proyectomaps2026/mapa_censo'.`);
+                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
             }
         } catch(e) {
             console.error(e);
@@ -2062,7 +2065,7 @@
         }
 
         try {
-            const res = await fetch(`https://api.github.com/repos/proyectomaps2026/mapa_censo/contents/config.json`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
             });
             if (res.ok) {
@@ -2100,7 +2103,7 @@
         try {
             let currentSha = null;
             try {
-                const getRes = await fetch(`https://api.github.com/repos/proyectomaps2026/mapa_censo/contents/config.json`, {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2130,7 +2133,7 @@
             
             if (currentSha) payload.sha = currentSha;
 
-            const res = await fetch(`https://api.github.com/repos/proyectomaps2026/mapa_censo/contents/config.json`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
