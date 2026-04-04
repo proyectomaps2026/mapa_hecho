@@ -694,21 +694,72 @@
         });
 
         const forensicOverlay = document.createElement('div');
-        forensicOverlay.id = 'forensic-overlay'; // ID para manejo
+        forensicOverlay.id = 'forensic-overlay'; 
         forensicOverlay.innerHTML = `
-            <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999998; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center;">
+            <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999998; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center;">
                 <div style="background: #fff; color: #111; padding: 40px; border-radius: 12px; max-width: 500px; width: 90%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); border-top: 8px solid var(--color-vencida);">
                     <i class="fas fa-lock" style="font-size: 40px; color: var(--color-vencida); margin-bottom: 20px;"></i>
                     <h1 style="margin:0 0 10px; font-size: 20px; font-weight: 900;">LICENCIA SGF EXPIRADA</h1>
-                    <p style="color: #666; font-size: 14px; margin-bottom: 30px;">El acceso a la plataforma ha sido suspendido. Aún puede acceder a la última copia de seguridad de sus datos.</p>
-                    <button onclick="descargarRespaldoTotalWord()" style="width:100%; padding: 18px; font-size: 15px; font-weight: 900; color: #fff; background: var(--color-vencida); border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
-                        ⚠️ DESCARGAR RESPALDO ÚLTIMO (WORD)
+                    <p style="color: #666; font-size: 14px; margin-bottom: 30px;">El acceso a la plataforma ha sido suspendido. Ingrese una licencia válida o descargue un respaldo.</p>
+                    
+                    <input type="text" id="lock-new-license-visor" placeholder="SGF-AURA-TOKEN..." style="width:100%; padding:15px; margin-bottom:15px; border:2px solid #ddd; border-radius:8px; font-weight:bold; text-align:center;">
+                    
+                    <button onclick="activarLicenciaVisor()" id="btn-activar-visor" style="width:100%; padding: 18px; font-size: 15px; font-weight: 900; color: #fff; background: var(--color-vencida); border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-bottom:10px;">
+                        ACTIVAR NUEVA LICENCIA
+                    </button>
+                    
+                    <button onclick="descargarRespaldoTotalWord()" style="width:100%; padding: 12px; font-size: 12px; font-weight: 900; color: #666; background: #eee; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase;">
+                        Descargar Respaldo Último (Word)
                     </button>
                 </div>
             </div>
         `;
         document.body.appendChild(forensicOverlay);
         window.stop();
+    }
+
+    async function activarLicenciaVisor() {
+        const val = document.getElementById('lock-new-license-visor').value.trim();
+        if(!val) return alert("Ingrese el token de activación.");
+        
+        const btn = document.getElementById('btn-activar-visor');
+        const originalText = btn.innerText;
+        btn.innerText = "ACTIVANDO...";
+        btn.disabled = true;
+
+        try {
+            // 1. OBTENER CONFIG ACTUAL
+            const resGet = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if(!resGet.ok) throw new Error("Fallo de red");
+            const configActual = await resGet.json();
+
+            // 2. ACTUALIZAR LICENCIA (EN CONFIG)
+            configActual.license = val;
+
+            // 3. ENVIAR A TRAVÉS DE LA API DE VERCEL
+            const resPost = await fetch('/api/guardar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    objetoJSON: configActual,
+                    mensajeCommit: "SGF Visor: Activación de Licencia desde Bloqueo"
+                })
+            });
+
+            if (resPost.ok) {
+                alert("✅ Licencia Activada con éxito. El sistema se reiniciará.");
+                location.reload();
+            } else {
+                const err = await resPost.json();
+                throw new Error(err.error || "Error en el servidor");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error de activación: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
     }
 
     function eliminarBloqueoForense() {
