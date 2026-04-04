@@ -2529,17 +2529,21 @@
         btn.disabled = true;
 
         try {
-            // PROTOCOLO VERCEL: Obtener config actual para no pisar campos
+            // 1. LEER LO QUE HAY EN LA NUBE (LICENCIA SAGRADA)
             const resGet = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             let configActual = { credentials: SYSTEM_AUTH, license: localStorage.getItem('sgf_license'), store: {} };
+            
             if (resGet.ok) {
                 configActual = await resGet.json();
             }
 
+            // 2. ACTUALIZAR DATA DEL MAPA (SIN TOCAR LA LICENCIA QUE YA LEÍMOS)
             const datosLimpios = extraerDatosGeometria();
             configActual.store = datosLimpios;
             
-            await uploadToGitHub(configActual, "SGF Cloud: Guardar Censo y RAW " + new Date().toLocaleString());
+            // 3. SUBIR OBJETO COMPLETO ACTUALIZADO (MANTENIENDO LICENCIA Y CREDENCIALES)
+            await uploadToGitHub(configActual, "SGF Cloud: Sincronización Censo y RAW");
+            
         } catch(e) {
             console.error(e);
             mostrarNotificacion("ERROR AL GUARDAR: " + e.message, "red");
