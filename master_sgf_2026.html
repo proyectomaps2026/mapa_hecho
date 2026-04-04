@@ -1520,11 +1520,11 @@
                         <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
                         ${!sectorData.isMaster ? `
                         <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
-                        <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
+                        <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
                         ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
                     </div>
                 </div>
-                <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded || idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+                <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
 
             for(let estatus in gruposPorEstatus) {
                 const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
@@ -2261,6 +2261,7 @@
                 visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
                 coloresPorEstatus: sec.coloresPorEstatus || {},
                 colorPrincipal: sec.colorPrincipal || '#00f2ff',
+                isExpanded: true, // Forzamos isExpanded=true para la carga inicial
                 registros: []
             };
 
