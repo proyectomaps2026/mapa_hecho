@@ -1153,32 +1153,46 @@
         const val = document.getElementById('lock-new-license').value.trim();
         if(!val) return alert("Ingrese el token de activación.");
         
-        let licFinal = val;
-        // Si no empieza con SGF-, asumimos que es un token y generamos la cadena completa
-        if(!val.startsWith('SGF-')) {
-            licFinal = generarCadenaLicenciaSGF(val);
-        }
+        const btn = document.querySelector('#license-lock-overlay button');
+        const originalText = btn.innerText;
+        btn.innerText = "ACTIVANDO...";
+        btn.disabled = true;
 
-        const est = analizarLicenciaSGF(licFinal);
-        if(!est.valid || est.expired) return alert("Error: Token o Licencia Inválida.");
-        
-        localStorage.setItem('sgf_license', licFinal);
-        
-        // Disparar envío inmediato a GitHub (Motor de Escritura Reparado)
-        const datosLimpios = extraerDatosGeometria();
-        const objetoMaestro = {
-            credentials: SYSTEM_AUTH,
-            license: licFinal,
-            master_token: localStorage.getItem('master_token_revert'),
-            store: datosLimpios
-        };
+        try {
+            // 1. OBTENER CONFIG ACTUAL (PROTOCOL: NO BORRAR CENSO)
+            const urlConfig = `${FILE_PATH}?t=${Date.now()}`;
+            const resGet = await fetch(urlConfig);
+            
+            let configActual = { credentials: SYSTEM_AUTH, store: extraerDatosGeometria() };
+            if (resGet.ok) {
+                configActual = await resGet.json();
+            }
 
-        const exito = await uploadToGitHub(objetoMaestro, "SGF Cloud: Activación de Licencia " + licFinal);
-        if(exito) {
-            alert("✅ Licencia Activada y Sincronizada con SGF-CLOUD.");
-            document.getElementById('license-lock-overlay').style.display = 'none';
-            validarLicenciaYBloqueo();
-            cargarDatosNube();
+            // 2. PREPARAR LICENCIA
+            let licFinal = val;
+            if(!val.startsWith('SGF-')) {
+                licFinal = generarCadenaLicenciaSGF(val);
+            }
+
+            const est = analizarLicenciaSGF(licFinal);
+            if(!est.valid || est.expired) throw new Error("Token o Licencia Inválida.");
+            
+            configActual.license = licFinal;
+
+            // 3. SUBIR A TRAVÉS DE LA API DE VERCEL (SEGURIDAD ETERNA)
+            const exito = await uploadToGitHub(configActual, "SGF Cloud: Activación de Licencia desde Bloqueo");
+            
+            if(exito) {
+                localStorage.setItem('sgf_license', licFinal);
+                alert("✅ Licencia Activada con éxito. El sistema se reiniciará.");
+                location.reload(); // REFRESCAR PÁGINA PARA LIBERAR EL MAPA
+            }
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error de activación: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
     }
 
@@ -2443,65 +2457,22 @@
     }
 
     async function uploadToGitHub(objetoJSON, mensajeCommit) {
-        const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if(!GITHUB_TOKEN_DYNAMIC) {
-            console.error("SGF Error: No GitHub Token found.");
-            mostrarNotificacion("ERROR: No hay token de acceso", "red");
-            return false;
-        }
-
-        const url = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`;
+        // AHORA USAMOS LA API ROUTE DE VERCEL PARA SEGURIDAD ETERNA
+        const url = '/api/guardar';
 
         try {
-            // 1. OBTENER EL SHA ACTUAL (OBLIGATORIO PARA PUT)
-            let currentSha = null;
-            const getRes = await fetch(url, {
-                method: 'GET',
-                headers: { 
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Cache-Control': 'no-cache'
-                }
-            });
-            
-            if (getRes.ok) {
-                const getData = await getRes.json();
-                currentSha = getData.sha;
-            } else if (getRes.status === 401) {
-                mostrarNotificacion(`ERROR 401: Token Inválido`, "red");
-                return false;
-            } else if (getRes.status === 404) {
-                console.warn("SGF: El archivo no existe, se creará uno nuevo.");
-            } else {
-                mostrarNotificacion(`ERROR ${getRes.status}: Fallo de comunicación`, "red");
-                return false;
-            }
-
-            // 2. PREPARAR EL CONTENIDO (UTF-8 SAFE)
-            const jsonStr = JSON.stringify(objetoJSON, null, 2);
-            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
-            
-            const payload = {
-                message: mensajeCommit || ("SGF Cloud Update " + new Date().toISOString()),
-                content: contentEncoded,
-                branch: "main"
-            };
-            if (currentSha) payload.sha = currentSha;
-
-            // 3. SUBIR A GITHUB (PUT)
             const res = await fetch(url, {
-                method: 'PUT',
+                method: 'POST',
                 headers: {
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    objetoJSON,
+                    mensajeCommit
+                })
             });
 
             if (res.ok) {
-                const resData = await res.json();
-                fileSha = resData.content.sha;
                 mostrarNotificacion("SINCRO EXITOSA: DATA EN LA NUBE", "green");
                 return true;
             } else {
@@ -2509,15 +2480,16 @@
                 const status = res.status;
                 let msg = `ERROR ${status}`;
                 if (status === 409) msg = "ERROR 409: SHA Desactualizado";
-                if (status === 401) msg = "ERROR 401: Sin Permisos";
+                if (status === 401) msg = "ERROR 401: Token Inválido";
                 if (status === 404) msg = "ERROR 404: Ruta no encontrada";
+                if (errData.error) msg = `ERROR: ${errData.error}`;
                 
                 mostrarNotificacion(msg, "red");
                 return false;
             }
         } catch (e) {
-            console.error("SGF Critical Upload Error:", e);
-            mostrarNotificacion("ERROR CRÍTICO: Fallo de red", "red");
+            console.error("SGF Critical API Error:", e);
+            mostrarNotificacion("ERROR CRÍTICO: Fallo de red con Vercel", "red");
             return false;
         }
     }
