@@ -1098,8 +1098,27 @@
        FASE 7: MOTOR DE LICENCIA Y CARGA DE DATOS (SGF-DECONSTRUCT)
        ========================================================================== */
     async function cargarDatosNube(token = null) {
-        // El visor primero intenta leer config.json de forma pública para ver si hay una licencia cargada
-        // Si no se provee token, intentamos una carga anónima (funciona si el repo es público o vía raw)
+        // 1. INTENTO DE CARGA DIRECTA (Vía Servidor Web - Más rápido y sin tokens)
+        if (!token) {
+            try {
+                const resWeb = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+                if (resWeb.ok) {
+                    const jsonParsed = await resWeb.json();
+                    if (jsonParsed.license) {
+                        const validacion = validarLicenciaSGF(jsonParsed.license);
+                        if (validacion.valid && !validacion.expired) {
+                            _decon_token = validacion.token;
+                            reconstruirDesdeJSON(jsonParsed.store || {});
+                            return { success: true, autoLoaded: true, validacion };
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("SGF: Intento de carga directa falló, procediendo a API...");
+            }
+        }
+
+        // 2. INTENTO VÍA GITHUB API (Si lo anterior falla o si ya tenemos token)
         const fetchUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`;
         const headers = token ? { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' } 
                               : { 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' };
@@ -1108,7 +1127,7 @@
             const res = await fetch(fetchUrl, { headers });
 
             if (!res.ok) {
-                if (!token) return { success: false, autoLoaded: false }; // Silencioso si es el intento automático
+                if (!token) return { success: false, autoLoaded: false }; 
                 bloquearSistemaPorLicencia();
                 return { success: false, autoLoaded: false };
             }
@@ -1117,12 +1136,10 @@
             const decodedContent = decodeURIComponent(escape(atob(data.content)));
             const jsonParsed = JSON.parse(decodedContent);
             
-            // Si cargamos con éxito y hay una licencia en el config, la usamos para reconstruir el token si no teníamos uno
             if (jsonParsed.license && !token) {
                 const validacion = validarLicenciaSGF(jsonParsed.license);
                 if (validacion.valid && !validacion.expired) {
                     _decon_token = validacion.token;
-                    // Recargamos ahora con el token oficial para asegurar acceso completo a otros archivos si fuera necesario
                     reconstruirDesdeJSON(jsonParsed.store || {});
                     return { success: true, autoLoaded: true, validacion };
                 }
