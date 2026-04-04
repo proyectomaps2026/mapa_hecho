@@ -545,6 +545,13 @@
     </div>
     
     <div class="tools-container">
+        <button class="btn tool-btn" id="btn-draw-marker" title="Dibujar Punto de Análisis" onclick="activarHerramienta('punto')">
+            <i class="fas fa-map-marker-alt"></i>
+        </button>
+        <button class="btn tool-btn" id="btn-draw-poly" title="Dibujar Área de Análisis" onclick="activarHerramienta('poligono')">
+            <i class="fas fa-draw-polygon"></i>
+        </button>
+
         <!-- BOTÓN GENERAR REPORTE (CON NUEVO SVG DE CÁMARA PROFESIONAL) -->
         <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -602,11 +609,41 @@
         const heightThreshold = window.outerHeight - window.innerHeight > 160;
         if(widthThreshold || heightThreshold) {
             console.clear();
-            _decon_token = null; // Purga inmediata del token de la memoria
+            _decon_token = null; // Purga inmediata del token de la memoria en caso de intrusión
             document.getElementById('map').style.display = 'none';
             bloquearSistemaPorLicencia();
         }
     }, 1000);
+
+    // Función para validar el formato de licencia SGF-USUARIO-TOKEN-FECHA
+    function validarLicenciaSGF(licencia) {
+        if (!licencia) return { valid: false, expired: true };
+        const parts = licencia.split('-');
+        // Formato esperado: SGF-USUARIO-TOKEN-FECHA (donde FECHA puede tener guiones)
+        if (parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true };
+
+        const usuario = parts[1];
+        const tokenRev = parts[2];
+        const fechaExpStr = parts.slice(3).join('-'); // Reconstruye la fecha (YYYY-MM-DD)
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fechaVence = new Date(fechaExpStr + 'T00:00:00');
+        fechaVence.setHours(0, 0, 0, 0);
+
+        if (isNaN(fechaVence.getTime())) return { valid: false, expired: true };
+
+        const diffTime = fechaVence.getTime() - hoy.getTime();
+        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        return {
+            valid: true,
+            expired: diasRestantes < 0,
+            dias: diasRestantes,
+            token: tokenRev.split('').reverse().join(''),
+            usuario: usuario
+        };
+    }
 
     // Función global para bloquear por FALTA DE ACCESO o ERROR DE LECTURA DE DATOS
     function bloquearSistemaPorLicencia() {
@@ -641,6 +678,7 @@
         });
 
         const forensicOverlay = document.createElement('div');
+        forensicOverlay.id = 'forensic-overlay'; // ID para manejo
         forensicOverlay.innerHTML = `
             <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999998; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center;">
                 <div style="background: #fff; color: #111; padding: 40px; border-radius: 12px; max-width: 500px; width: 90%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); border-top: 8px solid var(--color-vencida);">
@@ -655,6 +693,14 @@
         `;
         document.body.appendChild(forensicOverlay);
         window.stop();
+    }
+
+    function eliminarBloqueoForense() {
+        document.querySelectorAll('.ui-layer, #map').forEach(el => {
+            el.style.filter = 'none';
+        });
+        const overlay = document.getElementById('forensic-overlay');
+        if (overlay) overlay.remove();
     }
 </script>
 
@@ -963,9 +1009,12 @@
                 </div>`;
             }
 
+            // --- MEJORA: Botón de Acta Condicional ---
             const licenciaActiva = registro.datosGenerales["Licencia Act. Econ."] && registro.datosGenerales["Licencia Act. Econ."].trim() !== "";
-            if (licenciaActiva) {
-                html += `<button class="btn-popup-action btn-save" style="margin-top: 15px; background: #0d6efd;" onclick="generarActaWord('${idSector}', '${idFisico}')">📄 GENERAR ACTA DE RESPALDO</button>`;
+            const licExp = document.getElementById('forensic-overlay'); // Detecta si la licencia global expiró
+
+            if (licenciaActiva || licExp) {
+                html += `<button class="btn-popup-action btn-save" style="margin-top: 15px; background: #0d6efd;" onclick="generarActaWord('${idSector}', '${idFisico}')">📄 GENERAR ACTA DE RESPALDO (ART. 7, 9, 77, 91)</button>`;
             }
             html += `</div>`;
         }
@@ -978,6 +1027,45 @@
        FASE 4: FUNCIONES DE SISTEMA (MODO VISOR)
        ========================================================================== */
     
+    function activarHerramienta(tipo) {
+        if(!capaActivaId) {
+            // Si no hay capa activa, buscamos la primera disponible o creamos una temporal
+            const ids = Object.keys(STORE);
+            if(ids.length > 0) capaActivaId = ids[0];
+            else return alert("⚠️ SELECCIÓN REQUERIDA: Seleccione un Sector en el panel izquierdo.");
+        }
+        tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
+    }
+
+    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
+    const herramientaPoligono = new L.Draw.Polygon(mapa, { 
+        shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
+    });
+
+    mapa.on(L.Draw.Event.CREATED, (evento) => {
+        const idFisico = L.stamp(evento.layer);
+        
+        const nuevoRegistro = {
+            idFisico: idFisico,
+            tipoGeometria: evento.layerType,
+            capaLeaflet: evento.layer,
+            datosGenerales: { 
+                "Contribuyente": "MARCADOR TEMPORAL (NO SE GUARDARÁ)", 
+                "Estatus": "CENSO / NUEVO"
+            }
+        };
+
+        if(!STORE[capaActivaId]) {
+            capaActivaId = "sector_temporal_" + Date.now();
+            STORE[capaActivaId] = { nombreSector: "ANÁLISIS TEMPORAL", registros: [] };
+        }
+        
+        STORE[capaActivaId].registros.push(nuevoRegistro);
+        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
+        actualizarUIYMapa();
+        abrirPopupDinamico(capaActivaId, idFisico);
+    });
+
     function ejecutarMotorBusqueda() {
         textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase();
         actualizarUIYMapa();
@@ -1249,55 +1337,44 @@
             return;
         }
 
-        const parts = licenseKey.split('-');
-        if (parts.length < 4 || parts[0] !== 'SGF') {
+        const validacion = validarLicenciaSGF(licenseKey);
+
+        if (!validacion.valid) {
             alert("Error: Formato de licencia no válido. Acceso denegado.");
             bloquearSistemaPorLicencia();
             return;
         }
 
-        const user = parts[1];
-        const tokenRev = parts[2];
-        const fechaExpStr = parts.slice(3).join('-');
+        // Reconstruir token en memoria solo si es válido
+        _decon_token = validacion.token;
 
-        // 1. Reconstruir token en memoria
-        _decon_token = tokenRev.split('').reverse().join('');
-
-        // 2. Cargar los datos primero para asegurar que el respaldo funcione
+        // Cargar los datos primero para asegurar que el respaldo funcione
         const cargaExitosa = await cargarDatosNube(_decon_token);
-        if (!cargaExitosa) {
-            // Si la carga falla, el bloqueo ya fue activado por cargarDatosNube()
-            return;
-        }
+        if (!cargaExitosa) return;
 
-        // 3. Lógica de tiempo y alertas
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-
-        const fechaVence = new Date(fechaExpStr + 'T00:00:00'); // Asegura la fecha local
-        fechaVence.setHours(0, 0, 0, 0);
-
-        const diffTime = fechaVence.getTime() - hoy.getTime();
-        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diasRestantes < 0) {
+        // Lógica de tiempo y alertas
+        if (validacion.expired) {
             bloquearSistemaModoForense();
             return;
-        } else if (diasRestantes <= 7) {
-            alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${user}] vencerá el [${fechaVence.toLocaleDateString('es-VE')}]. Gestione la renovación con el Administrador.`);
+        } else {
+            eliminarBloqueoForense(); // Asegura que se vea si la licencia está bien
+            if (validacion.dias <= 7) {
+                alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${validacion.usuario}] vencerá en ${validacion.dias} días. Gestione la renovación.`);
+            }
         }
-        
-        // Si la licencia es válida, el sistema ya está cargado y funcionando.
     }
 
     // ARRANQUE DIRECTO CON VALIDACIÓN DE LICENCIA (SGF-DECONSTRUCT)
     window.onload = () => {
-        // Ocultar herramientas de modificación ya que es modo visor
-        document.getElementById('btn-draw-marker').style.display = 'none';
-        document.getElementById('btn-draw-poly').style.display = 'none';
-        document.getElementById('btn-save-server').style.display = 'none';
-        document.querySelector('.sidebar-footer button').style.display = 'none'; // Oculta "Crear Sector"
-        document.getElementById('toggle-readonly').parentElement.parentElement.style.display = 'none';
+        // En index.html (Visor), el botón de guardado no existe para proteger la base de datos
+        document.getElementById('btn-save-server')?.remove();
+        
+        // Pero permitimos herramientas de dibujo temporales para análisis visual
+        // El usuario puede crear puntos o polígonos, pero no se guardarán en la nube
+        const bMarker = document.getElementById('btn-draw-marker');
+        const bPoly = document.getElementById('btn-draw-poly');
+        if(bMarker) bMarker.style.display = 'flex';
+        if(bPoly) bPoly.style.display = 'flex';
 
         sync_sys_buffer();
     };
