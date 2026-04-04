@@ -2471,53 +2471,60 @@
             try {
                 let storeData = {};
                 
-                // 1. DETECTOR DE GOOGLE SHEETS
-                if (rawInput.includes("docs.google.com/spreadsheets")) {
-                    mostrarNotificacion("PROCESANDO GOOGLE SHEETS...", "orange");
-                    let csvUrl = rawInput;
-                    if (csvUrl.includes("/edit")) {
-                        csvUrl = csvUrl.replace(/\/edit.*$/, "/export?format=csv");
-                    }
-                    const res = await fetch(csvUrl);
-                    const csvText = await res.text();
-                    storeData = convertirCSVStore(csvText);
-                } 
-                // 2. DETECTOR DE URL (GITHUB RAW / OTROS)
-                else if (rawInput.startsWith('http')) {
-                    mostrarNotificacion("DESCARGANDO JSON...", "orange");
-                    const res = await fetch(rawInput);
-                    const json = await res.json();
-                    storeData = json.store || json;
-                } 
-                // 3. TEXTO DIRECTO (JSON O COORDENADAS)
-                else {
-                    try {
-                        const json = JSON.parse(rawInput);
+                // 1. PRIORIDAD: DETECTOR DE URL (GOOGLE SHEETS / GITHUB RAW)
+                if (rawInput.toLowerCase().startsWith('http')) {
+                    if (rawInput.includes("docs.google.com/spreadsheets")) {
+                        mostrarNotificacion("CONECTANDO A GOOGLE SHEETS...", "orange");
+                        let csvUrl = rawInput;
+                        if (csvUrl.includes("/edit")) {
+                            csvUrl = csvUrl.replace(/\/edit.*$/, "/export?format=csv");
+                        }
+                        const res = await fetch(csvUrl);
+                        const csvText = await res.text();
+                        storeData = convertirCSVStore(csvText);
+                    } else {
+                        mostrarNotificacion("DESCARGANDO RAW...", "orange");
+                        const res = await fetch(rawInput);
+                        const json = await res.json();
                         storeData = json.store || json;
-                    } catch(e) {
-                        // Si falla JSON, intentamos extraer coordenadas de texto sucio
-                        mostrarNotificacion("EXTRAYENDO COORDENADAS...", "orange");
-                        storeData = extraerCoordenadasDeTexto(rawInput);
+                    }
+                } 
+                // 2. PRIORIDAD: EXTRACCIÓN DE TEXTO SUCIO (REGEX) - No rompe si hay palabras
+                else {
+                    // Primero intentamos extraer coordenadas si hay números con comas/puntos
+                    const extraidos = extraerCoordenadasDeTexto(rawInput);
+                    
+                    if (extraidos["IMPORT_RAW"].registros.length > 0) {
+                        mostrarNotificacion("LIMPIANDO Y EXTRAYENDO TEXTO...", "orange");
+                        storeData = extraidos;
+                    } else {
+                        // 3. ÚLTIMO RECURSO: INTENTAR JSON.PARSE
+                        try {
+                            const json = JSON.parse(rawInput);
+                            storeData = json.store || json;
+                        } catch(e) {
+                            throw new Error("No se detectaron coordenadas válidas ni formato JSON correcto.");
+                        }
                     }
                 }
                 
-                // VALIDACIÓN Y AUTO-MASTER
-                if (Object.keys(storeData).length === 0) throw new Error("No se detectaron datos válidos.");
+                // VALIDACIÓN FINAL Y AUTO-MASTER
+                if (Object.keys(storeData).length === 0) throw new Error("Datos vacíos o incompatibles.");
                 
                 for(let id in storeData) {
                     storeData[id].isMaster = true;
                 }
                 
                 reconstruirDesdeJSON(storeData);
-                mostrarNotificacion("TODO-EN-UNO: CARGA EXITOSA (MASTER)", "green");
+                mostrarNotificacion("SISTEMA TODO-EN-UNO: CARGA EXITOSA", "green");
                 return; 
             } catch (e) {
-                console.error(e);
-                return alert("❌ Error en Carga Inteligente: " + e.message);
+                console.error("SGF Loader Error:", e);
+                return alert("❌ Error de Carga: " + e.message);
             }
         }
 
-        // Si no hay RAW, CARGA DESDE NUBE
+        // Si no hay RAW, CARGA NORMAL DESDE NUBE (CONFIG.JSON)
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
@@ -2525,35 +2532,43 @@
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 if (jsonParsed.license) localStorage.setItem('sgf_license', jsonParsed.license);
                 reconstruirDesdeJSON(jsonParsed.store || {});
-                mostrarNotificacion("DATOS SINCRONIZADOS", "green");
+                mostrarNotificacion("NUBE SINCRONIZADA", "green");
             }
         } catch (e) {
             mostrarNotificacion("ERROR DE RED", "red");
         }
     }
 
-    // MOTOR DE EXTRACCIÓN TOLERANTE A ERRORES (REGREX)
+    // MOTOR DE EXTRACCIÓN ULTRA-TOLERANTE (IGNORA PALABRAS COMO 'COORDENADA', 'LAT', ETC)
     function extraerCoordenadasDeTexto(texto) {
         const lineas = texto.split('\n');
         const registros = [];
-        // Regex busca pares de números que parezcan lat/lng (-?90 to 90, -?180 to 180)
-        const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/g;
         
-        lineas.forEach((linea, index) => {
+        // Regex mejorado: Busca pares de números decimales separados por coma o espacio
+        // Ignora cualquier texto que esté alrededor
+        const regexCoord = /(-?\d+\.\d+)\s*[,;\s]\s*(-?\d+\.\d+)/g;
+        
+        lineas.forEach((linea) => {
             let match;
-            while ((match = regex.exec(linea)) !== null) {
-                registros.push({
-                    idFisico: Date.now() + Math.random(),
-                    tipoGeometria: 'marker',
-                    coords: { lat: parseFloat(match[1]), lng: parseFloat(match[2]) },
-                    datosGenerales: { 
-                        "Contribuyente": "PUNTO EXTRAÍDO " + (registros.length + 1),
-                        "Estatus": "VIGENTE",
-                        "Nota": linea.trim()
-                    },
-                    visibleIndividual: true,
-                    camposOcultos: []
-                });
+            while ((match = regexCoord.exec(linea)) !== null) {
+                const lat = parseFloat(match[1]);
+                const lng = parseFloat(match[2]);
+                
+                // Validación básica de rango de coordenadas
+                if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+                    registros.push({
+                        idFisico: Date.now() + Math.random(),
+                        tipoGeometria: 'marker',
+                        coords: { lat, lng },
+                        datosGenerales: { 
+                            "Contribuyente": "PUNTO EXTRAÍDO " + (registros.length + 1),
+                            "Estatus": "VIGENTE",
+                            "Referencia": linea.trim().substring(0, 50)
+                        },
+                        visibleIndividual: true,
+                        camposOcultos: []
+                    });
+                }
             }
         });
 
