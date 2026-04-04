@@ -796,11 +796,13 @@
             
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
             
-            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional (SGF-CLOUD)</label>
-            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 10px; text-align: left; font-weight: bold;">Solicítela a su director o directora de Hacienda.</p>
-            <input type="password" id="login-pass" class="modal-input" placeholder="Pegue la licencia: SGF-CLOUD-XXXX">
+            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
+            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 10px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
+            <input type="password" id="login-pass" class="modal-input" placeholder="SGF-CLOUD-XXXX">
 
-            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">AUTENTICAR</button>
+            <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
+
+            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
             
             <div style="margin-top: 15px;">
                 <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
@@ -1050,6 +1052,8 @@
     function intentarLogin() {
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
+        const errorDiv = document.getElementById('login-error-msg');
+        errorDiv.style.display = 'none';
 
         // 1. JERARQUÍA MAESTRA (SUPER ADMIN WOLGFAN)
         if (user === 'Ing_Wolgfan' && pass === 'SGF-AURA-2026-SUPREMA') {
@@ -1079,15 +1083,19 @@
         // Si intenta entrar pegando directamente la licencia en el campo clave
         if(isLicenseLogin) {
             licenseObj = analizarLicenciaSGF(pass);
-            if(licenseObj.valid && licenseObj.usuario === user) {
+            if(licenseObj.valid && !licenseObj.expired && licenseObj.usuario === user) {
                 authSuccess = true;
                 localStorage.setItem('sgf_license', pass);
             }
         } else if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
             // Si entra con usuario/clave tradicional, busca si ya tiene licencia guardada
-            authSuccess = true;
             const storedLic = localStorage.getItem('sgf_license');
-            if(storedLic) licenseObj = analizarLicenciaSGF(storedLic);
+            if(storedLic) {
+                licenseObj = analizarLicenciaSGF(storedLic);
+                if(licenseObj.valid && !licenseObj.expired) {
+                    authSuccess = true;
+                }
+            }
         }
 
         if (authSuccess) {
@@ -1107,7 +1115,8 @@
             return;
         }
 
-        alert("Usuario, clave o Licencia SGF incorrectos.");
+        errorDiv.innerText = "Licencia Inválida o Vencida. Solicite una nueva a la Dirección de Hacienda.";
+        errorDiv.style.display = 'block';
     }
 
     /* ==========================================================================
@@ -2341,6 +2350,10 @@
                 document.getElementById('login-pass').value = savedLicense;
                 intentarLogin(); 
                 return;
+            } else {
+                // Si la licencia está vencida, limpiamos para que el usuario pueda meter una nueva sin fallos visuales.
+                document.getElementById('login-user').value = '';
+                document.getElementById('login-pass').value = '';
             }
         }
         
