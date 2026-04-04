@@ -3,23 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
-    <title>SISTEMA DE CONTROL FISCAL - HACIENDA MUNICIPAL</title>
+    <!-- IDENTIDAD CORPORATIVA: TÃ­tulo -->
+    <title>PROYECTO HACIENDA 2026 - COLÃ“N</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- LIBRERÍAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
+    <!-- LIBRERÃAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- LIBRERÍA XLSX PARA EXPORTACIÓN A EXCEL -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
-    <!-- LIBRERÍAS REQUERIDAS PARA EXPORTACIÓN A WORD (.DOCX) -->
-    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     
     <style>
         /* ==========================================================================
@@ -60,6 +54,25 @@
             z-index: 1; 
         }
 
+        /* BANNER DE ALERTA PREVENTIVA DE LICENCIA (NARANJA TRÃFICO) */
+        #license-banner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #FF8C00;
+            color: #ffffff;
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            z-index: 999999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
         /* ==========================================================================
            2. COMPONENTES DE INTERFAZ (UI)
            ========================================================================== */
@@ -67,6 +80,7 @@
             position: absolute; 
             z-index: 1000; 
             pointer-events: auto; 
+            transition: top 0.3s ease;
         }
         
         .glass-panel { 
@@ -113,7 +127,7 @@
         }
         
         .search-container { 
-            flex: 0 1 500px; 
+            flex: 1; 
             display: flex; 
             align-items: center; 
             gap: 12px; 
@@ -166,72 +180,13 @@
             background: rgba(0, 242, 255, 0.1); 
         }
 
-        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE Y OCULTAMIENTO */
+        /* ESTILOS PARA LA IMPRESIÃ“N DEL REPORTE Y OCULTAMIENTO DE LA MIRA */
         @media print {
             .ui-layer, .leaflet-control-container, .modal-overlay, #mira-captura { display: none !important; }
             #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
             body, html { overflow: visible; background: white; }
         }
         
-        /* TOGGLE MODO LECTURA */
-        .toggle-container { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            font-size: 11px; 
-            font-weight: 800; 
-            color: #a5b0bf; 
-            background: rgba(0,0,0,0.3); 
-            padding: 8px 15px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border-color); 
-        }
-        
-        .switch { 
-            position: relative; 
-            display: inline-block; 
-            width: 34px; 
-            height: 18px; 
-        }
-        
-        .switch input { 
-            opacity: 0; 
-            width: 0; 
-            height: 0; 
-        }
-        
-        .slider { 
-            position: absolute; 
-            cursor: pointer; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0; 
-            background-color: #da3633; 
-            transition: .4s; 
-            border-radius: 34px; 
-        }
-        
-        .slider:before { 
-            position: absolute; 
-            content: ""; 
-            height: 12px; 
-            width: 12px; 
-            left: 3px; 
-            bottom: 3px; 
-            background-color: white; 
-            transition: .4s; 
-            border-radius: 50%; 
-        }
-        
-        input:checked + .slider { 
-            background-color: var(--color-vigente); 
-        }
-        
-        input:checked + .slider:before { 
-            transform: translateX(16px); 
-        }
-
         /* SIDEBAR (PANEL MAESTRO) */
         #sidebar { 
             top: 95px; 
@@ -303,7 +258,6 @@
             align-items: center; 
             justify-content: space-between; 
             border-bottom: 1px solid transparent; 
-            cursor: pointer;
         }
         
         .sector-header:hover { 
@@ -316,64 +270,6 @@
             gap: 10px; 
         }
         
-        /* Controles Visuales del Sector */
-        .sector-controls { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        
-        .radio-active { 
-            appearance: none; 
-            width: 16px; 
-            height: 16px; 
-            border: 2px solid #6e7681; 
-            border-radius: 50%; 
-            outline: none; 
-            cursor: pointer; 
-            position: relative; 
-        }
-        
-        .radio-active:checked { 
-            border-color: var(--cyan-neon); 
-        }
-        
-        .radio-active:checked::after { 
-            content: ''; 
-            position: absolute; 
-            top: 3px; 
-            left: 3px; 
-            width: 6px; 
-            height: 6px; 
-            background: var(--cyan-neon); 
-            border-radius: 50%; 
-        }
-        
-        .check-visible { 
-            appearance: none; 
-            width: 16px; 
-            height: 16px; 
-            border: 2px solid #6e7681; 
-            border-radius: 4px; 
-            outline: none; 
-            cursor: pointer; 
-            position: relative; 
-        }
-        
-        .check-visible:checked { 
-            background: var(--color-vigente); 
-            border-color: var(--color-vigente); 
-        }
-        
-        .check-visible:checked::after { 
-            content: '✔'; 
-            position: absolute; 
-            color: white; 
-            font-size: 10px; 
-            top: -1px; 
-            left: 2px; 
-        }
-
         .sector-title { 
             font-size: 13px; 
             font-weight: 800; 
@@ -381,20 +277,7 @@
             cursor: pointer; 
         }
         
-        .sector-trash { 
-            padding: 5px; 
-            font-size: 13px; 
-            color: #6e7681; 
-            cursor: pointer; 
-            transition: 0.2s; 
-        }
-        
-        .sector-trash:hover { 
-            color: var(--color-vencida); 
-            text-shadow: 0 0 10px var(--color-vencida); 
-        }
-
-        /* ACORDEÓN DE ESTATUS Y LISTA */
+        /* ACORDEÃ“N DE ESTATUS Y LISTA */
         .status-group { 
             border-top: 1px solid var(--border-color); 
             background: rgba(255,255,255,0.01); 
@@ -418,13 +301,6 @@
             display: flex; 
             align-items: center; 
             gap: 10px; 
-        }
-        
-        .status-dot { 
-            width: 10px; 
-            height: 10px; 
-            border-radius: 50%; 
-            box-shadow: 0 0 8px currentColor; 
         }
         
         .status-count { 
@@ -478,26 +354,9 @@
             border-color: white; 
             background: rgba(255,255,255,0.05); 
         }
-        
-        .btn-solid-yellow { 
-            background: var(--color-temporal); 
-            color: #000; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-        }
-
-        /* Estilo añadido para botones verdes del módulo SGF */
-        .btn-solid-green { 
-            background: var(--color-vigente); 
-            color: #fff; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-        }
 
         /* ==========================================================================
-           3. POPUPS INMORTALES (VISTA LECTURA Y EDICIÓN DOBLE CONTENEDOR)
+           3. POPUPS INMORTALES (VISTA LECTURA Y EDICIÃ“N DOBLE CONTENEDOR)
            ========================================================================== */
         .leaflet-popup-content-wrapper { 
             padding: 0; 
@@ -578,74 +437,6 @@
             word-break: break-word; 
         }
 
-        /* Estilos Vista Edición */
-        .form-group { 
-            margin-bottom: 12px; 
-            border-bottom: 1px solid #eaeaea; 
-            padding-bottom: 6px; 
-            position: relative; 
-        }
-        
-        .form-label { 
-            display: block; 
-            font-size: 9px; 
-            font-weight: 900; 
-            color: #888; 
-            text-transform: uppercase; 
-            margin-bottom: 4px; 
-        }
-        
-        .form-input { 
-            width: 85%; 
-            border: none; 
-            font-family: 'Inter', sans-serif; 
-            font-size: 13px; 
-            font-weight: 700; 
-            color: #000; 
-            background: transparent; 
-            outline: none; 
-        }
-        
-        .form-input:focus { 
-            color: var(--color-vigente); 
-        }
-        
-        /* PRIVACIDAD DE URls */
-        .input-oculto { 
-            opacity: 0.6; 
-            font-family: monospace; 
-            letter-spacing: 1px; 
-        }
-
-        .form-select { 
-            width: 100%; 
-            padding: 8px; 
-            font-family: 'Inter', sans-serif; 
-            font-size: 12px; 
-            font-weight: 800; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
-            margin-top: 5px; 
-            outline: none; 
-            cursor: pointer; 
-        }
-        
-        .eye-btn { 
-            position: absolute; 
-            right: 5px; 
-            top: 20px; 
-            color: #ccc; 
-            cursor: pointer; 
-            font-size: 14px; 
-            transition: 0.2s; 
-            z-index: 10; 
-            padding: 5px; 
-        }
-        
-        .eye-btn:hover, .eye-btn.is-hidden { 
-            color: var(--color-vencida); 
-        }
-
         .btn-popup-action { 
             width: 100%; 
             padding: 14px; 
@@ -668,26 +459,9 @@
             background: var(--color-vigente); 
             box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); 
         }
-        
-        .btn-edit { 
-            background: var(--cyan-neon); 
-            color: #000; 
-            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); 
-        }
-        
-        .btn-del { 
-            background: var(--color-vencida); 
-            margin-top: 15px; 
-        }
-
-        /* MODO LECTURA CSS MAESTRO */
-        .readonly-mode .form-input { pointer-events: none; color: #555; }
-        .readonly-mode .form-select { pointer-events: none; background: #eee; }
-        .readonly-mode .eye-btn { display: none; }
-        .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
 
         /* ==========================================================================
-           5. ESTÉTICA PROFESIONAL DE VÉRTICES (PUNTOS BLANCOS EN EDICIÓN)
+           5. ESTÃ‰TICA PROFESIONAL DE VÃ‰RTICES (PUNTOS BLANCOS EN EDICIÃ“N)
            ========================================================================== */
         .leaflet-editing-icon {
             border-radius: 50% !important;
@@ -707,12 +481,6 @@
         .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
-        .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
-        .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold; }
-        .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
-
         /* MODALES DEL NUEVO FLUJO DE CAPTURA */
         .notif-modal {
             position: fixed;
@@ -730,7 +498,7 @@
             z-index: 999999;
             box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
             text-align: center;
-            display: none;
+            display: none; /* Oculto por defecto */
             flex-direction: column;
             gap: 15px;
         }
@@ -745,88 +513,101 @@
             pointer-events: none;
             font-weight: 600;
         }
+        /* ==========================================================================
+           7. RESPONSIVE DESIGN (MÃ“VIL Y PC)
+           ========================================================================== */
+        @media (max-width: 768px) {
+            #sidebar { 
+                width: 100%; 
+                left: 0; 
+                bottom: 0; 
+                top: auto; 
+                height: 50%; 
+                z-index: 2000;
+                transform: translateY(100%);
+                transition: transform 0.3s ease;
+            }
+            #sidebar.is-open { transform: translateY(0); }
+            
+            .top-nav { 
+                flex-wrap: wrap; 
+                height: auto; 
+                padding: 10px; 
+                gap: 5px; 
+            }
+            .search-container { flex: 1 1 100%; order: 2; }
+            .tools-container { flex: 1; justify-content: space-between; order: 1; }
+            
+            .btn, .tool-btn {
+                min-height: 44px;
+                min-width: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
 
-        /* ALERTA DE LICENCIA SGF */
-        .license-alert { 
-            background: rgba(218, 54, 51, 0.2); 
-            border: 1px solid var(--color-vencida); 
-            color: white; 
-            padding: 10px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-            margin-bottom: 15px; 
-            font-weight: 800; 
-            text-align: center; 
-            display: none; 
+            #mobile-toggle {
+                display: flex !important;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                background: var(--cyan-neon);
+                color: black;
+                font-size: 24px;
+                z-index: 3000;
+                box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
+                border: none;
+                justify-content: center;
+                align-items: center;
+            }
         }
+
+        #mobile-toggle { display: none; }
     </style>
 </head>
 <body>
 
+<!-- BOTÃ“N HAMBURGUESA MÃ“VIL -->
+<button id="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('is-open')">
+    <i class="fas fa-bars"></i>
+</button>
+
+<!-- BANNER DE ALERTA PREVENTIVA LICENCIA -->
+<div id="license-banner">
+    âš ï¸ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> dÃ­as. Gestione la renovaciÃ³n para evitar la suspensiÃ³n del servicio.
+</div>
+
 <!-- SELLO PROTECTOR INFERIOR -->
-<div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
+<div class="footer-protegido">Â© 2026 - Sistema Protegido - AlcaldÃ­a Bolivariana de ColÃ³n</div>
+
+<!-- OVERLAY DE SEGURIDAD (LOGIN VISOR) -->
+<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
+        <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
+        <h2 class="modal-title" style="margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase;">ACCESO AL VISOR FISCAL</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+        
+        <input type="text" id="login-user" class="modal-input" placeholder="Usuario Visor" style="width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold;">
+        <input type="password" id="login-pass" class="modal-input" placeholder="Clave de Acceso" style="width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold;">
+        
+        <div id="login-error-msg" style="color: #da3633; font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
+
+        <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px; background: var(--color-vigente); color: white; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase;" onclick="intentarLogin()">ACCEDER AL MAPA</button>
+    </div>
+</div>
 
 <!-- MODALES DEL FLUJO DE CAPTURA -->
 <div id="capture-modal" class="notif-modal">
     <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
-    <span>🔄 ENCUADRANDO REPORTE...<br><small style="color: #a5b0bf; font-size: 12px;">Por favor, no mueva el mapa ni cierre esta ventana.</small></span>
+    <span>ðŸ”„ ENCUADRANDO REPORTE...<br><small style="color: #a5b0bf; font-size: 12px;">Por favor, no mueva el mapa ni cierre esta ventana.</small></span>
 </div>
 
 <div id="success-modal" class="notif-modal" style="border-color: var(--color-vigente); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(35, 134, 54, 0.4);">
     <i class="fas fa-check-circle" style="font-size: 30px; color: var(--color-vigente);"></i>
-    <span>✅ Reporte Generado con Éxito.</span>
-</div>
-
-<!-- OVERLAY LOCKSCREEN (BLOQUEO POR LICENCIA VENCIDA) -->
-<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; background: rgba(7,9,13,0.98); flex-direction: column; align-items: center; justify-content: center;">
-    <i class="fas fa-lock" style="font-size: 50px; color: var(--color-vencida); margin-bottom: 20px;"></i>
-    <h1 style="color:var(--color-vencida); font-weight: 900; margin:0 0 10px 0; text-align: center;">LICENCIA SGF VENCIDA</h1>
-    <p style="color: #a5b0bf; font-size: 13px; margin-bottom: 30px; text-align: center;">Su período de acceso al Sistema de Control Fiscal ha finalizado.<br>Actualice su Licencia o genere un respaldo de sus datos.</p>
-    
-    <div style="width: 400px;">
-        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional">
-        <button class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 15px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
-        <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
-    </div>
-</div>
-
-<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
-    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
-        
-        <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
-        <div id="login-form-container">
-            <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
-            <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
-            <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
-            
-            <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-            
-            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
-            <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
-            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
-
-            <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
-
-            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
-            
-            <div style="margin-top: 15px;">
-                <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
-            </div>
-        </div>
-
-        <!-- CONTENEDOR 2: MENSAJE DE ÉXITO DE CORREO -->
-        <div id="recovery-success-container" style="display: none;">
-            <i class="fas fa-envelope-circle-check" style="font-size: 50px; color: var(--color-vigente); margin-bottom: 20px;"></i>
-            <h2 class="modal-title" style="color: var(--color-vigente); font-size: 20px;">¡CORREO ENVIADO CON ÉXITO!</h2>
-            <p style="font-size: 12px; color: #f0f3f6; line-height: 1.6; margin-bottom: 30px;">
-                Se han enviado sus credenciales de seguridad al correo vinculado del Administrador de Hacienda.<br><br>
-                <span style="color: var(--color-temporal); font-weight: bold;">Revise su bandeja de entrada (y carpeta de Spam).</span>
-            </p>
-            <button class="btn btn-outline" style="width: 100%; padding: 15px;" onclick="volverAlLogin()">REGRESAR AL LOGIN</button>
-        </div>
-
-    </div>
+    <span>âœ… Reporte Generado con Ã‰xito.</span>
 </div>
 
 <div id="map"></div>
@@ -838,42 +619,24 @@
     </div>
     
     <div class="tools-container">
-        <div class="toggle-container" title="Bloquea la edición para evitar cambios accidentales">
-            <label class="switch">
-                <input type="checkbox" id="toggle-readonly" onchange="alternarModoLectura()">
-                <span class="slider"></span>
-            </label>
-            SOLO LECTURA
-        </div>
-
-        <button class="btn tool-btn" id="btn-draw-marker" title="Nuevo Contribuyente" onclick="activarHerramienta('punto')">
+        <button class="btn tool-btn" id="btn-draw-marker" title="Dibujar Punto de AnÃ¡lisis" onclick="activarHerramienta('punto')">
             <i class="fas fa-map-marker-alt"></i>
         </button>
-        <button class="btn tool-btn" id="btn-draw-poly" title="Auditar Área" onclick="activarHerramienta('poligono')">
+        <button class="btn tool-btn" id="btn-draw-poly" title="Dibujar Ãrea de AnÃ¡lisis" onclick="activarHerramienta('poligono')">
             <i class="fas fa-draw-polygon"></i>
         </button>
 
-        <!-- BOTÓN GENERAR REPORTE (FOTO LIMPIA) -->
-        <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
+        <!-- BOTÃ“N GENERAR REPORTE (CON NUEVO SVG DE CÃMARA PROFESIONAL) -->
+        <button class="btn tool-btn" title="Generar Reporte FotogrÃ¡fico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
                 <circle cx="12" cy="13" r="3"></circle>
             </svg> GENERAR REPORTE
         </button>
-        
-        <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNube()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
-            <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
-        </button>
-
-        <!-- BOTÓN GUARDAR NUBE (GITHUB API) -->
-        <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
-            <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
-        </button>
     </div>
 </nav>
 
-<aside id="sidebar" class="ui-layer glass-panel">
+<aside id="sidebar" class="ui-layer glass-panel" style="overflow: hidden;">
     <!-- FRANJA TRICOLOR INSTITUCIONAL -->
     <div style="height: 5px; width: 100%; display: flex;">
         <div style="flex: 1; background: #008000;"></div> 
@@ -882,92 +645,188 @@
     </div>
 
     <div class="sidebar-header">
-        <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
-        <h1>SISTEMA DE CONTROL FISCAL</h1>
-        <div id="rol-indicador" style="font-size: 10px; color: #fbbc04; font-weight: 900; margin-top: 5px; margin-bottom: 8px; letter-spacing: 1px;"><i class="fas fa-user-shield"></i> ESPERANDO LOGIN...</div>
-        <p id="indicador-capa-activa">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
+        <!-- IDENTIDAD CORPORATIVA: Sidebar TÃ­tulos -->
+        <h1>PANEL DE CONTROL</h1>
+        <p style="font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; margin-top: 5px;">AlcaldÃ­a Bolivariana de ColÃ³n</p>
+        <p id="indicador-capa-activa" style="margin-top: 10px;">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
     </div>
     
-    <!-- ALERTA DE LICENCIA (SÓLO ADMIN) -->
-    <div id="license-warning-box" class="license-alert">
-        <i class="fas fa-exclamation-triangle"></i> ATENCIÓN: Su licencia vence en <span id="license-days-count">X</span> días.
-    </div>
-
     <div class="layers-container" id="arbol-datos">
         </div>
-    
-    <!-- MÓDULO DE CAMBIO DE CLAVE EN SIDEBAR -->
-    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
-        <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('ajustes-cuenta').style.display = document.getElementById('ajustes-cuenta').style.display === 'none' ? 'block' : 'none'">
-            <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
-            <i class="fas fa-chevron-down"></i>
-        </div>
-        <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
-            <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario">
-            <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave">
-            <button class="btn btn-save" style="width: 100%; padding: 8px; font-size: 10px;" onclick="cambiarCredenciales()">ACTUALIZAR Y GUARDAR NUBE</button>
-        </div>
-    </div>
-
-    <!-- MÓDULO PRIVADO SUPER ADMIN (LLAVE GITHUB) -->
-    <div id="panel-superadmin" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
-        <div style="font-size: 11px; font-weight: 800; color: #8e44ad; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
-            <span><i class="fas fa-server"></i> LLAVE MAESTRA GITHUB (SUPER ADMIN)</span>
-            <i class="fas fa-chevron-down"></i>
-        </div>
-        <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">ENCRIPTAR Y GUARDAR TOKEN</button>
-        </div>
-    </div>
-
-    <!-- MÓDULO GESTIÓN DE LICENCIA (ADMIN/CLIENTE) -->
-    <div id="panel-admin-licencia" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
-        <div style="font-size: 11px; font-weight: 800; color: var(--color-temporal); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleLicenciaPanel()">
-            <span><i class="fas fa-key"></i> LICENCIA SGF</span>
-            <i class="fas fa-chevron-down"></i>
-        </div>
-        <div id="ajustes-licencia" style="display: none; padding-top: 5px;">
-            <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
-            <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
-            <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
-            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
-        </div>
-    </div>
 
     <div class="sidebar-footer">
-        <button class="btn btn-outline" onclick="crearNuevoSector()" style="grid-column: span 1;">
-            <i class="fas fa-folder-plus"></i> CREAR SECTOR
-        </button>
-        
-        <!-- BOTÓN DE CERRAR SESIÓN (BOTÓN DE PÁNICO) -->
-        <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 1; border-color: var(--color-vencida); color: var(--color-vencida);">
-            <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
+        <button class="btn btn-outline" onclick="descargarRespaldoTotalWord()" style="background: #0d6efd; border-color:#0d6efd; color: white;">
+            ðŸ“„ DESCARGAR RESPALDO CERTIFICADO (WORD)
         </button>
     </div>
 </aside>
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
+       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÃ“N (F12) Y BLOQUEOS
        ========================================================================== */
+    let _decon_token = null; // Variable global para el token reconstruido
+    
+    // Bloquear Clic Derecho
     document.addEventListener('contextmenu', e => e.preventDefault());
     
+    // Bloquear Combinaciones de Teclas de InspecciÃ³n
     document.addEventListener('keydown', e => {
         if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
             e.preventDefault();
         }
     });
 
+    // Detector Profundo de DevTools
     setInterval(function() {
         const widthThreshold = window.outerWidth - window.innerWidth > 160;
         const heightThreshold = window.outerHeight - window.innerHeight > 160;
         if(widthThreshold || heightThreshold) {
             console.clear();
+            _decon_token = null; // Purga inmediata del token de la memoria en caso de intrusiÃ³n
             document.getElementById('map').style.display = 'none';
-            document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+            bloquearSistemaPorLicencia();
         }
     }, 1000);
+
+    // FunciÃ³n para validar el formato de licencia SGF-USUARIO-TOKEN-FECHA
+    function validarLicenciaSGF(licencia) {
+        if (!licencia) return { valid: false, expired: true };
+        const parts = licencia.split('-');
+        // Formato esperado: SGF-USUARIO-TOKEN-FECHA (donde FECHA puede tener guiones)
+        if (parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true };
+
+        const usuario = parts[1];
+        const tokenRev = parts[2];
+        const fechaExpStr = parts.slice(3).join('-'); // Reconstruye la fecha (YYYY-MM-DD)
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fechaVence = new Date(fechaExpStr + 'T00:00:00');
+        fechaVence.setHours(0, 0, 0, 0);
+
+        if (isNaN(fechaVence.getTime())) return { valid: false, expired: true };
+
+        const diffTime = fechaVence.getTime() - hoy.getTime();
+        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        return {
+            valid: true,
+            expired: diasRestantes < 0,
+            dias: diasRestantes,
+            token: tokenRev.split('').reverse().join(''),
+            usuario: usuario
+        };
+    }
+
+    // FunciÃ³n global para bloquear por FALTA DE ACCESO o ERROR DE LECTURA DE DATOS
+    function bloquearSistemaPorLicencia() {
+        document.body.innerHTML = `
+        <div style="display:flex; height:100vh; width: 100vw; justify-content:center; align-items:center; background:#121212; font-family:'Inter',sans-serif; z-index:999999; position:fixed; top:0; left:0;">
+            <div style="background: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-width: 600px; width: 90%; text-align: center; border-top: 6px solid #da3633;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 50px; color: #da3633; margin-bottom: 20px;"></i>
+                <h1 style="color: #111; font-size: 22px; font-weight: 900; margin: 0 0 10px 0; text-transform: uppercase;">ACCESO DENEGADO AL SERVIDOR</h1>
+                <div style="background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 10px; margin-bottom: 20px;">
+                    <code style="color: #da3633; font-weight: bold; font-size: 14px;">Status Code: 401 (Unauthorized) / 404 (Not Found)</code>
+                </div>
+                <p style="color: #555; font-size: 15px; line-height: 1.6; margin-bottom: 20px; font-weight: 500;">
+                    No se pudo establecer conexiÃ³n con el repositorio de datos. Esto puede deberse a una licencia no vÃ¡lida, un problema de red o una configuraciÃ³n incorrecta del servidor.
+                </p>
+                <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 30px; text-align: left;">
+                    <strong style="color: #856404; font-size: 14px; display: block; margin-bottom: 5px;">AcciÃ³n Requerida:</strong>
+                    <span style="color: #333; font-size: 13px; line-height: 1.5;">Por favor, ingrese una licencia vÃ¡lida o contacte al Administrador del Sistema para verificar la integridad de la conexiÃ³n y las credenciales.</span>
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 15px; font-size: 11px; color: #888; font-family: monospace; letter-spacing: 0.5px;">
+                    ID del Cliente: AYACUCHO-VEN-2026 | Server Status: Unreachable
+                </div>
+            </div>
+        </div>`;
+        window.stop();
+    }
+    
+    // NUEVO MODO DE BLOQUEO FORENSE (POR LICENCIA EXPIRADA)
+    function bloquearSistemaModoForense() {
+        document.querySelectorAll('.ui-layer, #map').forEach(el => {
+            el.style.transition = 'filter 0.5s ease';
+            el.style.filter = 'blur(10px)';
+        });
+
+        const forensicOverlay = document.createElement('div');
+        forensicOverlay.id = 'forensic-overlay'; 
+        forensicOverlay.innerHTML = `
+            <div style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:999998; background:rgba(0,0,0,0.85); display:flex; justify-content:center; align-items:center;">
+                <div style="background: #fff; color: #111; padding: 40px; border-radius: 12px; max-width: 500px; width: 90%; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.8); border-top: 8px solid var(--color-vencida);">
+                    <i class="fas fa-lock" style="font-size: 40px; color: var(--color-vencida); margin-bottom: 20px;"></i>
+                    <h1 style="margin:0 0 10px; font-size: 20px; font-weight: 900;">LICENCIA SGF EXPIRADA</h1>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 30px;">El acceso a la plataforma ha sido suspendido. Ingrese una licencia vÃ¡lida o descargue un respaldo.</p>
+                    
+                    <input type="text" id="lock-new-license-visor" placeholder="SGF-AURA-TOKEN..." style="width:100%; padding:15px; margin-bottom:15px; border:2px solid #ddd; border-radius:8px; font-weight:bold; text-align:center;">
+                    
+                    <button onclick="activarLicenciaVisor()" id="btn-activar-visor" style="width:100%; padding: 18px; font-size: 15px; font-weight: 900; color: #fff; background: var(--color-vencida); border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; margin-bottom:10px;">
+                        ACTIVAR NUEVA LICENCIA
+                    </button>
+                    
+                    <button onclick="descargarRespaldoTotalWord()" style="width:100%; padding: 12px; font-size: 12px; font-weight: 900; color: #666; background: #eee; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase;">
+                        Descargar Respaldo Ãšltimo (Word)
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(forensicOverlay);
+        window.stop();
+    }
+
+    async function activarLicenciaVisor() {
+        const val = document.getElementById('lock-new-license-visor').value.trim();
+        if(!val) return alert("Ingrese el token de activaciÃ³n.");
+        
+        const btn = document.getElementById('btn-activar-visor');
+        const originalText = btn.innerText;
+        btn.innerText = "ACTIVANDO...";
+        btn.disabled = true;
+
+        try {
+            // 1. OBTENER CONFIG ACTUAL
+            const resGet = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if(!resGet.ok) throw new Error("Fallo de red");
+            const configActual = await resGet.json();
+
+            // 2. ACTUALIZAR LICENCIA (EN CONFIG)
+            configActual.license = val;
+
+            // 3. ENVIAR A TRAVÃ‰S DE LA API DE VERCEL
+            const resPost = await fetch('/api/guardar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    objetoJSON: configActual,
+                    mensajeCommit: "SGF Visor: ActivaciÃ³n de Licencia desde Bloqueo"
+                })
+            });
+
+            if (resPost.ok) {
+                alert("âœ… Licencia Activada con Ã©xito. El sistema se reiniciarÃ¡.");
+                location.reload();
+            } else {
+                const err = await resPost.json();
+                throw new Error(err.error || "Error en el servidor");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("âŒ Error de activaciÃ³n: " + e.message);
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function eliminarBloqueoForense() {
+        document.querySelectorAll('.ui-layer, #map').forEach(el => {
+            el.style.filter = 'none';
+        });
+        const overlay = document.getElementById('forensic-overlay');
+        if (overlay) overlay.remove();
+    }
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -975,359 +834,42 @@
 
 <script>
     /* ==========================================================================
-       FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD SGF
+       FASE 0: VARIABLES GITHUB API Y SEGURIDAD OFUSCADA (MÃ‰TODO REVERSO PIKA)
        ========================================================================== */
-    // CREDENCIALES EMAILJS (Reemplazar con tus datos reales de emailjs.com)
-    const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY"; 
-    const EMAILJS_SERVICE_ID = "TU_SERVICE_ID";
-    const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID";
-
-    (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
-
-    // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
-    const FILE_PATH = 'config.json';
-    let fileSha = null;
+    const GITHUB_REPO = 'mapa_hecho'; 
+    const FILE_PATH = 'mapa_censo/config.json';
     
-    // JERARQUÍA DE ACCESO Y ROLES
-    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
-    let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
-    let CHECK_LICENSE_INTERVAL = null;
+    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' };
+    let _decon_token = null; 
+    
+    // El visor es estrictamente LECTURA
+    const modoLecturaGlobal = true;
+    
+    const _getAuth = () => _decon_token;
 
-    /* ==========================================================================
-       MOTOR DE LICENCIAS Y TOKENS SGF
-       ========================================================================== */
-    function analizarLicenciaSGF(licStr) {
-        if(!licStr) return { valid: false, expired: true, days: 0 };
-        const parts = licStr.split('-');
-        // Formato esperado: SGF-[USUARIO]-[TOKEN_REVERTIDO]-[FECHA_BASE64]
-        if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
-
-        const usuario = parts[1];
-        const tokenRev = parts[2];
-        let dateStr;
-        
-        try {
-            dateStr = atob(parts[3]); // Decodificamos la fecha en Base64
-        } catch(e) {
-            return { valid: false, expired: true, days: 0 };
-        }
-
-        // LIMPIEZA DE GUIONES: Para que "2026-07-02" se vuelva "20260702"
-        dateStr = dateStr.replace(/[-/]/g, '');
-
-        if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
-        
-        const expYear = parseInt(dateStr.substring(0,4));
-        const expMonth = parseInt(dateStr.substring(4,6)) - 1;
-        const expDay = parseInt(dateStr.substring(6,8));
-        
-        const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
-        const today = new Date();
-        const diffTime = expDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return { 
-            valid: true, 
-            expired: diffDays <= 0, 
-            days: diffDays,
-            tokenRev: tokenRev,
-            usuario: usuario
-        };
-    }
-
-    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
-    function getRealToken() {
-        if (CURRENT_ROLE === 'SUPERADMIN') {
-            const tk = localStorage.getItem('master_token_revert');
-            return tk ? tk.split('').reverse().join('') : null;
-        } else if (CURRENT_ROLE === 'ADMIN') {
-            const lic = localStorage.getItem('sgf_license');
-            const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired) {
-                return parsed.tokenRev.split('').reverse().join('');
-            }
-        }
-        return null;
-    }
-
-    /* ==========================================================================
-       FLUJO DE ACCESO ESTRICTO (LOGIN) Y LIMPIEZA DE DOM
-       ========================================================================== */
     function intentarLogin() {
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
         const errorDiv = document.getElementById('login-error-msg');
-        errorDiv.style.display = 'none';
 
-        // 1. JERARQUÍA MAESTRA (SUPER ADMIN WOLGFAN)
-        if (user === 'Ing_Wolgfan' && pass === 'SGF-AURA-2026-SUPREMA') {
-            CURRENT_ROLE = 'SUPERADMIN';
-            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (WOLGFAN)';
-            document.getElementById('panel-superadmin').style.display = 'block';
-            
-            // Muestra el botón RAW solo para SuperAdmin
-            const btnRaw = document.getElementById('btn-cargar-raw');
-            if(btnRaw) btnRaw.style.display = 'flex';
-            
-            // Limpieza de DOM: Remueve elementos del cliente
-            const panelAdmin = document.getElementById('panel-admin-licencia');
-            if(panelAdmin) panelAdmin.remove();
-
-            document.getElementById('login-overlay').style.display = 'none';
-            actualizarUIYMapa(); 
-            cargarDatosNube();
-            return;
-        }
-
-        // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
         if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
-            CURRENT_ROLE = 'ADMIN';
-            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
-            document.getElementById('panel-admin-licencia').style.display = 'block';
-            
-            // LIMPIEZA DEL DOM ESTRICTA (MÓDULO 3)
-            const btnRaw = document.getElementById('btn-cargar-raw');
-            if(btnRaw) btnRaw.remove();
-            const pnlSup = document.getElementById('panel-superadmin');
-            if(pnlSup) pnlSup.remove();
-
             document.getElementById('login-overlay').style.display = 'none';
-            actualizarUIYMapa();
-            iniciarCicloLicenciaAdmin();
-            return;
-        }
-
-        errorDiv.innerText = "Usuario o clave incorrectos.";
-        errorDiv.style.display = 'block';
-    }
-
-    /* ==========================================================================
-       CONTROL DE TIEMPO, BLOQUEO Y RESCATE (ADMIN)
-       ========================================================================== */
-    function iniciarCicloLicenciaAdmin() {
-        validarLicenciaYBloqueo();
-        CHECK_LICENSE_INTERVAL = setInterval(validarLicenciaYBloqueo, 60000); // Revisa cada minuto
-        cargarDatosNube(); // Intentará cargar si la licencia está viva
-    }
-
-    function validarLicenciaYBloqueo() {
-        if(CURRENT_ROLE !== 'ADMIN') return;
-        
-        const lic = localStorage.getItem('sgf_license');
-        const est = analizarLicenciaSGF(lic);
-
-        const lblDias = document.getElementById('lbl-dias-lic');
-        if(lblDias) lblDias.innerText = est.days > 0 ? est.days : 0;
-
-        if (!est.valid || est.expired) {
-            // BLOQUEO ÉTICO ACTIVADO
-            document.getElementById('license-lock-overlay').style.display = 'flex';
-            document.getElementById('license-warning-box').style.display = 'none';
+            sync_sys_buffer(); // Arranca el sistema
         } else {
-            document.getElementById('license-lock-overlay').style.display = 'none';
-            
-            // ALERTA PREVENTIVA (<= 10 DÍAS)
-            const warnBox = document.getElementById('license-warning-box');
-            if (est.days <= 10) {
-                warnBox.style.display = 'block';
-                document.getElementById('license-days-count').innerText = est.days;
-            } else {
-                warnBox.style.display = 'none';
-            }
+            errorDiv.innerText = "Usuario o clave incorrectos.";
+            errorDiv.style.display = 'block';
         }
-    }
-
-    function guardarLicenciaDesdeBloqueo() {
-        const val = document.getElementById('lock-new-license').value.trim();
-        if(!val) return alert("Ingrese el código de licencia.");
-        const est = analizarLicenciaSGF(val);
-        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
-        
-        localStorage.setItem('sgf_license', val);
-        alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
-        document.getElementById('license-lock-overlay').style.display = 'none';
-        validarLicenciaYBloqueo();
-        cargarDatosNube();
-    }
-
-    function actualizarLicenciaInterna() {
-        const val = document.getElementById('input-update-license').value.trim();
-        if(!val) return alert("Ingrese el código de licencia.");
-        const est = analizarLicenciaSGF(val);
-        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
-        
-        localStorage.setItem('sgf_license', val);
-        alert("Licencia Renovada con éxito.");
-        validarLicenciaYBloqueo();
     }
 
     /* ==========================================================================
-       BLOQUE DE EXPORTACIÓN DE DATOS (EXCEL Y WORD)
-       ========================================================================== */
-    function exportarExcelInstitucional() {
-        if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
-        const wb = XLSX.utils.book_new();
-        let datosParaExcel = [];
-        
-        Object.keys(STORE).forEach(idCapa => {
-            STORE[idCapa].registros.forEach(reg => {
-                const d = reg.datosGenerales;
-                const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
-
-                datosParaExcel.push({
-                    "SECTOR": nombreSector, 
-                    "RIF/CÉDULA": d["RIF"] || d["Cédula"] || d["Identificacion"] || "S/D",
-                    "CONTRIBUYENTE": d["Contribuyente"] || d["Razon Social"] || "Sin Nombre",
-                    "ESTADO FISCAL": d["Estatus"] || "Pendiente",
-                });
-            });
-        });
-
-        datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
-
-        const ws = XLSX.utils.json_to_sheet(datosParaExcel);
-        const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
-        const filaFinal = datosParaExcel.length + 3;
-        XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
-        XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
-        
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte Fiscal");
-        XLSX.writeFile(wb, "Reporte_Fiscal_Ayacucho.xlsx");
-    }
-
-    function descargarRespaldoWord() {
-        if (typeof docx === 'undefined') {
-            return alert("Error: La librería de generación de documentos no se cargó correctamente.");
-        }
-        if (Object.keys(STORE).length === 0) {
-            return alert("No hay datos cargados para generar un respaldo.");
-        }
-
-        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
-        const systemId = `SGF-CLOUD-${new Date().getFullYear()}`;
-
-        const allRecords = [];
-        Object.values(STORE).forEach(sector => {
-            allRecords.push(...sector.registros);
-        });
-
-        const tableRows = [];
-        
-        // Define header row
-        const headerRow = new TableRow({
-            children: [
-                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "UBICACIÓN", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTADO FISCAL", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "DOCUMENTACIÓN", bold: true, size: 16 })] })] }),
-            ],
-            tableHeader: true,
-        });
-        tableRows.push(headerRow);
-
-        // Create data rows
-        allRecords.forEach(reg => {
-            const d = reg.datosGenerales;
-
-            // Mapeo de Datos con lógica de precisión
-            const identidad = d["Razón Social"] || d["Nombre Comercial"] || d["Contribuyente"] || "Sin Identificar";
-            const registro = d["RIF / Registro"] || d["RIF"] || "N/A";
-            
-            const latLng = reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
-            const coordsText = `GPS: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
-            const ubicacion = `${d["Dirección (Referencia Manual)"] || "No especificada."}\n${coordsText}`;
-            
-            const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}\nAuditoría: ${d["ID_Auditoria"] || "N/A"}`;
-            
-            const estadoFiscal = `Validación: ${d["Validación Fiscal"] || d["Estatus"] || "N/A"}\nLicencia: ${d["Situación Sin Licencia"] || "N/A"}\nPago: ${d["Semáforo de Acuerdo de Pago"] || "N/A"}`;
-
-            const dataRow = new TableRow({
-                children: [
-                    new TableCell({ children: [
-                        new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 18 })] }),
-                        new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] }),
-                    ]}),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ubicacion, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 16 })] })] }),
-                ],
-            });
-            tableRows.push(dataRow);
-        });
-
-        const table = new Table({
-            rows: tableRows,
-            width: { size: 100, type: WidthType.PERCENTAGE },
-            columnWidths: [2500, 3000, 2000, 2000],
-        });
-
-        const doc = new Document({
-            sections: [{
-                headers: {
-                    default: new Header({
-                        children: [new Paragraph({
-                            text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO",
-                            alignment: AlignmentType.CENTER,
-                            style: "Header"
-                        })],
-                    }),
-                },
-                footers: {
-                    default: new Footer({
-                        children: [new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            children: [
-                                new TextRun(`Documento generado por SGF-CLOUD - ID Sistema: ${systemId} - Página `),
-                                new TextRun({
-                                    children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
-                                }),
-                            ],
-                        })],
-                    }),
-                },
-                children: [
-                    new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.RIGHT }),
-                    new Paragraph(" "),
-                    table,
-                    new Paragraph(" "), 
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ",
-                                bold: true,
-                                size: 20,
-                                break: 1,
-                            }),
-                            new TextRun({
-                                text: "El presente documento constituye un Respaldo Maestro de Fiscalización, emitido bajo los estándares de la Ley Orgánica de la Contraloría General de la República (Arts. 7, 9, 77 y 91), la Ley de Infogobierno (Art. 4) y la Constitución de la República (Arts. 168 y 174). ",
-                                size: 20,
-                            }),
-                            new TextRun({
-                                text: "Se hace constar que la información aquí detallada (RIF, Expediente, Censo y Validación) ha sido recolectada y validada en campo por el Fiscal Responsable asignado. Este reporte goza de presunción de veracidad para efectos de recaudación municipal. Cualquier modificación no autorizada de este soporte digital o físico anula su validez ante la Dirección de Hacienda.",
-                                size: 20,
-                            }),
-                        ],
-                        alignment: AlignmentType.JUSTIFIED,
-                    }),
-                ],
-            }],
-        });
-
-        Packer.toBlob(doc).then(blob => {
-            saveAs(blob, `Respaldo_Maestro_Fiscal_Ayacucho_${Date.now()}.docx`);
-        });
-    }
-
-    /* ==========================================================================
-       MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
+       MÃ“DULO NUEVO: CAPTURA FOTOGRÃFICA DE ALTA PRECISIÃ“N Y MARCA DE AGUA
        ========================================================================== */
     function previsualizarCaptura() {
         const modalCapture = document.getElementById('capture-modal');
         const modalSuccess = document.getElementById('success-modal');
         
-        modalCapture.querySelector('span').innerHTML = '🔄 INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el área de reporte.</small>';
+        modalCapture.querySelector('span').innerHTML = 'ðŸ”„ INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el Ã¡rea de reporte.</small>';
         modalCapture.style.display = 'flex';
         
         mapa.invalidateSize();
@@ -1337,25 +879,23 @@
         watermark.innerHTML = `
             <div style="border-left: 4px solid #da3633; padding-left: 12px; font-family:Inter,sans-serif; text-align:left; line-height:1.5;">
                 <strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br>
-                <span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
-                <em style="color: #ff0000; font-size: 11px; font-weight: 900;">¡PORQUE CON TRABAJO SE PRODUCE!</em><br>
+                <span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernizaciÃ³n fiscal</span><br>
+                <em style="color: #ff0000; font-size: 11px; font-weight: 900;">Â¡PORQUE CON TRABAJO SE PRODUCE!</em><br>
                 <strong style="color: #000000; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
-                <span style="color: #aaaaaa; font-size: 10px;">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</span>
+                <span style="color: #aaaaaa; font-size: 10px;">Â© 2026 - Sistema Protegido - AlcaldÃ­a Bolivariana de ColÃ³n</span>
             </div>
         `;
         watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
         document.getElementById('map').appendChild(watermark);
 
-        // Ocultar modal de aviso y esperar a que la RAM limpie el DOM
         setTimeout(() => {
-            modalCapture.style.display = 'none'; 
+            modalCapture.style.display = 'none';
             
-            // Disparar la foto limpia
             setTimeout(() => {
                 const mapElement = document.getElementById('map');
                 const mapCanvas = mapElement.getBoundingClientRect();
 
-                const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container, .footer-protegido');
+                const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container');
                 uiLayers.forEach(el => el.style.visibility = 'hidden');
 
                 html2canvas(document.body, {
@@ -1377,12 +917,14 @@
                     }
 
                     const imageLink = document.createElement('a');
-                    imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
+                    imageLink.download = `REPORTE_HACIENDA_COLON_${Date.now()}.png`;
                     imageLink.href = canvas.toDataURL("image/png");
                     imageLink.click();
 
                     modalSuccess.style.display = 'flex';
-                    setTimeout(() => { modalSuccess.style.display = 'none'; }, 3000);
+                    setTimeout(() => {
+                        modalSuccess.style.display = 'none';
+                    }, 3000);
 
                 }).catch(err => {
                     uiLayers.forEach(el => el.style.visibility = 'visible');
@@ -1390,28 +932,27 @@
                         document.getElementById('report-watermark').remove();
                     }
                     console.error("Fallo al generar reporte:", err);
-                    alert("Error al capturar imagen. Revise consola.");
+                    alert("Error al intentar capturar la imagen del mapa. Revise la consola.");
                 });
-            }, 1500); 
-        }, 1000); 
+            }, 1500);
+        }, 1000);
     }
 
     /* ==========================================================================
-       FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE LEAFLET
+       FASE 1: NÃšCLEO DE MEMORIA Y CONFIGURACIÃ“N BASE (MODO VISOR)
        ========================================================================== */
-    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026');
+    const mapa = L.map('map', { center: [8.0310, -72.2628], zoom: 15, zoomControl: false });
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - AYACUCHO (MODO VISOR)'); 
 
-    // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     
-    googleSat.addTo(mapa); 
-
+    googleSat.addTo(mapa);
+    
     const capaMaestraSectores = L.featureGroup().addTo(mapa);
     
     const baseMaps = {
-        "Vista Satélite": googleSat,
+        "Vista SatÃ©lite": googleSat,
         "Vista Mapa Urbano": googleStreets
     };
     const overlayMaps = {
@@ -1422,7 +963,6 @@
     const capasSectores = {};
     let STORE = {}; 
     let capaActivaId = null; 
-    let modoLecturaGlobal = false;
     let textoFiltroGlobal = "";
 
     const DICCIONARIO_ESTATUS = {
@@ -1431,152 +971,14 @@
         "TEMPORAL": { color: "#fbbc04" },
         "CENSO / NUEVO": { color: "#00f2ff" },
         "SIN LICENCIA": { color: "#da3633" },
-        "SIN CATEGORÍA": { color: "#6e7681" }
+        "SIN CATEGORÃA": { color: "#6e7681" }
     };
 
     const crearPinFiscal = (color) => L.divIcon({ 
         html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
         className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
     });
-
-    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
-    const herramientaPoligono = new L.Draw.Polygon(mapa, { 
-        shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
-    });
-
-    function activarHerramienta(tipo) {
-        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
-        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
-        if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
-        
-        tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
-    }
-
-    mapa.on(L.Draw.Event.CREATED, (evento) => {
-        const idFisico = L.stamp(evento.layer);
-        
-        if(evento.layer instanceof L.Marker) {
-            if (!modoLecturaGlobal) evento.layer.options.draggable = true;
-            evento.layer.on('dragend', () => actualizarUIYMapa());
-        } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
-            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
-            if (!modoLecturaGlobal) evento.layer.editing.enable();
-            evento.layer.on('edit', () => actualizarUIYMapa());
-        }
-
-        const nuevoRegistro = {
-            idFisico: idFisico,
-            tipoGeometria: evento.layerType,
-            capaLeaflet: evento.layer,
-            colorPersonalizado: null, 
-            visibleIndividual: true,
-            datosGenerales: { 
-                "Contribuyente": "NUEVO ESTABLECIMIENTO", 
-                "RIF": "J-00000000-0",
-                "Teléfono": "0414-0000000",
-                "Metros Cuadrados": "0 m2",
-                "Fecha Fiscalización": new Date().toISOString().split('T')[0],
-                "Estatus": "CENSO / NUEVO",
-                "Link Fotografía": ""
-            },
-            camposOcultos: []
-        };
-
-        STORE[capaActivaId].registros.push(nuevoRegistro);
-        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
-        
-        actualizarUIYMapa();
-        
-        setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
-        setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
-    });
-
-    function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(reg) {
-            reg.visibleIndividual = isVisible;
-            actualizarUIYMapa();
-        }
-    }
-
-    function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
-        if (!STORE[idSector]) return;
-        if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
-        STORE[idSector].visibilidadPorEstatus[estatus] = isVisible;
-        actualizarUIYMapa();
-    }
-
-    function actualizarNombreSector(id, valor) {
-        if(!STORE[id]) return;
-        STORE[id].nombreSector = valor.toUpperCase();
-        actualizarUIYMapa();
-    }
-
-    function cambiarColorEstatusSector(idSector, estatus, colorHex) {
-        if (modoLecturaGlobal) return alert("Modo lectura activo.");
-        if (!STORE[idSector]) return;
-        
-        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-        STORE[idSector].coloresPorEstatus[estatus] = colorHex;
-        
-        STORE[idSector].registros.forEach(reg => {
-            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-            if (estActual === estatus) {
-                reg.colorPersonalizado = colorHex;
-                if (reg.tipoGeometria === 'marker') {
-                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-                }
-            }
-        });
-        
-        actualizarUIYMapa();
-    }
-
-    function cambiarColorSector(idSector, colorHex) {
-        if (modoLecturaGlobal) return alert("Modo lectura activo.");
-        if (!STORE[idSector]) return;
-        
-        STORE[idSector].colorPrincipal = colorHex;
-        
-        STORE[idSector].registros.forEach(reg => {
-            reg.colorPersonalizado = colorHex;
-            if (reg.tipoGeometria === 'marker') {
-                reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-            } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-            }
-        });
-        
-        actualizarUIYMapa();
-    }
     
-    // REPARACIÓN DEL ÁRBOL (CLIC MANUAL OBLIGATORIO)
-    function toggleSectorBodyManual(e, idSector) {
-        if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
-        if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = true;
-        STORE[idSector].isExpanded = !STORE[idSector].isExpanded;
-        actualizarUIYMapa();
-    }
-
-    // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
-    function eliminarDelClon(idSector, idFisico) {
-        if(modoLecturaGlobal) return;
-        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
-        if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
-        
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(reg && capasSectores[idSector].hasLayer(reg.capaLeaflet)) {
-            capasSectores[idSector].removeLayer(reg.capaLeaflet);
-        }
-        
-        STORE[idSector].registros = STORE[idSector].registros.filter(r => String(r.idFisico) !== String(idFisico));
-        
-        if(mapa._popup) mapa.closePopup();
-        actualizarUIYMapa();
-    }
-
     /* ==========================================================================
        FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
        ========================================================================== */
@@ -1596,33 +998,35 @@
             const gruposPorEstatus = {};
             let hayResultadosBusqueda = false;
 
-            sectorData.registros.forEach(reg => {
-                if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
-                
-                const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                
-                if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
-                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
+            if (sectorData.registros) {
+                sectorData.registros.forEach(reg => {
+                    if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+                    
+                    const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÃA";
+                    
+                    if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
+                    const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
 
-                const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
-                const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+                    const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
+                    const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
-                const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
+                    const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
+                    const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
 
-                if (isPhysicallyVisible && !hasLayer) {
-                    capasSectores[idSector].addLayer(reg.capaLeaflet);
-                } else if (!isPhysicallyVisible && hasLayer) {
-                    capasSectores[idSector].removeLayer(reg.capaLeaflet);
-                }
+                    if (isPhysicallyVisible && !hasLayer) {
+                        capasSectores[idSector].addLayer(reg.capaLeaflet);
+                    } else if (!isPhysicallyVisible && hasLayer) {
+                        capasSectores[idSector].removeLayer(reg.capaLeaflet);
+                    }
 
-                if(cumpleFiltro) {
-                    hayResultadosBusqueda = true;
-                    if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
-                    gruposPorEstatus[estatus].conteo++;
-                    gruposPorEstatus[estatus].lista.push(reg);
-                }
-            });
+                    if(cumpleFiltro) {
+                        hayResultadosBusqueda = true;
+                        if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
+                        gruposPorEstatus[estatus].conteo++;
+                        gruposPorEstatus[estatus].lista.push(reg);
+                    }
+                });
+            }
 
             if (sectorData.visible) {
                 if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) {
@@ -1635,102 +1039,33 @@
             }
 
             if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
-
-            const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
             
             let htmlSector = `
             <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
-                <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
-                    <div class="sector-title-group">
-                        <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
-                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
-                        
-                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
-                           title="Mostrar/Ocultar todo el Sector" 
-                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
-                           onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
-                        
-                        <input type="text" value="${sectorData.nombreSector}" 
-                               title="Doble clic para enfocar sector en el mapa"
-                               onclick="event.stopPropagation();"
-                               ondblclick="enfocarSector('${idSector}')"
-                               onchange="actualizarNombreSector('${idSector}', this.value)" 
-                               style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 140px; outline:none; text-transform:uppercase;">
-                    </div>
-                    
-                    <div class="sector-controls">
-                        <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
-                        ${!sectorData.isMaster ? `
-                        <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
-                        <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
-                        ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
+                <div class="sector-header">
+                    <div class="sector-title-group" style="cursor: pointer;" onclick="document.querySelector('.sector-body[data-sector=\\'${idSector}\\']').style.display = document.querySelector('.sector-body[data-sector=\\'${idSector}\\']').style.display === 'none' ? 'block' : 'none'">
+                        <span class="sector-title" ondblclick="event.stopPropagation(); enfocarSector('${idSector}')">${sectorData.nombreSector}</span>
                     </div>
                 </div>
-                <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
+                <div class="sector-body" data-sector="${idSector}" style="display: ${idSector === capaActivaId || textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
             for(let estatus in gruposPorEstatus) {
-                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                
-                if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-                if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
-                
-                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
-                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
-
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
 
                 htmlSector += `
                 <div class="status-group">
-                    <div class="status-header">
-                        <div class="status-info" style="display:flex; align-items:center; gap:8px;">
-                            
-                            <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
-                               title="Mostrar/Ocultar Categoría" 
-                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
-                               onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                            
-                            <input type="color" title="Color de esta Categoría" value="${colorActual}"
-                                   onclick="event.stopPropagation();"
-                                   onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
-                                   style="width: 16px; height: 16px; border: none; cursor: pointer; background: transparent; padding: 0;">
-                            
-                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; flex:1;">
-                                ${estatus}
-                            </div>
-                        </div>
+                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                        <div class="status-info">${estatus}</div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
-                        ${!sectorData.isMaster ? `
-                            <div style="display: flex; align-items: center; gap: 15px; margin-left: auto; padding-left: 10px;">
-                                <input type="checkbox" 
-                                       style="cursor:pointer;"
-                                       onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" 
-                                       title="Seleccionar todos en esta categoría para borrado en lote">
-                                <i class="fas fa-trash-alt sector-trash" 
-                                   style="font-size: 13px;"
-                                   onclick="event.stopPropagation(); eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
-                                   title="Eliminar registros seleccionados de esta categoría"></i>
-                            </div>
-                        ` : ''}
                     </div>
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
-                            <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
-                                   title="Ocultar individualmente" 
-                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
-                                   onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
-                                   
+                            <div style="flex:1; display:flex; align-items:center; gap:8px;">
                                 <i class="fas fa-caret-right" style="opacity:0.5"></i> 
-                                <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
-                            ${!sectorData.isMaster ? `
-                                <input type="checkbox" class="chk-registro" data-id="${local.idFisico}" onclick="event.stopPropagation();" title="Marcar para borrado en lote" style="cursor:pointer;">
-                                <i class="fas fa-trash sector-trash" title="Borrar este registro" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>
-                            ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>`}
+                                ${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}
                             </div>
                         </div>`;
                 });
@@ -1741,22 +1076,17 @@
         }
 
         const indicador = document.getElementById('indicador-capa-activa');
-        if(capaActivaId && STORE[capaActivaId]) {
-            indicador.innerText = "CAPA DE TRABAJO: " + STORE[capaActivaId].nombreSector;
-            indicador.style.color = varCSS('--cyan-neon');
-        } else {
-            indicador.innerText = "HACIENDA MUNICIPAL - MODO LECTURA";
-            indicador.style.color = "#6e7681";
-        }
+        indicador.innerText = "HACIENDA MUNICIPAL - MODO VISOR";
+        indicador.style.color = "#6e7681";
     }
 
+
     /* ==========================================================================
-       FASE 3: DOBLE VISTA EN POPUP (REPARACIÓN DE APERTURA ANTI-BLOQUEOS)
+       FASE 3: DOBLE VISTA EN POPUP (REPARACIÃ“N DE APERTURA ANTI-BLOQUEOS)
        ========================================================================== */
+    
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
         capaFisica.on('click', () => {
-            const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-            if(reg) reg._modoPopup = 'lectura';
             abrirPopupDinamico(idSector, idFisico, false);
         });
     }
@@ -1770,47 +1100,26 @@
         if(centrarMapa) {
             const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
             mapa.flyTo(destino, 19, { duration: 0.5 });
-            registro._modoPopup = 'lectura';
         }
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
 
         capaMapa.unbindPopup();
-        capaMapa.bindPopup(htmlContenido, { 
-            minWidth: 320, 
-            closeButton: true, 
-            className: modoLecturaGlobal ? 'readonly-mode' : '' 
-        }).openPopup();
+        capaMapa.bindPopup(htmlContenido, { minWidth: 320, closeButton: true }).openPopup();
         
         mapa._popup = capaMapa.getPopup();
         mapa._popup._source = capaMapa; 
     }
 
-    function toggleModoPopup(idFisico, modo) {
-        const divRead = document.getElementById(`view-mode-${idFisico}`);
-        const divEdit = document.getElementById(`edit-mode-${idFisico}`);
-        
-        if (!divRead || !divEdit) return;
-
-        if (modo === 'edit') {
-            divRead.style.display = 'none';
-            divEdit.style.display = 'block';
-        } else {
-            divRead.style.display = 'block';
-            divEdit.style.display = 'none';
-        }
-    }
-
-    function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
-        const sectorData = STORE[idSector];
-        const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
+    function generarContenidoHTMLPopup(idSector, idFisico) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         let html = `<div class="pop-wrapper">`;
 
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
             html += `
             <div class="audit-report">
-                <h3 class="audit-title"><i class="fas fa-chart-area"></i> HACIENDA MUNICIPAL - AUDITORÍA</h3>
+                <h3 class="audit-title"><i class="fas fa-chart-area"></i> HACIENDA MUNICIPAL - AUDITORÃA</h3>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}"><span>Vigentes:</span> <span>${rep.v}</span></div>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}"><span>Vencidas:</span> <span>${rep.x}</span></div>
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
@@ -1819,78 +1128,38 @@
         } 
         else {
             const estActual = registro.datosGenerales["Estatus"];
-            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÃA"];
             
-            const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
-            const colorFinal = registro.colorPersonalizado || colorSector;
+            const colorFinal = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) 
+                ? STORE[idSector].coloresPorEstatus[estActual] 
+                : confEst.color;
             
-            const imgUrl = registro.datosGenerales["Link Fotografía"];
-            const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
+            const imgUrl = registro.datosGenerales["Link FotografÃ­a"];
             
             html += `
             <div class="pop-cover">
-                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
-                <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
+                ${(imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                <div class="pop-badge" style="background: ${colorFinal};">${estActual}</div>
             </div>
             <div class="pop-content">`;
 
-            html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
             for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                const isOculto = registro.camposOcultos.includes(clave);
-                if(isOculto) continue; 
+                if(clave === "Estatus" || clave === "Link FotografÃ­a") continue;
                 
                 html += `
                 <div class="read-field">
                     <span class="read-label">${clave}</span>
-                    <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
-                </div>`;
-            }
-            if(!modoLecturaGlobal) {
-                html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
-            }
-            html += `</div>`;
-
-            html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
-            for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                const isOculto = registro.camposOcultos.includes(clave);
-                
-                html += `
-                <div class="form-group">
-                    <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
-                    <span class="form-label">${clave}</span>
-                    <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
-                           ${isOculto ? 'type="password"' : ''} 
-                           onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;">
+                    <div class="read-value">${registro.datosGenerales[clave] || '-'}</div>
                 </div>`;
             }
 
-            html += `
-            <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
-                <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
-                <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">
-                    ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
-                </select>
-            </div>
-            
-            <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 10px;">
-                <span class="form-label" style="color: #111;">COLOR DE PINCHETA (PERSONALIZADO)</span>
-                <input type="color" style="width: 100%; height: 32px; border: none; cursor: pointer; border-radius: 6px; background: transparent; padding: 0;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
-            </div>
+            // --- MEJORA: BotÃ³n de Acta Condicional ---
+            const licenciaActiva = registro.datosGenerales["Licencia Act. Econ."] && registro.datosGenerales["Licencia Act. Econ."].trim() !== "";
+            const licExp = document.getElementById('forensic-overlay'); // Detecta si la licencia global expirÃ³
 
-            <div class="form-group">
-                <i class="fas ${isFotoOculta ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', 'Link Fotografía')"></i>
-                <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
-                <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
-            </div>
-            
-            <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
-            
-            if(!sectorData.isMaster) {
-                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
+            if (licenciaActiva || licExp) {
+                html += `<button class="btn-popup-action btn-save" style="margin-top: 15px; background: #0d6efd;" onclick="generarActaWord('${idSector}', '${idFisico}')">ðŸ“„ GENERAR ACTA DE RESPALDO (ART. 7, 9, 77, 91)</button>`;
             }
-            
             html += `</div>`;
         }
         
@@ -1898,292 +1167,56 @@
         return html;
     }
 
-    function cambiarColorPin(idSector, idFisico, colorHex) {
-        if(modoLecturaGlobal) return;
-        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!regOrigen) return;
-
-        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-
-        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
-
-        STORE[idSector].registros.forEach(reg => {
-            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-            if (estActual === estatusTarget) {
-                reg.colorPersonalizado = colorHex;
-                if (reg.tipoGeometria === 'marker') {
-                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-                }
-            }
-        });
-
-        actualizarUIYMapa();
-        const badge = document.getElementById(`badge-estatus-${idFisico}`);
-        if (badge) badge.style.background = colorHex;
-    }
-
-    function ejecutarToggleOjo(eventoClick, idSector, idFisico, claveCampo) {
-        eventoClick.stopPropagation(); 
-        if(modoLecturaGlobal) return;
-
-        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!regOrigen) return;
-
-        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-        const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
-
-        STORE[idSector].registros.forEach(reg => {
-            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-            if (estActual === estatusTarget) {
-                if (isCurrentlyHidden) {
-                    const idx = reg.camposOcultos.indexOf(claveCampo);
-                    if (idx > -1) reg.camposOcultos.splice(idx, 1);
-                } else {
-                    if (!reg.camposOcultos.includes(claveCampo)) {
-                        reg.camposOcultos.push(claveCampo);
-                    }
-                }
-            }
-        });
-
-        actualizarUIYMapa(); 
-
-        if(mapa._popup) {
-            const capaMapa = regOrigen.capaLeaflet;
-            capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
-        }
-    }
-
-    function actualizarDatoCampo(idSector, idFisico, clave, valor) {
-        STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
-        actualizarUIYMapa(); 
-    }
-
-    function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        reg.datosGenerales["Estatus"] = nuevoEst;
-        
-        const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-        const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : conf.color;
-        
-        reg.colorPersonalizado = colorSector; 
-        
-        if (reg.tipoGeometria === 'marker') {
-            reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
-        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-            reg.capaLeaflet.setStyle({ color: colorSector, fillColor: colorSector, fillOpacity: 0.2 });
-        }
-        
-        actualizarUIYMapa();
-
-        const badge = document.getElementById(`badge-estatus-${idFisico}`);
-        if (badge) {
-            badge.innerText = nuevoEst;
-            badge.style.background = colorSector;
-        }
-    }
-
     /* ==========================================================================
-       FASE 4: FUNCIONES DE SISTEMA Y VÉRTICES DE EDICIÓN
+       FASE 4: FUNCIONES DE SISTEMA (MODO VISOR)
        ========================================================================== */
-    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
-
-    function alternarModoLectura() {
-        modoLecturaGlobal = document.getElementById('toggle-readonly').checked;
-        const bMarker = document.getElementById('btn-draw-marker');
-        const bPoly = document.getElementById('btn-draw-poly');
-        
-        if(modoLecturaGlobal) {
-            bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
-            bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
-            if(mapa._popup) mapa.closePopup(); 
-        } else {
-            bMarker.style.opacity = "1"; bMarker.style.pointerEvents = "auto";
-            bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
+    
+    function activarHerramienta(tipo) {
+        if(!capaActivaId) {
+            // Si no hay capa activa, buscamos la primera disponible o creamos una temporal
+            const ids = Object.keys(STORE);
+            if(ids.length > 0) capaActivaId = ids[0];
+            else return alert("âš ï¸ SELECCIÃ“N REQUERIDA: Seleccione un Sector en el panel izquierdo.");
         }
-
-        for(let id in STORE) {
-            STORE[id].registros.forEach(reg => {
-                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    if (modoLecturaGlobal) {
-                        if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.disable();
-                    } else {
-                        if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.enable();
-                    }
-                } else if (reg.tipoGeometria === 'marker') {
-                    if (modoLecturaGlobal) {
-                        if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.disable();
-                    } else {
-                        if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.enable();
-                    }
-                }
-            });
-        }
+        tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
+
+    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
+    const herramientaPoligono = new L.Draw.Polygon(mapa, { 
+        shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
+    });
+
+    mapa.on(L.Draw.Event.CREATED, (evento) => {
+        const idFisico = L.stamp(evento.layer);
+        
+        const nuevoRegistro = {
+            idFisico: idFisico,
+            tipoGeometria: evento.layerType,
+            capaLeaflet: evento.layer,
+            datosGenerales: { 
+                "Contribuyente": "MARCADOR TEMPORAL (NO SE GUARDARÃ)", 
+                "Estatus": "CENSO / NUEVO"
+            }
+        };
+
+        if(!STORE[capaActivaId]) {
+            capaActivaId = "sector_temporal_" + Date.now();
+            STORE[capaActivaId] = { nombreSector: "ANÃLISIS TEMPORAL", registros: [] };
+        }
+        
+        STORE[capaActivaId].registros.push(nuevoRegistro);
+        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
+        actualizarUIYMapa();
+        abrirPopupDinamico(capaActivaId, idFisico);
+    });
 
     function ejecutarMotorBusqueda() {
         textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase();
         actualizarUIYMapa();
     }
 
-    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
-    
-    function toggleVisibilidadCapa(idSector, isVisible) { 
-        STORE[idSector].visible = isVisible;
-        if(isVisible) capaMaestraSectores.addLayer(capasSectores[idSector]);
-        else capaMaestraSectores.removeLayer(capasSectores[idSector]);
-        actualizarUIYMapa(); 
-    }
-
-    function crearNuevoSector() {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        const nombre = prompt("Nombre del Nuevo Sector/Capa:");
-        if(!nombre) return;
-        const id = 'sec_' + Date.now();
-        
-        capasSectores[id] = new L.FeatureGroup();
-        STORE[id] = { 
-            nombreSector: nombre.toUpperCase(), 
-            visible: true, 
-            isMaster: false,
-            isExpanded: true,
-            visibilidadPorEstatus: {}, 
-            coloresPorEstatus: {}, 
-            registros: [] 
-        };
-        capaActivaId = id;
-        actualizarUIYMapa();
-    }
-
-    function clonarSector(idSectorOriginal) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        const sectorOriginal = STORE[idSectorOriginal];
-        const nombre = prompt("Nombre de la nueva capa clonada:", sectorOriginal.nombreSector + " (CLON)");
-        if(!nombre) return;
-        
-        const newId = 'sec_' + Date.now();
-        capasSectores[newId] = new L.FeatureGroup();
-        
-        STORE[newId] = {
-            nombreSector: nombre.toUpperCase(),
-            visible: true,
-            isMaster: false,
-            isExpanded: true,
-            visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus)),
-            coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus)),
-            colorPrincipal: sectorOriginal.colorPrincipal,
-            registros: []
-        };
-        
-        sectorOriginal.registros.forEach(reg => {
-            let capaNueva;
-            if(reg.tipoGeometria === 'marker') {
-               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !modoLecturaGlobal});
-            } else {
-               capaNueva = L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
-            }
-            
-            const newIdFisico = L.stamp(capaNueva);
-            STORE[newId].registros.push({
-                idFisico: newIdFisico,
-                tipoGeometria: reg.tipoGeometria,
-                capaLeaflet: capaNueva,
-                colorPersonalizado: reg.colorPersonalizado,
-                visibleIndividual: reg.visibleIndividual,
-                _modoPopup: 'lectura',
-                datosGenerales: JSON.parse(JSON.stringify(reg.datosGenerales)),
-                camposOcultos: [...reg.camposOcultos]
-            });
-            vincularEventosCapa(capaNueva, newId, newIdFisico);
-        });
-        
-        capaActivaId = newId;
-        actualizarUIYMapa();
-    }
-    
-    function limpiarSector(idSector) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede limpiar.");
-        if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}" eliminando todos sus registros internos?`)) return;
-        
-        if (capasSectores[idSector]) {
-            capasSectores[idSector].clearLayers();
-        }
-        STORE[idSector].registros = [];
-        actualizarUIYMapa();
-    }
-
-    function eliminarSectorDefinitivo(idSector) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
-        if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
-        
-        if (capasSectores[idSector]) {
-            capaMaestraSectores.removeLayer(capasSectores[idSector]);
-            delete capasSectores[idSector];
-        }
-        delete STORE[idSector]; 
-        if(capaActivaId === idSector) capaActivaId = null;
-        actualizarUIYMapa();
-    }
-
-    // --- INICIO DE CÓDIGO INTEGRADO ---
-    // Función para marcar todos los de una sub-categoría específica
-    function seleccionarTodoEnCat(checkMaster, idContenedor) {
-        const contenedor = document.getElementById(idContenedor);
-        if (!contenedor) return;
-        const checks = contenedor.querySelectorAll('.chk-registro');
-        checks.forEach(c => c.checked = checkMaster.checked);
-    }
-
-    // Función para eliminar SOLO lo que está marcado en esa categoría
-    function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura para eliminar registros.");
-        const contenedor = document.getElementById(idContenedor);
-        if (!contenedor) return;
-        const seleccionados = contenedor.querySelectorAll('.chk-registro:checked');
-
-        if (seleccionados.length === 0) {
-            return alert("Por favor, seleccione al menos un registro en esta categoría marcando las casillas.");
-        }
-
-        if (confirm(`¿Eliminar los ${seleccionados.length} registros seleccionados de la categoría "${nombreCategoria}"?`)) {
-            const idsABorrar = Array.from(seleccionados).map(c => c.getAttribute('data-id'));
-            
-            // Remove layers from map first
-            const capaSector = capasSectores[idSector];
-            if(capaSector) {
-                const registrosABorrar = STORE[idSector].registros.filter(r => idsABorrar.includes(String(r.idFisico)));
-                registrosABorrar.forEach(reg => {
-                    if (capaSector.hasLayer(reg.capaLeaflet)) {
-                        capaSector.removeLayer(reg.capaLeaflet);
-                    }
-                });
-            }
-
-            // Filter the STORE for that specific layer
-            STORE[idSector].registros = STORE[idSector].registros.filter(r => !idsABorrar.includes(String(r.idFisico)));
-
-            // Close popup if it belongs to a deleted item
-            if (mapa._popup) {
-                const sourceId = L.stamp(mapa._popup._source);
-                if (idsABorrar.includes(String(sourceId))) {
-                    mapa.closePopup();
-                }
-            }
-
-            // Refresh map and UI
-            actualizarUIYMapa(); 
-            alert(`${seleccionados.length} registros eliminados de la copia de trabajo. Guarde en la nube para persistir los cambios.`);
-        }
-    }
-    // --- FIN DE CÓDIGO INTEGRADO ---
-
     function enfocarSector(idSector) {
-        if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
+        if(!STORE[idSector].visible) return;
         const limites = capasSectores[idSector].getBounds();
         if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] });
     }
@@ -2206,225 +1239,36 @@
     }
 
     /* ==========================================================================
-       FASE 6: EXTRACCIÓN DE COORDENADAS PARA BACKUP
+       FASE 7: MOTOR DE LICENCIA Y CARGA DE DATOS (SGF-DECONSTRUCT)
        ========================================================================== */
-    function extraerDatosGeometria() {
-        const storeCopia = JSON.parse(JSON.stringify(STORE, (key, val) => {
-            if (key === 'capaLeaflet' || key === 'grupoFisico') return undefined;
-            return val;
-        }));
+    async function cargarDatosNube(token = null) {
+        // 1. INTENTO DE CARGA PRIORITARIA (VÃ­a Web - Lee config.json directamente)
+        const fetchUrl = `${FILE_PATH}?t=${Date.now()}`;
+        
+        try {
+            const resWeb = await fetch(fetchUrl);
+            if (!resWeb.ok) throw new Error("Fallo de red");
 
-        for (let idSec in STORE) {
-            STORE[idSec].registros.forEach((reg, i) => {
-                if (reg.tipoGeometria === 'marker') {
-                    const ll = reg.capaLeaflet.getLatLng();
-                    storeCopia[idSec].registros[i].coords = { lat: ll.lat, lng: ll.lng };
-                } else {
-                    const lls = reg.capaLeaflet.getLatLngs();
-                    storeCopia[idSec].registros[i].coords = lls;
+            const jsonParsed = await resWeb.json();
+            
+            // Si hay una licencia en el config, intentamos usarla para validar
+            if (jsonParsed.license) {
+                const validacion = validarLicenciaSGF(jsonParsed.license);
+                if (validacion.valid && !validacion.expired) {
+                    _decon_token = validacion.token; // DescodificaciÃ³n exitosa
+                    reconstruirDesdeJSON(jsonParsed.store || {});
+                    return { success: true, autoLoaded: true, validacion };
+                } else if (validacion.expired) {
+                    return { success: true, autoLoaded: true, validacion, expired: true };
                 }
-            });
-        }
-        return storeCopia;
-    }
-
-    /* ==========================================================================
-       FASE 7: SEGURIDAD DE ACCESO Y CONFIGURACIONES
-       ========================================================================== */
-    function enviarCredenciales() {
-        const btnOlvidar = document.getElementById('btn-olvido');
-        const originalText = btnOlvidar.innerText;
-        btnOlvidar.innerText = "ENVIANDO CORREO...";
-        
-        const parametros_plantilla = {
-            usuario: SYSTEM_AUTH.user,
-            clave: SYSTEM_AUTH.pass,
-            fecha: new Date().toLocaleString()
-        };
-
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, parametros_plantilla)
-        .then(function() {
-            document.getElementById('login-form-container').style.display = 'none';
-            document.getElementById('recovery-success-container').style.display = 'block';
-            btnOlvidar.innerText = originalText;
-        }, function(error) {
-            console.error("Error EmailJS:", error);
-            alert("Hubo un error al intentar enviar el correo. Verifique la configuración de EmailJS.");
-            btnOlvidar.innerText = originalText;
-        });
-    }
-    
-    function volverAlLogin() {
-        document.getElementById('recovery-success-container').style.display = 'none';
-        document.getElementById('login-form-container').style.display = 'block';
-        document.getElementById('login-user').value = '';
-        document.getElementById('login-pass').value = '';
-    }
-
-    function cambiarCredenciales() {
-        const nu = document.getElementById('ajuste-user').value.trim();
-        const np = document.getElementById('ajuste-pass').value.trim();
-        
-        if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
-        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
-        
-        SYSTEM_AUTH.user = nu;
-        SYSTEM_AUTH.pass = np;
-        
-        document.getElementById('ajuste-user').value = "";
-        document.getElementById('ajuste-pass').value = "";
-        
-        alert("Credenciales actualizadas en memoria.\nGuardando en la Nube...");
-        guardarEnServidor();
-    }
-    
-    function toggleConfigServidor() {
-        const div = document.getElementById('ajustes-servidor');
-        if (div.style.display === 'none') {
-            div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = getRealToken() || '';
-        } else {
-            div.style.display = 'none';
-        }
-    }
-
-    function toggleLicenciaPanel() {
-        const div = document.getElementById('ajustes-licencia');
-        if (div.style.display === 'none') {
-            div.style.display = 'block';
-        } else {
-            div.style.display = 'none';
-        }
-    }
-    
-    async function verificarYGuardarTokenMaestro() {
-        const rawToken = document.getElementById('ajuste-repo-token').value.trim();
-        if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
-
-        const btn = document.querySelector('#ajustes-servidor button');
-        const originalText = btn.innerText;
-        btn.innerText = "VERIFICANDO...";
-        btn.disabled = true;
-
-        try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': 'token ' + rawToken }
-            });
-
-            if (res.ok) {
-                const pikaToken = rawToken.split('').reverse().join('');
-                localStorage.setItem('master_token_revert', pikaToken);
-                alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
-                await cargarDatosNube(); 
-            } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
             }
-        } catch(e) {
-            console.error(e);
-            alert(`❌ Error de verificación: ${e.message}`);
-        } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
-        }
-    }
-    
-    async function cargarDatosNube() {
-        const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if (!GITHUB_TOKEN_DYNAMIC) {
-            actualizarUIYMapa();
-            return;
-        }
+            
+            // Si llegamos aquÃ­, no habÃ­a licencia vÃ¡lida en el config
+            return { success: false, autoLoaded: false };
 
-        try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                fileSha = data.sha;
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                const jsonParsed = JSON.parse(decodedContent);
-                if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
-                reconstruirDesdeJSON(jsonParsed.store || {});
-            } else if (res.status === 404) {
-                actualizarUIYMapa();
-            } else {
-                throw new Error(`GitHub API error: ${res.status}`);
-            }
         } catch (e) {
-            console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos de la nube. Revise su conexión o Token. Error: " + e.message);
-            actualizarUIYMapa();
-        }
-    }
-
-    function cerrarSesionSeguridad() {
-        location.reload();
-    }
-
-    async function guardarEnServidor() {
-        const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
-
-        const btn = document.getElementById('btn-save-server');
-        const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
-        btn.disabled = true;
-
-        try {
-            let currentSha = null;
-            try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
-                }
-            } catch (err) {}
-
-            const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                store: datosLimpios
-            };
-            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
-            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
-            
-            const payload = {
-                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
-                content: contentEncoded,
-                branch: "main"
-            };
-            
-            if (currentSha) payload.sha = currentSha;
-
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/vnd.github.v3+json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if(!res.ok) throw new Error(await res.text());
-            
-            const data = await res.json();
-            fileSha = data.content.sha;
-            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
-        } catch(e) {
-            console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + e.message);
-        } finally {
-            btn.innerHTML = btnOriginalText;
-            btn.disabled = false;
+            console.error("SGF: Error al leer base de datos:", e);
+            return { success: false, autoLoaded: false };
         }
     }
 
@@ -2449,72 +1293,242 @@
             
             STORE[idSector] = {
                 nombreSector: sec.nombreSector,
-                visible: sec.visible !== false,
-                isMaster: sec.isMaster !== false, // Protect original layers by default
-                visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
+                visible: true,
+                visibilidadPorEstatus: {},
                 coloresPorEstatus: sec.coloresPorEstatus || {},
-                colorPrincipal: sec.colorPrincipal || '#00f2ff',
-                isExpanded: true, // Forzamos isExpanded=true para la carga inicial
                 registros: []
             };
 
-            sec.registros.forEach(reg => {
-                let capa;
-                const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                
-                let colorBase = confEst.color;
-                if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
-                    colorBase = STORE[idSector].coloresPorEstatus[estActual];
-                }
-                const colorAUsar = reg.colorPersonalizado || colorBase;
-                
-                if (reg.tipoGeometria === 'marker' && reg.coords) {
-                    const latParseada = parseFloat(reg.coords.lat);
-                    const lngParseada = parseFloat(reg.coords.lng);
-                    capa = L.marker([latParseada, lngParseada], { 
-                        icon: crearPinFiscal(colorAUsar), 
-                        draggable: !modoLecturaGlobal 
-                    });
-                    capa.on('dragend', () => actualizarUIYMapa());
-                } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                    const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
-                    capa = L.polygon(coordenadasPoligono, { 
-                        color: colorAUsar, 
-                        fillColor: colorAUsar, 
-                        fillOpacity: 0.2, 
-                        weight: 3, 
-                        dashArray: '5, 5' 
-                    });
-                    if (!modoLecturaGlobal) capa.editing.enable();
-                    capa.on('edit', () => actualizarUIYMapa());
-                }
+            if(sec.registros){
+                sec.registros.forEach(reg => {
+                    let capa;
+                    const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÃA";
+                    const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÃA"];
+                    
+                    let colorBase = confEst.color;
+                    if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
+                        colorBase = STORE[idSector].coloresPorEstatus[estActual];
+                    }
+                    
+                    if (reg.tipoGeometria === 'marker' && reg.coords) {
+                        capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { 
+                            icon: crearPinFiscal(colorBase)
+                        });
+                    } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                        capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { 
+                            color: colorBase, 
+                            fillColor: colorBase, 
+                            fillOpacity: 0.2, 
+                            weight: 3
+                        });
+                    }
 
-                if(capa) {
-                    const newIdFisico = L.stamp(capa);
-                    const nuevoReg = {
-                        idFisico: newIdFisico,
-                        tipoGeometria: reg.tipoGeometria,
-                        capaLeaflet: capa,
-                        colorPersonalizado: reg.colorPersonalizado,
-                        visibleIndividual: reg.visibleIndividual !== false,
-                        _modoPopup: 'lectura',
-                        datosGenerales: reg.datosGenerales,
-                        camposOcultos: reg.camposOcultos || []
-                    };
-                    STORE[idSector].registros.push(nuevoReg);
-                    vincularEventosCapa(capa, idSector, newIdFisico);
-                }
-            });
+                    if(capa) {
+                        const newIdFisico = L.stamp(capa);
+                        const nuevoReg = {
+                            idFisico: newIdFisico,
+                            tipoGeometria: reg.tipoGeometria,
+                            capaLeaflet: capa,
+                            datosGenerales: reg.datosGenerales,
+                        };
+                        STORE[idSector].registros.push(nuevoReg);
+                        vincularEventosCapa(capa, idSector, newIdFisico);
+                    }
+                });
+            }
         }
         actualizarUIYMapa();
     }
+    
+    /* ==========================================================================
+       MÃ“DULO DE RESPALDO WORD
+       ========================================================================== */
+    function generarActaWord(idSector, idFisico) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if (!registro) return alert("No se encontraron datos para generar el acta.");
 
-    function initSecurity() {
-        document.getElementById('login-overlay').style.display = 'flex';
+        const datos = registro.datosGenerales;
+        const razonSocial = datos["Contribuyente"] || datos["RazÃ³n Social"] || "NO ESPECIFICADO";
+        const rif = datos["RIF"] || datos["RIF / Registro"] || "NO ESPECIFICADO";
+        const expediente = datos["NÃºmero de Expediente"] || datos["NÂ° Expediente"] || "NO ESPECIFICADO";
+        const censo = datos["NÃºmero de Censo"] || datos["NÂ° de censo"] || "NO ESPECIFICADO";
+        const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO";
+        const fecha = new Date().toLocaleDateString('es-VE');
+
+        const footerLegal = `
+            <div style="text-align:justify; font-size:8pt; color:#555; border-top: 1px solid #000; padding-top:10px; margin-top: 50px;">
+                <strong>CERTIFICACIÃ“N DE REGISTRO FISCAL:</strong> El presente documento se emite en conformidad con las atribuciones conferidas a la Hacienda PÃºblica Municipal,
+                segÃºn lo establecido en la Ley OrgÃ¡nica del Poder PÃºblico Municipal (LOPPM) y las ordenanzas fiscales vigentes. Los datos aquÃ­ reflejados son
+                fiel copia de los registros del Sistema Georreferenciado Fiscal (SGF-CLOUD) y gozan de presunciÃ³n de veracidad y legalidad para todos los
+                efectos administrativos y tributarios, en concordancia con los <strong>ArtÃ­culos 7, 9, 77 y 91</strong> del marco legal aplicable.
+            </div>`;
+
+        const contenidoHtml = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Acta de Respaldo Fiscal</title></head>
+            <body style="font-family: Arial, sans-serif; font-size: 12pt; margin: 40px;">
+                <div style="text-align:center; margin-bottom: 40px;">
+                    <h1 style="font-size:16pt; margin:0;">ALCALDÃA BOLIVARIANA DEL MUNICIPIO COLÃ“N</h1>
+                    <h2 style="font-size:14pt; margin:0; font-weight:normal;">HACIENDA MUNICIPAL</h2>
+                    <h3 style="font-size:14pt; margin:0;">ACTA DE RESPALDO DE REGISTRO FISCAL</h3>
+                </div>
+                <p>En San Juan de ColÃ³n, a la fecha de <strong>${fecha}</strong>, se deja constancia de la informaciÃ³n registrada en el Sistema Georreferenciado Fiscal (SGF-CLOUD) para el siguiente contribuyente:</p>
+                
+                <table style="width:100%; border-collapse: collapse; border: 1px solid #ccc; margin-top:20px; margin-bottom:20px; font-size:11pt;">
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold; width: 35%;">RAZÃ“N SOCIAL / CONTRIBUYENTE</td><td style="padding:8px; border: 1px solid #ccc;">${razonSocial}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">REGISTRO DE INFORMACIÃ“N FISCAL (RIF)</td><td style="padding:8px; border: 1px solid #ccc;">${rif}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">NÃšMERO DE EXPEDIENTE</td><td style="padding:8px; border: 1px solid #ccc;">${expediente}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">NÃšMERO DE CENSO</td><td style="padding:8px; border: 1px solid #ccc;">${censo}</td></tr>
+                    <tr><td style="padding:8px; border: 1px solid #ccc; background-color:#f2f2f2; font-weight:bold;">LICENCIA DE ACTIVIDADES ECONÃ“MICAS</td><td style="padding:8px; border: 1px solid #ccc;">${licencia}</td></tr>
+                </table>
+                ${footerLegal}
+            </body>
+            </html>`;
+        
+        const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(contenidoHtml);
+        const filename = `Acta_Respaldo_${rif.replace(/[^a-zA-Z0-9]/g, '')}.doc`;
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function descargarRespaldoTotalWord() {
+        if (!STORE || Object.keys(STORE).length === 0) {
+            alert("No hay datos cargados en la memoria para generar un respaldo. La operaciÃ³n no puede continuar.");
+            return;
+        }
+
+        const fecha = new Date().toLocaleDateString('es-VE');
+        const footerLegal = `
+            <div style="text-align:justify; font-size:8pt; color:#555; border-top: 1px solid #000; padding-top:10px; margin-top: 50px;">
+                <strong>CERTIFICACIÃ“N DE REGISTRO FISCAL:</strong> El presente documento se emite en conformidad con las atribuciones conferidas a la Hacienda PÃºblica Municipal,
+                segÃºn lo establecido en la Ley OrgÃ¡nica del Poder PÃºblico Municipal (LOPPM) y las ordenanzas fiscales vigentes. Los datos aquÃ­ reflejados son
+                fiel copia de los registros del Sistema Georreferenciado Fiscal (SGF-CLOUD) y gozan de presunciÃ³n de veracidad y legalidad para todos los
+                efectos administrativos y tributarios, en concordancia con los <strong>ArtÃ­culos 7, 9, 77 y 91</strong> del marco legal aplicable.
+            </div>`;
+
+        let reportContent = '';
+        
+        for (const idSector in STORE) {
+            const sector = STORE[idSector];
+            reportContent += `<h2 style="font-size:18pt; color:#333; border-bottom:2px solid #333; padding-bottom:5px;">SECTOR: ${sector.nombreSector}</h2>`;
+            
+            if (sector.registros) {
+                sector.registros.forEach(registro => {
+                    if (registro.tipoGeometria === 'marker') {
+                        const datos = registro.datosGenerales;
+                        const razonSocial = datos["Contribuyente"] || datos["RazÃ³n Social"] || "NO ESPECIFICADO";
+                        const rif = datos["RIF"] || datos["RIF / Registro"] || "NO ESPECIFICADO";
+                        const expediente = datos["NÃºmero de Expediente"] || datos["NÂ° Expediente"] || "NO ESPECIFICADO";
+                        const censo = datos["NÃºmero de Censo"] || datos["NÂ° de censo"] || "NO ESPECIFICADO";
+                        const licencia = datos["Licencia Act. Econ."] || "NO ESPECIFICADO"; // Columna AD
+                        const estatus = datos["Estatus"] || "SIN CATEGORÃA";
+                        
+                        reportContent += `
+                            <div style="margin-top:20px; padding:15px; border: 1px solid #999; border-radius: 5px; background-color:#f9f9f9;">
+                                <h3 style="margin-top:0; font-size:14pt;">${razonSocial}</h3>
+                                <table style="width:100%; border-collapse: collapse; font-size:11pt;">
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold; width: 40%;">REGISTRO DE INFORMACIÃ“N FISCAL (RIF)</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${rif}</td></tr>
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÃšMERO DE EXPEDIENTE</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${expediente}</td></tr>
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">NÃšMERO DE CENSO</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${censo}</td></tr>
+                                    <tr><td style="padding:5px; border-bottom: 1px solid #ddd; background-color:#eaeaea; font-weight:bold;">LICENCIA DE ACTIVIDADES ECONÃ“MICAS</td><td style="padding:5px; border-bottom: 1px solid #ddd;">${licencia}</td></tr>
+                                    <tr><td style="padding:5px; background-color:#eaeaea; font-weight:bold;">ESTATUS FISCAL</td><td style="padding:5px;">${estatus}</td></tr>
+                                </table>
+                            </div>
+                        `;
+                    }
+                });
+            }
+            reportContent += '<br style="page-break-before:always" />';
+        }
+
+        const contenidoHtml = `
+            <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+            <head><meta charset='utf-8'><title>Respaldo Total SGF-CLOUD</title></head>
+            <body style="font-family: Arial, sans-serif; font-size: 12pt; margin: 40px;">
+                <div style="text-align:center; margin-bottom: 40px;">
+                    <h1 style="font-size:16pt; margin:0;">RESPALDO TOTAL CERTIFICADO</h1>
+                    <h2 style="font-size:14pt; margin:0; font-weight:normal;">SISTEMA GEOREFERENCIADO FISCAL (SGF-CLOUD)</h2>
+                    <h3 style="font-size:14pt; margin:0;">ALCALDÃA BOLIVARIANA DEL MUNICIPIO COLÃ“N</h3>
+                    <p>Generado en contingencia el <strong>${fecha}</strong></p>
+                </div>
+                ${reportContent}
+                ${footerLegal}
+            </body>
+            </html>`;
+
+        const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(contenidoHtml);
+        const filename = `Respaldo_Total_SGF-CLOUD_${new Date().toISOString().slice(0,10)}.doc`;
+        
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
     
-    initSecurity();
+    function analizarLicenciaSGF(licStr) {
+        if(!licStr) return { valid: false, expired: true, days: 0 };
+        const parts = licStr.split('-');
+        // FORMATO: SGF - USUARIO - TOKENREVERT - FECHABASE64
+        if(parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true, days: 0 };
+        try {
+            // EL TOKEN: Tercer campo, revertido
+            const tokenRevertido = parts[2];
+            const tokenReal = tokenRevertido.split('').reverse().join('');
+            
+            // LA FECHA: Cuarto campo, decodificado de Base64
+            const fechaBase64 = parts[3];
+            const fechaDecodificada = atob(fechaBase64); // Esperado: YYYY-MM-DD
+            
+            const expDate = new Date(fechaDecodificada + 'T23:59:59');
+            const hoy = new Date();
+            const diffTime = expDate.getTime() - hoy.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return { 
+                valid: true, 
+                expired: diffDays <= 0, 
+                days: diffDays, 
+                token: tokenReal,
+                usuario: parts[1]
+            };
+        } catch(e) { 
+            console.error("Error decodificando licencia:", e);
+            return { valid: false, expired: true, days: 0 }; 
+        }
+    }
+
+    // ARRANQUE DIRECTO CON CARGA DE CREDENCIALES (MODO VISOR AUTO-ACTIVADO)
+    window.onload = () => {
+        // PROTOCOLO PORTABILIDAD TOTAL: Intentamos cargar config.json primero
+        fetch(`${FILE_PATH}?t=${Date.now()}`)
+        .then(res => res.json())
+        .then(config => {
+            if (config.credentials) SYSTEM_AUTH = config.credentials;
+            
+            // Si hay licencia vÃ¡lida en la nube, entramos directo sin pedir login
+            if (config.license) {
+                const validacion = analizarLicenciaSGF(config.license);
+                if (validacion.valid && !validacion.expired) {
+                    document.getElementById('login-overlay').style.display = 'none';
+                    reconstruirDesdeJSON(config.store || {});
+                    console.log("ACCESO CONCEDIDO: LICENCIA NUBE RECONOCIDA");
+                    return;
+                }
+            }
+            // Si no hay licencia o expirÃ³, el login overlay se queda visible
+            document.getElementById('login-overlay').style.display = 'flex';
+        })
+        .catch(e => {
+            console.error("Error en portabilidad inicial:", e);
+            document.getElementById('login-overlay').style.display = 'flex';
+        });
+    };
 
 </script>
 </body>
