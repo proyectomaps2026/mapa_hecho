@@ -2464,58 +2464,149 @@
     }
     
     async function cargarDatosNube() {
-        // PROTOCOLO AURA: Primero intentamos cargar lo que esté pegado en el campo RAW
         const elRaw = document.getElementById('inputCensoRaw');
         const rawInput = elRaw ? elRaw.value.trim() : "";
         
         if (rawInput) {
             try {
-                let jsonParsed;
-                if (rawInput.startsWith('http')) {
+                let storeData = {};
+                
+                // 1. DETECTOR DE GOOGLE SHEETS
+                if (rawInput.includes("docs.google.com/spreadsheets")) {
+                    mostrarNotificacion("PROCESANDO GOOGLE SHEETS...", "orange");
+                    let csvUrl = rawInput;
+                    if (csvUrl.includes("/edit")) {
+                        csvUrl = csvUrl.replace(/\/edit.*$/, "/export?format=csv");
+                    }
+                    const res = await fetch(csvUrl);
+                    const csvText = await res.text();
+                    storeData = convertirCSVStore(csvText);
+                } 
+                // 2. DETECTOR DE URL (GITHUB RAW / OTROS)
+                else if (rawInput.startsWith('http')) {
+                    mostrarNotificacion("DESCARGANDO JSON...", "orange");
                     const res = await fetch(rawInput);
-                    jsonParsed = await res.json();
-                } else {
-                    jsonParsed = JSON.parse(rawInput);
+                    const json = await res.json();
+                    storeData = json.store || json;
+                } 
+                // 3. TEXTO DIRECTO (JSON O COORDENADAS)
+                else {
+                    try {
+                        const json = JSON.parse(rawInput);
+                        storeData = json.store || json;
+                    } catch(e) {
+                        // Si falla JSON, intentamos extraer coordenadas de texto sucio
+                        mostrarNotificacion("EXTRAYENDO COORDENADAS...", "orange");
+                        storeData = extraerCoordenadasDeTexto(rawInput);
+                    }
                 }
                 
-                // Si es un objeto completo (con store), lo procesamos
-                const storeData = jsonParsed.store || jsonParsed;
+                // VALIDACIÓN Y AUTO-MASTER
+                if (Object.keys(storeData).length === 0) throw new Error("No se detectaron datos válidos.");
                 
-                // Marcamos como Master al cargar manualmente desde RAW
                 for(let id in storeData) {
                     storeData[id].isMaster = true;
                 }
                 
                 reconstruirDesdeJSON(storeData);
-                mostrarNotificacion("CENSO RAW CARGADO Y MARCADO COMO MASTER", "green");
+                mostrarNotificacion("TODO-EN-UNO: CARGA EXITOSA (MASTER)", "green");
                 return; 
             } catch (e) {
-                return alert("❌ Error al procesar RAW: " + e.message);
+                console.error(e);
+                return alert("❌ Error en Carga Inteligente: " + e.message);
             }
         }
 
-        // Si no hay RAW, CARGA DIRECTA DESDE GITHUB PAGES (CONFIG.JSON PÚBLICO)
+        // Si no hay RAW, CARGA DESDE NUBE
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
                 const jsonParsed = await res.json();
-                
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
                 if (jsonParsed.license) localStorage.setItem('sgf_license', jsonParsed.license);
-                
                 reconstruirDesdeJSON(jsonParsed.store || {});
-                mostrarNotificacion("DATOS SINCRONIZADOS DESDE LA NUBE", "green");
-            } else if (res.status === 404) {
-                mostrarNotificacion("AVISO: Archivo no encontrado en la nube", "orange");
-                actualizarUIYMapa();
-            } else {
-                throw new Error(`Error de red: ${res.status}`);
+                mostrarNotificacion("DATOS SINCRONIZADOS", "green");
             }
         } catch (e) {
-            console.error("Failed to load cloud data:", e);
-            mostrarNotificacion("ERROR DE CARGA: " + e.message, "red");
-            actualizarUIYMapa();
+            mostrarNotificacion("ERROR DE RED", "red");
         }
+    }
+
+    // MOTOR DE EXTRACCIÓN TOLERANTE A ERRORES (REGREX)
+    function extraerCoordenadasDeTexto(texto) {
+        const lineas = texto.split('\n');
+        const registros = [];
+        // Regex busca pares de números que parezcan lat/lng (-?90 to 90, -?180 to 180)
+        const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/g;
+        
+        lineas.forEach((linea, index) => {
+            let match;
+            while ((match = regex.exec(linea)) !== null) {
+                registros.push({
+                    idFisico: Date.now() + Math.random(),
+                    tipoGeometria: 'marker',
+                    coords: { lat: parseFloat(match[1]), lng: parseFloat(match[2]) },
+                    datosGenerales: { 
+                        "Contribuyente": "PUNTO EXTRAÍDO " + (registros.length + 1),
+                        "Estatus": "VIGENTE",
+                        "Nota": linea.trim()
+                    },
+                    visibleIndividual: true,
+                    camposOcultos: []
+                });
+            }
+        });
+
+        return {
+            "IMPORT_RAW": {
+                nombreSector: "CARGA MANUAL " + new Date().toLocaleDateString(),
+                visible: true,
+                isMaster: true,
+                registros: registros
+            }
+        };
+    }
+
+    // CONVERTIDOR CSV (GOOGLE SHEETS) A STORE SGF
+    function convertirCSVStore(csv) {
+        const lineas = csv.split('\n');
+        const headers = lineas[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const registros = [];
+
+        for (let i = 1; i < lineas.length; i++) {
+            if (!lineas[i].trim()) continue;
+            const columnas = lineas[i].split(',').map(c => c.trim().replace(/"/g, ''));
+            const data = {};
+            headers.forEach((h, idx) => data[h] = columnas[idx]);
+
+            // Buscar Lat/Lng en columnas
+            const lat = parseFloat(data.lat || data.latitude || data.latitud || data.Latitud);
+            const lng = parseFloat(data.lng || data.longitude || data.longitud || data.Longitud);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                registros.push({
+                    idFisico: Date.now() + Math.random(),
+                    tipoGeometria: 'marker',
+                    coords: { lat, lng },
+                    datosGenerales: {
+                        "Contribuyente": data.nombre || data.contribuyente || data.Nombre || "SGF CLIENTE",
+                        "Estatus": data.estatus || data.estado || "VIGENTE",
+                        "RIF": data.rif || data.cedula || "N/A"
+                    },
+                    visibleIndividual: true,
+                    camposOcultos: []
+                });
+            }
+        }
+
+        return {
+            "IMPORT_GSHEETS": {
+                nombreSector: "IMPORTACIÓN GOOGLE SHEETS",
+                visible: true,
+                isMaster: true,
+                registros: registros
+            }
+        };
     }
 
     function cerrarSesionSeguridad() {
