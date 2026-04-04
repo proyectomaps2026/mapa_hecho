@@ -1205,9 +1205,8 @@
             return alert("No hay datos cargados para generar un respaldo.");
         }
 
-        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
-        const systemId = `SGF-CLOUD-${new Date().getFullYear()}`;
-
+        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber, ShadingType } = docx;
+        
         const allRecords = [];
         Object.values(STORE).forEach(sector => {
             allRecords.push(...sector.registros);
@@ -1235,7 +1234,7 @@
             const contribuyente = d["Razón Social"] || d["Nombre Comercial"] || "Sin Identificar";
             const registro = d["RIF / Registro"] || "N/A";
             const control = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || "N/A"}`;
-            const estatus = d["Licencia Act. Econ."] || "EN TRÁMITE";
+            const estatus = d["Licencia Act. Econ."] || "EN PROCESO";
             const fiscal = d["Fiscal"] || "N/A";
 
             const dataRow = new TableRow({
@@ -1261,54 +1260,46 @@
                 headers: {
                     default: new Header({
                         children: [new Paragraph({
-                            text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO",
+                            text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO - DIRECCIÓN DE HACIENDA",
                             alignment: AlignmentType.CENTER,
                         })],
                     }),
                 },
                 footers: {
                     default: new Footer({
-                        children: [new Paragraph({
-                            alignment: AlignmentType.CENTER,
-                            children: [
-                                new TextRun(`Documento generado por SGF-CLOUD - ID Sistema: ${systemId} - Página `),
-                                new TextRun({
-                                    children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
-                                }),
-                            ],
-                        })],
+                        children: [
+                            new Paragraph({
+                                alignment: AlignmentType.CENTER,
+                                children: [
+                                    new TextRun({
+                                        text: "CERTIFICACIÓN DE REGISTRO FISCAL: El presente documento constituye el respaldo oficial del Censo de Actividades Económicas, emitido conforme a la Ley Orgánica de la Contraloría (Arts. 7, 9, 77 y 91), la Constitución (Arts. 168 y 174) y la Ley de Infogobierno. La data aquí contenida es fidedigna y corresponde al corte realizado por el Fiscal responsable. Este soporte digital es parte del sistema SGF-CLOUD",
+                                        size: 14, // Smaller font for footer
+                                        italics: true,
+                                    }),
+                                ],
+                            }),
+                            new Paragraph({
+                                alignment: AlignmentType.RIGHT,
+                                children: [
+                                    new TextRun({
+                                        children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
+                                        size: 14,
+                                    }),
+                                ]
+                            })
+                        ],
                     }),
                 },
                 children: [
                     new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.RIGHT }),
                     new Paragraph(" "),
                     table,
-                    new Paragraph(" "), 
-                    new Paragraph({
-                        children: [
-                            new TextRun({
-                                text: "CERTIFICACIÓN DE REGISTRO FISCAL: ",
-                                bold: true,
-                                size: 20,
-                                break: 1,
-                            }),
-                            new TextRun({
-                                text: "El presente documento constituye el respaldo oficial del Censo de Actividades Económicas, emitido bajo los estándares de la Ley Orgánica de la Contraloría (Arts. 7, 9, 77 y 91) y la Constitución de la República (Arts. 168 y 174). ",
-                                size: 20,
-                            }),
-                            new TextRun({
-                                text: "Se certifica que la información aquí detallada (RIF, Expediente, Censo y Estatus de Licencia) ha sido procesada por el Fiscal responsable identificado en este reporte. Este documento digital es el soporte fidedigno del sistema SGF-CLOUD.",
-                                size: 20,
-                            }),
-                        ],
-                        alignment: AlignmentType.JUSTIFIED,
-                    }),
                 ],
             }],
         });
 
         Packer.toBlob(doc).then(blob => {
-            saveAs(blob, `Respaldo_Oficial_Censo_Ayacucho_${Date.now()}.docx`);
+            saveAs(blob, `Respaldo_Auditoria_Limpia_Ayacucho_${Date.now()}.docx`);
         });
     }
 
