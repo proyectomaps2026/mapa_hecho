@@ -917,7 +917,11 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <p style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Conexión directa vía Vercel Bridge (GITHUB_TOKEN).</p>
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; border-color: #8e44ad; color: #8e44ad;" onclick="cargarDatosNube()">REFRESCAR CONEXIÓN NUBE</button>
+            
+            <label style="color: white; font-size: 10px; font-weight: bold; display: block; margin-bottom: 5px;">PEGAR CENSO RAW / URL:</label>
+            <textarea id="ajuste-censo-raw" class="modal-input" style="height: 80px; font-size: 10px; padding: 10px; resize: vertical;" placeholder='{"sector_1": {...}} o URL de GitHub RAW'></textarea>
+            
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; border-color: #8e44ad; color: #8e44ad;" onclick="cargarDatosNube()">CARGAR RAW (LOCAL)</button>
         </div>
     </div>
 
@@ -2401,7 +2405,30 @@
     }
     
     async function cargarDatosNube() {
-        // CARGA DIRECTA DESDE GITHUB PAGES (CONFIG.JSON PÚBLICO)
+        // PROTOCOLO AURA: Primero intentamos cargar lo que esté pegado en el campo RAW
+        const rawInput = document.getElementById('ajuste-censo-raw').value.trim();
+        
+        if (rawInput) {
+            try {
+                let jsonParsed;
+                if (rawInput.startsWith('http')) {
+                    const res = await fetch(rawInput);
+                    jsonParsed = await res.json();
+                } else {
+                    jsonParsed = JSON.parse(rawInput);
+                }
+                
+                // Si es un objeto completo (con store), lo procesamos
+                const storeData = jsonParsed.store || jsonParsed;
+                reconstruirDesdeJSON(storeData);
+                mostrarNotificacion("CENSO RAW CARGADO LOCALMENTE", "green");
+                return; // Detenemos aquí para que Aura revise antes de guardar
+            } catch (e) {
+                return alert("❌ Error al procesar RAW: " + e.message);
+            }
+        }
+
+        // Si no hay RAW, CARGA DIRECTA DESDE GITHUB PAGES (CONFIG.JSON PÚBLICO)
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
