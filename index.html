@@ -1097,33 +1097,44 @@
     /* ==========================================================================
        FASE 7: MOTOR DE LICENCIA Y CARGA DE DATOS (SGF-DECONSTRUCT)
        ========================================================================== */
-    async function cargarDatosNube(token) {
-        if (!token) {
-            bloquearSistemaPorLicencia();
-            return false;
-        }
+    async function cargarDatosNube(token = null) {
+        // El visor primero intenta leer config.json de forma pública para ver si hay una licencia cargada
+        // Si no se provee token, intentamos una carga anónima (funciona si el repo es público o vía raw)
+        const fetchUrl = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`;
+        const headers = token ? { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' } 
+                              : { 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' };
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
-                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
-            });
+            const res = await fetch(fetchUrl, { headers });
 
             if (!res.ok) {
+                if (!token) return { success: false, autoLoaded: false }; // Silencioso si es el intento automático
                 bloquearSistemaPorLicencia();
-                return false;
+                return { success: false, autoLoaded: false };
             }
 
             const data = await res.json();
             const decodedContent = decodeURIComponent(escape(atob(data.content)));
             const jsonParsed = JSON.parse(decodedContent);
             
+            // Si cargamos con éxito y hay una licencia en el config, la usamos para reconstruir el token si no teníamos uno
+            if (jsonParsed.license && !token) {
+                const validacion = validarLicenciaSGF(jsonParsed.license);
+                if (validacion.valid && !validacion.expired) {
+                    _decon_token = validacion.token;
+                    // Recargamos ahora con el token oficial para asegurar acceso completo a otros archivos si fuera necesario
+                    reconstruirDesdeJSON(jsonParsed.store || {});
+                    return { success: true, autoLoaded: true, validacion };
+                }
+            }
+
             reconstruirDesdeJSON(jsonParsed.store || {});
-            return true; // Éxito en la carga
+            return { success: true, autoLoaded: !!token }; 
 
         } catch (e) {
             console.error("Fallo de lectura o parseo de la base de datos:", e);
-            bloquearSistemaPorLicencia();
-            return false;
+            if (token) bloquearSistemaPorLicencia();
+            return { success: false, autoLoaded: false };
         }
     }
 
@@ -1330,6 +1341,20 @@
     // NUEVO MOTOR DE LICENCIA: PROTOCOLO SGF-DECONSTRUCT
     // ==========================================================================
     async function sync_sys_buffer() {
+        // --- NUEVA LÓGICA: INTENTO DE AUTO-CARGA ---
+        // Primero intentamos cargar sin pedir nada, por si ya hay licencia en config.json
+        const autoCarga = await cargarDatosNube();
+        
+        if (autoCarga.success && autoCarga.autoLoaded) {
+            console.log("SGF: Licencia detectada en Config. Acceso Automático concedido.");
+            eliminarBloqueoForense();
+            if (autoCarga.validacion && autoCarga.validacion.dias <= 7) {
+                alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${autoCarga.validacion.usuario}] vencerá en ${autoCarga.validacion.dias} días.`);
+            }
+            return; // Acceso concedido, no pedimos prompt
+        }
+
+        // Si la auto-carga falla o no hay licencia, pedimos el prompt normal
         const licenseKey = prompt("SGF-CLOUD REQUIERE AUTENTICACIÓN\n\nIngrese su Licencia de Acceso:", "");
 
         if (!licenseKey) {
@@ -1348,18 +1373,18 @@
         // Reconstruir token en memoria solo si es válido
         _decon_token = validacion.token;
 
-        // Cargar los datos primero para asegurar que el respaldo funcione
-        const cargaExitosa = await cargarDatosNube(_decon_token);
-        if (!cargaExitosa) return;
+        // Cargar los datos oficialmente
+        const cargaFinal = await cargarDatosNube(_decon_token);
+        if (!cargaFinal.success) return;
 
         // Lógica de tiempo y alertas
         if (validacion.expired) {
             bloquearSistemaModoForense();
             return;
         } else {
-            eliminarBloqueoForense(); // Asegura que se vea si la licencia está bien
+            eliminarBloqueoForense(); 
             if (validacion.dias <= 7) {
-                alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${validacion.usuario}] vencerá en ${validacion.dias} días. Gestione la renovación.`);
+                alert(`⚠️ SGF-SISTEMA: Su licencia de uso para [${validacion.usuario}] vencerá en ${validacion.dias} días.`);
             }
         }
     }
