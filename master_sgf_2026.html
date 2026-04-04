@@ -17,6 +17,10 @@
     <!-- LIBRERÍA XLSX PARA EXPORTACIÓN A EXCEL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
+    <!-- LIBRERÍAS REQUERIDAS PARA EXPORTACIÓN A WORD (.DOCX) -->
+    <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
     <style>
         /* ==========================================================================
            1. VARIABLES MAESTRAS Y RESETEO (UI CORPORATIVA MUNICIPAL)
@@ -927,7 +931,7 @@
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
             <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
-            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
+            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
         </div>
     </div>
 
@@ -1160,7 +1164,7 @@
     }
 
     /* ==========================================================================
-       NUEVO BLOQUE: EXPORTACIÓN A EXCEL (SECTORIZACIÓN POR COORDENADAS)
+       BLOQUE DE EXPORTACIÓN DE DATOS (EXCEL Y WORD)
        ========================================================================== */
     function exportarExcelInstitucional() {
         if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
@@ -1198,6 +1202,88 @@
         XLSX.utils.book_append_sheet(wb, ws, "Reporte Fiscal");
         XLSX.writeFile(wb, "Reporte_Fiscal_Ayacucho.xlsx");
     }
+
+    function descargarRespaldoWord() {
+        if (typeof docx === 'undefined') {
+            return alert("Error: La librería de generación de documentos no se cargó correctamente.");
+        }
+        if (Object.keys(STORE).length === 0) {
+            return alert("No hay datos cargados para generar un respaldo.");
+        }
+
+        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle } = docx;
+
+        const allRecords = [];
+        Object.values(STORE).forEach(sector => {
+            allRecords.push(...sector.registros);
+        });
+
+        const tableHeader = new TableRow({
+            children: [
+                new TableCell({ text: "RIF / REGISTRO", width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RIF / REGISTRO", bold: true, size: 16 })] })] }),
+                new TableCell({ text: "RAZÓN SOCIAL", width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "RAZÓN SOCIAL", bold: true, size: 16 })] })] }),
+                new TableCell({ text: "VALIDACIÓN FISCAL", width: { size: 1500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "VALIDACIÓN FISCAL", bold: true, size: 16 })] })] }),
+                new TableCell({ text: "COORDENADAS GPS", width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "COORDENADAS GPS", bold: true, size: 16 })] })] }),
+                new TableCell({ text: "N° CENSO", width: { size: 1000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "N° CENSO", bold: true, size: 16 })] })] }),
+            ],
+            tableHeader: true,
+        });
+
+        const dataRows = allRecords.map(reg => {
+            const d = reg.datosGenerales;
+            const latLng = reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
+            const coordsText = `${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
+            
+            return new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["RIF"] || "S/D", size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["Contribuyente"] || d["Razón Social"] || "S/D", size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["Estatus"] || "S/D", size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: coordsText, size: 16 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: d["N° de censo"] || String(reg.idFisico), size: 16 })] })] }),
+                ],
+            });
+        });
+
+        const table = new Table({
+            rows: [tableHeader, ...dataRows],
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            columnWidths: [1500, 2500, 1500, 2000, 1000],
+        });
+
+        const doc = new Document({
+            sections: [{
+                children: [
+                    new Paragraph({ text: "ALCALDÍA BOLIVARIANA DEL MUNICIPIO AYACUCHO", heading: "Heading1", alignment: AlignmentType.CENTER }),
+                    new Paragraph({ text: "RESPALDO MAESTRO DE RECAUDACIÓN FISCAL", heading: "Heading2", alignment: AlignmentType.CENTER }),
+                    new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.CENTER, style: "WellSpaced" }),
+                    new Paragraph(" "), 
+                    table,
+                    new Paragraph(" "), 
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "CERTIFICACIÓN LEGAL: ",
+                                bold: true,
+                                size: 18,
+                            }),
+                            new TextRun({
+                                text: "Este respaldo se emite conforme a la Ley Orgánica de la Contraloría (Arts. 7, 9, 77 y 91) y la Ley de Infogobierno. Se garantiza que la data es fidedigna y corresponde al corte realizado en la fecha indicada. Este documento digital tiene carácter de título administrativo para la fiscalización municipal de Ayacucho.",
+                                size: 18,
+                            }),
+                        ],
+                        alignment: AlignmentType.JUSTIFIED,
+                        style: "WellSpaced"
+                    }),
+                ],
+            }],
+        });
+
+        Packer.toBlob(doc).then(blob => {
+            saveAs(blob, `Respaldo_Fiscal_Ayacucho_${Date.now()}.docx`);
+        });
+    }
+
 
     /* ==========================================================================
        MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
