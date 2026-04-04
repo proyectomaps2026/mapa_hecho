@@ -987,7 +987,7 @@
     // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; 
-    const FILE_PATH = 'mapa_censo/config.json';
+    const FILE_PATH = 'config.json';
     let fileSha = null;
     
     // JERARQUÍA DE ACCESO Y ROLES
@@ -1169,6 +1169,7 @@
         const objetoMaestro = {
             credentials: SYSTEM_AUTH,
             license: licFinal,
+            master_token: localStorage.getItem('master_token_revert'),
             store: datosLimpios
         };
 
@@ -1200,6 +1201,7 @@
         const objetoMaestro = {
             credentials: SYSTEM_AUTH,
             license: licFinal,
+            master_token: localStorage.getItem('master_token_revert'),
             store: datosLimpios
         };
 
@@ -2340,21 +2342,43 @@
         btn.disabled = true;
 
         try {
+            // USAR EL TOKEN DIRECTO SIN INVERTIR PARA LA PRUEBA DE API
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': 'token ' + rawToken }
+                method: 'GET',
+                headers: { 
+                    'Authorization': 'token ' + rawToken,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
 
             if (res.ok) {
+                // GUARDAR EL TOKEN INVERTIDO PARA SEGURIDAD EN LOCALSTORAGE
                 const pikaToken = rawToken.split('').reverse().join('');
                 localStorage.setItem('master_token_revert', pikaToken);
-                alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
-                await cargarDatosNube(); 
+                
+                // DISPARAR GUARDADO EN CONFIG.JSON (REVERT)
+                const datosLimpios = extraerDatosGeometria();
+                const objetoMaestro = {
+                    credentials: SYSTEM_AUTH,
+                    license: localStorage.getItem('sgf_license'),
+                    master_token: pikaToken, // TOKEN EN REVERT PARA EL CONFIG
+                    store: datosLimpios
+                };
+
+                const exito = await uploadToGitHub(objetoMaestro, "SGF Cloud: Actualización de Llave Maestra (REVERT) por SupAdmin");
+                
+                if(exito) {
+                    alert("✅ Llave Maestra Encriptada (REVERT) y Guardada en Config con éxito.");
+                    document.getElementById('ajuste-repo-token').value = "";
+                    await cargarDatosNube(); 
+                }
             } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
+                const errData = await res.json();
+                throw new Error(`Error ${res.status}: ${errData.message || 'Token inválido'}`);
             }
         } catch(e) {
-            console.error(e);
-            alert(`❌ Error de verificación: ${e.message}`);
+            console.error("SGF Debug Token Error:", e);
+            alert(`❌ Error de verificación: ${e.message}\n\nAsegúrese de pegar el token ghp_... completo.`);
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
@@ -2377,7 +2401,11 @@
                 fileSha = data.sha;
                 const decodedContent = decodeURIComponent(escape(atob(data.content)));
                 const jsonParsed = JSON.parse(decodedContent);
+                
                 if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+                if (jsonParsed.license) localStorage.setItem('sgf_license', jsonParsed.license);
+                if (jsonParsed.master_token) localStorage.setItem('master_token_revert', jsonParsed.master_token);
+                
                 reconstruirDesdeJSON(jsonParsed.store || {});
             } else if (res.status === 404) {
                 actualizarUIYMapa();
@@ -2501,6 +2529,7 @@
             const objetoMaestro = {
                 credentials: SYSTEM_AUTH,
                 license: localStorage.getItem('sgf_license'),
+                master_token: localStorage.getItem('master_token_revert'),
                 store: datosLimpios // Esto empaqueta todo el RAW del panel lateral (STORE)
             };
             
