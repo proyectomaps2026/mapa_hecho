@@ -9,12 +9,14 @@
       "visible": true,
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {},
+      "colorPrincipal": "#00f2ff",
       "registros": [
         {
           "idFisico": 83,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -58,10 +60,11 @@
           }
         },
         {
-          "idFisico": 85,
+          "idFisico": 84,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -105,10 +108,11 @@
           }
         },
         {
-          "idFisico": 86,
+          "idFisico": 85,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -152,10 +156,11 @@
           }
         },
         {
-          "idFisico": 87,
+          "idFisico": 86,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Unicel, C.A",
             "Estatus": "VENCIDA",
@@ -199,10 +204,11 @@
           }
         },
         {
-          "idFisico": 88,
+          "idFisico": 87,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Auri Estelita Moreno",
             "Estatus": "VENCIDA",
@@ -246,10 +252,11 @@
           }
         },
         {
-          "idFisico": 89,
+          "idFisico": 88,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Carlos eduardo albarracin",
             "Estatus": "SIN LICENCIA",
@@ -293,10 +300,11 @@
           }
         },
         {
-          "idFisico": 90,
+          "idFisico": 89,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -340,10 +348,11 @@
           }
         },
         {
-          "idFisico": 91,
+          "idFisico": 90,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Englobate Leal, F.P",
             "Estatus": "VENCIDA",
@@ -387,10 +396,11 @@
           }
         },
         {
-          "idFisico": 92,
+          "idFisico": 91,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "El palmar tiendas / Ramiro Leal Garcia",
             "Estatus": "VENCIDA",
@@ -434,10 +444,11 @@
           }
         },
         {
-          "idFisico": 93,
+          "idFisico": 92,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -481,10 +492,11 @@
           }
         },
         {
-          "idFisico": 94,
+          "idFisico": 93,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -528,10 +540,11 @@
           }
         },
         {
-          "idFisico": 95,
+          "idFisico": 94,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -575,10 +588,11 @@
           }
         },
         {
-          "idFisico": 96,
+          "idFisico": 95,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -622,10 +636,11 @@
           }
         },
         {
-          "idFisico": 97,
+          "idFisico": 96,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Almacenes todo al costo",
             "Estatus": "VENCIDA",
@@ -669,10 +684,11 @@
           }
         },
         {
-          "idFisico": 98,
+          "idFisico": 97,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Alfredo Dias / Panificados La Gran Roma",
             "Estatus": "VENCIDA",
@@ -716,10 +732,11 @@
           }
         },
         {
-          "idFisico": 99,
+          "idFisico": 98,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -763,10 +780,11 @@
           }
         },
         {
-          "idFisico": 100,
+          "idFisico": 99,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -810,10 +828,11 @@
           }
         },
         {
-          "idFisico": 101,
+          "idFisico": 100,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -857,10 +876,11 @@
           }
         },
         {
-          "idFisico": 102,
+          "idFisico": 101,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -904,10 +924,11 @@
           }
         },
         {
-          "idFisico": 103,
+          "idFisico": 102,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -951,10 +972,11 @@
           }
         },
         {
-          "idFisico": 104,
+          "idFisico": 103,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -998,10 +1020,11 @@
           }
         },
         {
-          "idFisico": 105,
+          "idFisico": 104,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1045,10 +1068,11 @@
           }
         },
         {
-          "idFisico": 106,
+          "idFisico": 105,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1092,10 +1116,11 @@
           }
         },
         {
-          "idFisico": 107,
+          "idFisico": 106,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1139,10 +1164,11 @@
           }
         },
         {
-          "idFisico": 108,
+          "idFisico": 107,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Cuiling he/ supermercado nuevo mundo",
             "Estatus": "VENCIDA",
@@ -1186,10 +1212,11 @@
           }
         },
         {
-          "idFisico": 109,
+          "idFisico": 108,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Banco de Venezuela S.A banco universal",
             "Estatus": "VENCIDA",
@@ -1233,10 +1260,11 @@
           }
         },
         {
-          "idFisico": 110,
+          "idFisico": 109,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Francisco José Perez Rondon",
             "Estatus": "TEMPORAL",
@@ -1280,10 +1308,11 @@
           }
         },
         {
-          "idFisico": 111,
+          "idFisico": 110,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Banco digital de los trabajadores, banco universal C.A",
             "Estatus": "VIGENTE",
@@ -1327,10 +1356,11 @@
           }
         },
         {
-          "idFisico": 112,
+          "idFisico": 111,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "El ciclón de colon C.A",
             "Estatus": "VENCIDA",
@@ -1374,10 +1404,11 @@
           }
         },
         {
-          "idFisico": 113,
+          "idFisico": 112,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1421,10 +1452,11 @@
           }
         },
         {
-          "idFisico": 114,
+          "idFisico": 113,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1468,10 +1500,11 @@
           }
         },
         {
-          "idFisico": 115,
+          "idFisico": 114,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1515,10 +1548,11 @@
           }
         },
         {
-          "idFisico": 116,
+          "idFisico": 115,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Banco saofitasa,banco universal C.A agencia colon",
             "Estatus": "VENCIDA",
@@ -1562,10 +1596,11 @@
           }
         },
         {
-          "idFisico": 117,
+          "idFisico": 116,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1609,10 +1644,11 @@
           }
         },
         {
-          "idFisico": 118,
+          "idFisico": 117,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Hildebrando carradini sanchez",
             "Estatus": "VENCIDA",
@@ -1656,10 +1692,11 @@
           }
         },
         {
-          "idFisico": 119,
+          "idFisico": 118,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1703,10 +1740,11 @@
           }
         },
         {
-          "idFisico": 120,
+          "idFisico": 119,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Maiker Onorio Prisco / la esquina del dulce",
             "Estatus": "VENCIDA",
@@ -1750,10 +1788,11 @@
           }
         },
         {
-          "idFisico": 121,
+          "idFisico": 120,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1797,10 +1836,11 @@
           }
         },
         {
-          "idFisico": 122,
+          "idFisico": 121,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "Abasto Medina Vivas F.P/ Liseth Katherine Vivas",
             "Estatus": "VENCIDA",
@@ -1844,10 +1884,11 @@
           }
         },
         {
-          "idFisico": 123,
+          "idFisico": 122,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
@@ -1891,10 +1932,11 @@
           }
         },
         {
-          "idFisico": 124,
+          "idFisico": 123,
           "tipoGeometria": "marker",
           "colorPersonalizado": null,
           "visibleIndividual": true,
+          "_modoPopup": "lectura",
           "datosGenerales": {
             "Contribuyente": "SIN REGISTRO",
             "Estatus": "SIN LICENCIA",
