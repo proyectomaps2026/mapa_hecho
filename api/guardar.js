@@ -1,7 +1,7 @@
 // api/guardar.js - SGF-AURA API Bridge for Vercel
 const GITHUB_USER = 'proyectomaps2026';
 const GITHUB_REPO = 'mapa_hecho';
-const FILE_PATH = 'mapa_censo/config.json';
+    const FILE_PATH = 'mapa_censo/config.json';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
