@@ -514,7 +514,11 @@
         
         .leaflet-popup-content { 
             margin: 0; 
-        } 
+        }
+
+        .pop-wrapper {
+            width: 100%;
+        }
         
         .pop-cover { 
             width: 100%; 
@@ -1311,28 +1315,22 @@
         const iNom = indiceColumnaMapeo(mapeo, 'nombre', headers);
         const iCat = indiceColumnaMapeo(mapeo, 'categoria', headers);
         const iFot = indiceColumnaMapeo(mapeo, 'foto', headers);
-        const mappedIdx = new Set([iLat, iLng, iNom, iCat, iFot].filter((ix) => ix >= 0));
         rows.forEach((row) => {
             if (iLat < 0 || iLng < 0) return;
             const la = parseNum(row[iLat]);
             const ln = parseNum(row[iLng]);
             if (isNaN(la) || isNaN(ln)) return;
             const datosGenerales = {};
-            datosGenerales['Contribuyente'] = (iNom >= 0 && row[iNom] !== undefined && row[iNom] !== null) ? String(row[iNom]).trim() : '';
-            datosGenerales['Estatus'] = (iCat >= 0 && row[iCat] !== undefined && row[iCat] !== null && String(row[iCat]).trim() !== '') ? String(row[iCat]).trim() : 'SIN CATEGORÍA';
-            datosGenerales['Link Fotografía'] = (iFot >= 0 && row[iFot] !== undefined && row[iFot] !== null) ? String(row[iFot]).trim() : '';
-            datosGenerales['RIF'] = '';
             headers.forEach((h, ix) => {
                 const hn = String(h).trim();
-                if (!hn || mappedIdx.has(ix)) return;
+                if (!hn) return;
                 const v = row[ix];
                 if (v !== undefined && v !== null && String(v).trim() !== '') datosGenerales[hn] = String(v).trim();
             });
-            datosGenerales['_oro_csv_ctx'] = JSON.stringify({
-                headers: headers.slice(),
-                fila: row.slice(),
-                idx: { lat: iLat, lng: iLng, nombre: iNom, categoria: iCat, foto: iFot }
-            });
+            datosGenerales['Contribuyente'] = (iNom >= 0 && row[iNom] !== undefined && row[iNom] !== null) ? String(row[iNom]).trim() : '';
+            datosGenerales['Estatus'] = (iCat >= 0 && row[iCat] !== undefined && row[iCat] !== null && String(row[iCat]).trim() !== '') ? String(row[iCat]).trim() : 'SIN CATEGORÍA';
+            datosGenerales['Link Fotografía'] = (iFot >= 0 && row[iFot] !== undefined && row[iFot] !== null) ? String(row[iFot]).trim() : '';
+            if (!datosGenerales['RIF']) datosGenerales['RIF'] = '';
             store[secId].registros.push({
                 tipoGeometria: 'marker',
                 coords: { lat: la, lng: ln },
@@ -1356,6 +1354,7 @@
         return ix >= 0 ? String(ix) : '';
     }
 
+    /* Mapeo manual CSV — alineado a Master Oro: opciones = índice de columna, texto = nombre de cabecera (csvRows solo conserva filas en _csvMapeoPendiente). */
     function mostrarSelectorColumnasCSV(headers, csvRows, decodedText, partesMeta) {
         _csvMapeoPendiente = { headers, rows: csvRows, decodedText, partesMeta };
         const firma = firmaHeaders(headers);
@@ -2478,54 +2477,6 @@
         }
     }
 
-    function escapeHtmlCsvPopup(s) {
-        return String(s ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-    }
-
-    function parseOroCsvCtx(registro) {
-        try {
-            const raw = registro.datosGenerales && registro.datosGenerales['_oro_csv_ctx'];
-            if (!raw || typeof raw !== 'string') return null;
-            const o = JSON.parse(raw);
-            if (!o || !Array.isArray(o.headers) || !Array.isArray(o.fila) || !o.idx) return null;
-            return o;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function crearContenidoPopup(registro, idFisico) {
-        const ctx = parseOroCsvCtx(registro);
-        if (!ctx) return '';
-        const hdrs = ctx.headers;
-        const fila = ctx.fila;
-        const idx = ctx.idx;
-        let html = '';
-        const nombreBold = (idx.nombre >= 0 && fila[idx.nombre] != null && String(fila[idx.nombre]).trim() !== '')
-            ? String(fila[idx.nombre]).trim()
-            : (registro.datosGenerales['Contribuyente'] || 'SIN NOMBRE');
-        html += `<div class="oro-popup-nombre" style="font-weight:800;font-size:15px;margin:10px 0 10px 0;color:#111;line-height:1.3;">${escapeHtmlCsvPopup(nombreBold)}</div>`;
-        const skipShow = new Set([idx.lat, idx.lng, idx.nombre, idx.foto].filter((i) => typeof i === 'number' && i >= 0));
-        hdrs.forEach((lab, i) => {
-            if (skipShow.has(i)) return;
-            const labS = String(lab || '').trim();
-            if (!labS) return;
-            const val = fila[i];
-            if (val === undefined || val === null || String(val).trim() === '') return;
-            const idSafe = String(i) + '-' + labS.replace(/\s/g, '');
-            html += `
-                <div class="read-field">
-                    <span class="read-label">${escapeHtmlCsvPopup(labS)}</span>
-                    <div class="read-value" id="view-val-${idFisico}-oro-${idSafe}">${escapeHtmlCsvPopup(String(val))}</div>
-                </div>`;
-        });
-        return html;
-    }
-
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const sectorData = STORE[idSector];
         const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
@@ -2554,18 +2505,13 @@
             });
         } 
         else {
-            const ctxOro = parseOroCsvCtx(registro);
-            const estActual = ctxOro && ctxOro.idx.categoria >= 0 && ctxOro.fila[ctxOro.idx.categoria] != null && String(ctxOro.fila[ctxOro.idx.categoria]).trim() !== ''
-                ? String(ctxOro.fila[ctxOro.idx.categoria]).trim()
-                : (registro.datosGenerales["Estatus"] || registro.datosGenerales["Estado"] || registro.datosGenerales["categoria"] || "SIN CATEGORÍA");
+            const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
             const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
             const colorFinal = registro.colorPersonalizado || colorSector;
             
-            const imgUrl = ctxOro && ctxOro.idx.foto >= 0 && ctxOro.fila[ctxOro.idx.foto] != null && String(ctxOro.fila[ctxOro.idx.foto]).trim().length > 0
-                ? String(ctxOro.fila[ctxOro.idx.foto]).trim()
-                : registro.datosGenerales["Link Fotografía"];
+            const imgUrl = registro.datosGenerales["Link Fotografía"];
             const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
             
             html += `
@@ -2576,13 +2522,8 @@
             <div class="pop-content">`;
 
             html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
-            const bloqueOro = crearContenidoPopup(registro, idFisico);
-            if (bloqueOro) {
-                html += bloqueOro;
-            } else {
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                if (clave === '_oro_csv_ctx' || String(clave).indexOf('_oro') === 0) continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 if(isOculto) continue; 
                 
@@ -2592,7 +2533,6 @@
                     <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
                 </div>`;
             }
-            }
             if(!lecturaBloqueaEdicion()) {
                 html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
             }
@@ -2601,7 +2541,6 @@
             html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                if (clave === '_oro_csv_ctx' || String(clave).indexOf('_oro') === 0) continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 
                 html += `
