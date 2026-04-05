@@ -1070,7 +1070,14 @@
         }
         const pathEnc = githubContentsApiPath(getGithubContentPathForApi());
         const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        if (authToken) headers['Authorization'] = 'token ' + authToken;
+        if (authToken) {
+            const isGoogle = /google\.com/i.test(rawLs);
+            const isRawGh = /raw\.githubusercontent\.com/i.test(rawLs);
+            const relativePath = !isAbsoluteHttpUrl(rawLs);
+            if (!isGoogle && (relativePath || isRawGh)) {
+                headers['Authorization'] = 'token ' + authToken;
+            }
+        }
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${pathEnc}`, { headers });
             if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
@@ -1199,21 +1206,38 @@
             }
         }
         if (i >= lines.length) return { store: {}, license, user, pass };
-        const header = parseCsvRow(lines[i]).map(h => h.trim());
+        const header = parseCsvRow(lines[i]).map(h => String(h).trim());
         i++;
-        const h = {};
-        header.forEach((name, idx) => { h[name] = idx; });
+        const hNorm = {};
+        header.forEach((name, idx) => {
+            if (!name) return;
+            hNorm[name] = idx;
+            hNorm[name.toLowerCase()] = idx;
+        });
         const getv = (row, col) => {
-            const ix = h[col];
-            return ix !== undefined ? row[ix] : undefined;
+            const keys = [col, String(col).toLowerCase(), String(col).toUpperCase()];
+            for (let k = 0; k < keys.length; k++) {
+                const ix = hNorm[keys[k]];
+                if (ix === undefined) continue;
+                let v = row[ix];
+                if (v !== undefined && v !== null) v = String(v).replace(/^\s+|\s+$/g, '');
+                if (v === '') return undefined;
+                return v;
+            }
+            return undefined;
+        };
+        const parseNum = (v) => {
+            if (v === undefined || v === null) return NaN;
+            const s = String(v).trim().replace(',', '.');
+            return parseFloat(s);
         };
         const store = {};
         for (; i < lines.length; i++) {
-            const row = parseCsvRow(lines[i]);
-            if (!row.length || row.every(c => String(c).trim() === '')) continue;
-            const secId = getv(row, 'sector_id') || getv(row, 'idSector');
-            if (!secId) continue;
-            const secName = getv(row, 'nombre_sector') || getv(row, 'nombreSector') || secId;
+            const row = parseCsvRow(lines[i]).map(c => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
+            if (!row.length || row.every(c => c === '')) continue;
+            let secId = getv(row, 'sector_id') || getv(row, 'idSector');
+            if (!secId) secId = 'csv_sheet_default';
+            const secName = getv(row, 'nombre_sector') || getv(row, 'nombreSector') || getv(row, 'sector_nombre') || 'IMPORTACIÓN CSV';
             const isM = String(getv(row, 'is_master') || getv(row, 'isMaster') || '').toLowerCase();
             const isMaster = isM === '1' || isM === 'true' || isM === 'yes';
             if (!store[secId]) {
@@ -1229,11 +1253,12 @@
             } else {
                 store[secId].isMaster = !!(store[secId].isMaster || isMaster);
             }
-            const tipo = (getv(row, 'tipoGeometria') || getv(row, 'tipo') || 'marker').trim();
+            let tipo = String(getv(row, 'tipoGeometria') || getv(row, 'tipo') || 'marker').trim().toLowerCase();
+            if (tipo !== 'polygon' && tipo !== 'rectangle') tipo = 'marker';
             let coords = null;
             if (tipo === 'marker') {
-                const la = parseFloat(getv(row, 'lat'));
-                const ln = parseFloat(getv(row, 'lng'));
+                const la = parseNum(getv(row, 'lat') ?? getv(row, 'latitude') ?? getv(row, 'LAT'));
+                const ln = parseNum(getv(row, 'lng') ?? getv(row, 'lon') ?? getv(row, 'longitud') ?? getv(row, 'LNG'));
                 if (!isNaN(la) && !isNaN(ln)) coords = { lat: la, lng: ln };
             } else {
                 const cj = getv(row, 'coords_json');
@@ -1242,15 +1267,22 @@
                 }
             }
             const datosGenerales = {};
-            const fixed = { sector_id: 1, nombre_sector: 1, nombreSector: 1, is_master: 1, isMaster: 1, tipoGeometria: 1, tipo: 1, lat: 1, lng: 1, coords_json: 1 };
+            const fixedLower = { sector_id: 1, idsector: 1, nombre_sector: 1, nombresector: 1, sector_nombre: 1, is_master: 1, ismaster: 1, tipogeometria: 1, tipo: 1, lat: 1, latitude: 1, lng: 1, lon: 1, longitud: 1, coords_json: 1 };
             header.forEach((col) => {
-                if (fixed[col]) return;
-                const v = getv(row, col);
-                if (v !== undefined && v !== '') datosGenerales[col] = v;
+                const c = String(col).trim();
+                if (!c || fixedLower[c.toLowerCase()]) return;
+                const v = getv(row, c);
+                if (v !== undefined && v !== '') datosGenerales[c] = v;
             });
+            const nombreVal = getv(row, 'nombre') || getv(row, 'Nombre') || getv(row, 'contribuyente');
+            if (nombreVal) datosGenerales['Contribuyente'] = nombreVal;
             if (!datosGenerales['Contribuyente']) datosGenerales['Contribuyente'] = getv(row, 'Contribuyente') || '';
             if (!datosGenerales['RIF']) datosGenerales['RIF'] = getv(row, 'RIF') || '';
+            const catVal = getv(row, 'categoria') || getv(row, 'Categoria') || getv(row, 'Estado');
+            if (catVal) datosGenerales['Estatus'] = catVal;
             if (!datosGenerales['Estatus']) datosGenerales['Estatus'] = getv(row, 'Estatus') || 'SIN CATEGORÍA';
+            if (getv(row, 'Estado') && !datosGenerales['Estado']) datosGenerales['Estado'] = getv(row, 'Estado');
+            if (getv(row, 'Deuda')) datosGenerales['Deuda'] = getv(row, 'Deuda');
             if (!datosGenerales['Link Fotografía']) datosGenerales['Link Fotografía'] = getv(row, 'Link Fotografía') || '';
             store[secId].registros.push({
                 tipoGeometria: tipo,
@@ -2127,9 +2159,20 @@
                 <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
             </div>`;
+            const dPol = registro.datosGenerales || {};
+            ['nombre', 'Contribuyente', 'Estado', 'Estatus', 'Deuda', 'categoria', 'RIF'].forEach((k) => {
+                const v = dPol[k];
+                if (v != null && String(v).trim() !== '') {
+                    html += `
+                <div class="read-field">
+                    <span class="read-label">${k}</span>
+                    <div class="read-value">${String(v)}</div>
+                </div>`;
+                }
+            });
         } 
         else {
-            const estActual = registro.datosGenerales["Estatus"];
+            const estActual = registro.datosGenerales["Estatus"] || registro.datosGenerales["Estado"] || registro.datosGenerales["categoria"] || "SIN CATEGORÍA";
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
             const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
@@ -2909,32 +2952,28 @@
                 }
             }
 
-            const fr = await fetchCloudDataPlainText(null);
-            if (fr.ok && fr.text) {
-                if (fr.sha) fileSha = fr.sha;
-                aplicarCargaDesdeTextoPlano(fr.text);
-                const est = analizarLicenciaSGF(obtenerCadenaLicencia());
+            await cargarDatosNube();
+            const est = analizarLicenciaSGF(obtenerCadenaLicencia());
 
-                if (est.valid && !est.expired) {
-                    CURRENT_ROLE = 'ADMIN';
-                    document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA (AUTO)';
-                    document.getElementById('panel-admin-licencia').style.display = 'block';
+            if (est.valid && !est.expired) {
+                CURRENT_ROLE = 'ADMIN';
+                document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA (AUTO)';
+                document.getElementById('panel-admin-licencia').style.display = 'block';
 
-                    const btnRaw = document.getElementById('btn-cargar-raw');
-                    if(btnRaw) btnRaw.remove();
-                    const pnlSup = document.getElementById('panel-superadmin');
-                    if(pnlSup) pnlSup.remove();
+                const btnRaw = document.getElementById('btn-cargar-raw');
+                if(btnRaw) btnRaw.remove();
+                const pnlSup = document.getElementById('panel-superadmin');
+                if(pnlSup) pnlSup.remove();
 
-                    document.getElementById('login-overlay').style.display = 'none';
-                    actualizarUIYMapa();
+                document.getElementById('login-overlay').style.display = 'none';
+                actualizarUIYMapa();
+                validarLicenciaYBloqueo();
+                if (CHECK_LICENSE_INTERVAL) clearInterval(CHECK_LICENSE_INTERVAL);
+                CHECK_LICENSE_INTERVAL = setInterval(async () => {
+                    await cargarDatosNube();
                     validarLicenciaYBloqueo();
-                    if (CHECK_LICENSE_INTERVAL) clearInterval(CHECK_LICENSE_INTERVAL);
-                    CHECK_LICENSE_INTERVAL = setInterval(async () => {
-                        await cargarDatosNube();
-                        validarLicenciaYBloqueo();
-                    }, 60000);
-                    return;
-                }
+                }, 60000);
+                return;
             }
         } catch(e) {
             console.warn("Validación silenciosa del Auto-Login falló o no tiene acceso: ", e);
