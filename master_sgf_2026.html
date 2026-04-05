@@ -917,7 +917,7 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">ENCRIPTAR Y GUARDAR TOKEN</button>
+            <button type="button" class="btn btn-outline" id="btn-verificar-token-maestro" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
         </div>
     </div>
 
@@ -1037,12 +1037,18 @@
         };
     }
 
-    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
+    // Llave maestra GitHub (solo Super Admin): siempre localStorage master_token_revert, invertida.
+    function getMasterTokenFromStorage() {
+        const tk = localStorage.getItem('master_token_revert');
+        return tk ? tk.split('').reverse().join('') : null;
+    }
+
+    // OBTENEDOR DE TOKEN SEGURO (Super Admin: únicamente llave maestra; Admin: licencia SGF)
     function getRealToken() {
         if (CURRENT_ROLE === 'SUPERADMIN') {
-            const tk = localStorage.getItem('master_token_revert');
-            return tk ? tk.split('').reverse().join('') : null;
-        } else if (CURRENT_ROLE === 'ADMIN') {
+            return getMasterTokenFromStorage();
+        }
+        if (CURRENT_ROLE === 'ADMIN') {
             const lic = localStorage.getItem('sgf_license');
             const parsed = analizarLicenciaSGF(lic);
             if (parsed.valid && !parsed.expired) {
@@ -1074,6 +1080,11 @@
             // Limpieza de DOM: Remueve elementos del cliente
             const panelAdmin = document.getElementById('panel-admin-licencia');
             if(panelAdmin) panelAdmin.remove();
+
+            const licWarn = document.getElementById('license-warning-box');
+            if (licWarn) licWarn.style.display = 'none';
+            const licLock = document.getElementById('license-lock-overlay');
+            if (licLock) licLock.style.display = 'none';
 
             document.getElementById('login-overlay').style.display = 'none';
             actualizarUIYMapa(); 
@@ -2290,7 +2301,7 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = getRealToken() || '';
+            document.getElementById('ajuste-repo-token').value = getMasterTokenFromStorage() || '';
         } else {
             div.style.display = 'none';
         }
@@ -2306,37 +2317,50 @@
     }
     
     async function verificarYGuardarTokenMaestro() {
+        if (CURRENT_ROLE !== 'SUPERADMIN') {
+            return alert("La verificación de llave maestra solo está disponible en sesión Super Admin.");
+        }
         const rawToken = document.getElementById('ajuste-repo-token').value.trim();
         if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
 
-        const btn = document.querySelector('#ajustes-servidor button');
-        const originalText = btn.innerText;
-        btn.innerText = "VERIFICANDO...";
-        btn.disabled = true;
+        const btn = document.getElementById('btn-verificar-token-maestro');
+        const originalText = btn ? btn.innerText : '';
+        if (btn) {
+            btn.innerText = "VERIFICANDO...";
+            btn.disabled = true;
+        }
 
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': 'token ' + rawToken }
+                headers: {
+                    'Authorization': 'token ' + rawToken,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
 
             if (res.ok) {
-                // CORRECCIÓN 2: Token Revertido y Guardado a Nube
                 const pikaToken = rawToken.split('').reverse().join('');
                 localStorage.setItem('master_token_revert', pikaToken);
-                alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
+                alert("✅ Token verificado. Llave maestra guardada (persistente en este equipo). Puede sobrescribirla en cualquier momento con otro token válido.");
                 
                 await cargarDatosNube(); 
-                SYSTEM_AUTH.masterToken = pikaToken; // Se encripta (invierte) antes de ir a Nube
+                SYSTEM_AUTH.masterToken = pikaToken;
                 await guardarEnServidor(); 
             } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
+                if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem('master_token_revert');
+                    if (SYSTEM_AUTH && SYSTEM_AUTH.masterToken) delete SYSTEM_AUTH.masterToken;
+                }
+                throw new Error(`Error ${res.status}: El token es inválido, expiró o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'. Pegue un token nuevo y pulse de nuevo Verificar y Guardar.`);
             }
         } catch(e) {
             console.error(e);
             alert(`❌ Error de verificación: ${e.message}`);
         } finally {
-            btn.innerText = originalText;
-            btn.disabled = false;
+            if (btn) {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
     }
     
@@ -2376,7 +2400,12 @@
 
     async function guardarEnServidor() {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
+        if(!GITHUB_TOKEN_DYNAMIC) {
+            if (CURRENT_ROLE === 'SUPERADMIN') {
+                return alert("❌ No hay llave maestra de GitHub guardada en este equipo. Abra «LLAVE MAESTRA GITHUB», pegue un token (ghp_...) y pulse Verificar y Guardar.");
+            }
+            return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
+        }
 
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
@@ -2522,48 +2551,75 @@
         actualizarUIYMapa();
     }
 
-    // CORRECCIÓN 3: Auto-Login (Visor Inteligente)
+    // Auto-login: 1) Super Admin solo con master_token_revert (sin licencia SGF). 2) Admin Hacienda con licencia en config.
     window.onload = async function() {
-        document.getElementById('login-overlay').style.display = 'flex'; // Estado por defecto
-        
-        try {
-            // Intentar extraer el archivo de la nube directo al cargar la página
-            let fetchOpts = {};
-            const tk = getRealToken();
-            if(tk) fetchOpts.headers = { 'Authorization': 'token ' + tk };
+        document.getElementById('login-overlay').style.display = 'flex';
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, fetchOpts);
-            
+        try {
+            const masterTk = getMasterTokenFromStorage();
+            if (masterTk) {
+                const resMaster = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                    headers: {
+                        'Authorization': 'token ' + masterTk,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                if (resMaster.ok) {
+                    const data = await resMaster.json();
+                    fileSha = data.sha;
+                    const jsonParsed = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                    if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+                    reconstruirDesdeJSON(jsonParsed.store || {});
+
+                    CURRENT_ROLE = 'SUPERADMIN';
+                    document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (LLAVE MAESTRA)';
+                    document.getElementById('panel-superadmin').style.display = 'block';
+                    const btnRaw = document.getElementById('btn-cargar-raw');
+                    if (btnRaw) btnRaw.style.display = 'flex';
+                    const panelAdmin = document.getElementById('panel-admin-licencia');
+                    if (panelAdmin) panelAdmin.remove();
+                    const licWarn = document.getElementById('license-warning-box');
+                    if (licWarn) licWarn.style.display = 'none';
+
+                    document.getElementById('login-overlay').style.display = 'none';
+                    actualizarUIYMapa();
+                    return;
+                }
+                if (resMaster.status === 401 || resMaster.status === 403) {
+                    localStorage.removeItem('master_token_revert');
+                }
+            }
+
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                headers: { 'Accept': 'application/vnd.github.v3+json' }
+            });
+
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.sha;
                 const jsonParsed = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-                
-                // Evaluar la Licencia extraída del config en la Nube
+
                 if (jsonParsed.credentials && jsonParsed.credentials.license) {
                     const est = analizarLicenciaSGF(jsonParsed.credentials.license);
-                    
+
                     if (est.valid && !est.expired) {
-                        // LICENCIA VÁLIDA: Ocultar login, construir mapa y entrar de inmediato
                         localStorage.setItem('sgf_license', jsonParsed.credentials.license);
                         SYSTEM_AUTH = jsonParsed.credentials;
                         reconstruirDesdeJSON(jsonParsed.store || {});
-                        
+
                         CURRENT_ROLE = 'ADMIN';
                         document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA (AUTO)';
                         document.getElementById('panel-admin-licencia').style.display = 'block';
-                        
-                        // Eliminar módulos de SuperAdmin
+
                         const btnRaw = document.getElementById('btn-cargar-raw');
                         if(btnRaw) btnRaw.remove();
                         const pnlSup = document.getElementById('panel-superadmin');
                         if(pnlSup) pnlSup.remove();
 
-                        // Ocultar Overlay de Login (El Visor Inteligente actúa)
                         document.getElementById('login-overlay').style.display = 'none';
                         actualizarUIYMapa();
                         iniciarCicloLicenciaAdmin();
-                        return; // Auto-login exitoso
+                        return;
                     }
                 }
             }
