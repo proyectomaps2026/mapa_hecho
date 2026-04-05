@@ -992,7 +992,6 @@
     const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
     const FILE_PATH_DEFAULT = 'censo_fiscal.csv';
     const LS_MASTER_JSON_PATH = 'master_config_json_path';
-    const LS_SKIP_AUTO_LOGIN = 'sgf_skip_auto_login_once';
     let fileSha = null;
 
     function normalizarRutaJsonGithub(val) {
@@ -1296,12 +1295,47 @@
         return { store, license, user, pass };
     }
 
+    function forzarRefrescoCapasMapa() {
+        actualizarUIYMapa();
+        if (typeof mapa !== 'undefined' && mapa) {
+            try {
+                mapa.invalidateSize();
+            } catch (e) {}
+            requestAnimationFrame(() => {
+                actualizarUIYMapa();
+                try { mapa.invalidateSize(); } catch (e) {}
+            });
+            setTimeout(() => {
+                actualizarUIYMapa();
+                try { mapa.invalidateSize(); } catch (e) {}
+            }, 200);
+        }
+    }
+
     function aplicarCargaDesdeTextoPlano(decodedText) {
         const r = csvTextToStoreObject(decodedText);
         if (r.license) SYSTEM_AUTH.license = r.license;
         if (r.user) SYSTEM_AUTH.user = r.user;
         if (r.pass) SYSTEM_AUTH.pass = r.pass;
         reconstruirDesdeJSON(r.store || {});
+        forzarRefrescoCapasMapa();
+    }
+
+    function sincronizarCamposPanelSuperAdmin() {
+        if (CURRENT_ROLE !== 'SUPERADMIN') return;
+        const linkEl = document.getElementById('ajuste-link-raw-json');
+        if (linkEl) linkEl.value = (localStorage.getItem(LS_MASTER_JSON_PATH) || '');
+        const tokEl = document.getElementById('ajuste-repo-token');
+        if (tokEl) {
+            const rev = localStorage.getItem('master_token_revert');
+            if (rev) {
+                tokEl.value = rev;
+                tokEl.type = 'password';
+            } else {
+                tokEl.value = '';
+                tokEl.type = 'password';
+            }
+        }
     }
 
     function storeToCsvString() {
@@ -1399,8 +1433,13 @@
             }
 
             document.getElementById('login-overlay').style.display = 'none';
-            actualizarUIYMapa(); 
-            cargarDatosNube();
+            sincronizarCamposPanelSuperAdmin();
+            actualizarUIYMapa();
+            void (async () => {
+                await cargarDatosNube();
+                forzarRefrescoCapasMapa();
+                sincronizarCamposPanelSuperAdmin();
+            })();
             return;
         }
 
@@ -2636,9 +2675,7 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = getMasterTokenFromStorage() || '';
-            const linkEl = document.getElementById('ajuste-link-raw-json');
-            if (linkEl) linkEl.value = (localStorage.getItem(LS_MASTER_JSON_PATH) || '');
+            sincronizarCamposPanelSuperAdmin();
         } else {
             div.style.display = 'none';
         }
@@ -2657,7 +2694,14 @@
         if (CURRENT_ROLE !== 'SUPERADMIN') {
             return alert("La verificación de llave maestra solo está disponible en sesión Super Admin.");
         }
-        const rawToken = document.getElementById('ajuste-repo-token').value.trim();
+        let rawToken = document.getElementById('ajuste-repo-token').value.trim();
+        const revGuardado = localStorage.getItem('master_token_revert');
+        if (!rawToken && revGuardado) {
+            return alert("Pegue el token completo (ghp_...) para verificar. El campo muestra la forma invertida guardada solo como referencia; bórrela y pegue el token real.");
+        }
+        if (revGuardado && rawToken === revGuardado) {
+            return alert("Ese valor es la llave invertida guardada. Pegue el token real de GitHub (ghp_...) para verificar y guardar.");
+        }
         if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
         persistMasterJsonPathFromInput(true);
 
@@ -2703,6 +2747,7 @@
                 btn.innerText = originalText;
                 btn.disabled = false;
             }
+            sincronizarCamposPanelSuperAdmin();
         }
     }
     
@@ -2711,6 +2756,9 @@
             const token = getRealToken();
             let fr = await fetchCloudDataPlainText(token);
             if (!fr.ok && token && (fr.status === 401 || fr.status === 403)) {
+                if (CURRENT_ROLE === 'SUPERADMIN') {
+                    try { localStorage.removeItem('master_token_revert'); } catch (e) {}
+                }
                 fr = await fetchCloudDataPlainText(null);
             }
             if (!fr.ok) {
@@ -2739,9 +2787,11 @@
     }
 
     function cerrarSesionSeguridad() {
+        const rol = CURRENT_ROLE;
         CURRENT_ROLE = null;
         try {
-            sessionStorage.setItem(LS_SKIP_AUTO_LOGIN, '1');
+            if (rol === 'SUPERADMIN') localStorage.removeItem('master_token_revert');
+            if (rol === 'ADMIN') localStorage.removeItem('sgf_license');
         } catch (e) {}
         location.reload();
     }
@@ -2911,22 +2961,15 @@
         document.getElementById('login-overlay').style.display = 'flex';
 
         try {
-            if (sessionStorage.getItem(LS_SKIP_AUTO_LOGIN) === '1') {
-                sessionStorage.removeItem(LS_SKIP_AUTO_LOGIN);
-                CURRENT_ROLE = null;
-                return;
-            }
-        } catch (e) {}
-
-        try {
             const masterTk = getMasterTokenFromStorage();
             if (masterTk) {
-                const frM = await fetchCloudDataPlainText(masterTk);
-                if (frM.ok && frM.text) {
-                    if (frM.sha) fileSha = frM.sha;
-                    aplicarCargaDesdeTextoPlano(frM.text);
+                CURRENT_ROLE = 'SUPERADMIN';
+                await cargarDatosNube();
+                if (!getMasterTokenFromStorage()) {
+                    CURRENT_ROLE = null;
+                }
 
-                    CURRENT_ROLE = 'SUPERADMIN';
+                if (CURRENT_ROLE === 'SUPERADMIN') {
                     document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (LLAVE MAESTRA)';
                     document.getElementById('panel-superadmin').style.display = 'block';
                     const btnRaw = document.getElementById('btn-cargar-raw');
@@ -2944,11 +2987,9 @@
                     }
 
                     document.getElementById('login-overlay').style.display = 'none';
-                    actualizarUIYMapa();
+                    sincronizarCamposPanelSuperAdmin();
+                    forzarRefrescoCapasMapa();
                     return;
-                }
-                if (frM.status === 401 || frM.status === 403) {
-                    localStorage.removeItem('master_token_revert');
                 }
             }
 
