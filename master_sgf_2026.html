@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
     <title>SISTEMA DE CONTROL FISCAL - HACIENDA MUNICIPAL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -10,8 +11,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
+    <!-- LIBRERÍAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- LIBRERÍA XLSX PARA EXPORTACIÓN A EXCEL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -87,12 +90,14 @@
             transform: translateY(-1px); 
         }
 
+        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE A 100px */
         .leaflet-top.leaflet-right {
             margin-top: 100px !important;
             z-index: 10001 !important;
             margin-right: 15px !important;
         }
 
+        /* BARRA SUPERIOR */
         .top-nav { 
             top: 15px; 
             left: 15px; 
@@ -159,12 +164,14 @@
             background: rgba(0, 242, 255, 0.1); 
         }
 
+        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE Y OCULTAMIENTO */
         @media print {
             .ui-layer, .leaflet-control-container, .modal-overlay, #mira-captura { display: none !important; }
             #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
             body, html { overflow: visible; background: white; }
         }
         
+        /* TOGGLE MODO LECTURA */
         .toggle-container { 
             display: flex; 
             align-items: center; 
@@ -185,77 +192,211 @@
             height: 18px; 
         }
         
-        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch input { 
+            opacity: 0; 
+            width: 0; 
+            height: 0; 
+        }
         
         .slider { 
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
-            background-color: #da3633; transition: .4s; border-radius: 34px; 
+            position: absolute; 
+            cursor: pointer; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background-color: #da3633; 
+            transition: .4s; 
+            border-radius: 34px; 
         }
         
         .slider:before { 
-            position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; 
-            background-color: white; transition: .4s; border-radius: 50%; 
+            position: absolute; 
+            content: ""; 
+            height: 12px; 
+            width: 12px; 
+            left: 3px; 
+            bottom: 3px; 
+            background-color: white; 
+            transition: .4s; 
+            border-radius: 50%; 
         }
         
-        input:checked + .slider { background-color: var(--color-vigente); }
-        input:checked + .slider:before { transform: translateX(16px); }
+        input:checked + .slider { 
+            background-color: var(--color-vigente); 
+        }
+        
+        input:checked + .slider:before { 
+            transform: translateX(16px); 
+        }
 
         /* SIDEBAR (PANEL MAESTRO) */
         #sidebar { 
-            top: 95px; left: 15px; bottom: 20px; width: 420px; 
-            display: flex; flex-direction: column; overflow: hidden;
+            top: 95px; 
+            left: 15px; 
+            bottom: 20px; 
+            width: 420px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
         }
-
-        aside#sidebar.ui-layer.glass-panel { font-family: 'Inter', sans-serif; color: var(--text-main); }
-        #sidebar .sidebar-header, #sidebar .layers-container, #sidebar .sidebar-footer, #sidebar .license-alert { font-family: 'Inter', sans-serif; }
         
         .sidebar-header { 
-            padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); 
+            padding: 25px 20px; 
+            border-bottom: 1px solid var(--border-color); 
+            background: rgba(255,255,255,0.02); 
         }
         
-        .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
-        .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; }
+        /* IDENTIDAD CORPORATIVA: Sidebar Header */
+        .sidebar-header h1 { 
+            margin: 0; 
+            font-size: 17px; 
+            font-weight: 900; 
+            letter-spacing: 1px; 
+            color: var(--color-temporal); 
+        }
         
-        .layers-container { flex: 1; overflow-y: auto; padding: 15px; }
-        .layers-container::-webkit-scrollbar { width: 6px; }
-        .layers-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        .sidebar-header p { 
+            margin: 6px 0 0; 
+            font-size: 11px; 
+            color: var(--cyan-neon); 
+            font-weight: 800; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .layers-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+        }
+        
+        .layers-container::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        
+        .layers-container::-webkit-scrollbar-thumb { 
+            background: var(--border-color); 
+            border-radius: 4px; 
+        }
 
+        /* TARJETAS DE SECTOR Y CONTROLES DUALES */
         .sector-card { 
-            margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; 
-            background: rgba(0,0,0,0.3); overflow: hidden; transition: all 0.3s ease; 
+            margin-bottom: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            background: rgba(0,0,0,0.3); 
+            overflow: hidden; 
+            transition: all 0.3s ease; 
         }
         
         .sector-card.is-active { 
-            border-color: var(--cyan-neon); background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
+            border-color: var(--cyan-neon); 
+            background: rgba(0, 242, 255, 0.03); 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
         }
         
         .sector-header { 
-            padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid transparent; cursor: pointer;
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-bottom: 1px solid transparent; 
+            cursor: pointer;
         }
         
-        .sector-header:hover { background: rgba(255,255,255,0.05); }
-        .sector-title-group { display: flex; align-items: center; gap: 15px; }
-        .sector-controls { display: flex; align-items: center; gap: 15px; }
+        .sector-header:hover { 
+            background: rgba(255,255,255,0.05); 
+        }
+        
+        .sector-title-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        
+        /* Controles Visuales del Sector */
+        .sector-controls { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
         
         .radio-active { 
-            appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 50%; outline: none; cursor: pointer; position: relative; 
+            appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #6e7681; 
+            border-radius: 50%; 
+            outline: none; 
+            cursor: pointer; 
+            position: relative; 
         }
-        .radio-active:checked { border-color: var(--cyan-neon); }
-        .radio-active:checked::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; background: var(--cyan-neon); border-radius: 50%; }
+        
+        .radio-active:checked { 
+            border-color: var(--cyan-neon); 
+        }
+        
+        .radio-active:checked::after { 
+            content: ''; 
+            position: absolute; 
+            top: 3px; 
+            left: 3px; 
+            width: 6px; 
+            height: 6px; 
+            background: var(--cyan-neon); 
+            border-radius: 50%; 
+        }
         
         .check-visible { 
-            appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 4px; outline: none; cursor: pointer; position: relative; 
+            appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #6e7681; 
+            border-radius: 4px; 
+            outline: none; 
+            cursor: pointer; 
+            position: relative; 
         }
-        .check-visible:checked { background: var(--color-vigente); border-color: var(--color-vigente); }
-        .check-visible:checked::after { content: '✔'; position: absolute; color: white; font-size: 10px; top: -1px; left: 2px; }
-
-        .sector-title { font-size: 13px; font-weight: 800; color: var(--text-main); cursor: pointer; }
         
-        .sector-trash { padding: 5px; font-size: 13px; color: #6e7681; cursor: pointer; transition: 0.2s; }
-        .sector-trash:hover { color: var(--color-vencida); text-shadow: 0 0 10px var(--color-vencida); }
+        .check-visible:checked { 
+            background: var(--color-vigente); 
+            border-color: var(--color-vigente); 
+        }
+        
+        .check-visible:checked::after { 
+            content: '✔'; 
+            position: absolute; 
+            color: white; 
+            font-size: 10px; 
+            top: -1px; 
+            left: 2px; 
+        }
 
-        /* ACORDEÓN DE ESTATUS Y FILAS CORREGIDAS (ESTÉTICA ORO) */
-        .status-group { border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
+        .sector-title { 
+            font-size: 13px; 
+            font-weight: 800; 
+            color: var(--text-main); 
+            cursor: pointer; 
+        }
+        
+        .sector-trash { 
+            padding: 5px; 
+            font-size: 13px; 
+            color: #6e7681; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        .sector-trash:hover { 
+            color: var(--color-vencida); 
+            text-shadow: 0 0 10px var(--color-vencida); 
+        }
+
+        /* ACORDEÓN DE ESTATUS Y LISTA */
+        .status-group { 
+            border-top: 1px solid var(--border-color); 
+            background: rgba(255,255,255,0.01); 
+        }
         
         .status-header { 
             padding: 12px 16px; 
@@ -263,131 +404,366 @@
             align-items: center; 
             gap: 15px; 
             cursor: pointer; 
-            border-bottom: 1px solid rgba(255,255,255,0.02);
         }
         
-        .status-header:hover { background: rgba(255,255,255,0.04); }
+        .status-header:hover { 
+            background: rgba(255,255,255,0.04); 
+        }
 
         .status-row-label {
-            flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px; 
-            color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.02em;
+            flex: 1;
+            min-width: 0;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .status-count { 
-            background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 4px 12px; font-size: 11px; 
-            font-weight: 700; font-family: 'Inter', sans-serif; color: var(--text-main); flex-shrink: 0; 
-            border: 1px solid rgba(255, 255, 255, 0.15); text-align: center; line-height: 1.2;
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 20px; 
+            padding: 2px 10px; 
+            font-size: 11px; 
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            line-height: 1.35;
+            text-align: center;
         }
 
-        .status-row-actions { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+        .status-row-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-shrink: 0;
+        }
 
         .status-color-wrap {
-            width: 20px; height: 20px; flex-shrink: 0; border-radius: 4px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
         }
 
         .status-cat-color-input {
-            appearance: none; display: block; width: 22px; height: 22px; margin: -1px 0 0 -1px; padding: 0; border: none; background: transparent; cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            display: block;
+            width: 22px;
+            height: 22px;
+            margin: -1px 0 0 -1px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
         }
 
-        .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
+        .status-cat-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+        .status-cat-color-input::-webkit-color-swatch { border: none; }
+        .status-cat-color-input::-moz-color-swatch { border: none; }
+
+        .local-list { 
+            background: rgba(0,0,0,0.5); 
+            max-height: 250px; 
+            overflow-y: auto; 
+        }
         
         .local-row { 
-            padding: 8px 16px 8px 24px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; gap: 15px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); 
+            padding: 8px 16px 8px 24px; 
+            font-size: 11px; 
+            color: #a5b0bfff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            cursor: pointer; 
+            border-bottom: 1px solid rgba(255,255,255,0.02); 
         }
         
-        .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
+        .local-row:hover { 
+            color: white; 
+            background: rgba(255,255,255,0.08); 
+        }
 
         .sidebar-footer { 
-            padding: 20px; display: grid; grid-template-columns: 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); 
+            padding: 20px; 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 12px; 
+            border-top: 1px solid var(--border-color); 
+            background: rgba(0,0,0,0.2); 
         }
         
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; padding: 14px; border-radius: 8px; font-size: 11px; }
-        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.05); }
-        .btn-solid-yellow { background: var(--color-temporal); color: #000; padding: 14px; border-radius: 8px; font-size: 11px; }
-        .btn-solid-green { background: var(--color-vigente); color: #fff; padding: 14px; border-radius: 8px; font-size: 11px; }
+        .btn-outline { 
+            background: transparent; 
+            border: 1px solid var(--border-color); 
+            color: white; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+        }
+        
+        .btn-outline:hover { 
+            border-color: white; 
+            background: rgba(255,255,255,0.05); 
+        }
+        
+        .btn-solid-yellow { 
+            background: var(--color-temporal); 
+            color: #000; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+        }
+
+        /* Estilo añadido para botones verdes del módulo SGF */
+        .btn-solid-green { 
+            background: var(--color-vigente); 
+            color: #fff; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+        }
 
         /* ==========================================================================
            3. POPUPS INMORTALES (VISTA LECTURA Y EDICIÓN DOBLE CONTENEDOR)
            ========================================================================== */
-        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; background: #fff; width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .leaflet-popup-tip { background: #fff; }
-        .leaflet-popup-content { margin: 0; }
-        .pop-wrapper { width: 100%; }
+        .leaflet-popup-content-wrapper { 
+            padding: 0; 
+            overflow: hidden; 
+            border-radius: 12px; 
+            background: #fff; 
+            width: 340px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+        }
         
-        .pop-cover { width: 100%; height: 160px; background: #111; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .pop-cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-        .pop-badge { position: absolute; top: 15px; left: 15px; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 900; color: white; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.5); }
-        .pop-content { padding: 20px; color: #111; max-height: 400px; overflow-y: auto; }
+        .leaflet-popup-tip { 
+            background: #fff; 
+        }
         
-        .read-field { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 8px; }
-        .read-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-        .read-value { font-size: 13px; font-weight: 700; color: #111; word-break: break-word; }
+        .leaflet-popup-content { 
+            margin: 0; 
+        } 
+        
+        .pop-cover { 
+            width: 100%; 
+            height: 160px; 
+            background: #111; 
+            position: relative; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+        
+        .pop-cover img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            opacity: 0.9; 
+        }
+        
+        .pop-badge { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 10px; 
+            font-weight: 900; 
+            color: white; 
+            text-transform: uppercase; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            border: 2px solid rgba(255,255,255,0.5); 
+        }
+        
+        .pop-content { 
+            padding: 20px; 
+            color: #111; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        
+        /* Estilos Vista Lectura Profesional */
+        .read-field { 
+            margin-bottom: 12px; 
+            border-bottom: 1px solid #eaeaea; 
+            padding-bottom: 8px; 
+        }
+        
+        .read-label { 
+            display: block; 
+            font-size: 9px; 
+            font-weight: 900; 
+            color: #888; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+        }
+        
+        .read-value { 
+            font-size: 13px; 
+            font-weight: 700; 
+            color: #111; 
+            word-break: break-word; 
+        }
 
-        .form-group { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px; position: relative; }
-        .form-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-        .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #000; background: transparent; outline: none; }
-        .form-input:focus { color: var(--color-vigente); }
-        .input-oculto { opacity: 0.6; font-family: monospace; letter-spacing: 1px; }
+        /* Estilos Vista Edición */
+        .form-group { 
+            margin-bottom: 12px; 
+            border-bottom: 1px solid #eaeaea; 
+            padding-bottom: 6px; 
+            position: relative; 
+        }
+        
+        .form-label { 
+            display: block; 
+            font-size: 9px; 
+            font-weight: 900; 
+            color: #888; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+        }
+        
+        .form-input { 
+            width: 85%; 
+            border: none; 
+            font-family: 'Inter', sans-serif; 
+            font-size: 13px; 
+            font-weight: 700; 
+            color: #000; 
+            background: transparent; 
+            outline: none; 
+        }
+        
+        .form-input:focus { 
+            color: var(--color-vigente); 
+        }
+        
+        /* PRIVACIDAD DE URls */
+        .input-oculto { 
+            opacity: 0.6; 
+            font-family: monospace; 
+            letter-spacing: 1px; 
+        }
 
-        .form-select { width: 100%; padding: 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; outline: none; cursor: pointer; }
-        .eye-btn { position: absolute; right: 5px; top: 20px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; z-index: 10; padding: 5px; }
-        .eye-btn:hover, .eye-btn.is-hidden { color: var(--color-vencida); }
+        .form-select { 
+            width: 100%; 
+            padding: 8px; 
+            font-family: 'Inter', sans-serif; 
+            font-size: 12px; 
+            font-weight: 800; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            margin-top: 5px; 
+            outline: none; 
+            cursor: pointer; 
+        }
+        
+        .eye-btn { 
+            position: absolute; 
+            right: 5px; 
+            top: 20px; 
+            color: #ccc; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: 0.2s; 
+            z-index: 10; 
+            padding: 5px; 
+        }
+        
+        .eye-btn:hover, .eye-btn.is-hidden { 
+            color: var(--color-vencida); 
+        }
 
-        .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; transition: 0.2s; }
-        .btn-popup-action:hover { filter: brightness(1.1); }
-        .btn-save { background: var(--color-vigente); box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
-        .btn-edit { background: var(--cyan-neon); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); }
-        .btn-del { background: var(--color-vencida); margin-top: 15px; }
+        .btn-popup-action { 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 12px; 
+            border-radius: 8px; 
+            margin-top: 10px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            border: none; 
+            text-transform: uppercase; 
+            color: white; 
+            transition: 0.2s; 
+        }
+        
+        .btn-popup-action:hover { 
+            filter: brightness(1.1); 
+        }
+        
+        .btn-save { 
+            background: var(--color-vigente); 
+            box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); 
+        }
+        
+        .btn-edit { 
+            background: var(--cyan-neon); 
+            color: #000; 
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); 
+        }
+        
+        .btn-del { 
+            background: var(--color-vencida); 
+            margin-top: 15px; 
+        }
 
+        /* MODO LECTURA CSS MAESTRO */
         .readonly-mode .form-input { pointer-events: none; color: #555; }
         .readonly-mode .form-select { pointer-events: none; background: #eee; }
         .readonly-mode .eye-btn { display: none; }
         .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
 
-        .leaflet-editing-icon { border-radius: 50% !important; border: 2px solid var(--border-color) !important; background-color: #fff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        /* ==========================================================================
+           5. ESTÉTICA PROFESIONAL DE VÉRTICES (PUNTOS BLANCOS EN EDICIÓN)
+           ========================================================================== */
+        .leaflet-editing-icon {
+            border-radius: 50% !important;
+            border: 2px solid var(--border-color) !important;
+            background-color: #fff !important;
+            width: 12px !important;
+            height: 12px !important;
+            margin-left: -6px !important;
+            margin-top: -6px !important;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
 
         /* ==========================================================================
-           6. POPUP AUDITORIA (GLASS PANEL ESTÉTICA ORO)
+           6. MODALES Y REPORTES
            ========================================================================== */
-        .audit-popup-wrapper .leaflet-popup-content-wrapper {
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--cyan-neon);
-            color: var(--text-main);
-            box-shadow: var(--shadow-heavy);
-            border-radius: 12px;
-        }
-        .audit-popup-wrapper .leaflet-popup-tip {
-            background: var(--panel-bg);
-            border: 1px solid var(--cyan-neon);
-            border-top: none;
-            border-left: none;
-        }
-        .audit-report {
-            text-align: center;
-            padding: 20px;
+        .audit-report.glass-panel {
+            font-family: 'Inter', sans-serif;
+            padding: 20px 22px;
+            margin: 0;
+            text-align: left;
         }
         .audit-title {
-            margin: 0 0 15px;
-            font-size: 14px;
+            margin: 0 0 14px;
+            font-size: 12px;
             font-weight: 900;
-            color: var(--text-main);
-            letter-spacing: 1px;
+            color: var(--color-temporal);
+            letter-spacing: 0.06em;
             text-transform: uppercase;
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding-bottom: 12px;
         }
         .audit-resumen-cuerpo {
             margin: 0;
-            color: #a5b0bf;
+            color: var(--text-main);
             font-size: 13px;
             font-weight: 600;
-            line-height: 1.5;
-            white-space: normal;
+            line-height: 1.55;
         }
         .audit-total-inline {
             color: var(--cyan-neon);
-            font-weight: 900;
+            font-weight: 800;
+            white-space: nowrap;
         }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
@@ -396,16 +772,51 @@
         .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold; }
         .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
 
+        /* MODALES DEL NUEVO FLUJO DE CAPTURA */
         .notif-modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(18, 22, 29, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--cyan-neon); color: white; padding: 30px 40px; border-radius: 12px; font-size: 16px; font-weight: 800; z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4); text-align: center; display: none; flex-direction: column; gap: 15px;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(18, 22, 29, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--cyan-neon);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            z-index: 999999;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .footer-protegido {
-            position: fixed; bottom: 5px; right: 15px; font-size: 9px; color: rgba(255,255,255,0.4); z-index: 9999; pointer-events: none; font-weight: 600;
+            position: fixed;
+            bottom: 5px;
+            right: 15px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+            z-index: 9999;
+            pointer-events: none;
+            font-weight: 600;
         }
 
+        /* ALERTA DE LICENCIA SGF */
         .license-alert { 
-            background: rgba(218, 54, 51, 0.2); border: 1px solid var(--color-vencida); color: white; padding: 10px; border-radius: 8px; font-size: 11px; margin-bottom: 15px; font-weight: 800; text-align: center; display: none; 
+            background: rgba(218, 54, 51, 0.2); 
+            border: 1px solid var(--color-vencida); 
+            color: white; 
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            margin-bottom: 15px; 
+            font-weight: 800; 
+            text-align: center; 
+            display: none; 
         }
     </style>
 </head>
@@ -425,56 +836,45 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
-<!-- BANNER BLOQUEO LICENCIA CORREGIDO (Seguridad Intacta, UX Platinium) -->
-<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); flex-direction: column; align-items: center; justify-content: center;">
-    <div class="glass-panel modal-box" style="width: 440px; max-width: 90%; padding: 40px 30px; text-align: center; box-sizing: border-box; box-shadow: var(--shadow-heavy); border: 1px solid var(--border-color);">
-        <i class="fas fa-lock" style="font-size: 48px; color: var(--color-temporal); margin-bottom: 20px;"></i>
-        <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 15px 0; font-size: 18px; letter-spacing: 1px; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
-        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 13px; line-height: 1.5; margin: 0 0 25px 0;">Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema o descargue su respaldo de contingencia.</p>
-        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 15px;">
-        <button type="button" class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 12px; font-size: 12px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
-        <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 10px; font-size: 11px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
-        <button type="button" class="btn btn-solid-yellow" style="width: 100%; padding: 12px; font-size: 11px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO (EXCEL)</button>
+<!-- BANNER LICENCIA (solo ADMIN: activación o vencida; mapa visible detrás) -->
+<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; justify-content: center;">
+    <div class="glass-panel modal-box" style="width: 420px; max-width: 92%; padding: 32px 28px; text-align: center; box-sizing: border-box;">
+        <i class="fas fa-key" style="font-size: 44px; color: var(--color-temporal); margin-bottom: 16px;"></i>
+        <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 12px 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
+        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF). Puede descargar respaldo Word o Excel antes de activar.</p>
+        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 12px;">
+        <button type="button" class="btn btn-save" style="width: 100%; padding: 14px; margin-bottom: 10px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
+        <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
+        <button type="button" class="btn btn-solid-yellow" style="width: 100%; padding: 12px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO (EXCEL)</button>
     </div>
 </div>
 
-<!-- MODAL MAPEO MANUAL COLUMNAS CSV -->
-<div id="csv-mapeo-modal-overlay" class="modal-overlay" style="z-index: 9000; display: none; flex-direction: column; align-items: center; justify-content: center;">
-    <div class="glass-panel modal-box" style="max-width: 520px; width: 92%; padding: 24px; max-height: 90vh; overflow-y: auto;">
-        <h2 class="modal-title" style="margin-bottom: 12px;">MAPEO MANUAL DE COLUMNAS (CSV)</h2>
-        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 16px;">Seleccione qué columna del archivo corresponde a cada campo. Latitud y Longitud son obligatorias para las pinchetas.</p>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Latitud</label>
-        <select id="csv-map-lat" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Longitud</label>
-        <select id="csv-map-lng" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Nombre / Contribuyente</label>
-        <select id="csv-map-nombre" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Categoría / Semáforo</label>
-        <select id="csv-map-categoria" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Foto / Imagen</label>
-        <select id="csv-map-foto" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 16px; width: 100%; box-sizing: border-box;"></select>
-        <button type="button" class="btn btn-save" style="width: 100%; padding: 12px;" onclick="confirmarMapeoColumnasCSV()">CONFIRMAR</button>
-        <button type="button" class="btn btn-outline" style="width: 100%; padding: 10px; margin-top: 8px;" onclick="cerrarModalMapeoCsv()">CANCELAR</button>
-    </div>
-</div>
-
-<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN) -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999 !important;">
+<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
+<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
     <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
+        
+        <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
         <div id="login-form-container">
             <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
             <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
             <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+            
             <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
+            
             <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
             <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
             <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
+
             <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
+
             <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
+            
             <div style="margin-top: 15px;">
                 <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
             </div>
         </div>
+
+        <!-- CONTENEDOR 2: MENSAJE DE ÉXITO DE CORREO -->
         <div id="recovery-success-container" style="display: none;">
             <i class="fas fa-envelope-circle-check" style="font-size: 50px; color: var(--color-vigente); margin-bottom: 20px;"></i>
             <h2 class="modal-title" style="color: var(--color-vigente); font-size: 20px;">¡CORREO ENVIADO CON ÉXITO!</h2>
@@ -484,6 +884,7 @@
             </p>
             <button class="btn btn-outline" style="width: 100%; padding: 15px;" onclick="volverAlLogin()">REGRESAR AL LOGIN</button>
         </div>
+
     </div>
 </div>
 
@@ -511,6 +912,7 @@
             <i class="fas fa-draw-polygon"></i>
         </button>
 
+        <!-- BOTÓN GENERAR REPORTE (FOTO LIMPIA) -->
         <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
@@ -518,10 +920,12 @@
             </svg> GENERAR REPORTE
         </button>
         
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNubePorBotonRawSuperAdmin()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
+        <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
+        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNube()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
             <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
         </button>
 
+        <!-- BOTÓN GUARDAR NUBE (GITHUB API) -->
         <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
             <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
         </button>
@@ -529,24 +933,29 @@
 </nav>
 
 <aside id="sidebar" class="ui-layer glass-panel">
-    <div style="height: 5px; width: 100%; display: flex; flex-shrink: 0;">
-        <div style="flex: 1; background: #008000;"></div>
-        <div style="flex: 1; background: #FF0000;"></div>
-        <div style="flex: 1; background: #FFFF00;"></div>
+    <!-- FRANJA TRICOLOR INSTITUCIONAL -->
+    <div style="height: 5px; width: 100%; display: flex;">
+        <div style="flex: 1; background: #008000;"></div> 
+        <div style="flex: 1; background: #FF0000;"></div> 
+        <div style="flex: 1; background: #FFFF00;"></div> 
     </div>
 
     <div class="sidebar-header">
+        <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
         <h1>SISTEMA DE CONTROL FISCAL</h1>
         <div id="rol-indicador" style="font-size: 10px; color: #fbbc04; font-weight: 900; margin-top: 5px; margin-bottom: 8px; letter-spacing: 1px;"><i class="fas fa-user-shield"></i> ESPERANDO LOGIN...</div>
         <p id="indicador-capa-activa">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
     </div>
     
+    <!-- ALERTA DE LICENCIA (SÓLO ADMIN) -->
     <div id="license-warning-box" class="license-alert">
         <i class="fas fa-exclamation-triangle"></i> ATENCIÓN: Su licencia vence en <span id="license-days-count">X</span> días.
     </div>
 
-    <div class="layers-container" id="arbol-datos"></div>
+    <div class="layers-container" id="arbol-datos">
+        </div>
     
+    <!-- MÓDULO DE CAMBIO DE CLAVE EN SIDEBAR -->
     <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('ajustes-cuenta').style.display = document.getElementById('ajustes-cuenta').style.display === 'none' ? 'block' : 'none'">
             <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
@@ -559,21 +968,19 @@
         </div>
     </div>
 
+    <!-- MÓDULO PRIVADO SUPER ADMIN (LLAVE GITHUB) -->
     <div id="panel-superadmin" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: #8e44ad; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
             <span><i class="fas fa-server"></i> LLAVE MAESTRA GITHUB (SUPER ADMIN)</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Link Raw JSON (GitHub) o ruta en el repo</label>
-            <input type="text" id="ajuste-link-raw-json" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 6px;" placeholder="URL completa CSV (Raw GitHub, Google Sheets export, etc.) o ruta en repo">
-            <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="persistMasterJsonPathFromInput()">APLICAR RUTA / LINK</button>
-            <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="solicitarReconfigurarColumnasCSV()">RECONFIGURAR COLUMNAS CSV</button>
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button type="button" class="btn btn-outline" id="btn-verificar-token-maestro" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">ENCRIPTAR Y GUARDAR TOKEN</button>
         </div>
     </div>
 
+    <!-- MÓDULO GESTIÓN DE LICENCIA (ADMIN/CLIENTE) -->
     <div id="panel-admin-licencia" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: var(--color-temporal); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleLicenciaPanel()">
             <span><i class="fas fa-key"></i> LICENCIA SGF</span>
@@ -583,8 +990,7 @@
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
             <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
-            <button type="button" class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="solicitarReconfigurarColumnasCSV()">RECONFIGURAR COLUMNAS CSV</button>
-            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
+            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
     </div>
 
@@ -593,6 +999,7 @@
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
         </button>
         
+        <!-- BOTÓN DE CERRAR SESIÓN (BOTÓN DE PÁNICO) -->
         <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 1; border-color: var(--color-vencida); color: var(--color-vencida);">
             <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
         </button>
@@ -629,173 +1036,63 @@
     /* ==========================================================================
        FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD SGF
        ========================================================================== */
+    // CREDENCIALES EMAILJS (Reemplazar con tus datos reales de emailjs.com)
     const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY"; 
     const EMAILJS_SERVICE_ID = "TU_SERVICE_ID";
     const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID";
 
     (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
 
+    // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_hecho'; 
-    const FILE_PATH_DEFAULT = 'censo_fiscal.csv';
-    const LS_MASTER_JSON_PATH = 'master_config_json_path';
-    const LS_CONFIG_MAPEO_COLUMNAS = 'config_mapeo_columnas';
+    const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
+    const FILE_PATH = 'config.json';
     let fileSha = null;
-    let _csvMapeoPendiente = null;
-    window.__csvDisparoModalMapeoPorCargaManual = false;
-
-    function normalizarRutaJsonGithub(val) {
-        val = (val || '').trim();
-        if (!val) return FILE_PATH_DEFAULT;
-        try {
-            if (/^https?:\/\/raw\.githubusercontent\.com\//i.test(val)) {
-                const u = new URL(val);
-                const parts = u.pathname.split('/').filter(Boolean);
-                if (parts.length >= 4) return parts.slice(3).join('/');
-            }
-            if (/api\.github\.com\/repos\//i.test(val)) {
-                const idx = val.indexOf('/contents/');
-                if (idx !== -1) {
-                    const rest = val.slice(idx + '/contents/'.length).split('?')[0];
-                    try {
-                        return decodeURIComponent(rest) || FILE_PATH_DEFAULT;
-                    } catch (e) {
-                        return rest || FILE_PATH_DEFAULT;
-                    }
-                }
-            }
-        } catch (e) { }
-        return val.replace(/^\/+/, '') || FILE_PATH_DEFAULT;
-    }
-
-    function isAbsoluteHttpUrl(s) {
-        return /^https?:\/\//i.test((s || '').trim());
-    }
-
-    function getGithubContentPathForApi() {
-        const raw = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-        if (!raw) return FILE_PATH_DEFAULT;
-        if (isAbsoluteHttpUrl(raw)) {
-            try {
-                if (/raw\.githubusercontent\.com/i.test(raw)) {
-                    const u = new URL(raw);
-                    const parts = u.pathname.split('/').filter(Boolean);
-                    if (parts.length >= 4) return parts.slice(3).join('/');
-                }
-            } catch (e) {}
-            return FILE_PATH_DEFAULT;
-        }
-        return normalizarRutaJsonGithub(raw);
-    }
-
-    function dataSourceIsExternalNonGithub() {
-        const raw = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-        return isAbsoluteHttpUrl(raw) && !/raw\.githubusercontent\.com/i.test(raw);
-    }
-
-    function githubContentsApiPath(filePath) {
-        return filePath.split('/').map(encodeURIComponent).join('/');
-    }
-
-    function persistMasterJsonPathFromInput(silent) {
-        const el = document.getElementById('ajuste-link-raw-json');
-        if (!el) return;
-        const raw = el.value.trim();
-        localStorage.setItem(LS_MASTER_JSON_PATH, raw);
-        if (!silent) alert('✅ Enlace o ruta CSV guardada.');
-    }
-
-    async function fetchCloudDataPlainText(authToken) {
-        const rawLs = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-        if (isAbsoluteHttpUrl(rawLs) && /raw\.githubusercontent\.com/i.test(rawLs)) {
-            try {
-                const res = await fetch(rawLs.trim(), { method: 'GET', cache: 'no-store', credentials: 'omit' });
-                if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
-                const text = await res.text();
-                return { ok: true, status: res.status, text, sha: null };
-            } catch (e) {
-                return { ok: false, status: 0, text: null, sha: null };
-            }
-        }
-        if (isAbsoluteHttpUrl(rawLs) && !/raw\.githubusercontent\.com/i.test(rawLs)) {
-            try {
-                const res = await fetch(rawLs, { method: 'GET', cache: 'no-store' });
-                if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
-                const text = await res.text();
-                return { ok: true, status: res.status, text, sha: null };
-            } catch (e) {
-                return { ok: false, status: 0, text: null, sha: null };
-            }
-        }
-        const pathEnc = githubContentsApiPath(getGithubContentPathForApi());
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        if (authToken) {
-            const isGoogle = /google\.com/i.test(rawLs);
-            const isRawGh = /raw\.githubusercontent\.com/i.test(rawLs);
-            const relativePath = !isAbsoluteHttpUrl(rawLs);
-            if (!isGoogle && (relativePath || isRawGh)) {
-                headers['Authorization'] = 'token ' + authToken;
-            }
-        }
-        try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${pathEnc}`, { headers });
-            if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
-            const data = await res.json();
-            if (typeof data.content !== 'string') return { ok: false, status: res.status, text: null, sha: data.sha || null };
-            const bin = atob(data.content.replace(/\s/g, ''));
-            const text = decodeURIComponent(escape(bin));
-            return { ok: true, status: 200, text, sha: data.sha || null };
-        } catch (e) {
-            return { ok: false, status: 0, text: null, sha: null };
-        }
-    }
     
+    // JERARQUÍA DE ACCESO Y ROLES
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
-    let CURRENT_ROLE = null; 
+    let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
     let CHECK_LICENSE_INTERVAL = null;
 
     /* ==========================================================================
        MOTOR DE LICENCIAS Y TOKENS SGF
        ========================================================================== */
     function analizarLicenciaSGF(licStr) {
-        const bad = { valid: false, expired: true, days: 0, tokenRev: '', usuario: '', githubToken: null };
-        if (!licStr || typeof licStr !== 'string') return bad;
-        const s = licStr.trim();
-        if (!s.startsWith('SGF-')) return bad;
-        const last = s.lastIndexOf('-');
-        if (last <= 4) return bad;
-        const fechaB64 = s.slice(last + 1).replace(/\s/g, '');
-        const prefix = s.slice(0, last);
-        if (!prefix.startsWith('SGF-')) return bad;
-        const inner = prefix.slice(4);
-        const fd = inner.indexOf('-');
-        if (fd < 0) return bad;
-        const usuario = inner.slice(0, fd);
-        const tokenRev = inner.slice(fd + 1);
-        if (!usuario || !tokenRev) return bad;
-        let datePlain;
+        if(!licStr) return { valid: false, expired: true, days: 0 };
+        const parts = licStr.split('-');
+        // Formato esperado: SGF-[USUARIO]-[TOKEN_REVERTIDO]-[FECHA_BASE64]
+        if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
+
+        const usuario = parts[1];
+        const tokenRev = parts[2];
+        let dateStr;
+        
         try {
-            datePlain = atob(fechaB64);
-        } catch (e) {
-            return bad;
+            dateStr = atob(parts[3]); // Decodificamos la fecha en Base64
+        } catch(e) {
+            return { valid: false, expired: true, days: 0 };
         }
-        const compact = datePlain.replace(/[-/\s]/g, '');
-        if (compact.length !== 8 || !/^\d{8}$/.test(compact)) return bad;
-        const expYear = parseInt(compact.substring(0, 4), 10);
-        const expMonth = parseInt(compact.substring(4, 6), 10) - 1;
-        const expDay = parseInt(compact.substring(6, 8), 10);
+
+        // LIMPIEZA DE GUIONES: Para que "2026-07-02" se vuelva "20260702"
+        dateStr = dateStr.replace(/[-/]/g, '');
+
+        if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
+        
+        const expYear = parseInt(dateStr.substring(0,4));
+        const expMonth = parseInt(dateStr.substring(4,6)) - 1;
+        const expDay = parseInt(dateStr.substring(6,8));
+        
         const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
         const today = new Date();
         const diffTime = expDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const githubToken = tokenRev.split('').reverse().join('');
-        return {
-            valid: true,
-            expired: diffDays <= 0,
+
+        return { 
+            valid: true, 
+            expired: diffDays <= 0, 
             days: diffDays,
-            tokenRev,
-            usuario,
-            githubToken
+            tokenRev: tokenRev,
+            usuario: usuario
         };
     }
 
@@ -805,205 +1102,6 @@
         }
         const ls = localStorage.getItem('sgf_license');
         return ls ? ls.trim() : '';
-    }
-
-    function parseCsvRowDelimited(line, sepChar) {
-        const sep = sepChar === ';' ? ';' : ',';
-        const out = [];
-        let cur = '';
-        let inQ = false;
-        for (let i = 0; i < line.length; i++) {
-            const c = line[i];
-            if (inQ) {
-                if (c === '"') {
-                    if (line[i + 1] === '"') { cur += '"'; i++; }
-                    else inQ = false;
-                } else cur += c;
-            } else {
-                if (c === '"') inQ = true;
-                else if (c === sep) { out.push(cur); cur = ''; }
-                else cur += c;
-            }
-        }
-        out.push(cur);
-        return out;
-    }
-
-    function parseCsvRow(line) {
-        return parseCsvRowDelimited(line, ',');
-    }
-
-    function detectDelimiterForLine(line) {
-        const a = parseCsvRowDelimited(line, ',');
-        const b = parseCsvRowDelimited(line, ';');
-        const na = a.filter((c) => String(c).trim().length).length;
-        const nb = b.filter((c) => String(c).trim().length).length;
-        if (nb > na) return ';';
-        if (na > nb) return ',';
-        const countSemi = (line.match(/;/g) || []).length;
-        const countComma = (line.match(/,/g) || []).length;
-        return countSemi > countComma ? ';' : ',';
-    }
-
-    function encontrarFilaCabeceraOro(lines) {
-        for (let k = 0; k < lines.length; k++) {
-            const raw = lines[k];
-            const u = raw.toUpperCase();
-            if (!u.includes('RIF') && !u.includes('CONTRIBUYENTE')) continue;
-            const delim = detectDelimiterForLine(raw);
-            const cells = parseCsvRowDelimited(raw, delim);
-            const nonEmpty = cells.filter((c) => String(c).trim().length);
-            if (nonEmpty.length >= 2) return { index: k, delimiter: delim };
-        }
-        return null;
-    }
-
-    function csvEscapeCell(s) {
-        s = String(s ?? '');
-        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-        return s;
-    }
-
-    function extraerAuthDesdeLinea(ln) {
-        let cells = parseCsvRowDelimited(ln, ',');
-        if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-            return { user: cells[1], pass: cells[2] };
-        }
-        cells = parseCsvRowDelimited(ln, ';');
-        if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-            return { user: cells[1], pass: cells[2] };
-        }
-        return null;
-    }
-
-    function parseCsvPreambleHeadersRows(csvText) {
-        const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
-        if (!lines.length) return null;
-
-        let license = null;
-        for (let j = 0; j < lines.length; j++) {
-            const t = lines[j].trim();
-            if (t.startsWith('SGF-')) {
-                license = t;
-                break;
-            }
-        }
-
-        const cabOro = encontrarFilaCabeceraOro(lines);
-        if (cabOro) {
-            const iHeader = cabOro.index;
-            const delim = cabOro.delimiter;
-            let user = null;
-            let pass = null;
-            for (let j = 0; j < iHeader; j++) {
-                const auth = extraerAuthDesdeLinea(lines[j]);
-                if (auth) {
-                    user = auth.user;
-                    pass = auth.pass;
-                    break;
-                }
-            }
-            const headers = parseCsvRowDelimited(lines[iHeader], delim).map((h) => String(h).trim());
-            const rows = [];
-            for (let i = iHeader + 1; i < lines.length; i++) {
-                const row = parseCsvRowDelimited(lines[i], delim).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-                if (!row.length || row.every((c) => c === '')) continue;
-                rows.push(row);
-            }
-            return { license, user, pass, headers, rows, delimiter: delim };
-        }
-
-        let i = 0;
-        const L0 = lines[0].trim();
-        if (L0.startsWith('SGF-')) {
-            license = L0;
-            i = 1;
-        }
-        let user = null;
-        let pass = null;
-        if (i < lines.length) {
-            const cells = parseCsvRow(lines[i]);
-            if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-                user = cells[1];
-                pass = cells[2];
-                i++;
-            } else if (cells.length >= 2) {
-                const c0 = String(cells[0]).toLowerCase();
-                if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
-                    user = cells[0];
-                    pass = cells[1];
-                    i++;
-                }
-            }
-        }
-        if (i >= lines.length) return { license, user, pass, headers: [], rows: [], delimiter: ',' };
-        const headers = parseCsvRow(lines[i]).map((h) => String(h).trim());
-        i++;
-        const rows = [];
-        for (; i < lines.length; i++) {
-            const row = parseCsvRow(lines[i]).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-            if (!row.length || row.every((c) => c === '')) continue;
-            rows.push(row);
-        }
-        return { license, user, pass, headers, rows, delimiter: ',' };
-    }
-
-    function firmaHeaders(headers, delimiter) {
-        const d = delimiter === ';' ? ';' : ',';
-        return headers.map((h) => String(h).trim()).join('\u0001') + '\u0002' + d;
-    }
-
-    function leerMapeoColumnasPersistido(firma) {
-        try {
-            const raw = localStorage.getItem(LS_CONFIG_MAPEO_COLUMNAS);
-            if (!raw) return null;
-            const o = JSON.parse(raw);
-            if (!o || o.signature !== firma) return null;
-            return o;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function obtenerCeldaPorEncabezado(headers, row, nombreColumna) {
-        if (!nombreColumna) return '';
-        const name = String(nombreColumna).trim();
-        const i = headers.findIndex(h => String(h).trim() === name);
-        if (i < 0) return '';
-        const v = row[i];
-        if (v === undefined || v === null) return '';
-        return String(v).replace(/^\s+|\s+$/g, '');
-    }
-
-    function indiceColumnaMapeo(mapeo, campo, headers) {
-        const raw = mapeo[campo];
-        if (raw === '' || raw === null || raw === undefined) return -1;
-        const n = parseInt(String(raw), 10);
-        if (!isNaN(n) && n >= 0 && n < headers.length) return n;
-        const name = String(raw).trim();
-        if (!name) return -1;
-        return headers.findIndex(h => String(h).trim() === name);
-    }
-
-    function extraerLatLngFilasMapeo(row, iLat, iLng, parseNum) {
-        if (iLat < 0 || iLng < 0) return { la: NaN, ln: NaN };
-        if (iLat === iLng) {
-            const raw = row[iLat];
-            if (raw === undefined || raw === null) return { la: NaN, ln: NaN };
-            let s = String(raw).trim();
-            if (!s) return { la: NaN, ln: NaN };
-            let parts = s.split(',');
-            if (parts.length < 2) parts = s.split(';');
-            if (parts.length < 2) parts = s.trim().split(/\s+/);
-            parts = parts.map((x) => x.trim()).filter((x) => x.length > 0);
-            if (parts.length >= 2) {
-                const la = parseNum(parts[0]);
-                const ln = parseNum(parts[1]);
-                return { la, ln };
-            }
-            return { la: NaN, ln: NaN };
-        }
-        return { la: parseNum(row[iLat]), ln: parseNum(row[iLng]) };
     }
 
     function obtenerEstatusParaCuadro(reg) {
@@ -1021,422 +1119,16 @@
             .replace(/"/g, '&quot;');
     }
 
-    function procesarFilasConMapeo(mapeo, headers, rows, meta) {
-        const license = meta ? meta.license : null;
-        const user = meta ? meta.user : null;
-        const pass = meta ? meta.pass : null;
-        const parseNum = (v) => {
-            if (v === undefined || v === null || v === '') return NaN;
-            const s = String(v).trim().replace(',', '.');
-            return parseFloat(s);
-        };
-        const secId = 'csv_sheet_default';
-        const store = {};
-        store[secId] = {
-            nombreSector: 'IMPORTACIÓN CSV',
-            visible: true,
-            isMaster: false,
-            visibilidadPorEstatus: {},
-            coloresPorEstatus: {},
-            colorPrincipal: '#00f2ff',
-            registros: []
-        };
-        const iLat = indiceColumnaMapeo(mapeo, 'lat', headers);
-        const iLng = indiceColumnaMapeo(mapeo, 'lng', headers);
-        const iNom = indiceColumnaMapeo(mapeo, 'nombre', headers);
-        const iCat = indiceColumnaMapeo(mapeo, 'categoria', headers);
-        const iFot = indiceColumnaMapeo(mapeo, 'foto', headers);
-        rows.forEach((row) => {
-            if (iLat < 0 || iLng < 0) return;
-            const { la, ln } = extraerLatLngFilasMapeo(row, iLat, iLng, parseNum);
-            if (isNaN(la) || isNaN(ln)) return;
-            const datosGenerales = {};
-            headers.forEach((h, ix) => {
-                const hn = String(h).trim();
-                if (!hn) return;
-                const v = row[ix];
-                if (v !== undefined && v !== null && String(v).trim() !== '') datosGenerales[hn] = String(v).trim();
-            });
-            datosGenerales['Contribuyente'] = (iNom >= 0 && row[iNom] !== undefined && row[iNom] !== null) ? String(row[iNom]).trim() : '';
-            datosGenerales['Estatus'] = (iCat >= 0 && row[iCat] !== undefined && row[iCat] !== null && String(row[iCat]).trim() !== '') ? String(row[iCat]).trim() : 'SIN CATEGORÍA';
-            datosGenerales['Link Fotografía'] = (iFot >= 0 && row[iFot] !== undefined && row[iFot] !== null) ? String(row[iFot]).trim() : '';
-            if (!datosGenerales['RIF']) datosGenerales['RIF'] = '';
-            store[secId].registros.push({
-                tipoGeometria: 'marker',
-                coords: { lat: la, lng: ln },
-                datosGenerales,
-                colorPersonalizado: null,
-                visibleIndividual: true,
-                camposOcultos: []
-            });
-        });
-        return { store, license, user, pass };
-    }
-
-    function valorSelectIndiceCompatible(valorPrevio, headers) {
-        if (valorPrevio === null || valorPrevio === undefined || valorPrevio === '') return '';
-        const vs = String(valorPrevio).trim();
-        if (/^\d+$/.test(vs)) {
-            const n = parseInt(vs, 10);
-            if (n >= 0 && n < headers.length) return String(n);
-        }
-        const ix = headers.findIndex((h) => String(h).trim() === vs);
-        return ix >= 0 ? String(ix) : '';
-    }
-
-    function mostrarSelectorColumnasCSV(headers, csvRows, decodedText, partesMeta) {
-        _csvMapeoPendiente = { headers, rows: csvRows, decodedText, partesMeta };
-        const firma = firmaHeaders(headers, partesMeta && partesMeta.delimiter);
-        const prev = leerMapeoColumnasPersistido(firma);
-        function llenarSelect(id, valorPrevio) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.innerHTML = '<option value="">-- Seleccionar columna --</option>';
-            headers.forEach((header, index) => {
-                const opt = document.createElement('option');
-                opt.value = String(index);
-                const lab = String(header != null ? header : '').trim();
-                opt.textContent = lab || ('Columna ' + index);
-                el.appendChild(opt);
-            });
-            const vComp = valorSelectIndiceCompatible(valorPrevio, headers);
-            if (vComp !== '' && [...el.options].some((o) => o.value === vComp)) el.value = vComp;
-        }
-        llenarSelect('csv-map-lat', prev && prev.lat);
-        llenarSelect('csv-map-lng', prev && prev.lng);
-        llenarSelect('csv-map-nombre', prev && prev.nombre);
-        llenarSelect('csv-map-categoria', prev && prev.categoria);
-        llenarSelect('csv-map-foto', prev && prev.foto);
-        const ov = document.getElementById('csv-mapeo-modal-overlay');
-        if (ov) ov.style.display = 'flex';
-    }
-
-    function confirmarMapeoColumnasCSV() {
-        const lat = document.getElementById('csv-map-lat') ? document.getElementById('csv-map-lat').value : '';
-        const lng = document.getElementById('csv-map-lng') ? document.getElementById('csv-map-lng').value : '';
-        if (!lat || !lng) {
-            return alert('Debe seleccionar columnas de Latitud y Longitud.');
-        }
-        const nombre = document.getElementById('csv-map-nombre') ? document.getElementById('csv-map-nombre').value : '';
-        const categoria = document.getElementById('csv-map-categoria') ? document.getElementById('csv-map-categoria').value : '';
-        const foto = document.getElementById('csv-map-foto') ? document.getElementById('csv-map-foto').value : '';
-        if (!_csvMapeoPendiente) return;
-        const headers = _csvMapeoPendiente.headers;
-        const rows = _csvMapeoPendiente.rows;
-        const partesMeta = _csvMapeoPendiente.partesMeta;
-        const firma = firmaHeaders(headers, partesMeta && partesMeta.delimiter);
-        const persist = { signature: firma, lat, lng, nombre, categoria, foto };
-        try {
-            localStorage.setItem(LS_CONFIG_MAPEO_COLUMNAS, JSON.stringify(persist));
-        } catch (e) {}
-        const r = procesarFilasConMapeo(persist, headers, rows, partesMeta);
-        if (r.license) SYSTEM_AUTH.license = r.license;
-        if (r.user) SYSTEM_AUTH.user = r.user;
-        if (r.pass) SYSTEM_AUTH.pass = r.pass;
-        reconstruirDesdeJSON(r.store || {});
-        actualizarUIYMapa();
-        forzarRefrescoCapasMapa();
-        _csvMapeoPendiente = null;
-        const ov = document.getElementById('csv-mapeo-modal-overlay');
-        if (ov) ov.style.display = 'none';
-    }
-
-    function cerrarModalMapeoCsv() {
-        _csvMapeoPendiente = null;
-        const ov = document.getElementById('csv-mapeo-modal-overlay');
-        if (ov) ov.style.display = 'none';
-    }
-
-    function solicitarReconfigurarColumnasCSV() {
-        if (CURRENT_ROLE !== 'SUPERADMIN' && CURRENT_ROLE !== 'ADMIN') {
-            return alert('Inicie sesión para reconfigurar columnas.');
-        }
-        const t = window.__ultimoCsvDecodificado;
-        if (!t) return alert('Cargue primero los datos desde la nube (RAW).');
-        aplicarCargaDesdeTextoPlano(t, { forzarModalMapeo: true });
-    }
-
-    function csvTextToStoreObject(csvText) {
-        const empty = { store: {}, license: null, user: null, pass: null };
-        const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
-        if (!lines.length) return empty;
-
-        let license = null;
-        for (let j = 0; j < lines.length; j++) {
-            const t = lines[j].trim();
-            if (t.startsWith('SGF-')) {
-                license = t;
-                break;
-            }
-        }
-
-        let user = null;
-        let pass = null;
-        let i;
-        let header;
-        let delim = ',';
-
-        const cabOro = encontrarFilaCabeceraOro(lines);
-        if (cabOro) {
-            for (let j = 0; j < cabOro.index; j++) {
-                const auth = extraerAuthDesdeLinea(lines[j]);
-                if (auth) {
-                    user = auth.user;
-                    pass = auth.pass;
-                    break;
-                }
-            }
-            delim = cabOro.delimiter;
-            header = parseCsvRowDelimited(lines[cabOro.index], delim).map((h) => String(h).trim());
-            i = cabOro.index + 1;
-        } else {
-            i = 0;
-            const L0 = lines[0].trim();
-            if (L0.startsWith('SGF-')) {
-                license = L0;
-                i = 1;
-            }
-            if (i < lines.length) {
-                const cells = parseCsvRow(lines[i]);
-                if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-                    user = cells[1];
-                    pass = cells[2];
-                    i++;
-                } else if (cells.length >= 2) {
-                    const c0 = String(cells[0]).toLowerCase();
-                    if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
-                        user = cells[0];
-                        pass = cells[1];
-                        i++;
-                    }
-                }
-            }
-            if (i >= lines.length) return { store: {}, license, user, pass };
-            header = parseCsvRow(lines[i]).map((h) => String(h).trim());
-            i++;
-        }
-
-        if (!header || !header.length) return { store: {}, license, user, pass };
-        const hNorm = {};
-        header.forEach((name, idx) => {
-            if (!name) return;
-            hNorm[name] = idx;
-            hNorm[name.toLowerCase()] = idx;
-        });
-        const getv = (row, col) => {
-            const keys = [col, String(col).toLowerCase(), String(col).toUpperCase()];
-            for (let k = 0; k < keys.length; k++) {
-                const ix = hNorm[keys[k]];
-                if (ix === undefined) continue;
-                let v = row[ix];
-                if (v !== undefined && v !== null) v = String(v).replace(/^\s+|\s+$/g, '');
-                if (v === '') return undefined;
-                return v;
-            }
-            return undefined;
-        };
-        const parseNum = (v) => {
-            if (v === undefined || v === null) return NaN;
-            const s = String(v).trim().replace(',', '.');
-            return parseFloat(s);
-        };
-        const store = {};
-        for (; i < lines.length; i++) {
-            const row = parseCsvRowDelimited(lines[i], delim).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-            if (!row.length || row.every((c) => c === '')) continue;
-            let secId = getv(row, 'sector_id') || getv(row, 'idSector');
-            if (!secId) secId = 'csv_sheet_default';
-            const secName = getv(row, 'nombre_sector') || getv(row, 'nombreSector') || getv(row, 'sector_nombre') || 'IMPORTACIÓN CSV';
-            const isM = String(getv(row, 'is_master') || getv(row, 'isMaster') || '').toLowerCase();
-            const isMaster = isM === '1' || isM === 'true' || isM === 'yes';
-            if (!store[secId]) {
-                store[secId] = {
-                    nombreSector: secName,
-                    visible: true,
-                    isMaster,
-                    visibilidadPorEstatus: {},
-                    coloresPorEstatus: {},
-                    colorPrincipal: '#00f2ff',
-                    registros: []
-                };
-            } else {
-                store[secId].isMaster = !!(store[secId].isMaster || isMaster);
-            }
-            let tipo = String(getv(row, 'tipoGeometria') || getv(row, 'tipo') || 'marker').trim().toLowerCase();
-            if (tipo !== 'polygon' && tipo !== 'rectangle') tipo = 'marker';
-            let coords = null;
-            if (tipo === 'marker') {
-                const la = parseNum(getv(row, 'lat') ?? getv(row, 'latitude') ?? getv(row, 'LAT'));
-                const ln = parseNum(getv(row, 'lng') ?? getv(row, 'lon') ?? getv(row, 'longitud') ?? getv(row, 'LNG'));
-                if (!isNaN(la) && !isNaN(ln)) coords = { lat: la, lng: ln };
-            } else {
-                const cj = getv(row, 'coords_json');
-                if (cj) {
-                    try { coords = JSON.parse(cj); } catch (e) {}
-                }
-            }
-            const datosGenerales = {};
-            const fixedLower = { sector_id: 1, idsector: 1, nombre_sector: 1, nombresector: 1, sector_nombre: 1, is_master: 1, ismaster: 1, tipogeometria: 1, tipo: 1, lat: 1, latitude: 1, lng: 1, lon: 1, longitud: 1, coords_json: 1 };
-            header.forEach((col) => {
-                const c = String(col).trim();
-                if (!c || fixedLower[c.toLowerCase()]) return;
-                const v = getv(row, c);
-                if (v !== undefined && v !== '') datosGenerales[c] = v;
-            });
-            const nombreVal = getv(row, 'nombre') || getv(row, 'Nombre') || getv(row, 'contribuyente');
-            if (nombreVal) datosGenerales['Contribuyente'] = nombreVal;
-            if (!datosGenerales['Contribuyente']) datosGenerales['Contribuyente'] = getv(row, 'Contribuyente') || '';
-            if (!datosGenerales['RIF']) datosGenerales['RIF'] = getv(row, 'RIF') || '';
-            const catVal = getv(row, 'categoria') || getv(row, 'Categoria') || getv(row, 'Estado');
-            if (catVal) datosGenerales['Estatus'] = catVal;
-            if (!datosGenerales['Estatus']) datosGenerales['Estatus'] = getv(row, 'Estatus') || 'SIN CATEGORÍA';
-            if (getv(row, 'Estado') && !datosGenerales['Estado']) datosGenerales['Estado'] = getv(row, 'Estado');
-            if (getv(row, 'Deuda')) datosGenerales['Deuda'] = getv(row, 'Deuda');
-            if (!datosGenerales['Link Fotografía']) datosGenerales['Link Fotografía'] = getv(row, 'Link Fotografía') || '';
-            store[secId].registros.push({
-                tipoGeometria: tipo,
-                coords,
-                datosGenerales,
-                colorPersonalizado: null,
-                visibleIndividual: true,
-                camposOcultos: []
-            });
-        }
-        return { store, license, user, pass };
-    }
-
-    function forzarRefrescoCapasMapa() {
-        actualizarUIYMapa();
-        if (typeof mapa !== 'undefined' && mapa) {
-            try {
-                mapa.invalidateSize();
-            } catch (e) {}
-            requestAnimationFrame(() => {
-                actualizarUIYMapa();
-                try { mapa.invalidateSize(); } catch (e) {}
-            });
-            setTimeout(() => {
-                actualizarUIYMapa();
-                try { mapa.invalidateSize(); } catch (e) {}
-            }, 200);
-        }
-    }
-
-    function aplicarCargaDesdeTextoPlano(decodedText, opciones) {
-        opciones = opciones || {};
-        try {
-            window.__ultimoCsvDecodificado = decodedText;
-        } catch (e) {}
-        const partes = parseCsvPreambleHeadersRows(decodedText);
-        if (!partes || !partes.headers || partes.headers.length === 0) {
-            const r = csvTextToStoreObject(decodedText);
-            if (r.license) SYSTEM_AUTH.license = r.license;
-            if (r.user) SYSTEM_AUTH.user = r.user;
-            if (r.pass) SYSTEM_AUTH.pass = r.pass;
-            reconstruirDesdeJSON(r.store || {});
-            forzarRefrescoCapasMapa();
-            return;
-        }
-        const firma = firmaHeaders(partes.headers, partes.delimiter);
-        let mapeo = opciones.forzarModalMapeo ? null : leerMapeoColumnasPersistido(firma);
-        const iLatOk = mapeo ? indiceColumnaMapeo(mapeo, 'lat', partes.headers) : -1;
-        const iLngOk = mapeo ? indiceColumnaMapeo(mapeo, 'lng', partes.headers) : -1;
-        if (mapeo && String(mapeo.lat) !== '' && String(mapeo.lng) !== '' && iLatOk >= 0 && iLngOk >= 0) {
-            const r = procesarFilasConMapeo(mapeo, partes.headers, partes.rows, partes);
-            if (r.license) SYSTEM_AUTH.license = r.license;
-            if (r.user) SYSTEM_AUTH.user = r.user;
-            if (r.pass) SYSTEM_AUTH.pass = r.pass;
-            reconstruirDesdeJSON(r.store || {});
-            actualizarUIYMapa();
-            forzarRefrescoCapasMapa();
-            return;
-        }
-        if (partes.license) SYSTEM_AUTH.license = partes.license;
-        if (partes.user) SYSTEM_AUTH.user = partes.user;
-        if (partes.pass) SYSTEM_AUTH.pass = partes.pass;
-        const disparoManualSuperCargar = !!window.__csvDisparoModalMapeoPorCargaManual;
-        const puedeAbrirModalMapeo = (CURRENT_ROLE !== null) && (opciones.forzarModalMapeo || (disparoManualSuperCargar && CURRENT_ROLE === 'SUPERADMIN'));
-        if (puedeAbrirModalMapeo) {
-            mostrarSelectorColumnasCSV(partes.headers, partes.rows, decodedText, partes);
-            return;
-        }
-        const rSil = csvTextToStoreObject(decodedText);
-        if (rSil.license) SYSTEM_AUTH.license = rSil.license;
-        if (rSil.user) SYSTEM_AUTH.user = rSil.user;
-        if (rSil.pass) SYSTEM_AUTH.pass = rSil.pass;
-        reconstruirDesdeJSON(rSil.store || {});
-        forzarRefrescoCapasMapa();
-    }
-
-    function sincronizarCamposPanelSuperAdmin() {
-        if (CURRENT_ROLE !== 'SUPERADMIN') return;
-        const linkEl = document.getElementById('ajuste-link-raw-json');
-        if (linkEl) linkEl.value = (localStorage.getItem(LS_MASTER_JSON_PATH) || '');
-        const tokEl = document.getElementById('ajuste-repo-token');
-        if (tokEl) {
-            const rev = localStorage.getItem('master_token_revert');
-            if (rev) {
-                tokEl.value = rev;
-                tokEl.type = 'text';
-            } else {
-                tokEl.value = '';
-                tokEl.type = 'password';
-            }
-        }
-    }
-
-    function storeToCsvString() {
-        const lic = (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).startsWith('SGF-'))
-            ? String(SYSTEM_AUTH.license).replace(/[\r\n]/g, '') : '';
-        const lines = [];
-        lines.push(lic);
-        lines.push(['AUTH', SYSTEM_AUTH.user || 'admin', SYSTEM_AUTH.pass || 'admin'].map(csvEscapeCell).join(','));
-        const hdr = ['sector_id', 'nombre_sector', 'is_master', 'tipoGeometria', 'lat', 'lng', 'coords_json', 'Contribuyente', 'RIF', 'Estatus', 'Link Fotografía'];
-        lines.push(hdr.join(','));
-        const datos = extraerDatosGeometria();
-        for (const idSec in datos) {
-            const sec = datos[idSec];
-            for (const reg of sec.registros) {
-                const lat = reg.coords && reg.coords.lat !== undefined ? reg.coords.lat : '';
-                const lng = reg.coords && reg.coords.lng !== undefined ? reg.coords.lng : '';
-                let coordsJson = '';
-                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    try { coordsJson = JSON.stringify(reg.coords || []); } catch (e) {}
-                }
-                const d = reg.datosGenerales || {};
-                const row = [
-                    idSec,
-                    sec.nombreSector || '',
-                    sec.isMaster ? '1' : '0',
-                    reg.tipoGeometria || '',
-                    lat,
-                    lng,
-                    coordsJson,
-                    d['Contribuyente'] || '',
-                    d['RIF'] || '',
-                    d['Estatus'] || '',
-                    d['Link Fotografía'] || ''
-                ];
-                lines.push(row.map(csvEscapeCell).join(','));
-            }
-        }
-        return lines.join('\n');
-    }
-
-    function getMasterTokenFromStorage() {
-        const tk = localStorage.getItem('master_token_revert');
-        return tk ? tk.split('').reverse().join('') : null;
-    }
-
+    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
     function getRealToken() {
         if (CURRENT_ROLE === 'SUPERADMIN') {
-            return getMasterTokenFromStorage();
-        }
-        if (CURRENT_ROLE === 'ADMIN') {
+            const tk = localStorage.getItem('master_token_revert');
+            return tk ? tk.split('').reverse().join('') : null;
+        } else if (CURRENT_ROLE === 'ADMIN') {
             const lic = obtenerCadenaLicencia();
             const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired && parsed.githubToken) {
-                return parsed.githubToken;
+            if (parsed.valid && !parsed.expired && parsed.tokenRev) {
+                return parsed.tokenRev.split('').reverse().join('');
             }
         }
         return null;
@@ -1451,45 +1143,36 @@
         const errorDiv = document.getElementById('login-error-msg');
         errorDiv.style.display = 'none';
 
+        // 1. JERARQUÍA MAESTRA (SUPER ADMIN WOLGFAN)
         if (user === 'Ing_Wolgfan' && pass === 'SGF-AURA-2026-SUPREMA') {
             CURRENT_ROLE = 'SUPERADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (WOLGFAN)';
             document.getElementById('panel-superadmin').style.display = 'block';
             
+            // Muestra el botón RAW solo para SuperAdmin
             const btnRaw = document.getElementById('btn-cargar-raw');
             if(btnRaw) btnRaw.style.display = 'flex';
             
+            // Limpieza de DOM: Remueve elementos del cliente
             const panelAdmin = document.getElementById('panel-admin-licencia');
             if(panelAdmin) panelAdmin.remove();
 
-            const licWarn = document.getElementById('license-warning-box');
-            if (licWarn) licWarn.style.display = 'none';
-            const licLock = document.getElementById('license-lock-overlay');
-            if (licLock) licLock.style.display = 'none';
-
-            const roToggle = document.getElementById('toggle-readonly');
-            if (roToggle) {
-                roToggle.checked = false;
-                modoLecturaGlobal = false;
-                alternarModoLectura();
-            }
+            const licLockS = document.getElementById('license-lock-overlay');
+            if (licLockS) licLockS.style.display = 'none';
 
             document.getElementById('login-overlay').style.display = 'none';
-            sincronizarCamposPanelSuperAdmin();
-            actualizarUIYMapa();
-            void (async () => {
-                await cargarDatosNube();
-                forzarRefrescoCapasMapa();
-                sincronizarCamposPanelSuperAdmin();
-            })();
+            actualizarUIYMapa(); 
+            cargarDatosNube();
             return;
         }
 
+        // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
         if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
             
+            // LIMPIEZA DEL DOM ESTRICTA (MÓDULO 3)
             const btnRaw = document.getElementById('btn-cargar-raw');
             if(btnRaw) btnRaw.remove();
             const pnlSup = document.getElementById('panel-superadmin');
@@ -1497,7 +1180,7 @@
 
             document.getElementById('login-overlay').style.display = 'none';
             actualizarUIYMapa();
-            void iniciarCicloLicenciaAdmin();
+            iniciarCicloLicenciaAdmin();
             return;
         }
 
@@ -1534,10 +1217,10 @@
             if (lockH && lockP) {
                 if (!est.valid) {
                     lockH.textContent = 'ACTIVACIÓN REQUERIDA';
-                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema o descargue su respaldo de contingencia.';
+                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word o Excel antes de continuar.';
                 } else {
                     lockH.textContent = 'LICENCIA SGF VENCIDA';
-                    lockP.innerHTML = 'Su período de acceso ha finalizado. Ingrese una licencia vigente o descargue el respaldo de sus datos de forma segura.';
+                    lockP.innerHTML = 'Su período de acceso ha finalizado. Ingrese una licencia vigente o descargue un respaldo de sus datos.';
                 }
             }
             if (lockOv) lockOv.style.display = 'flex';
@@ -1545,7 +1228,6 @@
             if (wb) wb.style.display = 'none';
         } else {
             if (lockOv) lockOv.style.display = 'none';
-            
             const warnBox = document.getElementById('license-warning-box');
             const licDays = document.getElementById('license-days-count');
             if (est.days <= 10) {
@@ -1564,40 +1246,39 @@
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
+        SYSTEM_AUTH.license = val;
         alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
-        document.getElementById('license-lock-overlay').style.display = 'none';
+        const lockOv = document.getElementById('license-lock-overlay');
+        if (lockOv) lockOv.style.display = 'none';
         validarLicenciaYBloqueo();
-        
-        await cargarDatosNube(); 
-        SYSTEM_AUTH.license = val; 
-        await guardarEnServidor(); 
+        await cargarDatosNube();
     }
 
-    async function actualizarLicenciaInterna() {
+    function actualizarLicenciaInterna() {
         const val = document.getElementById('input-update-license').value.trim();
         if(!val) return alert("Ingrese el código de licencia.");
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
+        SYSTEM_AUTH.license = val;
         alert("Licencia Renovada con éxito.");
         validarLicenciaYBloqueo();
-
-        SYSTEM_AUTH.license = val;
-        await guardarEnServidor();
     }
 
     /* ==========================================================================
-       BLOQUE DE EXPORTACIÓN DE DATOS (EXCEL Y WORD)
+       NUEVO BLOQUE: EXPORTACIÓN A EXCEL (SECTORIZACIÓN POR COORDENADAS)
        ========================================================================== */
     function exportarExcelInstitucional() {
         if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
         const wb = XLSX.utils.book_new();
         let datosParaExcel = [];
         
+        // Recorremos los registros que están cargados en el mapa
         Object.keys(STORE).forEach(idCapa => {
             STORE[idCapa].registros.forEach(reg => {
                 const d = reg.datosGenerales;
+                // IMPORTANTE: El nombre del sector se toma del contenedor donde está el punto
                 const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
 
                 datosParaExcel.push({
@@ -1609,10 +1290,14 @@
             });
         });
 
+        // Ordenar por Sector y luego por Nombre
         datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
 
         const ws = XLSX.utils.json_to_sheet(datosParaExcel);
+        
+        // PIE DE PÁGINA LEGAL CON LOS ARTÍCULOS SOLICITADOS
         const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
+        
         const filaFinal = datosParaExcel.length + 3;
         XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
         XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
@@ -1638,7 +1323,6 @@
         });
 
         const tableRows = [];
-        
         const headerRow = new TableRow({
             children: [
                 new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 16 })] })] }),
@@ -1651,18 +1335,15 @@
         tableRows.push(headerRow);
 
         allRecords.forEach(reg => {
-            const d = reg.datosGenerales;
+            const d = reg.datosGenerales || {};
             const identidad = d["Razón Social"] || d["Nombre Comercial"] || d["Contribuyente"] || "Sin Identificar";
             const registro = d["RIF / Registro"] || d["RIF"] || "N/A";
-            
-            const latLng = reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
+            const latLng = reg.capaLeaflet && reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
             const coordsText = `GPS: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
             const ubicacion = `${d["Dirección (Referencia Manual)"] || "No especificada."}\n${coordsText}`;
-            
             const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}\nAuditoría: ${d["ID_Auditoria"] || "N/A"}`;
             const estadoFiscal = `Validación: ${d["Validación Fiscal"] || d["Estatus"] || "N/A"}\nLicencia: ${d["Situación Sin Licencia"] || "N/A"}\nPago: ${d["Semáforo de Acuerdo de Pago"] || "N/A"}`;
-
-            const dataRow = new TableRow({
+            tableRows.push(new TableRow({
                 children: [
                     new TableCell({ children: [
                         new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 18 })] }),
@@ -1672,8 +1353,7 @@
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 16 })] })] }),
                     new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 16 })] })] }),
                 ],
-            });
-            tableRows.push(dataRow);
+            }));
         });
 
         const table = new Table({
@@ -1710,23 +1390,11 @@
                     new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.RIGHT }),
                     new Paragraph(" "),
                     table,
-                    new Paragraph(" "), 
+                    new Paragraph(" "),
                     new Paragraph({
                         children: [
-                            new TextRun({
-                                text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ",
-                                bold: true,
-                                size: 20,
-                                break: 1,
-                            }),
-                            new TextRun({
-                                text: "El presente documento constituye un Respaldo Maestro de Fiscalización, emitido bajo los estándares de la Ley Orgánica de la Contraloría General de la República (Arts. 7, 9, 77 y 91), la Ley de Infogobierno (Art. 4) y la Constitución de la República (Arts. 168 y 174). ",
-                                size: 20,
-                            }),
-                            new TextRun({
-                                text: "Se hace constar que la información aquí detallada (RIF, Expediente, Censo y Validación) ha sido recolectada y validada en campo por el Fiscal Responsable asignado. Este reporte goza de presunción de veracidad para efectos de recaudación municipal. Cualquier modificación no autorizada de este soporte digital o físico anula su validez ante la Dirección de Hacienda.",
-                                size: 20,
-                            }),
+                            new TextRun({ text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ", bold: true, size: 20, break: 1 }),
+                            new TextRun({ text: "Respaldo maestro de fiscalización conforme a normativa municipal.", size: 20 }),
                         ],
                         alignment: AlignmentType.JUSTIFIED,
                     }),
@@ -1737,6 +1405,909 @@
         Packer.toBlob(doc).then(blob => {
             saveAs(blob, `Respaldo_Maestro_Fiscal_Ayacucho_${Date.now()}.docx`);
         });
+    }
+
+    /* ==========================================================================
+       MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
+       ========================================================================== */
+    function previsualizarCaptura() {
+        const modalCapture = document.getElementById('capture-modal');
+        const modalSuccess = document.getElementById('success-modal');
+        
+        modalCapture.querySelector('span').innerHTML = '🔄 INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el área de reporte.</small>';
+        modalCapture.style.display = 'flex';
+        
+        mapa.invalidateSize();
+
+        const watermark = document.createElement('div');
+        watermark.id = 'report-watermark';
+        watermark.innerHTML = `
+            <div style="border-left: 4px solid #da3633; padding-left: 12px; font-family:Inter,sans-serif; text-align:left; line-height:1.5;">
+                <strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br>
+                <span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
+                <em style="color: #ff0000; font-size: 11px; font-weight: 900;">¡PORQUE CON TRABAJO SE PRODUCE!</em><br>
+                <strong style="color: #000000; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
+                <span style="color: #aaaaaa; font-size: 10px;">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</span>
+            </div>
+        `;
+        watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
+        document.getElementById('map').appendChild(watermark);
+
+        // Ocultar modal de aviso y esperar a que la RAM limpie el DOM
+        setTimeout(() => {
+            modalCapture.style.display = 'none'; 
+            
+            // Disparar la foto limpia
+            setTimeout(() => {
+                const mapElement = document.getElementById('map');
+                const mapCanvas = mapElement.getBoundingClientRect();
+
+                const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container, .footer-protegido');
+                uiLayers.forEach(el => el.style.visibility = 'hidden');
+
+                html2canvas(document.body, {
+                    x: mapCanvas.left,
+                    y: mapCanvas.top,
+                    width: mapCanvas.width,
+                    height: mapCanvas.height,
+                    scrollX: 0,
+                    scrollY: 0,
+                    scroll: false,
+                    useCORS: true,
+                    allowTaint: false,
+                    scale: 2
+                }).then(canvas => {
+                    uiLayers.forEach(el => el.style.visibility = 'visible');
+                    
+                    if(document.getElementById('report-watermark')) {
+                        document.getElementById('report-watermark').remove();
+                    }
+
+                    const imageLink = document.createElement('a');
+                    imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
+                    imageLink.href = canvas.toDataURL("image/png");
+                    imageLink.click();
+
+                    modalSuccess.style.display = 'flex';
+                    setTimeout(() => { modalSuccess.style.display = 'none'; }, 3000);
+
+                }).catch(err => {
+                    uiLayers.forEach(el => el.style.visibility = 'visible');
+                    if(document.getElementById('report-watermark')) {
+                        document.getElementById('report-watermark').remove();
+                    }
+                    console.error("Fallo al generar reporte:", err);
+                    alert("Error al capturar imagen. Revise consola.");
+                });
+            }, 1500); 
+        }, 1000); 
+    }
+
+    /* ==========================================================================
+       FASE 1: NÚCLEO DE MEMORIA Y CONFIGURACIÓN BASE LEAFLET
+       ========================================================================== */
+    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026');
+
+    // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    
+    googleSat.addTo(mapa); 
+
+    const capaMaestraSectores = L.featureGroup().addTo(mapa);
+    
+    const baseMaps = {
+        "Vista Satélite": googleSat,
+        "Vista Mapa Urbano": googleStreets
+    };
+    const overlayMaps = {
+        "Sectores Digitalizados": capaMaestraSectores
+    };
+    L.control.layers(baseMaps, overlayMaps, {position: 'topright'}).addTo(mapa);
+
+    const capasSectores = {};
+    let STORE = {}; 
+    let capaActivaId = null; 
+    let modoLecturaGlobal = false;
+    let textoFiltroGlobal = "";
+
+    const DICCIONARIO_ESTATUS = {
+        "VIGENTE": { color: "#238636" },
+        "VENCIDA": { color: "#da3633" },
+        "TEMPORAL": { color: "#fbbc04" },
+        "CENSO / NUEVO": { color: "#00f2ff" },
+        "SIN LICENCIA": { color: "#da3633" },
+        "SIN CATEGORÍA": { color: "#6e7681" }
+    };
+
+    const crearPinFiscal = (color) => L.divIcon({ 
+        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
+        className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
+    });
+
+    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
+    const herramientaPoligono = new L.Draw.Polygon(mapa, { 
+        shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' }
+    });
+
+    function activarHerramienta(tipo) {
+        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
+        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
+        if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
+        
+        tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
+    }
+
+    mapa.on(L.Draw.Event.CREATED, (evento) => {
+        const idFisico = L.stamp(evento.layer);
+        
+        if(evento.layer instanceof L.Marker) {
+            if (!modoLecturaGlobal) evento.layer.options.draggable = true;
+            evento.layer.on('dragend', () => actualizarUIYMapa());
+        } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
+            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
+            if (!modoLecturaGlobal) evento.layer.editing.enable();
+            evento.layer.on('edit', () => actualizarUIYMapa());
+        }
+
+        const nuevoRegistro = {
+            idFisico: idFisico,
+            tipoGeometria: evento.layerType,
+            capaLeaflet: evento.layer,
+            colorPersonalizado: null, 
+            visibleIndividual: true,
+            datosGenerales: { 
+                "Contribuyente": "NUEVO ESTABLECIMIENTO", 
+                "RIF": "J-00000000-0",
+                "Teléfono": "0414-0000000",
+                "Metros Cuadrados": "0 m2",
+                "Fecha Fiscalización": new Date().toISOString().split('T')[0],
+                "Estatus": "CENSO / NUEVO",
+                "Link Fotografía": ""
+            },
+            camposOcultos: []
+        };
+
+        STORE[capaActivaId].registros.push(nuevoRegistro);
+        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
+        
+        actualizarUIYMapa();
+        
+        setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
+        setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
+    });
+
+    function toggleVisibilidadIndividual(idSector, idFisico, isVisible) {
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(reg) {
+            reg.visibleIndividual = isVisible;
+            actualizarUIYMapa();
+        }
+    }
+
+    function toggleVisibilidadEstatus(idSector, estatus, isVisible) {
+        if (!STORE[idSector]) return;
+        if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
+        STORE[idSector].visibilidadPorEstatus[estatus] = isVisible;
+        actualizarUIYMapa();
+    }
+
+    function actualizarNombreSector(id, valor) {
+        if(!STORE[id]) return;
+        STORE[id].nombreSector = valor.toUpperCase();
+        actualizarUIYMapa();
+    }
+
+    function cambiarColorEstatusSector(idSector, estatus, colorHex) {
+        if (modoLecturaGlobal) return alert("Modo lectura activo.");
+        if (!STORE[idSector]) return;
+        
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatus] = colorHex;
+        
+        STORE[idSector].registros.forEach(reg => {
+            const estActual = obtenerEstatusParaCuadro(reg);
+            if (estActual === estatus) {
+                reg.colorPersonalizado = colorHex;
+                if (reg.tipoGeometria === 'marker') {
+                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+                }
+            }
+        });
+        
+        actualizarUIYMapa();
+    }
+
+    function cambiarColorSector(idSector, colorHex) {
+        if (modoLecturaGlobal) return alert("Modo lectura activo.");
+        if (!STORE[idSector]) return;
+        
+        STORE[idSector].colorPrincipal = colorHex;
+        
+        STORE[idSector].registros.forEach(reg => {
+            reg.colorPersonalizado = colorHex;
+            if (reg.tipoGeometria === 'marker') {
+                reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+            } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+            }
+        });
+        
+        actualizarUIYMapa();
+    }
+    
+    // REPARACIÓN DEL ÁRBOL (CLIC MANUAL OBLIGATORIO)
+    function toggleSectorBodyManual(e, idSector) {
+        if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
+        if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = true;
+        STORE[idSector].isExpanded = !STORE[idSector].isExpanded;
+        actualizarUIYMapa();
+    }
+
+    // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
+    function eliminarDelClon(idSector, idFisico) {
+        if(modoLecturaGlobal) return;
+        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
+        if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
+        
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(reg && capasSectores[idSector].hasLayer(reg.capaLeaflet)) {
+            capasSectores[idSector].removeLayer(reg.capaLeaflet);
+        }
+        
+        STORE[idSector].registros = STORE[idSector].registros.filter(r => String(r.idFisico) !== String(idFisico));
+        
+        if(mapa._popup) mapa.closePopup();
+        actualizarUIYMapa();
+    }
+
+    /* ==========================================================================
+       FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
+       ========================================================================== */
+    function actualizarUIYMapa() {
+        const contenedor = document.getElementById('arbol-datos');
+        contenedor.innerHTML = "";
+        
+        for(let idSector in STORE) {
+            const sectorData = STORE[idSector];
+
+            if (!capasSectores[idSector]) {
+                capasSectores[idSector] = new L.FeatureGroup();
+            }
+
+            capasSectores[idSector].clearLayers();
+
+            const gruposPorEstatus = {};
+            let hayResultadosBusqueda = false;
+
+            sectorData.registros.forEach(reg => {
+                if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+                
+                const estatus = obtenerEstatusParaCuadro(reg);
+                
+                if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
+                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
+
+                const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
+                const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+
+                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
+                const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
+
+                if (isPhysicallyVisible && !hasLayer) {
+                    capasSectores[idSector].addLayer(reg.capaLeaflet);
+                } else if (!isPhysicallyVisible && hasLayer) {
+                    capasSectores[idSector].removeLayer(reg.capaLeaflet);
+                }
+
+                if(cumpleFiltro) {
+                    hayResultadosBusqueda = true;
+                    if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
+                    gruposPorEstatus[estatus].conteo++;
+                    gruposPorEstatus[estatus].lista.push(reg);
+                }
+            });
+
+            if (sectorData.visible) {
+                if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.addLayer(capasSectores[idSector]);
+                }
+            } else {
+                if (capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.removeLayer(capasSectores[idSector]);
+                }
+            }
+
+            if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
+
+            const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
+            
+            let htmlSector = `
+            <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
+                <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
+                    <div class="sector-title-group">
+                        <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
+                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
+                        
+                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
+                           title="Mostrar/Ocultar todo el Sector" 
+                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
+                           onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                        
+                        <input type="text" value="${sectorData.nombreSector}" 
+                               title="Doble clic para enfocar sector en el mapa"
+                               onclick="event.stopPropagation();"
+                               ondblclick="enfocarSector('${idSector}')"
+                               onchange="actualizarNombreSector('${idSector}', this.value)" 
+                               style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 140px; outline:none; text-transform:uppercase;">
+                    </div>
+                    
+                    <div class="sector-controls">
+                        <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
+                        ${!sectorData.isMaster ? `
+                        <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
+                        <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
+                        ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
+                    </div>
+                </div>
+                <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
+
+            for(let estatus in gruposPorEstatus) {
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                
+                if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+                if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
+                
+                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
+                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
+
+                const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
+
+                htmlSector += `
+                <div class="status-group">
+                    <div class="status-header">
+                        <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
+                           title="Mostrar/Ocultar esta categoría en el mapa"
+                           style="cursor: pointer; width: 18px; text-align: center; color: ${estatusVisible ? 'var(--text-main)' : '#6e7681'}; font-size: 14px; flex-shrink: 0;"
+                           onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
+                        <div class="status-row-label" onclick="event.stopPropagation(); document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">${estatus}</div>
+                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
+                        <div class="status-color-wrap">
+                        <input type="color" class="status-cat-color-input" title="Color de categoría" value="${colorActual}"
+                               onclick="event.stopPropagation();"
+                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)"
+                               ${sectorData.isMaster ? 'disabled' : ''}>
+                        </div>
+                        ${!sectorData.isMaster ? `
+                        <div class="status-row-actions">
+                            <input type="checkbox" 
+                                   style="cursor:pointer;"
+                                   onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" 
+                                   title="Seleccionar todos en esta categoría para borrado en lote">
+                            <i class="fas fa-trash-alt sector-trash" 
+                               style="font-size: 13px;"
+                               onclick="event.stopPropagation(); eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
+                               title="Eliminar registros seleccionados de esta categoría"></i>
+                        </div>` : ''}
+                    </div>
+                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+
+                gruposPorEstatus[estatus].lista.forEach(local => {
+                    htmlSector += `
+                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
+                            <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
+                                   title="Ocultar individualmente" 
+                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
+                                   onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
+                                   
+                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
+                                <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
+                            ${!sectorData.isMaster ? `
+                                <input type="checkbox" class="chk-registro" data-id="${local.idFisico}" onclick="event.stopPropagation();" title="Marcar para borrado en lote" style="cursor:pointer;">
+                                <i class="fas fa-trash sector-trash" title="Borrar este registro" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>
+                            ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>`}
+                            </div>
+                        </div>`;
+                });
+                htmlSector += `</div></div>`;
+            }
+            htmlSector += `</div></div>`;
+            contenedor.insertAdjacentHTML('beforeend', htmlSector);
+        }
+
+        const indicador = document.getElementById('indicador-capa-activa');
+        if(capaActivaId && STORE[capaActivaId]) {
+            indicador.innerText = "CAPA DE TRABAJO: " + STORE[capaActivaId].nombreSector;
+            indicador.style.color = varCSS('--cyan-neon');
+        } else {
+            indicador.innerText = "HACIENDA MUNICIPAL - MODO LECTURA";
+            indicador.style.color = "#6e7681";
+        }
+    }
+
+    /* ==========================================================================
+       FASE 3: DOBLE VISTA EN POPUP (REPARACIÓN DE APERTURA ANTI-BLOQUEOS)
+       ========================================================================== */
+    function vincularEventosCapa(capaFisica, idSector, idFisico) {
+        capaFisica.on('click', () => {
+            const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+            if(reg) reg._modoPopup = 'lectura';
+            abrirPopupDinamico(idSector, idFisico, false);
+        });
+    }
+
+    function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!registro) return;
+
+        const capaMapa = registro.capaLeaflet;
+        
+        if(centrarMapa) {
+            const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
+            mapa.flyTo(destino, 19, { duration: 0.5 });
+            registro._modoPopup = 'lectura';
+        }
+
+        const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
+
+        capaMapa.unbindPopup();
+        capaMapa.bindPopup(htmlContenido, { 
+            minWidth: 320, 
+            closeButton: true, 
+            className: modoLecturaGlobal ? 'readonly-mode' : '' 
+        }).openPopup();
+        
+        mapa._popup = capaMapa.getPopup();
+        mapa._popup._source = capaMapa; 
+    }
+
+    function toggleModoPopup(idFisico, modo) {
+        const divRead = document.getElementById(`view-mode-${idFisico}`);
+        const divEdit = document.getElementById(`edit-mode-${idFisico}`);
+        
+        if (!divRead || !divEdit) return;
+
+        if (modo === 'edit') {
+            divRead.style.display = 'none';
+            divEdit.style.display = 'block';
+        } else {
+            divRead.style.display = 'block';
+            divEdit.style.display = 'none';
+        }
+    }
+
+    function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
+        const sectorData = STORE[idSector];
+        const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
+        let html = `<div class="pop-wrapper">`;
+
+        if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
+            const rep = calcularAuditoria(registro.capaLeaflet);
+            const cuerpoEstatus = rep.textoCompacto ? escHtmlBasico(rep.textoCompacto) : '—';
+            html += `
+            <div class="audit-report glass-panel">
+                <h3 class="audit-title">RESUMEN DE CENSO - HACIENDA</h3>
+                <p class="audit-resumen-cuerpo">ESTATUS: ${cuerpoEstatus} · <span class="audit-total-inline">Total: ${rep.total}</span></p>
+            </div>`;
+        } 
+        else {
+            const estActual = registro.datosGenerales["Estatus"];
+            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+            
+            const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
+            const colorFinal = registro.colorPersonalizado || colorSector;
+            
+            const imgUrl = registro.datosGenerales["Link Fotografía"];
+            const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
+            
+            html += `
+            <div class="pop-cover">
+                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
+            </div>
+            <div class="pop-content">`;
+
+            html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
+            for(let clave in registro.datosGenerales) {
+                if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                const isOculto = registro.camposOcultos.includes(clave);
+                if(isOculto) continue; 
+                
+                html += `
+                <div class="read-field">
+                    <span class="read-label">${clave}</span>
+                    <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
+                </div>`;
+            }
+            if(!modoLecturaGlobal) {
+                html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
+            }
+            html += `</div>`;
+
+            html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
+            for(let clave in registro.datosGenerales) {
+                if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                const isOculto = registro.camposOcultos.includes(clave);
+                
+                html += `
+                <div class="form-group">
+                    <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
+                    <span class="form-label">${clave}</span>
+                    <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
+                           ${isOculto ? 'type="password"' : ''} 
+                           onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;">
+                </div>`;
+            }
+
+            html += `
+            <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
+                <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
+                <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">
+                    ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
+                </select>
+            </div>
+            
+            <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 10px;">
+                <span class="form-label" style="color: #111;">COLOR DE PINCHETA (PERSONALIZADO)</span>
+                <input type="color" style="width: 100%; height: 32px; border: none; cursor: pointer; border-radius: 6px; background: transparent; padding: 0;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
+            </div>
+
+            <div class="form-group">
+                <i class="fas ${isFotoOculta ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', 'Link Fotografía')"></i>
+                <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
+                <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
+            </div>
+            
+            <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
+            
+            if(!sectorData.isMaster) {
+                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
+            }
+            
+            html += `</div>`;
+        }
+        
+        html += `</div></div>`;
+        return html;
+    }
+
+    function cambiarColorPin(idSector, idFisico, colorHex) {
+        if(modoLecturaGlobal) return;
+        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!regOrigen) return;
+
+        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
+
+        STORE[idSector].registros.forEach(reg => {
+            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            if (estActual === estatusTarget) {
+                reg.colorPersonalizado = colorHex;
+                if (reg.tipoGeometria === 'marker') {
+                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+                }
+            }
+        });
+
+        actualizarUIYMapa();
+        const badge = document.getElementById(`badge-estatus-${idFisico}`);
+        if (badge) badge.style.background = colorHex;
+    }
+
+    function ejecutarToggleOjo(eventoClick, idSector, idFisico, claveCampo) {
+        eventoClick.stopPropagation(); 
+        if(modoLecturaGlobal) return;
+
+        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!regOrigen) return;
+
+        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
+
+        STORE[idSector].registros.forEach(reg => {
+            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            if (estActual === estatusTarget) {
+                if (isCurrentlyHidden) {
+                    const idx = reg.camposOcultos.indexOf(claveCampo);
+                    if (idx > -1) reg.camposOcultos.splice(idx, 1);
+                } else {
+                    if (!reg.camposOcultos.includes(claveCampo)) {
+                        reg.camposOcultos.push(claveCampo);
+                    }
+                }
+            }
+        });
+
+        actualizarUIYMapa(); 
+
+        if(mapa._popup) {
+            const capaMapa = regOrigen.capaLeaflet;
+            capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
+        }
+    }
+
+    function actualizarDatoCampo(idSector, idFisico, clave, valor) {
+        STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
+        actualizarUIYMapa(); 
+    }
+
+    function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        reg.datosGenerales["Estatus"] = nuevoEst;
+        
+        const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+        const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : conf.color;
+        
+        reg.colorPersonalizado = colorSector; 
+        
+        if (reg.tipoGeometria === 'marker') {
+            reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
+        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+            reg.capaLeaflet.setStyle({ color: colorSector, fillColor: colorSector, fillOpacity: 0.2 });
+        }
+        
+        actualizarUIYMapa();
+
+        const badge = document.getElementById(`badge-estatus-${idFisico}`);
+        if (badge) {
+            badge.innerText = nuevoEst;
+            badge.style.background = colorSector;
+        }
+    }
+
+    /* ==========================================================================
+       FASE 4: FUNCIONES DE SISTEMA Y VÉRTICES DE EDICIÓN
+       ========================================================================== */
+    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+    function alternarModoLectura() {
+        modoLecturaGlobal = document.getElementById('toggle-readonly').checked;
+        const bMarker = document.getElementById('btn-draw-marker');
+        const bPoly = document.getElementById('btn-draw-poly');
+        
+        if(modoLecturaGlobal) {
+            bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
+            bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
+            if(mapa._popup) mapa.closePopup(); 
+        } else {
+            bMarker.style.opacity = "1"; bMarker.style.pointerEvents = "auto";
+            bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
+        }
+
+        for(let id in STORE) {
+            STORE[id].registros.forEach(reg => {
+                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    if (modoLecturaGlobal) {
+                        if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.disable();
+                    } else {
+                        if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.enable();
+                    }
+                } else if (reg.tipoGeometria === 'marker') {
+                    if (modoLecturaGlobal) {
+                        if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.disable();
+                    } else {
+                        if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.enable();
+                    }
+                }
+            });
+        }
+    }
+
+    function ejecutarMotorBusqueda() {
+        textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase();
+        actualizarUIYMapa();
+    }
+
+    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
+    
+    function toggleVisibilidadCapa(idSector, isVisible) { 
+        STORE[idSector].visible = isVisible;
+        if(isVisible) capaMaestraSectores.addLayer(capasSectores[idSector]);
+        else capaMaestraSectores.removeLayer(capasSectores[idSector]);
+        actualizarUIYMapa(); 
+    }
+
+    function crearNuevoSector() {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        const nombre = prompt("Nombre del Nuevo Sector/Capa:");
+        if(!nombre) return;
+        const id = 'sec_' + Date.now();
+        
+        capasSectores[id] = new L.FeatureGroup();
+        STORE[id] = { 
+            nombreSector: nombre.toUpperCase(), 
+            visible: true, 
+            isMaster: false,
+            isExpanded: true,
+            visibilidadPorEstatus: {}, 
+            coloresPorEstatus: {}, 
+            registros: [] 
+        };
+        capaActivaId = id;
+        actualizarUIYMapa();
+    }
+
+    function clonarSector(idSectorOriginal) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        const sectorOriginal = STORE[idSectorOriginal];
+        const nombre = prompt("Nombre de la nueva capa clonada:", sectorOriginal.nombreSector + " (CLON)");
+        if(!nombre) return;
+        
+        const newId = 'sec_' + Date.now();
+        capasSectores[newId] = new L.FeatureGroup();
+        
+        STORE[newId] = {
+            nombreSector: nombre.toUpperCase(),
+            visible: true,
+            isMaster: false,
+            isExpanded: true,
+            visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus)),
+            coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus)),
+            colorPrincipal: sectorOriginal.colorPrincipal,
+            registros: []
+        };
+        
+        sectorOriginal.registros.forEach(reg => {
+            let capaNueva;
+            if(reg.tipoGeometria === 'marker') {
+               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !modoLecturaGlobal});
+            } else {
+               capaNueva = L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
+            }
+            
+            const newIdFisico = L.stamp(capaNueva);
+            STORE[newId].registros.push({
+                idFisico: newIdFisico,
+                tipoGeometria: reg.tipoGeometria,
+                capaLeaflet: capaNueva,
+                colorPersonalizado: reg.colorPersonalizado,
+                visibleIndividual: reg.visibleIndividual,
+                _modoPopup: 'lectura',
+                datosGenerales: JSON.parse(JSON.stringify(reg.datosGenerales)),
+                camposOcultos: [...reg.camposOcultos]
+            });
+            vincularEventosCapa(capaNueva, newId, newIdFisico);
+        });
+        
+        capaActivaId = newId;
+        actualizarUIYMapa();
+    }
+    
+    function limpiarSector(idSector) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede limpiar.");
+        if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}" eliminando todos sus registros internos?`)) return;
+        
+        if (capasSectores[idSector]) {
+            capasSectores[idSector].clearLayers();
+        }
+        STORE[idSector].registros = [];
+        actualizarUIYMapa();
+    }
+
+    function eliminarSectorDefinitivo(idSector) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
+        if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
+        
+        if (capasSectores[idSector]) {
+            capaMaestraSectores.removeLayer(capasSectores[idSector]);
+            delete capasSectores[idSector];
+        }
+        delete STORE[idSector]; 
+        if(capaActivaId === idSector) capaActivaId = null;
+        actualizarUIYMapa();
+    }
+
+    // --- INICIO DE CÓDIGO INTEGRADO ---
+    // Función para marcar todos los de una sub-categoría específica
+    function seleccionarTodoEnCat(checkMaster, idContenedor) {
+        const contenedor = document.getElementById(idContenedor);
+        if (!contenedor) return;
+        const checks = contenedor.querySelectorAll('.chk-registro');
+        checks.forEach(c => c.checked = checkMaster.checked);
+    }
+
+    // Función para eliminar SOLO lo que está marcado en esa categoría
+    function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura para eliminar registros.");
+        const contenedor = document.getElementById(idContenedor);
+        if (!contenedor) return;
+        const seleccionados = contenedor.querySelectorAll('.chk-registro:checked');
+
+        if (seleccionados.length === 0) {
+            return alert("Por favor, seleccione al menos un registro en esta categoría marcando las casillas.");
+        }
+
+        if (confirm(`¿Eliminar los ${seleccionados.length} registros seleccionados de la categoría "${nombreCategoria}"?`)) {
+            const idsABorrar = Array.from(seleccionados).map(c => c.getAttribute('data-id'));
+            
+            // Remove layers from map first
+            const capaSector = capasSectores[idSector];
+            if(capaSector) {
+                const registrosABorrar = STORE[idSector].registros.filter(r => idsABorrar.includes(String(r.idFisico)));
+                registrosABorrar.forEach(reg => {
+                    if (capaSector.hasLayer(reg.capaLeaflet)) {
+                        capaSector.removeLayer(reg.capaLeaflet);
+                    }
+                });
+            }
+
+            // Filter the STORE for that specific layer
+            STORE[idSector].registros = STORE[idSector].registros.filter(r => !idsABorrar.includes(String(r.idFisico)));
+
+            // Close popup if it belongs to a deleted item
+            if (mapa._popup) {
+                const sourceId = L.stamp(mapa._popup._source);
+                if (idsABorrar.includes(String(sourceId))) {
+                    mapa.closePopup();
+                }
+            }
+
+            // Refresh map and UI
+            actualizarUIYMapa(); 
+            alert(`${seleccionados.length} registros eliminados de la copia de trabajo. Guarde en la nube para persistir los cambios.`);
+        }
+    }
+    // --- FIN DE CÓDIGO INTEGRADO ---
+
+    function enfocarSector(idSector) {
+        if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
+        const limites = capasSectores[idSector].getBounds();
+        if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] });
+    }
+
+    function calcularAuditoria(poligonoActivo) {
+        const porEstatus = {};
+        let total = 0;
+        const box = poligonoActivo.getBounds();
+        for (let id in STORE) {
+            STORE[id].registros.forEach((r) => {
+                if (r.tipoGeometria !== 'marker' || !r.capaLeaflet) return;
+                let ll;
+                try { ll = r.capaLeaflet.getLatLng(); } catch (e) { return; }
+                if (!ll || !box.contains(ll)) return;
+                total++;
+                const est = obtenerEstatusParaCuadro(r);
+                porEstatus[est] = (porEstatus[est] || 0) + 1;
+            });
+        }
+        const claves = Object.keys(porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
+        const textoCompacto = claves.map((k) => `${porEstatus[k]} ${k}`).join(', ');
+        return { porEstatus, total, textoCompacto };
+    }
+
+    /* ==========================================================================
+       FASE 6: EXTRACCIÓN DE COORDENADAS PARA BACKUP
+       ========================================================================== */
+    function extraerDatosGeometria() {
+        const storeCopia = JSON.parse(JSON.stringify(STORE, (key, val) => {
+            if (key === 'capaLeaflet' || key === 'grupoFisico') return undefined;
+            return val;
+        }));
+
+        for (let idSec in STORE) {
+            STORE[idSec].registros.forEach((reg, i) => {
+                if (reg.tipoGeometria === 'marker') {
+                    const ll = reg.capaLeaflet.getLatLng();
+                    storeCopia[idSec].registros[i].coords = { lat: ll.lat, lng: ll.lng };
+                } else {
+                    const lls = reg.capaLeaflet.getLatLngs();
+                    storeCopia[idSec].registros[i].coords = lls;
+                }
+            });
+        }
+        return storeCopia;
     }
 
     /* ==========================================================================
@@ -1793,7 +2364,7 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            sincronizarCamposPanelSuperAdmin();
+            document.getElementById('ajuste-repo-token').value = getRealToken() || '';
         } else {
             div.style.display = 'none';
         }
@@ -1809,142 +2380,73 @@
     }
     
     async function verificarYGuardarTokenMaestro() {
-        if (CURRENT_ROLE !== 'SUPERADMIN') {
-            return alert("La verificación de llave maestra solo está disponible en sesión Super Admin.");
-        }
-        let rawToken = document.getElementById('ajuste-repo-token').value.trim();
-        const revGuardado = localStorage.getItem('master_token_revert');
-        if (!rawToken && revGuardado) {
-            return alert("Pegue el token completo (ghp_...) para verificar. El campo muestra la forma invertida guardada solo como referencia; bórrela y pegue el token real.");
-        }
-        if (revGuardado && rawToken === revGuardado) {
-            return alert("Ese valor es la llave invertida guardada. Pegue el token real de GitHub (ghp_...) para verificar y guardar.");
-        }
+        const rawToken = document.getElementById('ajuste-repo-token').value.trim();
         if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
-        persistMasterJsonPathFromInput(true);
 
-        const btn = document.getElementById('btn-verificar-token-maestro');
-        const originalText = btn ? btn.innerText : '';
-        if (btn) {
-            btn.innerText = "VERIFICANDO...";
-            btn.disabled = true;
-        }
+        const btn = document.querySelector('#ajustes-servidor button');
+        const originalText = btn.innerText;
+        btn.innerText = "VERIFICANDO...";
+        btn.disabled = true;
 
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: {
-                    'Authorization': 'token ' + rawToken,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
+                headers: { 'Authorization': 'token ' + rawToken }
             });
 
             if (res.ok) {
                 const pikaToken = rawToken.split('').reverse().join('');
                 localStorage.setItem('master_token_revert', pikaToken);
-                SYSTEM_AUTH.masterToken = pikaToken;
-                try {
-                    await cargarDatosNube();
-                } catch (loadErr) {
-                    console.warn("Carga inicial tras verificar token:", loadErr);
-                }
-                const pushOk = await guardarEnServidor({ suppressSuccessAlert: true });
-                if (!pushOk) return;
-                alert("✅ Token verificado, llave persistida y CSV sincronizado con el repositorio.");
+                alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
+                await cargarDatosNube(); 
             } else {
-                if (res.status === 401 || res.status === 403) {
-                    localStorage.removeItem('master_token_revert');
-                    if (SYSTEM_AUTH && SYSTEM_AUTH.masterToken) delete SYSTEM_AUTH.masterToken;
-                }
-                throw new Error(`Error ${res.status}: El token es inválido, expiró o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'. Pegue un token nuevo y pulse de nuevo Verificar y Guardar.`);
+                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
             }
         } catch(e) {
             console.error(e);
             alert(`❌ Error de verificación: ${e.message}`);
         } finally {
-            if (btn) {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-            sincronizarCamposPanelSuperAdmin();
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
     }
     
-    async function cargarDatosNubePorBotonRawSuperAdmin() {
-        try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (e0) {}
-        console.log('[SGF] Descargando datos...');
-        alert('Descargando datos...');
-        window.__csvDisparoModalMapeoPorCargaManual = true;
-        try {
-            await cargarDatosNube();
-        } finally {
-            try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (e1) {}
-        }
-    }
-
     async function cargarDatosNube() {
+        const GITHUB_TOKEN_DYNAMIC = getRealToken();
+        if (!GITHUB_TOKEN_DYNAMIC) {
+            actualizarUIYMapa();
+            return;
+        }
+
         try {
-            const token = getRealToken();
-            let fr = await fetchCloudDataPlainText(token);
-            if (!fr.ok && token && (fr.status === 401 || fr.status === 403)) {
-                if (CURRENT_ROLE === 'SUPERADMIN') {
-                    try { localStorage.removeItem('master_token_revert'); } catch (e) {}
-                }
-                fr = await fetchCloudDataPlainText(null);
-            }
-            if (!fr.ok) {
-                try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (eClr) {}
-                if (fr.status === 404) {
-                    actualizarUIYMapa();
-                    return;
-                }
-                if (!token && CURRENT_ROLE !== 'SUPERADMIN') {
-                    actualizarUIYMapa();
-                    return;
-                }
-                console.error("Carga nube:", fr.status);
-                if (token || CURRENT_ROLE === 'SUPERADMIN') {
-                    alert("No se pudieron cargar los datos CSV. Revise enlace, token o permisos. Código: " + fr.status);
-                }
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                fileSha = data.sha;
+                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                const jsonParsed = JSON.parse(decodedContent);
+                if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+                reconstruirDesdeJSON(jsonParsed.store || {});
+            } else if (res.status === 404) {
                 actualizarUIYMapa();
-                return;
+            } else {
+                throw new Error(`GitHub API error: ${res.status}`);
             }
-            if (fr.sha) fileSha = fr.sha;
-            const forzarMapTrasCargaManual = !!window.__csvDisparoModalMapeoPorCargaManual;
-            aplicarCargaDesdeTextoPlano(fr.text, forzarMapTrasCargaManual ? { forzarModalMapeo: true } : {});
         } catch (e) {
-            try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (eClr2) {}
             console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos. " + (e.message || e));
+            alert("No se pudieron cargar los datos de la nube. Revise su conexión o Token. Error: " + e.message);
             actualizarUIYMapa();
         }
     }
 
     function cerrarSesionSeguridad() {
-        const rol = CURRENT_ROLE;
-        CURRENT_ROLE = null;
-        try {
-            if (rol === 'SUPERADMIN') localStorage.removeItem('master_token_revert');
-            if (rol === 'ADMIN') localStorage.removeItem('sgf_license');
-        } catch (e) {}
         location.reload();
     }
 
-    async function guardarEnServidor(opts) {
-        opts = opts || {};
+    async function guardarEnServidor() {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if(!GITHUB_TOKEN_DYNAMIC) {
-            if (CURRENT_ROLE === 'SUPERADMIN') {
-                alert("❌ No hay llave maestra de GitHub guardada en este equipo. Abra «LLAVE MAESTRA GITHUB», pegue un token (ghp_...) y pulse Verificar y Guardar.");
-            } else {
-                alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
-            }
-            return false;
-        }
-
-        if (dataSourceIsExternalNonGithub()) {
-            alert("❌ La fuente es una URL externa (ej. Google Sheets). Guarde usando una ruta o URL raw de GitHub dentro del repositorio.");
-            return false;
-        }
+        if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
 
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
@@ -1954,7 +2456,7 @@
         try {
             let currentSha = null;
             try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getGithubContentPathForApi())}`, {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -1968,8 +2470,13 @@
                 }
             } catch (err) {}
 
-            const csvBody = storeToCsvString();
-            const contentEncoded = btoa(unescape(encodeURIComponent(csvBody)));
+            const datosLimpios = extraerDatosGeometria();
+            const objetoMaestro = {
+                credentials: SYSTEM_AUTH,
+                store: datosLimpios
+            };
+            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
+            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
             
             const payload = {
                 message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
@@ -1979,7 +2486,7 @@
             
             if (currentSha) payload.sha = currentSha;
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getGithubContentPathForApi())}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -1993,88 +2500,103 @@
             
             const data = await res.json();
             fileSha = data.content.sha;
-            if (!opts.suppressSuccessAlert) {
-                alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
-            }
-            return true;
+            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
         } catch(e) {
             console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + (e.message || e));
-            return false;
+            alert("❌ Error crítico al guardar en GitHub: " + e.message);
         } finally {
             btn.innerHTML = btnOriginalText;
             btn.disabled = false;
         }
     }
 
-    function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
-        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!registro) return;
-
-        const capaMapa = registro.capaLeaflet;
-        
-        if(centrarMapa) {
-            const destino = capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter();
-            mapa.flyTo(destino, 19, { duration: 0.5 });
-            registro._modoPopup = 'lectura';
+    const analizarCoordenadasProfundas = (coords) => {
+        if (Array.isArray(coords)) {
+            return coords.map(analizarCoordenadasProfundas);
+        } else if (coords && coords.lat !== undefined && coords.lng !== undefined) {
+            return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
         }
-
-        const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
+        return coords;
+    };
+    
+    function reconstruirDesdeJSON(datosCargados) {
+        STORE = {};
+        for(let id in capasSectores) {
+            if(capaMaestraSectores.hasLayer(capasSectores[id])) capaMaestraSectores.removeLayer(capasSectores[id]);
+        }
         
-        const esAuditoria = (registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle');
-        let classes = lecturaBloqueaEdicion() ? 'readonly-mode' : '';
-        if (esAuditoria) classes += ' audit-popup-wrapper';
+        for(let idSector in datosCargados) {
+            const sec = datosCargados[idSector];
+            capasSectores[idSector] = new L.FeatureGroup();
+            
+            STORE[idSector] = {
+                nombreSector: sec.nombreSector,
+                visible: sec.visible !== false,
+                isMaster: sec.isMaster !== false, // Protect original layers by default
+                visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
+                coloresPorEstatus: sec.coloresPorEstatus || {},
+                colorPrincipal: sec.colorPrincipal || '#00f2ff',
+                isExpanded: true, // Forzamos isExpanded=true para la carga inicial
+                registros: []
+            };
 
-        capaMapa.unbindPopup();
-        capaMapa.bindPopup(htmlContenido, { 
-            minWidth: 320, 
-            closeButton: true, 
-            className: classes.trim() 
-        }).openPopup();
-        
-        mapa._popup = capaMapa.getPopup();
-        mapa._popup._source = capaMapa; 
+            sec.registros.forEach(reg => {
+                let capa;
+                const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                
+                let colorBase = confEst.color;
+                if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) {
+                    colorBase = STORE[idSector].coloresPorEstatus[estActual];
+                }
+                const colorAUsar = reg.colorPersonalizado || colorBase;
+                
+                if (reg.tipoGeometria === 'marker' && reg.coords) {
+                    const latParseada = parseFloat(reg.coords.lat);
+                    const lngParseada = parseFloat(reg.coords.lng);
+                    capa = L.marker([latParseada, lngParseada], { 
+                        icon: crearPinFiscal(colorAUsar), 
+                        draggable: !modoLecturaGlobal 
+                    });
+                    capa.on('dragend', () => actualizarUIYMapa());
+                } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                    const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
+                    capa = L.polygon(coordenadasPoligono, { 
+                        color: colorAUsar, 
+                        fillColor: colorAUsar, 
+                        fillOpacity: 0.2, 
+                        weight: 3, 
+                        dashArray: '5, 5' 
+                    });
+                    if (!modoLecturaGlobal) capa.editing.enable();
+                    capa.on('edit', () => actualizarUIYMapa());
+                }
+
+                if(capa) {
+                    const newIdFisico = L.stamp(capa);
+                    const nuevoReg = {
+                        idFisico: newIdFisico,
+                        tipoGeometria: reg.tipoGeometria,
+                        capaLeaflet: capa,
+                        colorPersonalizado: reg.colorPersonalizado,
+                        visibleIndividual: reg.visibleIndividual !== false,
+                        _modoPopup: 'lectura',
+                        datosGenerales: reg.datosGenerales,
+                        camposOcultos: reg.camposOcultos || []
+                    };
+                    STORE[idSector].registros.push(nuevoReg);
+                    vincularEventosCapa(capa, idSector, newIdFisico);
+                }
+            });
+        }
+        actualizarUIYMapa();
     }
 
-    window.onload = async function() {
+    function initSecurity() {
         document.getElementById('login-overlay').style.display = 'flex';
-
-        try {
-            const masterTk = getMasterTokenFromStorage();
-            if (masterTk) {
-                CURRENT_ROLE = 'SUPERADMIN';
-                sincronizarCamposPanelSuperAdmin();
-                await cargarDatosNube();
-
-                if (CURRENT_ROLE === 'SUPERADMIN') {
-                    document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (LLAVE MAESTRA)';
-                    document.getElementById('panel-superadmin').style.display = 'block';
-                    const btnRaw = document.getElementById('btn-cargar-raw');
-                    if (btnRaw) btnRaw.style.display = 'flex';
-                    const panelAdmin = document.getElementById('panel-admin-licencia');
-                    if (panelAdmin) panelAdmin.remove();
-                    const licWarn = document.getElementById('license-warning-box');
-                    if (licWarn) licWarn.style.display = 'none';
-
-                    const roToggleM = document.getElementById('toggle-readonly');
-                    if (roToggleM) {
-                        roToggleM.checked = false;
-                        modoLecturaGlobal = false;
-                        alternarModoLectura();
-                    }
-
-                    document.getElementById('login-overlay').style.display = 'none';
-                    sincronizarCamposPanelSuperAdmin();
-                    forzarRefrescoCapasMapa();
-                    return;
-                }
-            }
-
-            await cargarDatosNube();
-        } catch(e) {
-            console.warn("Validación silenciosa del Auto-Login falló o no tiene acceso: ", e);
-        }
-    };
+    }
+    
+    initSecurity();
 
 </script>
 </body>
