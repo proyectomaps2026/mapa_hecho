@@ -1548,6 +1548,9 @@
             forzarRefrescoCapasMapa();
             return;
         }
+        if (partes.license) SYSTEM_AUTH.license = partes.license;
+        if (partes.user) SYSTEM_AUTH.user = partes.user;
+        if (partes.pass) SYSTEM_AUTH.pass = partes.pass;
         mostrarSelectorColumnasCSV(partes.headers, partes.rows, decodedText, partes);
     }
 
