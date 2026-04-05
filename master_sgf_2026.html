@@ -1445,6 +1445,12 @@
 
         // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
         if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+            const estAdmin = analizarLicenciaSGF(obtenerCadenaLicencia());
+            if (!estAdmin.valid || estAdmin.expired) {
+                errorDiv.innerText = "No hay licencia SGF vigente en el archivo de datos ni guardada en este equipo. El acceso de administración requiere una licencia válida.";
+                errorDiv.style.display = 'block';
+                return;
+            }
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
@@ -2956,7 +2962,7 @@
         actualizarUIYMapa();
     }
 
-    // Auto-login: 1) Super Admin solo con master_token_revert (sin licencia SGF). 2) Admin Hacienda con licencia en config.
+    // Orden en carga: 1) Master con master_token_revert guardado. 2) Si no, cargar CSV (licencia/credenciales/geometría). 3) Si no hay Master, el login-overlay permanece hasta ACCEDER (Admin exige licencia SGF válida en CSV o localStorage).
     window.onload = async function() {
         document.getElementById('login-overlay').style.display = 'flex';
 
@@ -2965,9 +2971,6 @@
             if (masterTk) {
                 CURRENT_ROLE = 'SUPERADMIN';
                 await cargarDatosNube();
-                if (!getMasterTokenFromStorage()) {
-                    CURRENT_ROLE = null;
-                }
 
                 if (CURRENT_ROLE === 'SUPERADMIN') {
                     document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (LLAVE MAESTRA)';
@@ -2994,28 +2997,8 @@
             }
 
             await cargarDatosNube();
-            const est = analizarLicenciaSGF(obtenerCadenaLicencia());
-
-            if (est.valid && !est.expired) {
-                CURRENT_ROLE = 'ADMIN';
-                document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA (AUTO)';
-                document.getElementById('panel-admin-licencia').style.display = 'block';
-
-                const btnRaw = document.getElementById('btn-cargar-raw');
-                if(btnRaw) btnRaw.remove();
-                const pnlSup = document.getElementById('panel-superadmin');
-                if(pnlSup) pnlSup.remove();
-
-                document.getElementById('login-overlay').style.display = 'none';
-                actualizarUIYMapa();
-                validarLicenciaYBloqueo();
-                if (CHECK_LICENSE_INTERVAL) clearInterval(CHECK_LICENSE_INTERVAL);
-                CHECK_LICENSE_INTERVAL = setInterval(async () => {
-                    await cargarDatosNube();
-                    validarLicenciaYBloqueo();
-                }, 60000);
-                return;
-            }
+            // Paso 2 cumplido: CSV cargado para evaluar licencia y credenciales al usar ACCEDER.
+            // Paso 3: sin sesión Master no se quita el login-overlay aquí; Admin debe autenticarse con usuario/clave y licencia SGF válida (CSV o localStorage).
         } catch(e) {
             console.warn("Validación silenciosa del Auto-Login falló o no tiene acceso: ", e);
         }
