@@ -725,9 +725,41 @@
         /* ==========================================================================
            6. MODALES Y REPORTES
            ========================================================================== */
-        .audit-report { background: #f8f9fa; padding: 20px; }
-        .audit-title { margin: 0 0 15px; font-size: 14px; font-weight: 900; color: #111; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .audit-stat { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; margin-bottom: 8px; padding: 4px 0; }
+        .audit-report {
+            font-family: 'Inter', sans-serif;
+            background: rgba(18, 22, 29, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        }
+        .audit-title {
+            margin: 0 0 12px;
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--color-temporal);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 10px;
+            letter-spacing: 0.02em;
+        }
+        .audit-conteo-limpio {
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.55;
+            margin: 0 0 12px;
+        }
+        .audit-total-line {
+            color: var(--cyan-neon);
+            font-weight: 800;
+            font-size: 12px;
+            padding-top: 10px;
+            margin-top: 4px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
+        }
 
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
@@ -1410,6 +1442,14 @@
         const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '];
         if (v != null && String(v).trim() !== '') return String(v).trim();
         return 'SIN CATEGORÍA';
+    }
+
+    function escHtmlBasico(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     function procesarFilasConMapeo(mapeo, headers, rows, meta) {
@@ -2496,12 +2536,9 @@
                 <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
 
             for(let estatus in gruposPorEstatus) {
-                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                
                 if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
                 if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
                 
-                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
                 const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
 
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
@@ -2515,11 +2552,6 @@
                                title="Mostrar/Ocultar Categoría" 
                                style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
                                onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                            
-                            <input type="color" title="Color de esta Categoría" value="${colorActual}"
-                                   onclick="event.stopPropagation();"
-                                   onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
-                                   style="width: 16px; height: 16px; border: none; cursor: pointer; background: transparent; padding: 0;">
                             
                             <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; flex:1;">
                                 ${estatus}
@@ -2635,13 +2667,12 @@
 
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
+            const lineaConteo = rep.textoCompacto ? escHtmlBasico(rep.textoCompacto) : 'Sin registros en el área';
             html += `
             <div class="audit-report">
-                <h3 class="audit-title"><i class="fas fa-chart-area"></i> HACIENDA MUNICIPAL - AUDITORÍA</h3>
-                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VIGENTE'].color}"><span>Vigentes:</span> <span>${rep.v}</span></div>
-                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['VENCIDA'].color}"><span>Vencidas:</span> <span>${rep.x}</span></div>
-                <div class="audit-stat" style="color:${DICCIONARIO_ESTATUS['TEMPORAL'].color}"><span>Temporales:</span> <span>${rep.t}</span></div>
-                <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL LOCALES:</span> <span>${rep.total}</span></div>
+                <h3 class="audit-title"><i class="fas fa-chart-area"></i> CUADRO DE MANDO — CENSO</h3>
+                <p class="audit-conteo-limpio">${lineaConteo}</p>
+                <div class="audit-total-line">TOTAL EN ÁREA: ${rep.total}</div>
             </div>`;
             const dPol = registro.datosGenerales || {};
             ['nombre', 'Contribuyente', 'Estado', 'Estatus', 'Deuda', 'categoria', 'RIF'].forEach((k) => {
@@ -3027,20 +3058,27 @@
     }
 
     function calcularAuditoria(poligonoActivo) {
-        let count = { v: 0, x: 0, t: 0, total: 0 };
+        const porEstatus = {};
+        let total = 0;
         const box = poligonoActivo.getBounds();
-        for(let id in STORE) {
-            STORE[id].registros.forEach(r => {
-                if(r.tipoGeometria === 'marker' && box.contains(r.capaLeaflet.getLatLng())) {
-                    count.total++;
-                    const e = r.datosGenerales["Estatus"];
-                    if(e === "VIGENTE") count.v++;
-                    else if(e === "VENCIDA" || e === "SIN LICENCIA") count.x++;
-                    else if(e === "TEMPORAL") count.t++;
+        for (let id in STORE) {
+            STORE[id].registros.forEach((r) => {
+                if (r.tipoGeometria !== 'marker' || !r.capaLeaflet) return;
+                let ll;
+                try {
+                    ll = r.capaLeaflet.getLatLng();
+                } catch (e) {
+                    return;
                 }
+                if (!ll || !box.contains(ll)) return;
+                total++;
+                const est = obtenerEstatusParaCuadro(r);
+                porEstatus[est] = (porEstatus[est] || 0) + 1;
             });
         }
-        return count;
+        const claves = Object.keys(porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
+        const textoCompacto = claves.map((k) => `${porEstatus[k]} ${k}`).join(', ');
+        return { porEstatus, total, textoCompacto };
     }
 
     /* ==========================================================================
