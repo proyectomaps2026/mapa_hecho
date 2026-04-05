@@ -1188,7 +1188,8 @@
         return ls ? ls.trim() : '';
     }
 
-    function parseCsvRow(line) {
+    function parseCsvRowDelimited(line, sepChar) {
+        const sep = sepChar === ';' ? ';' : ',';
         const out = [];
         let cur = '';
         let inQ = false;
@@ -1201,12 +1202,41 @@
                 } else cur += c;
             } else {
                 if (c === '"') inQ = true;
-                else if (c === ',') { out.push(cur); cur = ''; }
+                else if (c === sep) { out.push(cur); cur = ''; }
                 else cur += c;
             }
         }
         out.push(cur);
         return out;
+    }
+
+    function parseCsvRow(line) {
+        return parseCsvRowDelimited(line, ',');
+    }
+
+    function detectDelimiterForLine(line) {
+        const a = parseCsvRowDelimited(line, ',');
+        const b = parseCsvRowDelimited(line, ';');
+        const na = a.filter((c) => String(c).trim().length).length;
+        const nb = b.filter((c) => String(c).trim().length).length;
+        if (nb > na) return ';';
+        if (na > nb) return ',';
+        const countSemi = (line.match(/;/g) || []).length;
+        const countComma = (line.match(/,/g) || []).length;
+        return countSemi > countComma ? ';' : ',';
+    }
+
+    function encontrarFilaCabeceraOro(lines) {
+        for (let k = 0; k < lines.length; k++) {
+            const raw = lines[k];
+            const u = raw.toUpperCase();
+            if (!u.includes('RIF') && !u.includes('CONTRIBUYENTE')) continue;
+            const delim = detectDelimiterForLine(raw);
+            const cells = parseCsvRowDelimited(raw, delim);
+            const nonEmpty = cells.filter((c) => String(c).trim().length);
+            if (nonEmpty.length >= 2) return { index: k, delimiter: delim };
+        }
+        return null;
     }
 
     function csvEscapeCell(s) {
@@ -1215,11 +1245,56 @@
         return s;
     }
 
+    function extraerAuthDesdeLinea(ln) {
+        let cells = parseCsvRowDelimited(ln, ',');
+        if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
+            return { user: cells[1], pass: cells[2] };
+        }
+        cells = parseCsvRowDelimited(ln, ';');
+        if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
+            return { user: cells[1], pass: cells[2] };
+        }
+        return null;
+    }
+
     function parseCsvPreambleHeadersRows(csvText) {
         const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
         if (!lines.length) return null;
-        let i = 0;
+
         let license = null;
+        for (let j = 0; j < lines.length; j++) {
+            const t = lines[j].trim();
+            if (t.startsWith('SGF-')) {
+                license = t;
+                break;
+            }
+        }
+
+        const cabOro = encontrarFilaCabeceraOro(lines);
+        if (cabOro) {
+            const iHeader = cabOro.index;
+            const delim = cabOro.delimiter;
+            let user = null;
+            let pass = null;
+            for (let j = 0; j < iHeader; j++) {
+                const auth = extraerAuthDesdeLinea(lines[j]);
+                if (auth) {
+                    user = auth.user;
+                    pass = auth.pass;
+                    break;
+                }
+            }
+            const headers = parseCsvRowDelimited(lines[iHeader], delim).map((h) => String(h).trim());
+            const rows = [];
+            for (let i = iHeader + 1; i < lines.length; i++) {
+                const row = parseCsvRowDelimited(lines[i], delim).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
+                if (!row.length || row.every((c) => c === '')) continue;
+                rows.push(row);
+            }
+            return { license, user, pass, headers, rows, delimiter: delim };
+        }
+
+        let i = 0;
         const L0 = lines[0].trim();
         if (L0.startsWith('SGF-')) {
             license = L0;
@@ -1242,20 +1317,21 @@
                 }
             }
         }
-        if (i >= lines.length) return { license, user, pass, headers: [], rows: [] };
-        const headers = parseCsvRow(lines[i]).map(h => String(h).trim());
+        if (i >= lines.length) return { license, user, pass, headers: [], rows: [], delimiter: ',' };
+        const headers = parseCsvRow(lines[i]).map((h) => String(h).trim());
         i++;
         const rows = [];
         for (; i < lines.length; i++) {
-            const row = parseCsvRow(lines[i]).map(c => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-            if (!row.length || row.every(c => c === '')) continue;
+            const row = parseCsvRow(lines[i]).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
+            if (!row.length || row.every((c) => c === '')) continue;
             rows.push(row);
         }
-        return { license, user, pass, headers, rows };
+        return { license, user, pass, headers, rows, delimiter: ',' };
     }
 
-    function firmaHeaders(headers) {
-        return headers.map(h => String(h).trim()).join('\u0001');
+    function firmaHeaders(headers, delimiter) {
+        const d = delimiter === ';' ? ';' : ',';
+        return headers.map((h) => String(h).trim()).join('\u0001') + '\u0002' + d;
     }
 
     function leerMapeoColumnasPersistido(firma) {
@@ -1357,7 +1433,7 @@
     /* Mapeo manual CSV — alineado a Master Oro: opciones = índice de columna, texto = nombre de cabecera (csvRows solo conserva filas en _csvMapeoPendiente). */
     function mostrarSelectorColumnasCSV(headers, csvRows, decodedText, partesMeta) {
         _csvMapeoPendiente = { headers, rows: csvRows, decodedText, partesMeta };
-        const firma = firmaHeaders(headers);
+        const firma = firmaHeaders(headers, partesMeta && partesMeta.delimiter);
         const prev = leerMapeoColumnasPersistido(firma);
         function llenarSelect(id, valorPrevio) {
             const el = document.getElementById(id);
@@ -1395,7 +1471,7 @@
         const headers = _csvMapeoPendiente.headers;
         const rows = _csvMapeoPendiente.rows;
         const partesMeta = _csvMapeoPendiente.partesMeta;
-        const firma = firmaHeaders(headers);
+        const firma = firmaHeaders(headers, partesMeta && partesMeta.delimiter);
         const persist = { signature: firma, lat, lng, nombre, categoria, foto };
         try {
             localStorage.setItem(LS_CONFIG_MAPEO_COLUMNAS, JSON.stringify(persist));
@@ -1431,33 +1507,63 @@
         const empty = { store: {}, license: null, user: null, pass: null };
         const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
         if (!lines.length) return empty;
-        let i = 0;
+
         let license = null;
-        const L0 = lines[0].trim();
-        if (L0.startsWith('SGF-')) {
-            license = L0;
-            i = 1;
-        }
-        let user = null;
-        let pass = null;
-        if (i < lines.length) {
-            const cells = parseCsvRow(lines[i]);
-            if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-                user = cells[1];
-                pass = cells[2];
-                i++;
-            } else if (cells.length >= 2) {
-                const c0 = String(cells[0]).toLowerCase();
-                if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
-                    user = cells[0];
-                    pass = cells[1];
-                    i++;
-                }
+        for (let j = 0; j < lines.length; j++) {
+            const t = lines[j].trim();
+            if (t.startsWith('SGF-')) {
+                license = t;
+                break;
             }
         }
-        if (i >= lines.length) return { store: {}, license, user, pass };
-        const header = parseCsvRow(lines[i]).map(h => String(h).trim());
-        i++;
+
+        let user = null;
+        let pass = null;
+        let i;
+        let header;
+        let delim = ',';
+
+        const cabOro = encontrarFilaCabeceraOro(lines);
+        if (cabOro) {
+            for (let j = 0; j < cabOro.index; j++) {
+                const auth = extraerAuthDesdeLinea(lines[j]);
+                if (auth) {
+                    user = auth.user;
+                    pass = auth.pass;
+                    break;
+                }
+            }
+            delim = cabOro.delimiter;
+            header = parseCsvRowDelimited(lines[cabOro.index], delim).map((h) => String(h).trim());
+            i = cabOro.index + 1;
+        } else {
+            i = 0;
+            const L0 = lines[0].trim();
+            if (L0.startsWith('SGF-')) {
+                license = L0;
+                i = 1;
+            }
+            if (i < lines.length) {
+                const cells = parseCsvRow(lines[i]);
+                if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
+                    user = cells[1];
+                    pass = cells[2];
+                    i++;
+                } else if (cells.length >= 2) {
+                    const c0 = String(cells[0]).toLowerCase();
+                    if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
+                        user = cells[0];
+                        pass = cells[1];
+                        i++;
+                    }
+                }
+            }
+            if (i >= lines.length) return { store: {}, license, user, pass };
+            header = parseCsvRow(lines[i]).map((h) => String(h).trim());
+            i++;
+        }
+
+        if (!header || !header.length) return { store: {}, license, user, pass };
         const hNorm = {};
         header.forEach((name, idx) => {
             if (!name) return;
@@ -1483,8 +1589,8 @@
         };
         const store = {};
         for (; i < lines.length; i++) {
-            const row = parseCsvRow(lines[i]).map(c => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-            if (!row.length || row.every(c => c === '')) continue;
+            const row = parseCsvRowDelimited(lines[i], delim).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
+            if (!row.length || row.every((c) => c === '')) continue;
             let secId = getv(row, 'sector_id') || getv(row, 'idSector');
             if (!secId) secId = 'csv_sheet_default';
             const secName = getv(row, 'nombre_sector') || getv(row, 'nombreSector') || getv(row, 'sector_nombre') || 'IMPORTACIÓN CSV';
@@ -1578,7 +1684,7 @@
             forzarRefrescoCapasMapa();
             return;
         }
-        const firma = firmaHeaders(partes.headers);
+        const firma = firmaHeaders(partes.headers, partes.delimiter);
         let mapeo = opciones.forzarModalMapeo ? null : leerMapeoColumnasPersistido(firma);
         const iLatOk = mapeo ? indiceColumnaMapeo(mapeo, 'lat', partes.headers) : -1;
         const iLngOk = mapeo ? indiceColumnaMapeo(mapeo, 'lng', partes.headers) : -1;
