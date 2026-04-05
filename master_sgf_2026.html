@@ -1082,6 +1082,16 @@
 
     async function fetchCloudDataPlainText(authToken) {
         const rawLs = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
+        if (isAbsoluteHttpUrl(rawLs) && /raw\.githubusercontent\.com/i.test(rawLs)) {
+            try {
+                const res = await fetch(rawLs.trim(), { method: 'GET', cache: 'no-store', credentials: 'omit' });
+                if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
+                const text = await res.text();
+                return { ok: true, status: res.status, text, sha: null };
+            } catch (e) {
+                return { ok: false, status: 0, text: null, sha: null };
+            }
+        }
         if (isAbsoluteHttpUrl(rawLs) && !/raw\.githubusercontent\.com/i.test(rawLs)) {
             try {
                 const res = await fetch(rawLs, { method: 'GET', cache: 'no-store' });
@@ -3003,11 +3013,14 @@
     }
     
     async function cargarDatosNubePorBotonRawSuperAdmin() {
+        try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (e0) {}
+        console.log('[SGF] Descargando datos...');
+        alert('Descargando datos...');
         window.__csvDisparoModalMapeoPorCargaManual = true;
         try {
             await cargarDatosNube();
         } finally {
-            window.__csvDisparoModalMapeoPorCargaManual = false;
+            try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (e1) {}
         }
     }
 
@@ -3022,6 +3035,7 @@
                 fr = await fetchCloudDataPlainText(null);
             }
             if (!fr.ok) {
+                try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (eClr) {}
                 if (fr.status === 404) {
                     actualizarUIYMapa();
                     return;
@@ -3038,8 +3052,10 @@
                 return;
             }
             if (fr.sha) fileSha = fr.sha;
-            aplicarCargaDesdeTextoPlano(fr.text);
+            const forzarMapTrasCargaManual = !!window.__csvDisparoModalMapeoPorCargaManual;
+            aplicarCargaDesdeTextoPlano(fr.text, forzarMapTrasCargaManual ? { forzarModalMapeo: true } : {});
         } catch (e) {
+            try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (eClr2) {}
             console.error("Failed to load cloud data:", e);
             alert("No se pudieron cargar los datos. " + (e.message || e));
             actualizarUIYMapa();
