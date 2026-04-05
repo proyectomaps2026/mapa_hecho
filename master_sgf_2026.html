@@ -791,7 +791,7 @@
 </div>
 
 <!-- MODAL MAPEO MANUAL COLUMNAS CSV (VERSIÓN ORO) -->
-<div id="csv-mapeo-modal-overlay" class="modal-overlay" style="z-index: 10050; display: none; flex-direction: column; align-items: center; justify-content: center;">
+<div id="csv-mapeo-modal-overlay" class="modal-overlay" style="z-index: 9000; display: none; flex-direction: column; align-items: center; justify-content: center;">
     <div class="glass-panel modal-box" style="max-width: 520px; width: 92%; padding: 24px; max-height: 90vh; overflow-y: auto;">
         <h2 class="modal-title" style="margin-bottom: 12px;">MAPEO MANUAL DE COLUMNAS (CSV)</h2>
         <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 16px;">Seleccione qué columna del archivo corresponde a cada campo. Latitud y Longitud son obligatorias para las pinchetas.</p>
@@ -811,7 +811,7 @@
 </div>
 
 <!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999 !important;">
     <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
         
         <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
@@ -882,7 +882,7 @@
         </button>
         
         <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNube()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
+        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNubePorBotonRawSuperAdmin()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
             <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
         </button>
 
@@ -1017,6 +1017,7 @@
     const LS_CONFIG_MAPEO_COLUMNAS = 'config_mapeo_columnas';
     let fileSha = null;
     let _csvMapeoPendiente = null;
+    window.__csvDisparoModalMapeoPorCargaManual = false;
 
     function normalizarRutaJsonGithub(val) {
         val = (val || '').trim();
@@ -1551,7 +1552,18 @@
         if (partes.license) SYSTEM_AUTH.license = partes.license;
         if (partes.user) SYSTEM_AUTH.user = partes.user;
         if (partes.pass) SYSTEM_AUTH.pass = partes.pass;
-        mostrarSelectorColumnasCSV(partes.headers, partes.rows, decodedText, partes);
+        const disparoManualSuperCargar = !!window.__csvDisparoModalMapeoPorCargaManual;
+        const puedeAbrirModalMapeo = (CURRENT_ROLE !== null) && (opciones.forzarModalMapeo || (disparoManualSuperCargar && CURRENT_ROLE === 'SUPERADMIN'));
+        if (puedeAbrirModalMapeo) {
+            mostrarSelectorColumnasCSV(partes.headers, partes.rows, decodedText, partes);
+            return;
+        }
+        const rSil = csvTextToStoreObject(decodedText);
+        if (rSil.license) SYSTEM_AUTH.license = rSil.license;
+        if (rSil.user) SYSTEM_AUTH.user = rSil.user;
+        if (rSil.pass) SYSTEM_AUTH.pass = rSil.pass;
+        reconstruirDesdeJSON(rSil.store || {});
+        forzarRefrescoCapasMapa();
     }
 
     function sincronizarCamposPanelSuperAdmin() {
@@ -2990,6 +3002,15 @@
         }
     }
     
+    async function cargarDatosNubePorBotonRawSuperAdmin() {
+        window.__csvDisparoModalMapeoPorCargaManual = true;
+        try {
+            await cargarDatosNube();
+        } finally {
+            window.__csvDisparoModalMapeoPorCargaManual = false;
+        }
+    }
+
     async function cargarDatosNube() {
         try {
             const token = getRealToken();
