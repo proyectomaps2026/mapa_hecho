@@ -916,6 +916,9 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
+            <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Link Raw JSON (GitHub) o ruta en el repo</label>
+            <input type="text" id="ajuste-link-raw-json" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 6px;" placeholder="Ej: config.json o URL raw.githubusercontent.com/.../archivo.json">
+            <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="persistMasterJsonPathFromInput()">APLICAR RUTA / LINK</button>
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
             <button type="button" class="btn btn-outline" id="btn-verificar-token-maestro" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
         </div>
@@ -987,8 +990,56 @@
     // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
-    const FILE_PATH = 'config.json';
+    const FILE_PATH_DEFAULT = 'config.json';
+    const LS_MASTER_JSON_PATH = 'master_config_json_path';
+    const LS_SKIP_AUTO_LOGIN = 'sgf_skip_auto_login_once';
     let fileSha = null;
+
+    function normalizarRutaJsonGithub(val) {
+        val = (val || '').trim();
+        if (!val) return FILE_PATH_DEFAULT;
+        try {
+            if (/^https?:\/\/raw\.githubusercontent\.com\//i.test(val)) {
+                const u = new URL(val);
+                const parts = u.pathname.split('/').filter(Boolean);
+                if (parts.length >= 4) return parts.slice(3).join('/');
+            }
+            if (/api\.github\.com\/repos\//i.test(val)) {
+                const idx = val.indexOf('/contents/');
+                if (idx !== -1) {
+                    const rest = val.slice(idx + '/contents/'.length).split('?')[0];
+                    try {
+                        return decodeURIComponent(rest) || FILE_PATH_DEFAULT;
+                    } catch (e) {
+                        return rest || FILE_PATH_DEFAULT;
+                    }
+                }
+            }
+        } catch (e) { /* usar valor plano */ }
+        return val.replace(/^\/+/, '') || FILE_PATH_DEFAULT;
+    }
+
+    function getEffectiveFilePath() {
+        try {
+            const p = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
+            return p ? normalizarRutaJsonGithub(p) : FILE_PATH_DEFAULT;
+        } catch (e) {
+            return FILE_PATH_DEFAULT;
+        }
+    }
+
+    function githubContentsApiPath(filePath) {
+        return filePath.split('/').map(encodeURIComponent).join('/');
+    }
+
+    function persistMasterJsonPathFromInput(silent) {
+        const el = document.getElementById('ajuste-link-raw-json');
+        if (!el) return;
+        const normalized = normalizarRutaJsonGithub(el.value);
+        localStorage.setItem(LS_MASTER_JSON_PATH, normalized);
+        el.value = normalized;
+        if (!silent) alert('✅ Ruta JSON guardada: ' + normalized);
+    }
     
     // JERARQUÍA DE ACCESO Y ROLES
     let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
@@ -1085,6 +1136,13 @@
             if (licWarn) licWarn.style.display = 'none';
             const licLock = document.getElementById('license-lock-overlay');
             if (licLock) licLock.style.display = 'none';
+
+            const roToggle = document.getElementById('toggle-readonly');
+            if (roToggle) {
+                roToggle.checked = false;
+                modoLecturaGlobal = false;
+                alternarModoLectura();
+            }
 
             document.getElementById('login-overlay').style.display = 'none';
             actualizarUIYMapa(); 
@@ -1444,6 +1502,15 @@
     let modoLecturaGlobal = false;
     let textoFiltroGlobal = "";
 
+    function lecturaBloqueaEdicion() {
+        return modoLecturaGlobal && CURRENT_ROLE !== 'SUPERADMIN';
+    }
+
+    function capaMaestraProtegidaContraEdicion(idSector) {
+        const s = STORE[idSector];
+        return !!(s && s.isMaster && CURRENT_ROLE !== 'SUPERADMIN');
+    }
+
     const DICCIONARIO_ESTATUS = {
         "VIGENTE": { color: "#238636" },
         "VENCIDA": { color: "#da3633" },
@@ -1464,7 +1531,7 @@
     });
 
     function activarHerramienta(tipo) {
-        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
+        if(lecturaBloqueaEdicion()) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
         if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
         if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
         
@@ -1475,11 +1542,11 @@
         const idFisico = L.stamp(evento.layer);
         
         if(evento.layer instanceof L.Marker) {
-            if (!modoLecturaGlobal) evento.layer.options.draggable = true;
+            if (!lecturaBloqueaEdicion()) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
         } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
             evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
-            if (!modoLecturaGlobal) evento.layer.editing.enable();
+            if (!lecturaBloqueaEdicion()) evento.layer.editing.enable();
             evento.layer.on('edit', () => actualizarUIYMapa());
         }
 
@@ -1532,7 +1599,7 @@
     }
 
     function cambiarColorEstatusSector(idSector, estatus, colorHex) {
-        if (modoLecturaGlobal) return alert("Modo lectura activo.");
+        if (lecturaBloqueaEdicion()) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
         
         if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
@@ -1554,7 +1621,7 @@
     }
 
     function cambiarColorSector(idSector, colorHex) {
-        if (modoLecturaGlobal) return alert("Modo lectura activo.");
+        if (lecturaBloqueaEdicion()) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
         
         STORE[idSector].colorPrincipal = colorHex;
@@ -1581,8 +1648,8 @@
 
     // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
     function eliminarDelClon(idSector, idFisico) {
-        if(modoLecturaGlobal) return;
-        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
+        if(lecturaBloqueaEdicion()) return;
+        if(capaMaestraProtegidaContraEdicion(idSector)) return alert("Registro Protegido en Capa Maestra.");
         if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
         
         const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
@@ -1679,7 +1746,7 @@
                     
                     <div class="sector-controls">
                         <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
-                        ${!sectorData.isMaster ? `
+                        ${!capaMaestraProtegidaContraEdicion(idSector) ? `
                         <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
                         <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
                         ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
@@ -1718,7 +1785,7 @@
                             </div>
                         </div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
-                        ${!sectorData.isMaster ? `
+                        ${!capaMaestraProtegidaContraEdicion(idSector) ? `
                             <div style="display: flex; align-items: center; gap: 15px; margin-left: auto; padding-left: 10px;">
                                 <input type="checkbox" 
                                        style="cursor:pointer;"
@@ -1746,7 +1813,7 @@
                                 <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
-                            ${!sectorData.isMaster ? `
+                            ${!capaMaestraProtegidaContraEdicion(idSector) ? `
                                 <input type="checkbox" class="chk-registro" data-id="${local.idFisico}" onclick="event.stopPropagation();" title="Marcar para borrado en lote" style="cursor:pointer;">
                                 <i class="fas fa-trash sector-trash" title="Borrar este registro" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>
                             ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>`}
@@ -1798,7 +1865,7 @@
         capaMapa.bindPopup(htmlContenido, { 
             minWidth: 320, 
             closeButton: true, 
-            className: modoLecturaGlobal ? 'readonly-mode' : '' 
+            className: lecturaBloqueaEdicion() ? 'readonly-mode' : '' 
         }).openPopup();
         
         mapa._popup = capaMapa.getPopup();
@@ -1865,7 +1932,7 @@
                     <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
                 </div>`;
             }
-            if(!modoLecturaGlobal) {
+            if(!lecturaBloqueaEdicion()) {
                 html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
             }
             html += `</div>`;
@@ -1906,7 +1973,7 @@
             
             <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
             
-            if(!sectorData.isMaster) {
+            if(!capaMaestraProtegidaContraEdicion(idSector)) {
                 html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
             }
             
@@ -1918,7 +1985,7 @@
     }
 
     function cambiarColorPin(idSector, idFisico, colorHex) {
-        if(modoLecturaGlobal) return;
+        if(lecturaBloqueaEdicion()) return;
         const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!regOrigen) return;
 
@@ -1946,7 +2013,7 @@
 
     function ejecutarToggleOjo(eventoClick, idSector, idFisico, claveCampo) {
         eventoClick.stopPropagation(); 
-        if(modoLecturaGlobal) return;
+        if(lecturaBloqueaEdicion()) return;
 
         const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!regOrigen) return;
@@ -1972,7 +2039,7 @@
 
         if(mapa._popup) {
             const capaMapa = regOrigen.capaLeaflet;
-            capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
+            capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: lecturaBloqueaEdicion() ? 'readonly-mode' : '' }).openPopup();
         }
     }
 
@@ -2015,7 +2082,7 @@
         const bMarker = document.getElementById('btn-draw-marker');
         const bPoly = document.getElementById('btn-draw-poly');
         
-        if(modoLecturaGlobal) {
+        if(lecturaBloqueaEdicion()) {
             bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
             bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
             if(mapa._popup) mapa.closePopup(); 
@@ -2027,13 +2094,13 @@
         for(let id in STORE) {
             STORE[id].registros.forEach(reg => {
                 if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    if (modoLecturaGlobal) {
+                    if (lecturaBloqueaEdicion()) {
                         if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.disable();
                     } else {
                         if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.enable();
                     }
                 } else if (reg.tipoGeometria === 'marker') {
-                    if (modoLecturaGlobal) {
+                    if (lecturaBloqueaEdicion()) {
                         if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.disable();
                     } else {
                         if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.enable();
@@ -2058,7 +2125,7 @@
     }
 
     function crearNuevoSector() {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
         const nombre = prompt("Nombre del Nuevo Sector/Capa:");
         if(!nombre) return;
         const id = 'sec_' + Date.now();
@@ -2078,7 +2145,7 @@
     }
 
     function clonarSector(idSectorOriginal) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
         const sectorOriginal = STORE[idSectorOriginal];
         const nombre = prompt("Nombre de la nueva capa clonada:", sectorOriginal.nombreSector + " (CLON)");
         if(!nombre) return;
@@ -2100,7 +2167,7 @@
         sectorOriginal.registros.forEach(reg => {
             let capaNueva;
             if(reg.tipoGeometria === 'marker') {
-               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !modoLecturaGlobal});
+               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !lecturaBloqueaEdicion()});
             } else {
                capaNueva = L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
             }
@@ -2124,8 +2191,8 @@
     }
     
     function limpiarSector(idSector) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede limpiar.");
+        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
+        if(capaMaestraProtegidaContraEdicion(idSector)) return alert("Capa Maestra Protegida. No se puede limpiar.");
         if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}" eliminando todos sus registros internos?`)) return;
         
         if (capasSectores[idSector]) {
@@ -2136,8 +2203,8 @@
     }
 
     function eliminarSectorDefinitivo(idSector) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
+        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
+        if(capaMaestraProtegidaContraEdicion(idSector)) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
         if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
         
         if (capasSectores[idSector]) {
@@ -2160,7 +2227,7 @@
 
     // Función para eliminar SOLO lo que está marcado en esa categoría
     function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura para eliminar registros.");
+        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura para eliminar registros.");
         const contenedor = document.getElementById(idContenedor);
         if (!contenedor) return;
         const seleccionados = contenedor.querySelectorAll('.chk-registro:checked');
@@ -2302,6 +2369,8 @@
         if (div.style.display === 'none') {
             div.style.display = 'block';
             document.getElementById('ajuste-repo-token').value = getMasterTokenFromStorage() || '';
+            const linkEl = document.getElementById('ajuste-link-raw-json');
+            if (linkEl) linkEl.value = getEffectiveFilePath();
         } else {
             div.style.display = 'none';
         }
@@ -2322,6 +2391,7 @@
         }
         const rawToken = document.getElementById('ajuste-repo-token').value.trim();
         if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
+        persistMasterJsonPathFromInput(true);
 
         const btn = document.getElementById('btn-verificar-token-maestro');
         const originalText = btn ? btn.innerText : '';
@@ -2341,11 +2411,15 @@
             if (res.ok) {
                 const pikaToken = rawToken.split('').reverse().join('');
                 localStorage.setItem('master_token_revert', pikaToken);
-                alert("✅ Token verificado. Llave maestra guardada (persistente en este equipo). Puede sobrescribirla en cualquier momento con otro token válido.");
-                
-                await cargarDatosNube(); 
                 SYSTEM_AUTH.masterToken = pikaToken;
-                await guardarEnServidor(); 
+                try {
+                    await cargarDatosNube();
+                } catch (loadErr) {
+                    console.warn("Carga inicial tras verificar token:", loadErr);
+                }
+                const pushOk = await guardarEnServidor({ suppressSuccessAlert: true });
+                if (!pushOk) return;
+                alert("✅ Token verificado, llave persistida y config.json sincronizado con el repositorio.");
             } else {
                 if (res.status === 401 || res.status === 403) {
                     localStorage.removeItem('master_token_revert');
@@ -2372,7 +2446,7 @@
         }
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
                 headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
             });
             if (res.ok) {
@@ -2395,16 +2469,23 @@
     }
 
     function cerrarSesionSeguridad() {
+        CURRENT_ROLE = null;
+        try {
+            sessionStorage.setItem(LS_SKIP_AUTO_LOGIN, '1');
+        } catch (e) {}
         location.reload();
     }
 
-    async function guardarEnServidor() {
+    async function guardarEnServidor(opts) {
+        opts = opts || {};
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if(!GITHUB_TOKEN_DYNAMIC) {
             if (CURRENT_ROLE === 'SUPERADMIN') {
-                return alert("❌ No hay llave maestra de GitHub guardada en este equipo. Abra «LLAVE MAESTRA GITHUB», pegue un token (ghp_...) y pulse Verificar y Guardar.");
+                alert("❌ No hay llave maestra de GitHub guardada en este equipo. Abra «LLAVE MAESTRA GITHUB», pegue un token (ghp_...) y pulse Verificar y Guardar.");
+            } else {
+                alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
             }
-            return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
+            return false;
         }
 
         const btn = document.getElementById('btn-save-server');
@@ -2415,7 +2496,7 @@
         try {
             let currentSha = null;
             try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2445,7 +2526,7 @@
             
             if (currentSha) payload.sha = currentSha;
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2459,10 +2540,14 @@
             
             const data = await res.json();
             fileSha = data.content.sha;
-            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+            if (!opts.suppressSuccessAlert) {
+                alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+            }
+            return true;
         } catch(e) {
             console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + e.message);
+            alert("❌ Error crítico al guardar en GitHub: " + (e.message || e));
+            return false;
         } finally {
             btn.innerHTML = btnOriginalText;
             btn.disabled = false;
@@ -2515,7 +2600,7 @@
                     const lngParseada = parseFloat(reg.coords.lng);
                     capa = L.marker([latParseada, lngParseada], { 
                         icon: crearPinFiscal(colorAUsar), 
-                        draggable: !modoLecturaGlobal 
+                        draggable: !lecturaBloqueaEdicion() 
                     });
                     capa.on('dragend', () => actualizarUIYMapa());
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
@@ -2527,7 +2612,7 @@
                         weight: 3, 
                         dashArray: '5, 5' 
                     });
-                    if (!modoLecturaGlobal) capa.editing.enable();
+                    if (!lecturaBloqueaEdicion()) capa.editing.enable();
                     capa.on('edit', () => actualizarUIYMapa());
                 }
 
@@ -2556,9 +2641,17 @@
         document.getElementById('login-overlay').style.display = 'flex';
 
         try {
+            if (sessionStorage.getItem(LS_SKIP_AUTO_LOGIN) === '1') {
+                sessionStorage.removeItem(LS_SKIP_AUTO_LOGIN);
+                CURRENT_ROLE = null;
+                return;
+            }
+        } catch (e) {}
+
+        try {
             const masterTk = getMasterTokenFromStorage();
             if (masterTk) {
-                const resMaster = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                const resMaster = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
                     headers: {
                         'Authorization': 'token ' + masterTk,
                         'Accept': 'application/vnd.github.v3+json'
@@ -2581,6 +2674,13 @@
                     const licWarn = document.getElementById('license-warning-box');
                     if (licWarn) licWarn.style.display = 'none';
 
+                    const roToggleM = document.getElementById('toggle-readonly');
+                    if (roToggleM) {
+                        roToggleM.checked = false;
+                        modoLecturaGlobal = false;
+                        alternarModoLectura();
+                    }
+
                     document.getElementById('login-overlay').style.display = 'none';
                     actualizarUIYMapa();
                     return;
@@ -2590,7 +2690,7 @@
                 }
             }
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
                 headers: { 'Accept': 'application/vnd.github.v3+json' }
             });
 
