@@ -438,18 +438,27 @@
             gap: 10px; 
         }
         
-        .status-dot { 
-            width: 10px; 
-            height: 10px; 
-            border-radius: 50%; 
-            box-shadow: 0 0 8px currentColor; 
-        }
-        
         .status-count { 
             background: rgba(255,255,255,0.1); 
             padding: 2px 8px; 
             border-radius: 12px; 
             font-size: 10px; 
+        }
+
+        .status-cat-color-input {
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 4px;
+            background: transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .status-cat-color-input:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
 
         .local-list { 
@@ -2539,6 +2548,8 @@
                 if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
                 if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
                 
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
                 const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
 
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
@@ -2546,20 +2557,24 @@
                 htmlSector += `
                 <div class="status-group">
                     <div class="status-header">
-                        <div class="status-info" style="display:flex; align-items:center; gap:8px;">
+                        <div class="status-info" style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
                             
                             <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
                                title="Mostrar/Ocultar Categoría" 
-                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px;"
+                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px; flex-shrink:0;"
                                onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
                             
-                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; flex:1;">
+                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 ${estatus}
                             </div>
                         </div>
-                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
+                        <span class="status-count" style="flex-shrink:0;">${gruposPorEstatus[estatus].conteo}</span>
+                        <input type="color" class="status-cat-color-input" title="Color de esta categoría (semáforo)" value="${colorActual}"
+                               onclick="event.stopPropagation();"
+                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)"
+                               ${capaMaestraProtegidaContraEdicion(idSector) ? 'disabled' : ''}>
                         ${!capaMaestraProtegidaContraEdicion(idSector) ? `
-                            <div style="display: flex; align-items: center; gap: 15px; margin-left: auto; padding-left: 10px;">
+                            <div style="display: flex; align-items: center; gap: 15px; margin-left: 4px; padding-left: 6px; flex-shrink:0;">
                                 <input type="checkbox" 
                                        style="cursor:pointer;"
                                        onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" 
