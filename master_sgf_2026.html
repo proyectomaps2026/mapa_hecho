@@ -1276,6 +1276,16 @@
         return String(v).replace(/^\s+|\s+$/g, '');
     }
 
+    function indiceColumnaMapeo(mapeo, campo, headers) {
+        const raw = mapeo[campo];
+        if (raw === '' || raw === null || raw === undefined) return -1;
+        const n = parseInt(String(raw), 10);
+        if (!isNaN(n) && n >= 0 && n < headers.length) return n;
+        const name = String(raw).trim();
+        if (!name) return -1;
+        return headers.findIndex(h => String(h).trim() === name);
+    }
+
     function procesarFilasConMapeo(mapeo, headers, rows, meta) {
         const license = meta ? meta.license : null;
         const user = meta ? meta.user : null;
@@ -1296,21 +1306,32 @@
             colorPrincipal: '#00f2ff',
             registros: []
         };
-        const mappedNames = new Set([mapeo.lat, mapeo.lng, mapeo.nombre, mapeo.categoria, mapeo.foto].filter(Boolean));
+        const iLat = indiceColumnaMapeo(mapeo, 'lat', headers);
+        const iLng = indiceColumnaMapeo(mapeo, 'lng', headers);
+        const iNom = indiceColumnaMapeo(mapeo, 'nombre', headers);
+        const iCat = indiceColumnaMapeo(mapeo, 'categoria', headers);
+        const iFot = indiceColumnaMapeo(mapeo, 'foto', headers);
+        const mappedIdx = new Set([iLat, iLng, iNom, iCat, iFot].filter((ix) => ix >= 0));
         rows.forEach((row) => {
-            const la = parseNum(obtenerCeldaPorEncabezado(headers, row, mapeo.lat));
-            const ln = parseNum(obtenerCeldaPorEncabezado(headers, row, mapeo.lng));
+            if (iLat < 0 || iLng < 0) return;
+            const la = parseNum(row[iLat]);
+            const ln = parseNum(row[iLng]);
             if (isNaN(la) || isNaN(ln)) return;
             const datosGenerales = {};
-            datosGenerales['Contribuyente'] = obtenerCeldaPorEncabezado(headers, row, mapeo.nombre) || '';
-            datosGenerales['Estatus'] = obtenerCeldaPorEncabezado(headers, row, mapeo.categoria) || 'SIN CATEGORÍA';
-            datosGenerales['Link Fotografía'] = obtenerCeldaPorEncabezado(headers, row, mapeo.foto) || '';
+            datosGenerales['Contribuyente'] = (iNom >= 0 && row[iNom] !== undefined && row[iNom] !== null) ? String(row[iNom]).trim() : '';
+            datosGenerales['Estatus'] = (iCat >= 0 && row[iCat] !== undefined && row[iCat] !== null && String(row[iCat]).trim() !== '') ? String(row[iCat]).trim() : 'SIN CATEGORÍA';
+            datosGenerales['Link Fotografía'] = (iFot >= 0 && row[iFot] !== undefined && row[iFot] !== null) ? String(row[iFot]).trim() : '';
             datosGenerales['RIF'] = '';
             headers.forEach((h, ix) => {
                 const hn = String(h).trim();
-                if (!hn || mappedNames.has(hn)) return;
+                if (!hn || mappedIdx.has(ix)) return;
                 const v = row[ix];
                 if (v !== undefined && v !== null && String(v).trim() !== '') datosGenerales[hn] = String(v).trim();
+            });
+            datosGenerales['_oro_csv_ctx'] = JSON.stringify({
+                headers: headers.slice(),
+                fila: row.slice(),
+                idx: { lat: iLat, lng: iLng, nombre: iNom, categoria: iCat, foto: iFot }
             });
             store[secId].registros.push({
                 tipoGeometria: 'marker',
@@ -1324,6 +1345,17 @@
         return { store, license, user, pass };
     }
 
+    function valorSelectIndiceCompatible(valorPrevio, headers) {
+        if (valorPrevio === null || valorPrevio === undefined || valorPrevio === '') return '';
+        const vs = String(valorPrevio).trim();
+        if (/^\d+$/.test(vs)) {
+            const n = parseInt(vs, 10);
+            if (n >= 0 && n < headers.length) return String(n);
+        }
+        const ix = headers.findIndex((h) => String(h).trim() === vs);
+        return ix >= 0 ? String(ix) : '';
+    }
+
     function mostrarSelectorColumnasCSV(headers, csvRows, decodedText, partesMeta) {
         _csvMapeoPendiente = { headers, rows: csvRows, decodedText, partesMeta };
         const firma = firmaHeaders(headers);
@@ -1331,16 +1363,16 @@
         function llenarSelect(id, valorPrevio) {
             const el = document.getElementById(id);
             if (!el) return;
-            el.innerHTML = '<option value="">— (ninguna) —</option>';
-            headers.forEach((h) => {
-                const t = String(h).trim();
-                if (!t) return;
+            el.innerHTML = '<option value="">-- Seleccionar columna --</option>';
+            headers.forEach((header, index) => {
                 const opt = document.createElement('option');
-                opt.value = t;
-                opt.textContent = t;
+                opt.value = String(index);
+                const lab = String(header != null ? header : '').trim();
+                opt.textContent = lab || ('Columna ' + index);
                 el.appendChild(opt);
             });
-            if (valorPrevio && [...el.options].some((o) => o.value === valorPrevio)) el.value = valorPrevio;
+            const vComp = valorSelectIndiceCompatible(valorPrevio, headers);
+            if (vComp !== '' && [...el.options].some((o) => o.value === vComp)) el.value = vComp;
         }
         llenarSelect('csv-map-lat', prev && prev.lat);
         llenarSelect('csv-map-lng', prev && prev.lng);
@@ -1549,7 +1581,9 @@
         }
         const firma = firmaHeaders(partes.headers);
         let mapeo = opciones.forzarModalMapeo ? null : leerMapeoColumnasPersistido(firma);
-        if (mapeo && mapeo.lat && mapeo.lng) {
+        const iLatOk = mapeo ? indiceColumnaMapeo(mapeo, 'lat', partes.headers) : -1;
+        const iLngOk = mapeo ? indiceColumnaMapeo(mapeo, 'lng', partes.headers) : -1;
+        if (mapeo && String(mapeo.lat) !== '' && String(mapeo.lng) !== '' && iLatOk >= 0 && iLngOk >= 0) {
             const r = procesarFilasConMapeo(mapeo, partes.headers, partes.rows, partes);
             if (r.license) SYSTEM_AUTH.license = r.license;
             if (r.user) SYSTEM_AUTH.user = r.user;
@@ -2444,6 +2478,54 @@
         }
     }
 
+    function escapeHtmlCsvPopup(s) {
+        return String(s ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function parseOroCsvCtx(registro) {
+        try {
+            const raw = registro.datosGenerales && registro.datosGenerales['_oro_csv_ctx'];
+            if (!raw || typeof raw !== 'string') return null;
+            const o = JSON.parse(raw);
+            if (!o || !Array.isArray(o.headers) || !Array.isArray(o.fila) || !o.idx) return null;
+            return o;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function crearContenidoPopup(registro, idFisico) {
+        const ctx = parseOroCsvCtx(registro);
+        if (!ctx) return '';
+        const hdrs = ctx.headers;
+        const fila = ctx.fila;
+        const idx = ctx.idx;
+        let html = '';
+        const nombreBold = (idx.nombre >= 0 && fila[idx.nombre] != null && String(fila[idx.nombre]).trim() !== '')
+            ? String(fila[idx.nombre]).trim()
+            : (registro.datosGenerales['Contribuyente'] || 'SIN NOMBRE');
+        html += `<div class="oro-popup-nombre" style="font-weight:800;font-size:15px;margin:10px 0 10px 0;color:#111;line-height:1.3;">${escapeHtmlCsvPopup(nombreBold)}</div>`;
+        const skipShow = new Set([idx.lat, idx.lng, idx.nombre, idx.foto].filter((i) => typeof i === 'number' && i >= 0));
+        hdrs.forEach((lab, i) => {
+            if (skipShow.has(i)) return;
+            const labS = String(lab || '').trim();
+            if (!labS) return;
+            const val = fila[i];
+            if (val === undefined || val === null || String(val).trim() === '') return;
+            const idSafe = String(i) + '-' + labS.replace(/\s/g, '');
+            html += `
+                <div class="read-field">
+                    <span class="read-label">${escapeHtmlCsvPopup(labS)}</span>
+                    <div class="read-value" id="view-val-${idFisico}-oro-${idSafe}">${escapeHtmlCsvPopup(String(val))}</div>
+                </div>`;
+        });
+        return html;
+    }
+
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const sectorData = STORE[idSector];
         const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
@@ -2472,13 +2554,18 @@
             });
         } 
         else {
-            const estActual = registro.datosGenerales["Estatus"] || registro.datosGenerales["Estado"] || registro.datosGenerales["categoria"] || "SIN CATEGORÍA";
+            const ctxOro = parseOroCsvCtx(registro);
+            const estActual = ctxOro && ctxOro.idx.categoria >= 0 && ctxOro.fila[ctxOro.idx.categoria] != null && String(ctxOro.fila[ctxOro.idx.categoria]).trim() !== ''
+                ? String(ctxOro.fila[ctxOro.idx.categoria]).trim()
+                : (registro.datosGenerales["Estatus"] || registro.datosGenerales["Estado"] || registro.datosGenerales["categoria"] || "SIN CATEGORÍA");
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
             const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
             const colorFinal = registro.colorPersonalizado || colorSector;
             
-            const imgUrl = registro.datosGenerales["Link Fotografía"];
+            const imgUrl = ctxOro && ctxOro.idx.foto >= 0 && ctxOro.fila[ctxOro.idx.foto] != null && String(ctxOro.fila[ctxOro.idx.foto]).trim().length > 0
+                ? String(ctxOro.fila[ctxOro.idx.foto]).trim()
+                : registro.datosGenerales["Link Fotografía"];
             const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
             
             html += `
@@ -2489,8 +2576,13 @@
             <div class="pop-content">`;
 
             html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
+            const bloqueOro = crearContenidoPopup(registro, idFisico);
+            if (bloqueOro) {
+                html += bloqueOro;
+            } else {
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                if (clave === '_oro_csv_ctx' || String(clave).indexOf('_oro') === 0) continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 if(isOculto) continue; 
                 
@@ -2500,6 +2592,7 @@
                     <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
                 </div>`;
             }
+            }
             if(!lecturaBloqueaEdicion()) {
                 html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
             }
@@ -2508,6 +2601,7 @@
             html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                if (clave === '_oro_csv_ctx' || String(clave).indexOf('_oro') === 0) continue;
                 const isOculto = registro.camposOcultos.includes(clave);
                 
                 html += `
