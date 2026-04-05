@@ -917,7 +917,7 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Link Raw JSON (GitHub) o ruta en el repo</label>
-            <input type="text" id="ajuste-link-raw-json" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 6px;" placeholder="Ej: config.json o URL raw.githubusercontent.com/.../archivo.json">
+            <input type="text" id="ajuste-link-raw-json" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 6px;" placeholder="URL completa CSV (Raw GitHub, Google Sheets export, etc.) o ruta en repo">
             <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="persistMasterJsonPathFromInput()">APLICAR RUTA / LINK</button>
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
             <button type="button" class="btn btn-outline" id="btn-verificar-token-maestro" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
@@ -990,7 +990,7 @@
     // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
     const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
-    const FILE_PATH_DEFAULT = 'config.json';
+    const FILE_PATH_DEFAULT = 'censo_fiscal.csv';
     const LS_MASTER_JSON_PATH = 'master_config_json_path';
     const LS_SKIP_AUTO_LOGIN = 'sgf_skip_auto_login_once';
     let fileSha = null;
@@ -1019,13 +1019,29 @@
         return val.replace(/^\/+/, '') || FILE_PATH_DEFAULT;
     }
 
-    function getEffectiveFilePath() {
-        try {
-            const p = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-            return p ? normalizarRutaJsonGithub(p) : FILE_PATH_DEFAULT;
-        } catch (e) {
+    function isAbsoluteHttpUrl(s) {
+        return /^https?:\/\//i.test((s || '').trim());
+    }
+
+    function getGithubContentPathForApi() {
+        const raw = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
+        if (!raw) return FILE_PATH_DEFAULT;
+        if (isAbsoluteHttpUrl(raw)) {
+            try {
+                if (/raw\.githubusercontent\.com/i.test(raw)) {
+                    const u = new URL(raw);
+                    const parts = u.pathname.split('/').filter(Boolean);
+                    if (parts.length >= 4) return parts.slice(3).join('/');
+                }
+            } catch (e) {}
             return FILE_PATH_DEFAULT;
         }
+        return normalizarRutaJsonGithub(raw);
+    }
+
+    function dataSourceIsExternalNonGithub() {
+        const raw = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
+        return isAbsoluteHttpUrl(raw) && !/raw\.githubusercontent\.com/i.test(raw);
     }
 
     function githubContentsApiPath(filePath) {
@@ -1035,10 +1051,37 @@
     function persistMasterJsonPathFromInput(silent) {
         const el = document.getElementById('ajuste-link-raw-json');
         if (!el) return;
-        const normalized = normalizarRutaJsonGithub(el.value);
-        localStorage.setItem(LS_MASTER_JSON_PATH, normalized);
-        el.value = normalized;
-        if (!silent) alert('✅ Ruta JSON guardada: ' + normalized);
+        const raw = el.value.trim();
+        localStorage.setItem(LS_MASTER_JSON_PATH, raw);
+        if (!silent) alert('✅ Enlace o ruta CSV guardada.');
+    }
+
+    async function fetchCloudDataPlainText(authToken) {
+        const rawLs = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
+        if (isAbsoluteHttpUrl(rawLs) && !/raw\.githubusercontent\.com/i.test(rawLs)) {
+            try {
+                const res = await fetch(rawLs, { method: 'GET', cache: 'no-store' });
+                if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
+                const text = await res.text();
+                return { ok: true, status: res.status, text, sha: null };
+            } catch (e) {
+                return { ok: false, status: 0, text: null, sha: null };
+            }
+        }
+        const pathEnc = githubContentsApiPath(getGithubContentPathForApi());
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (authToken) headers['Authorization'] = 'token ' + authToken;
+        try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${pathEnc}`, { headers });
+            if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
+            const data = await res.json();
+            if (typeof data.content !== 'string') return { ok: false, status: res.status, text: null, sha: data.sha || null };
+            const bin = atob(data.content.replace(/\s/g, ''));
+            const text = decodeURIComponent(escape(bin));
+            return { ok: true, status: 200, text, sha: data.sha || null };
+        } catch (e) {
+            return { ok: false, status: 0, text: null, sha: null };
+        }
     }
     
     // JERARQUÍA DE ACCESO Y ROLES
@@ -1049,43 +1092,222 @@
     /* ==========================================================================
        MOTOR DE LICENCIAS Y TOKENS SGF
        ========================================================================== */
+    // SGF-[USUARIO]-[TOKEN REVERTIDO, puede incluir guiones]-[FECHA Base64, ej. MjAyNi0wNS0wNA -> 2026-05-04]
     function analizarLicenciaSGF(licStr) {
-        if(!licStr) return { valid: false, expired: true, days: 0 };
-        const parts = licStr.split('-');
-        // Formato esperado: SGF-[USUARIO]-[TOKEN_REVERTIDO]-[FECHA_BASE64]
-        if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
-
-        const usuario = parts[1];
-        const tokenRev = parts[2];
-        let dateStr;
-        
+        const bad = { valid: false, expired: true, days: 0, tokenRev: '', usuario: '', githubToken: null };
+        if (!licStr || typeof licStr !== 'string') return bad;
+        const s = licStr.trim();
+        if (!s.startsWith('SGF-')) return bad;
+        const last = s.lastIndexOf('-');
+        if (last <= 4) return bad;
+        const fechaB64 = s.slice(last + 1).replace(/\s/g, '');
+        const prefix = s.slice(0, last);
+        if (!prefix.startsWith('SGF-')) return bad;
+        const inner = prefix.slice(4);
+        const fd = inner.indexOf('-');
+        if (fd < 0) return bad;
+        const usuario = inner.slice(0, fd);
+        const tokenRev = inner.slice(fd + 1);
+        if (!usuario || !tokenRev) return bad;
+        let datePlain;
         try {
-            dateStr = atob(parts[3]); // Decodificamos la fecha en Base64
-        } catch(e) {
-            return { valid: false, expired: true, days: 0 };
+            datePlain = atob(fechaB64);
+        } catch (e) {
+            return bad;
         }
-
-        // LIMPIEZA DE GUIONES: Para que "2026-07-02" se vuelva "20260702"
-        dateStr = dateStr.replace(/[-/]/g, '');
-
-        if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
-        
-        const expYear = parseInt(dateStr.substring(0,4));
-        const expMonth = parseInt(dateStr.substring(4,6)) - 1;
-        const expDay = parseInt(dateStr.substring(6,8));
-        
+        const compact = datePlain.replace(/[-/\s]/g, '');
+        if (compact.length !== 8 || !/^\d{8}$/.test(compact)) return bad;
+        const expYear = parseInt(compact.substring(0, 4), 10);
+        const expMonth = parseInt(compact.substring(4, 6), 10) - 1;
+        const expDay = parseInt(compact.substring(6, 8), 10);
         const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
         const today = new Date();
         const diffTime = expDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return { 
-            valid: true, 
-            expired: diffDays <= 0, 
+        const githubToken = tokenRev.split('').reverse().join('');
+        return {
+            valid: true,
+            expired: diffDays <= 0,
             days: diffDays,
-            tokenRev: tokenRev,
-            usuario: usuario
+            tokenRev,
+            usuario,
+            githubToken
         };
+    }
+
+    function obtenerCadenaLicencia() {
+        if (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).trim().startsWith('SGF-')) {
+            return String(SYSTEM_AUTH.license).trim();
+        }
+        const ls = localStorage.getItem('sgf_license');
+        return ls ? ls.trim() : '';
+    }
+
+    function parseCsvRow(line) {
+        const out = [];
+        let cur = '';
+        let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+            const c = line[i];
+            if (inQ) {
+                if (c === '"') {
+                    if (line[i + 1] === '"') { cur += '"'; i++; }
+                    else inQ = false;
+                } else cur += c;
+            } else {
+                if (c === '"') inQ = true;
+                else if (c === ',') { out.push(cur); cur = ''; }
+                else cur += c;
+            }
+        }
+        out.push(cur);
+        return out;
+    }
+
+    function csvEscapeCell(s) {
+        s = String(s ?? '');
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+    }
+
+    function csvTextToStoreObject(csvText) {
+        const empty = { store: {}, license: null, user: null, pass: null };
+        const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
+        if (!lines.length) return empty;
+        let i = 0;
+        let license = null;
+        const L0 = lines[0].trim();
+        if (L0.startsWith('SGF-')) {
+            license = L0;
+            i = 1;
+        }
+        let user = null;
+        let pass = null;
+        if (i < lines.length) {
+            const cells = parseCsvRow(lines[i]);
+            if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
+                user = cells[1];
+                pass = cells[2];
+                i++;
+            } else if (cells.length >= 2) {
+                const c0 = String(cells[0]).toLowerCase();
+                if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
+                    user = cells[0];
+                    pass = cells[1];
+                    i++;
+                }
+            }
+        }
+        if (i >= lines.length) return { store: {}, license, user, pass };
+        const header = parseCsvRow(lines[i]).map(h => h.trim());
+        i++;
+        const h = {};
+        header.forEach((name, idx) => { h[name] = idx; });
+        const getv = (row, col) => {
+            const ix = h[col];
+            return ix !== undefined ? row[ix] : undefined;
+        };
+        const store = {};
+        for (; i < lines.length; i++) {
+            const row = parseCsvRow(lines[i]);
+            if (!row.length || row.every(c => String(c).trim() === '')) continue;
+            const secId = getv(row, 'sector_id') || getv(row, 'idSector');
+            if (!secId) continue;
+            const secName = getv(row, 'nombre_sector') || getv(row, 'nombreSector') || secId;
+            const isM = String(getv(row, 'is_master') || getv(row, 'isMaster') || '').toLowerCase();
+            const isMaster = isM === '1' || isM === 'true' || isM === 'yes';
+            if (!store[secId]) {
+                store[secId] = {
+                    nombreSector: secName,
+                    visible: true,
+                    isMaster,
+                    visibilidadPorEstatus: {},
+                    coloresPorEstatus: {},
+                    colorPrincipal: '#00f2ff',
+                    registros: []
+                };
+            } else {
+                store[secId].isMaster = !!(store[secId].isMaster || isMaster);
+            }
+            const tipo = (getv(row, 'tipoGeometria') || getv(row, 'tipo') || 'marker').trim();
+            let coords = null;
+            if (tipo === 'marker') {
+                const la = parseFloat(getv(row, 'lat'));
+                const ln = parseFloat(getv(row, 'lng'));
+                if (!isNaN(la) && !isNaN(ln)) coords = { lat: la, lng: ln };
+            } else {
+                const cj = getv(row, 'coords_json');
+                if (cj) {
+                    try { coords = JSON.parse(cj); } catch (e) {}
+                }
+            }
+            const datosGenerales = {};
+            const fixed = { sector_id: 1, nombre_sector: 1, nombreSector: 1, is_master: 1, isMaster: 1, tipoGeometria: 1, tipo: 1, lat: 1, lng: 1, coords_json: 1 };
+            header.forEach((col) => {
+                if (fixed[col]) return;
+                const v = getv(row, col);
+                if (v !== undefined && v !== '') datosGenerales[col] = v;
+            });
+            if (!datosGenerales['Contribuyente']) datosGenerales['Contribuyente'] = getv(row, 'Contribuyente') || '';
+            if (!datosGenerales['RIF']) datosGenerales['RIF'] = getv(row, 'RIF') || '';
+            if (!datosGenerales['Estatus']) datosGenerales['Estatus'] = getv(row, 'Estatus') || 'SIN CATEGORÍA';
+            if (!datosGenerales['Link Fotografía']) datosGenerales['Link Fotografía'] = getv(row, 'Link Fotografía') || '';
+            store[secId].registros.push({
+                tipoGeometria: tipo,
+                coords,
+                datosGenerales,
+                colorPersonalizado: null,
+                visibleIndividual: true,
+                camposOcultos: []
+            });
+        }
+        return { store, license, user, pass };
+    }
+
+    function aplicarCargaDesdeTextoPlano(decodedText) {
+        const r = csvTextToStoreObject(decodedText);
+        if (r.license) SYSTEM_AUTH.license = r.license;
+        if (r.user) SYSTEM_AUTH.user = r.user;
+        if (r.pass) SYSTEM_AUTH.pass = r.pass;
+        reconstruirDesdeJSON(r.store || {});
+    }
+
+    function storeToCsvString() {
+        const lic = (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).startsWith('SGF-'))
+            ? String(SYSTEM_AUTH.license).replace(/[\r\n]/g, '') : '';
+        const lines = [];
+        lines.push(lic);
+        lines.push(['AUTH', SYSTEM_AUTH.user || 'admin', SYSTEM_AUTH.pass || 'admin'].map(csvEscapeCell).join(','));
+        const hdr = ['sector_id', 'nombre_sector', 'is_master', 'tipoGeometria', 'lat', 'lng', 'coords_json', 'Contribuyente', 'RIF', 'Estatus', 'Link Fotografía'];
+        lines.push(hdr.join(','));
+        const datos = extraerDatosGeometria();
+        for (const idSec in datos) {
+            const sec = datos[idSec];
+            for (const reg of sec.registros) {
+                const lat = reg.coords && reg.coords.lat !== undefined ? reg.coords.lat : '';
+                const lng = reg.coords && reg.coords.lng !== undefined ? reg.coords.lng : '';
+                let coordsJson = '';
+                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    try { coordsJson = JSON.stringify(reg.coords || []); } catch (e) {}
+                }
+                const d = reg.datosGenerales || {};
+                const row = [
+                    idSec,
+                    sec.nombreSector || '',
+                    sec.isMaster ? '1' : '0',
+                    reg.tipoGeometria || '',
+                    lat,
+                    lng,
+                    coordsJson,
+                    d['Contribuyente'] || '',
+                    d['RIF'] || '',
+                    d['Estatus'] || '',
+                    d['Link Fotografía'] || ''
+                ];
+                lines.push(row.map(csvEscapeCell).join(','));
+            }
+        }
+        return lines.join('\n');
     }
 
     // Llave maestra GitHub (solo Super Admin): siempre localStorage master_token_revert, invertida.
@@ -1100,10 +1322,10 @@
             return getMasterTokenFromStorage();
         }
         if (CURRENT_ROLE === 'ADMIN') {
-            const lic = localStorage.getItem('sgf_license');
+            const lic = obtenerCadenaLicencia();
             const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired) {
-                return parsed.tokenRev.split('').reverse().join('');
+            if (parsed.valid && !parsed.expired && parsed.githubToken) {
+                return parsed.githubToken;
             }
         }
         return null;
@@ -1164,7 +1386,7 @@
 
             document.getElementById('login-overlay').style.display = 'none';
             actualizarUIYMapa();
-            iniciarCicloLicenciaAdmin();
+            void iniciarCicloLicenciaAdmin();
             return;
         }
 
@@ -1175,16 +1397,19 @@
     /* ==========================================================================
        CONTROL DE TIEMPO, BLOQUEO Y RESCATE (ADMIN)
        ========================================================================== */
-    function iniciarCicloLicenciaAdmin() {
+    async function iniciarCicloLicenciaAdmin() {
+        await cargarDatosNube();
         validarLicenciaYBloqueo();
-        CHECK_LICENSE_INTERVAL = setInterval(validarLicenciaYBloqueo, 60000); // Revisa cada minuto
-        cargarDatosNube(); // Intentará cargar si la licencia está viva
+        CHECK_LICENSE_INTERVAL = setInterval(async () => {
+            await cargarDatosNube();
+            validarLicenciaYBloqueo();
+        }, 60000);
     }
 
     function validarLicenciaYBloqueo() {
         if(CURRENT_ROLE !== 'ADMIN') return;
         
-        const lic = localStorage.getItem('sgf_license');
+        const lic = obtenerCadenaLicencia();
         const est = analizarLicenciaSGF(lic);
 
         const lblDias = document.getElementById('lbl-dias-lic');
@@ -2370,7 +2595,7 @@
             div.style.display = 'block';
             document.getElementById('ajuste-repo-token').value = getMasterTokenFromStorage() || '';
             const linkEl = document.getElementById('ajuste-link-raw-json');
-            if (linkEl) linkEl.value = getEffectiveFilePath();
+            if (linkEl) linkEl.value = (localStorage.getItem(LS_MASTER_JSON_PATH) || '');
         } else {
             div.style.display = 'none';
         }
@@ -2419,7 +2644,7 @@
                 }
                 const pushOk = await guardarEnServidor({ suppressSuccessAlert: true });
                 if (!pushOk) return;
-                alert("✅ Token verificado, llave persistida y config.json sincronizado con el repositorio.");
+                alert("✅ Token verificado, llave persistida y CSV sincronizado con el repositorio.");
             } else {
                 if (res.status === 401 || res.status === 403) {
                     localStorage.removeItem('master_token_revert');
@@ -2439,31 +2664,33 @@
     }
     
     async function cargarDatosNube() {
-        const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if (!GITHUB_TOKEN_DYNAMIC) {
-            actualizarUIYMapa();
-            return;
-        }
-
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                fileSha = data.sha;
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                const jsonParsed = JSON.parse(decodedContent);
-                if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
-                reconstruirDesdeJSON(jsonParsed.store || {});
-            } else if (res.status === 404) {
-                actualizarUIYMapa();
-            } else {
-                throw new Error(`GitHub API error: ${res.status}`);
+            const token = getRealToken();
+            let fr = await fetchCloudDataPlainText(token);
+            if (!fr.ok && token && (fr.status === 401 || fr.status === 403)) {
+                fr = await fetchCloudDataPlainText(null);
             }
+            if (!fr.ok) {
+                if (fr.status === 404) {
+                    actualizarUIYMapa();
+                    return;
+                }
+                if (!token && CURRENT_ROLE !== 'SUPERADMIN') {
+                    actualizarUIYMapa();
+                    return;
+                }
+                console.error("Carga nube:", fr.status);
+                if (token || CURRENT_ROLE === 'SUPERADMIN') {
+                    alert("No se pudieron cargar los datos CSV. Revise enlace, token o permisos. Código: " + fr.status);
+                }
+                actualizarUIYMapa();
+                return;
+            }
+            if (fr.sha) fileSha = fr.sha;
+            aplicarCargaDesdeTextoPlano(fr.text);
         } catch (e) {
             console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos de la nube. Revise su conexión o Token. Error: " + e.message);
+            alert("No se pudieron cargar los datos. " + (e.message || e));
             actualizarUIYMapa();
         }
     }
@@ -2488,6 +2715,11 @@
             return false;
         }
 
+        if (dataSourceIsExternalNonGithub()) {
+            alert("❌ La fuente es una URL externa (ej. Google Sheets). Guarde usando una ruta o URL raw de GitHub dentro del repositorio.");
+            return false;
+        }
+
         const btn = document.getElementById('btn-save-server');
         const btnOriginalText = btn.innerHTML;
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
@@ -2496,7 +2728,7 @@
         try {
             let currentSha = null;
             try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getGithubContentPathForApi())}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2510,13 +2742,8 @@
                 }
             } catch (err) {}
 
-            const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                store: datosLimpios
-            };
-            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
-            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
+            const csvBody = storeToCsvString();
+            const contentEncoded = btoa(unescape(encodeURIComponent(csvBody)));
             
             const payload = {
                 message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
@@ -2526,7 +2753,7 @@
             
             if (currentSha) payload.sha = currentSha;
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getGithubContentPathForApi())}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2651,18 +2878,10 @@
         try {
             const masterTk = getMasterTokenFromStorage();
             if (masterTk) {
-                const resMaster = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
-                    headers: {
-                        'Authorization': 'token ' + masterTk,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                if (resMaster.ok) {
-                    const data = await resMaster.json();
-                    fileSha = data.sha;
-                    const jsonParsed = JSON.parse(decodeURIComponent(escape(atob(data.content))));
-                    if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
-                    reconstruirDesdeJSON(jsonParsed.store || {});
+                const frM = await fetchCloudDataPlainText(masterTk);
+                if (frM.ok && frM.text) {
+                    if (frM.sha) fileSha = frM.sha;
+                    aplicarCargaDesdeTextoPlano(frM.text);
 
                     CURRENT_ROLE = 'SUPERADMIN';
                     document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (LLAVE MAESTRA)';
@@ -2685,42 +2904,36 @@
                     actualizarUIYMapa();
                     return;
                 }
-                if (resMaster.status === 401 || resMaster.status === 403) {
+                if (frM.status === 401 || frM.status === 403) {
                     localStorage.removeItem('master_token_revert');
                 }
             }
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getEffectiveFilePath())}`, {
-                headers: { 'Accept': 'application/vnd.github.v3+json' }
-            });
+            const fr = await fetchCloudDataPlainText(null);
+            if (fr.ok && fr.text) {
+                if (fr.sha) fileSha = fr.sha;
+                aplicarCargaDesdeTextoPlano(fr.text);
+                const est = analizarLicenciaSGF(obtenerCadenaLicencia());
 
-            if (res.ok) {
-                const data = await res.json();
-                fileSha = data.sha;
-                const jsonParsed = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                if (est.valid && !est.expired) {
+                    CURRENT_ROLE = 'ADMIN';
+                    document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA (AUTO)';
+                    document.getElementById('panel-admin-licencia').style.display = 'block';
 
-                if (jsonParsed.credentials && jsonParsed.credentials.license) {
-                    const est = analizarLicenciaSGF(jsonParsed.credentials.license);
+                    const btnRaw = document.getElementById('btn-cargar-raw');
+                    if(btnRaw) btnRaw.remove();
+                    const pnlSup = document.getElementById('panel-superadmin');
+                    if(pnlSup) pnlSup.remove();
 
-                    if (est.valid && !est.expired) {
-                        localStorage.setItem('sgf_license', jsonParsed.credentials.license);
-                        SYSTEM_AUTH = jsonParsed.credentials;
-                        reconstruirDesdeJSON(jsonParsed.store || {});
-
-                        CURRENT_ROLE = 'ADMIN';
-                        document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA (AUTO)';
-                        document.getElementById('panel-admin-licencia').style.display = 'block';
-
-                        const btnRaw = document.getElementById('btn-cargar-raw');
-                        if(btnRaw) btnRaw.remove();
-                        const pnlSup = document.getElementById('panel-superadmin');
-                        if(pnlSup) pnlSup.remove();
-
-                        document.getElementById('login-overlay').style.display = 'none';
-                        actualizarUIYMapa();
-                        iniciarCicloLicenciaAdmin();
-                        return;
-                    }
+                    document.getElementById('login-overlay').style.display = 'none';
+                    actualizarUIYMapa();
+                    validarLicenciaYBloqueo();
+                    if (CHECK_LICENSE_INTERVAL) clearInterval(CHECK_LICENSE_INTERVAL);
+                    CHECK_LICENSE_INTERVAL = setInterval(async () => {
+                        await cargarDatosNube();
+                        validarLicenciaYBloqueo();
+                    }, 60000);
+                    return;
                 }
             }
         } catch(e) {
