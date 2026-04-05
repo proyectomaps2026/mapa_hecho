@@ -246,12 +246,21 @@
         aside#sidebar.ui-layer.glass-panel {
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
-            background: var(--panel-bg) !important;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(20, 20, 22, 0.92) !important;
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             box-shadow: var(--shadow-heavy);
+        }
+
+        .sidebar-oro-topgold {
+            height: 3px;
+            width: 100%;
+            flex-shrink: 0;
+            background: var(--color-temporal);
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 0 12px rgba(251, 188, 4, 0.25);
         }
 
         #sidebar .sidebar-header,
@@ -299,20 +308,20 @@
             border-radius: 4px; 
         }
 
-        /* TARJETAS DE SECTOR Y CONTROLES DUALES */
+        /* TARJETAS DE SECTOR — MAESTRO ORO (borde cian capa activa) */
         .sector-card { 
-            margin-bottom: 12px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            background: rgba(0,0,0,0.3); 
+            margin-bottom: 14px; 
+            border: 1px solid rgba(42, 49, 58, 0.95); 
+            border-radius: 10px; 
+            background: rgba(0, 0, 0, 0.42); 
             overflow: hidden; 
-            transition: all 0.3s ease; 
+            transition: border-color 0.25s ease, box-shadow 0.25s ease; 
         }
         
         .sector-card.is-active { 
-            border-color: var(--cyan-neon); 
-            background: rgba(0, 242, 255, 0.03); 
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
+            border: 1px solid var(--cyan-neon); 
+            background: rgba(0, 242, 255, 0.04); 
+            box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.12), 0 8px 28px rgba(0, 0, 0, 0.45); 
         }
         
         .sector-header { 
@@ -419,17 +428,30 @@
         }
         
         .status-header { 
-            padding: 10px 16px; 
+            padding: 11px 14px; 
             font-size: 11px; 
             font-weight: 800; 
             display: flex; 
             align-items: center; 
-            justify-content: space-between; 
+            gap: 10px; 
             cursor: pointer; 
         }
         
         .status-header:hover { 
             background: rgba(255,255,255,0.04); 
+        }
+
+        .oro-status-label {
+            flex: 1;
+            min-width: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 900;
+            font-size: 11px;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
         .status-info { 
@@ -439,21 +461,41 @@
         }
         
         .status-count { 
-            background: rgba(255,255,255,0.1); 
-            padding: 2px 8px; 
-            border-radius: 12px; 
+            background: rgba(255, 255, 255, 0.08); 
+            padding: 4px 11px; 
+            border-radius: 14px; 
             font-size: 10px; 
+            font-weight: 900;
+            color: var(--text-main);
+            flex-shrink: 0;
         }
 
         .status-cat-color-input {
-            width: 22px;
-            height: 22px;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            min-width: 16px;
             padding: 0;
-            border: 1px solid rgba(255, 255, 255, 0.35);
-            border-radius: 4px;
-            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            border-radius: 2px;
+            background: rgba(30, 30, 35, 0.9);
             cursor: pointer;
             flex-shrink: 0;
+        }
+
+        .status-cat-color-input::-webkit-color-swatch-wrapper {
+            padding: 1px;
+        }
+
+        .status-cat-color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 1px;
+        }
+
+        .status-cat-color-input::-moz-color-swatch {
+            border: none;
+            border-radius: 1px;
         }
 
         .status-cat-color-input:disabled {
@@ -956,13 +998,8 @@
     </div>
 </nav>
 
-<aside id="sidebar" class="ui-layer glass-panel">
-    <!-- FRANJA TRICOLOR INSTITUCIONAL -->
-    <div style="height: 5px; width: 100%; display: flex;">
-        <div style="flex: 1; background: #008000;"></div> 
-        <div style="flex: 1; background: #FF0000;"></div> 
-        <div style="flex: 1; background: #FFFF00;"></div> 
-    </div>
+<aside id="sidebar" class="ui-layer glass-panel sidebar-oro">
+    <div class="sidebar-oro-topgold" aria-hidden="true"></div>
 
     <div class="sidebar-header">
         <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
@@ -2519,12 +2556,12 @@
                 <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
-                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
+                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')" onclick="event.stopPropagation();">
                         
-                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
-                           title="Mostrar/Ocultar todo el Sector" 
-                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
-                           onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                        <input type="checkbox" class="check-visible" title="Mostrar/Ocultar toda la capa en el mapa"
+                               ${sectorData.visible ? 'checked' : ''}
+                               onclick="event.stopPropagation();"
+                               onchange="toggleVisibilidadCapa('${idSector}', this.checked);">
                         
                         <input type="text" value="${sectorData.nombreSector}" 
                                title="Doble clic para enfocar sector en el mapa"
@@ -2557,34 +2594,18 @@
                 htmlSector += `
                 <div class="status-group">
                     <div class="status-header">
-                        <div class="status-info" style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
-                            
-                            <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
-                               title="Mostrar/Ocultar Categoría" 
-                               style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; margin-right: 5px; flex-shrink:0;"
-                               onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                            
-                            <div onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'" style="cursor: pointer; padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                ${estatus}
-                            </div>
-                        </div>
-                        <span class="status-count" style="flex-shrink:0;">${gruposPorEstatus[estatus].conteo}</span>
-                        <input type="color" class="status-cat-color-input" title="Color de esta categoría (semáforo)" value="${colorActual}"
+                        <input type="checkbox" class="check-visible" title="Mostrar/Ocultar esta categoría en el mapa"
+                               ${estatusVisible ? 'checked' : ''}
+                               onclick="event.stopPropagation();"
+                               onchange="toggleVisibilidadEstatus('${idSector}', '${estatus}', this.checked);">
+                        <input type="color" class="status-cat-color-input" title="Color de categoría (semáforo)" value="${colorActual}"
                                onclick="event.stopPropagation();"
                                onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)"
                                ${capaMaestraProtegidaContraEdicion(idSector) ? 'disabled' : ''}>
-                        ${!capaMaestraProtegidaContraEdicion(idSector) ? `
-                            <div style="display: flex; align-items: center; gap: 15px; margin-left: 4px; padding-left: 6px; flex-shrink:0;">
-                                <input type="checkbox" 
-                                       style="cursor:pointer;"
-                                       onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" 
-                                       title="Seleccionar todos en esta categoría para borrado en lote">
-                                <i class="fas fa-trash-alt sector-trash" 
-                                   style="font-size: 13px;"
-                                   onclick="event.stopPropagation(); eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
-                                   title="Eliminar registros seleccionados de esta categoría"></i>
-                            </div>
-                        ` : ''}
+                        <div class="oro-status-label" onclick="event.stopPropagation(); document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                                ${estatus}
+                        </div>
+                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
                     </div>
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
