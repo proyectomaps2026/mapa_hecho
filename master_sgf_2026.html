@@ -242,6 +242,24 @@
             flex-direction: column; 
             overflow: hidden;
         }
+
+        aside#sidebar.ui-layer.glass-panel {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            background: var(--panel-bg) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow-heavy);
+        }
+
+        #sidebar .sidebar-header,
+        #sidebar .layers-container,
+        #sidebar .sidebar-footer,
+        #sidebar .license-alert {
+            font-family: 'Inter', sans-serif;
+        }
         
         .sidebar-header { 
             padding: 25px 20px; 
@@ -1366,6 +1384,34 @@
         return headers.findIndex(h => String(h).trim() === name);
     }
 
+    function extraerLatLngFilasMapeo(row, iLat, iLng, parseNum) {
+        if (iLat < 0 || iLng < 0) return { la: NaN, ln: NaN };
+        if (iLat === iLng) {
+            const raw = row[iLat];
+            if (raw === undefined || raw === null) return { la: NaN, ln: NaN };
+            let s = String(raw).trim();
+            if (!s) return { la: NaN, ln: NaN };
+            let parts = s.split(',');
+            if (parts.length < 2) parts = s.split(';');
+            if (parts.length < 2) parts = s.trim().split(/\s+/);
+            parts = parts.map((x) => x.trim()).filter((x) => x.length > 0);
+            if (parts.length >= 2) {
+                const la = parseNum(parts[0]);
+                const ln = parseNum(parts[1]);
+                return { la, ln };
+            }
+            return { la: NaN, ln: NaN };
+        }
+        return { la: parseNum(row[iLat]), ln: parseNum(row[iLng]) };
+    }
+
+    function obtenerEstatusParaCuadro(reg) {
+        const d = reg.datosGenerales || {};
+        const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '];
+        if (v != null && String(v).trim() !== '') return String(v).trim();
+        return 'SIN CATEGORÍA';
+    }
+
     function procesarFilasConMapeo(mapeo, headers, rows, meta) {
         const license = meta ? meta.license : null;
         const user = meta ? meta.user : null;
@@ -1393,8 +1439,7 @@
         const iFot = indiceColumnaMapeo(mapeo, 'foto', headers);
         rows.forEach((row) => {
             if (iLat < 0 || iLng < 0) return;
-            const la = parseNum(row[iLat]);
-            const ln = parseNum(row[iLng]);
+            const { la, ln } = extraerLatLngFilasMapeo(row, iLat, iLng, parseNum);
             if (isNaN(la) || isNaN(ln)) return;
             const datosGenerales = {};
             headers.forEach((h, ix) => {
@@ -2381,7 +2426,7 @@
             sectorData.registros.forEach(reg => {
                 if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
                 
-                const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                const estatus = obtenerEstatusParaCuadro(reg);
                 
                 if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
                 const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
