@@ -246,21 +246,6 @@
         aside#sidebar.ui-layer.glass-panel {
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
-            background: rgba(20, 20, 22, 0.92) !important;
-            backdrop-filter: blur(18px);
-            -webkit-backdrop-filter: blur(18px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: var(--shadow-heavy);
-        }
-
-        .sidebar-oro-topgold {
-            height: 3px;
-            width: 100%;
-            flex-shrink: 0;
-            background: var(--color-temporal);
-            border-radius: 12px 12px 0 0;
-            box-shadow: 0 0 12px rgba(251, 188, 4, 0.25);
         }
 
         #sidebar .sidebar-header,
@@ -271,7 +256,7 @@
         }
         
         .sidebar-header { 
-            padding: 26px 22px 24px; 
+            padding: 25px 20px; 
             border-bottom: 1px solid var(--border-color); 
             background: rgba(255,255,255,0.02); 
         }
@@ -296,7 +281,7 @@
         .layers-container { 
             flex: 1; 
             overflow-y: auto; 
-            padding: 18px; 
+            padding: 15px; 
         }
         
         .layers-container::-webkit-scrollbar { 
@@ -308,24 +293,24 @@
             border-radius: 4px; 
         }
 
-        /* TARJETAS DE SECTOR — MAESTRO ORO (borde cian capa activa) */
+        /* TARJETAS DE SECTOR (.mater oro.txt) */
         .sector-card { 
-            margin-bottom: 14px; 
-            border: 1px solid rgba(42, 49, 58, 0.95); 
-            border-radius: 10px; 
-            background: rgba(0, 0, 0, 0.42); 
+            margin-bottom: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            background: rgba(0,0,0,0.3); 
             overflow: hidden; 
-            transition: border-color 0.25s ease, box-shadow 0.25s ease; 
+            transition: all 0.3s ease; 
         }
         
         .sector-card.is-active { 
-            border: 1px solid var(--cyan-neon); 
-            background: rgba(0, 242, 255, 0.04); 
-            box-shadow: 0 0 0 1px rgba(0, 242, 255, 0.12), 0 8px 28px rgba(0, 0, 0, 0.45); 
+            border-color: var(--cyan-neon); 
+            background: rgba(0, 242, 255, 0.03); 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
         }
         
         .sector-header { 
-            padding: 14px 18px; 
+            padding: 12px 16px; 
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
@@ -422,7 +407,7 @@
             text-shadow: 0 0 10px var(--color-vencida); 
         }
 
-        /* ACORDEÓN DE ESTATUS — Platinium / Oro (sin .status-dot ni círculos de color) */
+        /* ACORDEÓN DE ESTATUS (.mater oro.txt — sin .status-dot) */
         .status-group { 
             border-top: 1px solid var(--border-color); 
             background: rgba(255,255,255,0.01); 
@@ -475,20 +460,27 @@
             flex-shrink: 0;
         }
 
+        .status-color-wrap {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
         .status-cat-color-input {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
-            min-width: 20px;
+            display: block;
+            width: 22px;
+            height: 22px;
+            margin: -1px 0 0 -1px;
             padding: 0;
             border: none;
-            border-radius: 4px;
+            border-radius: 0;
             background: transparent;
             cursor: pointer;
-            flex-shrink: 0;
-            overflow: hidden;
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
         }
 
         .status-cat-color-input::-webkit-color-swatch-wrapper {
@@ -497,12 +489,12 @@
 
         .status-cat-color-input::-webkit-color-swatch {
             border: none;
-            border-radius: 3px;
+            border-radius: 0;
         }
 
         .status-cat-color-input::-moz-color-swatch {
             border: none;
-            border-radius: 3px;
+            border-radius: 0;
         }
 
         .status-cat-color-input:disabled {
@@ -517,7 +509,7 @@
         }
         
         .local-row { 
-            padding: 11px 16px 11px 20px; 
+            padding: 8px 16px 8px 24px; 
             font-size: 11px; 
             color: #a5b0bfff; 
             display: flex; 
@@ -784,26 +776,21 @@
         /* ==========================================================================
            6. MODALES Y REPORTES
            ========================================================================== */
-        .audit-report {
+        .audit-report.glass-panel {
             font-family: 'Inter', sans-serif;
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
             padding: 20px 22px;
-            margin-bottom: 0;
-            box-shadow: var(--shadow-heavy);
+            margin: 0;
+            text-align: left;
         }
         .audit-title {
-            margin: 0 0 18px;
+            margin: 0 0 14px;
             font-size: 12px;
             font-weight: 900;
             color: var(--color-temporal);
             letter-spacing: 0.06em;
             text-transform: uppercase;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 14px;
+            padding-bottom: 12px;
         }
         .audit-resumen-cuerpo {
             margin: 0;
@@ -890,16 +877,16 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
-<!-- OVERLAY LOCKSCREEN (BLOQUEO POR LICENCIA VENCIDA) -->
-<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; background: rgba(7,9,13,0.98); flex-direction: column; align-items: center; justify-content: center;">
-    <i class="fas fa-lock" style="font-size: 50px; color: var(--color-vencida); margin-bottom: 20px;"></i>
-    <h1 style="color:var(--color-vencida); font-weight: 900; margin:0 0 10px 0; text-align: center;">LICENCIA SGF VENCIDA</h1>
-    <p style="color: #a5b0bf; font-size: 13px; margin-bottom: 30px; text-align: center;">Su período de acceso al Sistema de Control Fiscal ha finalizado.<br>Actualice su Licencia o genere un respaldo de sus datos.</p>
-    
-    <div style="width: 400px;">
-        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional">
-        <button class="btn btn-save" style="width: 100%; padding: 15px; margin-bottom: 15px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
-        <button class="btn btn-solid-yellow" style="width: 100%;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO FISCAL (EXCEL)</button>
+<!-- BANNER BLOQUEO LICENCIA (solo ADMIN: primera vez o vencida; mapa visible detrás) -->
+<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; justify-content: center;">
+    <div class="glass-panel modal-box" style="width: 420px; max-width: 92%; padding: 32px 28px; text-align: center; box-sizing: border-box;">
+        <i class="fas fa-key" style="font-size: 44px; color: var(--color-temporal); margin-bottom: 16px;"></i>
+        <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 12px 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
+        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.</p>
+        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 12px;">
+        <button type="button" class="btn btn-save" style="width: 100%; padding: 14px; margin-bottom: 10px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
+        <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
+        <button type="button" class="btn btn-solid-yellow" style="width: 100%; padding: 12px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO (EXCEL)</button>
     </div>
 </div>
 
@@ -1006,8 +993,12 @@
     </div>
 </nav>
 
-<aside id="sidebar" class="ui-layer glass-panel sidebar-oro">
-    <div class="sidebar-oro-topgold" aria-hidden="true"></div>
+<aside id="sidebar" class="ui-layer glass-panel">
+    <div style="height: 5px; width: 100%; display: flex; flex-shrink: 0;">
+        <div style="flex: 1; background: #008000;"></div>
+        <div style="flex: 1; background: #FF0000;"></div>
+        <div style="flex: 1; background: #FFFF00;"></div>
+    </div>
 
     <div class="sidebar-header">
         <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
@@ -1978,12 +1969,6 @@
 
         // 2. ÚNICA vía a modo Admin: botón ACCEDER + usuario/clave del CSV y licencia SGF válida (no hay auto-login en onload).
         if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
-            const estAdmin = analizarLicenciaSGF(obtenerCadenaLicencia());
-            if (!estAdmin.valid || estAdmin.expired || !estAdmin.githubToken) {
-                errorDiv.innerText = "No hay licencia SGF vigente en el archivo de datos ni guardada en este equipo. El acceso de administración requiere una licencia válida.";
-                errorDiv.style.display = 'block';
-                return;
-            }
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
@@ -2025,20 +2010,33 @@
         const lblDias = document.getElementById('lbl-dias-lic');
         if(lblDias) lblDias.innerText = est.days > 0 ? est.days : 0;
 
+        const lockOv = document.getElementById('license-lock-overlay');
+        const lockH = document.getElementById('lock-banner-heading');
+        const lockP = document.getElementById('lock-banner-text');
+
         if (!est.valid || est.expired) {
-            // BLOQUEO ÉTICO ACTIVADO
-            document.getElementById('license-lock-overlay').style.display = 'flex';
-            document.getElementById('license-warning-box').style.display = 'none';
+            if (lockH && lockP) {
+                if (!est.valid) {
+                    lockH.textContent = 'ACTIVACIÓN REQUERIDA';
+                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar un respaldo de los datos antes de continuar.';
+                } else {
+                    lockH.textContent = 'LICENCIA SGF VENCIDA';
+                    lockP.innerHTML = 'Su período de acceso ha finalizado. Ingrese una licencia vigente o descargue el respaldo de sus datos.';
+                }
+            }
+            if (lockOv) lockOv.style.display = 'flex';
+            const wb = document.getElementById('license-warning-box');
+            if (wb) wb.style.display = 'none';
         } else {
-            document.getElementById('license-lock-overlay').style.display = 'none';
+            if (lockOv) lockOv.style.display = 'none';
             
-            // ALERTA PREVENTIVA (<= 10 DÍAS)
             const warnBox = document.getElementById('license-warning-box');
+            const licDays = document.getElementById('license-days-count');
             if (est.days <= 10) {
-                warnBox.style.display = 'block';
-                document.getElementById('license-days-count').innerText = est.days;
+                if (warnBox) warnBox.style.display = 'block';
+                if (licDays) licDays.innerText = est.days;
             } else {
-                warnBox.style.display = 'none';
+                if (warnBox) warnBox.style.display = 'none';
             }
         }
     }
@@ -2608,10 +2606,12 @@
                            onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
                         <div class="status-row-label" onclick="event.stopPropagation(); document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">${estatus}</div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
+                        <div class="status-color-wrap">
                         <input type="color" class="status-cat-color-input" title="Color de categoría (semáforo)" value="${colorActual}"
                                onclick="event.stopPropagation();"
                                onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)"
                                ${capaMaestraProtegidaContraEdicion(idSector) ? 'disabled' : ''}>
+                        </div>
                         ${!capaMaestraProtegidaContraEdicion(idSector) ? `
                         <div class="status-row-actions">
                             <input type="checkbox" 
