@@ -790,6 +790,26 @@
     </div>
 </div>
 
+<!-- MODAL MAPEO MANUAL COLUMNAS CSV (VERSIÓN ORO) -->
+<div id="csv-mapeo-modal-overlay" class="modal-overlay" style="z-index: 10050; display: none; flex-direction: column; align-items: center; justify-content: center;">
+    <div class="glass-panel modal-box" style="max-width: 520px; width: 92%; padding: 24px; max-height: 90vh; overflow-y: auto;">
+        <h2 class="modal-title" style="margin-bottom: 12px;">MAPEO MANUAL DE COLUMNAS (CSV)</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 16px;">Seleccione qué columna del archivo corresponde a cada campo. Latitud y Longitud son obligatorias para las pinchetas.</p>
+        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Latitud</label>
+        <select id="csv-map-lat" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
+        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Longitud</label>
+        <select id="csv-map-lng" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
+        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Nombre / Contribuyente</label>
+        <select id="csv-map-nombre" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
+        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Categoría / Semáforo</label>
+        <select id="csv-map-categoria" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
+        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Foto / Imagen</label>
+        <select id="csv-map-foto" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 16px; width: 100%; box-sizing: border-box;"></select>
+        <button type="button" class="btn btn-save" style="width: 100%; padding: 12px;" onclick="confirmarMapeoColumnasCSV()">CONFIRMAR</button>
+        <button type="button" class="btn btn-outline" style="width: 100%; padding: 10px; margin-top: 8px;" onclick="cerrarModalMapeoCsv()">CANCELAR</button>
+    </div>
+</div>
+
 <!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
 <div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
     <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
@@ -919,6 +939,7 @@
             <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Link Raw JSON (GitHub) o ruta en el repo</label>
             <input type="text" id="ajuste-link-raw-json" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 6px;" placeholder="URL completa CSV (Raw GitHub, Google Sheets export, etc.) o ruta en repo">
             <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="persistMasterJsonPathFromInput()">APLICAR RUTA / LINK</button>
+            <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="solicitarReconfigurarColumnasCSV()">RECONFIGURAR COLUMNAS CSV</button>
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
             <button type="button" class="btn btn-outline" id="btn-verificar-token-maestro" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
         </div>
@@ -934,6 +955,7 @@
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
             <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
+            <button type="button" class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="solicitarReconfigurarColumnasCSV()">RECONFIGURAR COLUMNAS CSV</button>
             <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
         </div>
     </div>
@@ -992,7 +1014,9 @@
     const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
     const FILE_PATH_DEFAULT = 'censo_fiscal.csv';
     const LS_MASTER_JSON_PATH = 'master_config_json_path';
+    const LS_CONFIG_MAPEO_COLUMNAS = 'config_mapeo_columnas';
     let fileSha = null;
+    let _csvMapeoPendiente = null;
 
     function normalizarRutaJsonGithub(val) {
         val = (val || '').trim();
@@ -1176,6 +1200,191 @@
         return s;
     }
 
+    function parseCsvPreambleHeadersRows(csvText) {
+        const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
+        if (!lines.length) return null;
+        let i = 0;
+        let license = null;
+        const L0 = lines[0].trim();
+        if (L0.startsWith('SGF-')) {
+            license = L0;
+            i = 1;
+        }
+        let user = null;
+        let pass = null;
+        if (i < lines.length) {
+            const cells = parseCsvRow(lines[i]);
+            if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
+                user = cells[1];
+                pass = cells[2];
+                i++;
+            } else if (cells.length >= 2) {
+                const c0 = String(cells[0]).toLowerCase();
+                if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
+                    user = cells[0];
+                    pass = cells[1];
+                    i++;
+                }
+            }
+        }
+        if (i >= lines.length) return { license, user, pass, headers: [], rows: [] };
+        const headers = parseCsvRow(lines[i]).map(h => String(h).trim());
+        i++;
+        const rows = [];
+        for (; i < lines.length; i++) {
+            const row = parseCsvRow(lines[i]).map(c => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
+            if (!row.length || row.every(c => c === '')) continue;
+            rows.push(row);
+        }
+        return { license, user, pass, headers, rows };
+    }
+
+    function firmaHeaders(headers) {
+        return headers.map(h => String(h).trim()).join('\u0001');
+    }
+
+    function leerMapeoColumnasPersistido(firma) {
+        try {
+            const raw = localStorage.getItem(LS_CONFIG_MAPEO_COLUMNAS);
+            if (!raw) return null;
+            const o = JSON.parse(raw);
+            if (!o || o.signature !== firma) return null;
+            return o;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function obtenerCeldaPorEncabezado(headers, row, nombreColumna) {
+        if (!nombreColumna) return '';
+        const name = String(nombreColumna).trim();
+        const i = headers.findIndex(h => String(h).trim() === name);
+        if (i < 0) return '';
+        const v = row[i];
+        if (v === undefined || v === null) return '';
+        return String(v).replace(/^\s+|\s+$/g, '');
+    }
+
+    function procesarFilasConMapeo(mapeo, headers, rows, meta) {
+        const license = meta ? meta.license : null;
+        const user = meta ? meta.user : null;
+        const pass = meta ? meta.pass : null;
+        const parseNum = (v) => {
+            if (v === undefined || v === null || v === '') return NaN;
+            const s = String(v).trim().replace(',', '.');
+            return parseFloat(s);
+        };
+        const secId = 'csv_sheet_default';
+        const store = {};
+        store[secId] = {
+            nombreSector: 'IMPORTACIÓN CSV',
+            visible: true,
+            isMaster: false,
+            visibilidadPorEstatus: {},
+            coloresPorEstatus: {},
+            colorPrincipal: '#00f2ff',
+            registros: []
+        };
+        const mappedNames = new Set([mapeo.lat, mapeo.lng, mapeo.nombre, mapeo.categoria, mapeo.foto].filter(Boolean));
+        rows.forEach((row) => {
+            const la = parseNum(obtenerCeldaPorEncabezado(headers, row, mapeo.lat));
+            const ln = parseNum(obtenerCeldaPorEncabezado(headers, row, mapeo.lng));
+            if (isNaN(la) || isNaN(ln)) return;
+            const datosGenerales = {};
+            datosGenerales['Contribuyente'] = obtenerCeldaPorEncabezado(headers, row, mapeo.nombre) || '';
+            datosGenerales['Estatus'] = obtenerCeldaPorEncabezado(headers, row, mapeo.categoria) || 'SIN CATEGORÍA';
+            datosGenerales['Link Fotografía'] = obtenerCeldaPorEncabezado(headers, row, mapeo.foto) || '';
+            datosGenerales['RIF'] = '';
+            headers.forEach((h, ix) => {
+                const hn = String(h).trim();
+                if (!hn || mappedNames.has(hn)) return;
+                const v = row[ix];
+                if (v !== undefined && v !== null && String(v).trim() !== '') datosGenerales[hn] = String(v).trim();
+            });
+            store[secId].registros.push({
+                tipoGeometria: 'marker',
+                coords: { lat: la, lng: ln },
+                datosGenerales,
+                colorPersonalizado: null,
+                visibleIndividual: true,
+                camposOcultos: []
+            });
+        });
+        return { store, license, user, pass };
+    }
+
+    function mostrarSelectorColumnasCSV(headers, csvRows, decodedText, partesMeta) {
+        _csvMapeoPendiente = { headers, rows: csvRows, decodedText, partesMeta };
+        const firma = firmaHeaders(headers);
+        const prev = leerMapeoColumnasPersistido(firma);
+        function llenarSelect(id, valorPrevio) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = '<option value="">— (ninguna) —</option>';
+            headers.forEach((h) => {
+                const t = String(h).trim();
+                if (!t) return;
+                const opt = document.createElement('option');
+                opt.value = t;
+                opt.textContent = t;
+                el.appendChild(opt);
+            });
+            if (valorPrevio && [...el.options].some((o) => o.value === valorPrevio)) el.value = valorPrevio;
+        }
+        llenarSelect('csv-map-lat', prev && prev.lat);
+        llenarSelect('csv-map-lng', prev && prev.lng);
+        llenarSelect('csv-map-nombre', prev && prev.nombre);
+        llenarSelect('csv-map-categoria', prev && prev.categoria);
+        llenarSelect('csv-map-foto', prev && prev.foto);
+        const ov = document.getElementById('csv-mapeo-modal-overlay');
+        if (ov) ov.style.display = 'flex';
+    }
+
+    function confirmarMapeoColumnasCSV() {
+        const lat = document.getElementById('csv-map-lat') ? document.getElementById('csv-map-lat').value : '';
+        const lng = document.getElementById('csv-map-lng') ? document.getElementById('csv-map-lng').value : '';
+        if (!lat || !lng) {
+            return alert('Debe seleccionar columnas de Latitud y Longitud.');
+        }
+        const nombre = document.getElementById('csv-map-nombre') ? document.getElementById('csv-map-nombre').value : '';
+        const categoria = document.getElementById('csv-map-categoria') ? document.getElementById('csv-map-categoria').value : '';
+        const foto = document.getElementById('csv-map-foto') ? document.getElementById('csv-map-foto').value : '';
+        if (!_csvMapeoPendiente) return;
+        const headers = _csvMapeoPendiente.headers;
+        const rows = _csvMapeoPendiente.rows;
+        const partesMeta = _csvMapeoPendiente.partesMeta;
+        const firma = firmaHeaders(headers);
+        const persist = { signature: firma, lat, lng, nombre, categoria, foto };
+        try {
+            localStorage.setItem(LS_CONFIG_MAPEO_COLUMNAS, JSON.stringify(persist));
+        } catch (e) {}
+        const r = procesarFilasConMapeo(persist, headers, rows, partesMeta);
+        if (r.license) SYSTEM_AUTH.license = r.license;
+        if (r.user) SYSTEM_AUTH.user = r.user;
+        if (r.pass) SYSTEM_AUTH.pass = r.pass;
+        reconstruirDesdeJSON(r.store || {});
+        actualizarUIYMapa();
+        forzarRefrescoCapasMapa();
+        _csvMapeoPendiente = null;
+        const ov = document.getElementById('csv-mapeo-modal-overlay');
+        if (ov) ov.style.display = 'none';
+    }
+
+    function cerrarModalMapeoCsv() {
+        _csvMapeoPendiente = null;
+        const ov = document.getElementById('csv-mapeo-modal-overlay');
+        if (ov) ov.style.display = 'none';
+    }
+
+    function solicitarReconfigurarColumnasCSV() {
+        if (CURRENT_ROLE !== 'SUPERADMIN' && CURRENT_ROLE !== 'ADMIN') {
+            return alert('Inicie sesión para reconfigurar columnas.');
+        }
+        const t = window.__ultimoCsvDecodificado;
+        if (!t) return alert('Cargue primero los datos desde la nube (RAW).');
+        aplicarCargaDesdeTextoPlano(t, { forzarModalMapeo: true });
+    }
+
     function csvTextToStoreObject(csvText) {
         const empty = { store: {}, license: null, user: null, pass: null };
         const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
@@ -1312,13 +1521,34 @@
         }
     }
 
-    function aplicarCargaDesdeTextoPlano(decodedText) {
-        const r = csvTextToStoreObject(decodedText);
-        if (r.license) SYSTEM_AUTH.license = r.license;
-        if (r.user) SYSTEM_AUTH.user = r.user;
-        if (r.pass) SYSTEM_AUTH.pass = r.pass;
-        reconstruirDesdeJSON(r.store || {});
-        forzarRefrescoCapasMapa();
+    function aplicarCargaDesdeTextoPlano(decodedText, opciones) {
+        opciones = opciones || {};
+        try {
+            window.__ultimoCsvDecodificado = decodedText;
+        } catch (e) {}
+        const partes = parseCsvPreambleHeadersRows(decodedText);
+        if (!partes || !partes.headers || partes.headers.length === 0) {
+            const r = csvTextToStoreObject(decodedText);
+            if (r.license) SYSTEM_AUTH.license = r.license;
+            if (r.user) SYSTEM_AUTH.user = r.user;
+            if (r.pass) SYSTEM_AUTH.pass = r.pass;
+            reconstruirDesdeJSON(r.store || {});
+            forzarRefrescoCapasMapa();
+            return;
+        }
+        const firma = firmaHeaders(partes.headers);
+        let mapeo = opciones.forzarModalMapeo ? null : leerMapeoColumnasPersistido(firma);
+        if (mapeo && mapeo.lat && mapeo.lng) {
+            const r = procesarFilasConMapeo(mapeo, partes.headers, partes.rows, partes);
+            if (r.license) SYSTEM_AUTH.license = r.license;
+            if (r.user) SYSTEM_AUTH.user = r.user;
+            if (r.pass) SYSTEM_AUTH.pass = r.pass;
+            reconstruirDesdeJSON(r.store || {});
+            actualizarUIYMapa();
+            forzarRefrescoCapasMapa();
+            return;
+        }
+        mostrarSelectorColumnasCSV(partes.headers, partes.rows, decodedText, partes);
     }
 
     function sincronizarCamposPanelSuperAdmin() {
@@ -1330,7 +1560,7 @@
             const rev = localStorage.getItem('master_token_revert');
             if (rev) {
                 tokEl.value = rev;
-                tokEl.type = 'password';
+                tokEl.type = 'text';
             } else {
                 tokEl.value = '';
                 tokEl.type = 'password';
