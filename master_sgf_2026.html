@@ -2794,7 +2794,7 @@
         }
     }
 
-    function procesarMapeoCSV() {
+    async function procesarMapeoCSV() {
         const idxCoords = document.getElementById('mapeo-coords').value;
         const idxNombre = document.getElementById('mapeo-nombre').value;
         const idxImagen = document.getElementById('mapeo-imagen').value;
@@ -2818,6 +2818,8 @@
         };
 
         let errores = 0;
+        let exitosos = 0;
+
         RAW_CSV_DATA.forEach(fila => {
             try {
                 const rawCoords = fila[idxCoords];
@@ -2836,7 +2838,7 @@
                 // 1. Crear la capa con el icono fiscal ya definido
                 const capa = L.marker([lat, lng], { 
                     icon: crearPinFiscal('#8e44ad'), 
-                    draggable: true 
+                    draggable: !modoLecturaGlobal 
                 });
 
                 const newIdFisico = L.stamp(capa);
@@ -2858,18 +2860,21 @@
                 // 2. Vincular Eventos y Popup antes de agregar al STORE
                 vincularEventosCapa(capa, idCapa, newIdFisico);
                 
-                // 3. Preparar el popup inicial
-                capa.bindPopup(generarContenidoHTMLPopup(idCapa, newIdFisico), { 
+                // 3. Preparar el popup inicial íntegramente
+                const htmlContenido = generarContenidoHTMLPopup(idCapa, newIdFisico);
+                capa.bindPopup(htmlContenido, { 
                     minWidth: 320, 
-                    closeButton: true 
+                    closeButton: true,
+                    className: modoLecturaGlobal ? 'readonly-mode' : ''
                 });
 
                 STORE[idCapa].registros.push(nuevoReg);
                 
                 // Forzar dragend para actualizar coordenadas si se mueve
                 capa.on('dragend', () => actualizarUIYMapa());
-                
+                exitosos++;
             } catch(err) {
+                console.error("Error en fila CSV:", err);
                 errores++;
             }
         });
@@ -2882,18 +2887,18 @@
         const buscador = document.getElementById('buscador-global');
         if(buscador) {
             buscador.value = '';
-            textoFiltroGlobal = ''; // Resetear también la variable interna del filtro
+            textoFiltroGlobal = ''; 
         }
         
-        // Refrescar mapa y panel lateral (renderizarListaLateral)
+        // Refrescar mapa y panel lateral
         actualizarUIYMapa();
         
         // Enfocar la nueva capa si tiene registros válidos
-        if (STORE[idCapa].registros.length > 0) {
+        if (exitosos > 0) {
             enfocarSector(idCapa);
         }
         
-        alert(`✅ Importación finalizada.\nÉxito: ${RAW_CSV_DATA.length - errores}\nErrores: ${errores}\n\nLos registros ya son visibles en el panel lateral bajo la nueva capa de importación.`);
+        alert(`✅ Importación finalizada.\nÉxito: ${exitosos}\nErrores: ${errores}\n\nLos registros ya son visibles en el panel lateral bajo la nueva capa de importación.`);
     }
 
     function initSecurity() {
