@@ -970,12 +970,12 @@
     <!-- MÓDULO PRIVADO SUPER ADMIN (LLAVE GITHUB) -->
     <div id="panel-superadmin" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: #8e44ad; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
-            <span><i class="fas fa-server"></i> LLAVE MAESTRA GITHUB (SUPER ADMIN)</span>
+            <span><i class="fas fa-server"></i> CONFIGURACIÓN MAESTRA (SUPER ADMIN)</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
+            <input type="password" id="ajuste-repo-licencia" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Licencia SGF Maestra">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="verificarYGuardarLicenciaMaestra()">ACTIVAR LICENCIA MAESTRA</button>
             
             <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (CSV)">
             <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URL DEL RAW</button>
@@ -2347,7 +2347,7 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = SYSTEM_AUTH.token || '';
+            document.getElementById('ajuste-repo-licencia').value = SYSTEM_AUTH.licenciaSGF || '';
             document.getElementById('ajuste-repo-urlraw').value = SYSTEM_AUTH.urlRaw || '';
         } else {
             div.style.display = 'none';
@@ -2363,9 +2363,11 @@
         }
     }
     
-    async function verificarYGuardarTokenMaestro() {
-        const rawToken = document.getElementById('ajuste-repo-token').value.trim();
-        if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
+    async function verificarYGuardarLicenciaMaestra() {
+        const val = document.getElementById('ajuste-repo-licencia').value.trim();
+        if(!val) return alert("Ingrese el código de licencia maestra.");
+        const est = analizarLicenciaSGF(val);
+        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
         const btn = document.querySelector('#ajustes-servidor button');
         const originalText = btn.innerText;
@@ -2373,27 +2375,32 @@
         btn.disabled = true;
 
         try {
+            // Extraemos el token de la licencia
+            const token = est.tokenRev.split('').reverse().join('');
+            
+            // Verificamos el token con GitHub
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
                 headers: { 
-                    'Authorization': 'token ' + rawToken,
+                    'Authorization': 'token ' + token,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
 
             if (res.ok) {
                 // Guardamos en SYSTEM_AUTH y Sincronizamos
-                SYSTEM_AUTH.token = rawToken;
-                alert("✅ Token Verificado. Sincronizando con la Nube...");
+                SYSTEM_AUTH.licenciaSGF = val;
+                SYSTEM_AUTH.token = token;
+                alert("✅ Licencia Maestra Activada. Sincronizando con la Nube...");
                 await guardarEnServidor();
                 await cargarDatosNube(); 
             } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
+                throw new Error(`Error ${res.status}: El token de la licencia es inválido o no tiene acceso al repositorio.`);
             }
         } catch(e) {
-            console.error("Verificación de Token Fallida:", e);
+            console.error("Activación de Licencia Fallida:", e);
             let msg = e.message;
             if (msg === "Failed to fetch") msg = "Error de red: No se pudo alcanzar GitHub API.";
-            alert(`❌ Error de verificación: ${msg}`);
+            alert(`❌ Error de activación: ${msg}`);
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
