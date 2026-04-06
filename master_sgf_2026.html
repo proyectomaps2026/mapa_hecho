@@ -2471,35 +2471,33 @@
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
 
-        const btn = document.getElementById('btn-save-server');
-        const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
-        btn.disabled = true;
+        const btnSave = document.getElementById('btn-save-server');
+        const btnOriginalText = btnSave ? btnSave.innerHTML : "GUARDAR NUBE";
+        if(btnSave) {
+            btnSave.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
+            btnSave.disabled = true;
+        }
 
         try {
-            // 1. OBTENER ESTADO ACTUAL (Smart Merge)
+            // 1. OBTENER ESTADO ACTUAL (Smart Merge) - SIEMPRE REFRESCAR EL SHA
             let currentCloudData = {};
             let currentSha = null;
             
-            try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
-                    const binaryStr = atob(getData.content);
-                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
-                    const decoded = new TextDecoder('utf-8').decode(bytes);
-                    currentCloudData = JSON.parse(decoded);
+            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
+                    'Accept': 'application/vnd.github.v3+json'
                 }
-            } catch (err) {
-                console.warn("No se pudo obtener el archivo actual, se creará uno nuevo.");
+            });
+            
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                currentSha = getData.sha;
+                const binaryStr = atob(getData.content);
+                const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                const decoded = new TextDecoder('utf-8').decode(bytes);
+                currentCloudData = JSON.parse(decoded);
             }
 
             // 2. PREPARAR DATOS (Merge Inteligente)
@@ -2507,13 +2505,13 @@
             
             // Migramos todo a una estructura FLAT (Plana)
             const nuevaConfiguracion = {
-                ...currentCloudData, // Preservamos lo que ya existe en la nube (ej: otros sectores)
+                ...currentCloudData, 
                 userAdmin: SYSTEM_AUTH.userAdmin,
                 passAdmin: SYSTEM_AUTH.passAdmin,
                 urlRaw: SYSTEM_AUTH.urlRaw,
                 token: SYSTEM_AUTH.token,
                 licenciaSGF: SYSTEM_AUTH.licenciaSGF,
-                store: datosLimpios // El store siempre se sobreescribe con lo local
+                store: datosLimpios 
             };
 
             // 3. CODIFICACIÓN SEGURA UTF-8 PARA GITHUB
@@ -2543,7 +2541,13 @@
                 body: JSON.stringify(payload)
             });
 
-            if(!res.ok) throw new Error(await res.text());
+            if(!res.ok) {
+                const errorData = await res.json();
+                if (res.status === 409) {
+                    throw new Error("Conflicto de versiones (409). El archivo ha sido modificado recientemente. Intente de nuevo en unos segundos.");
+                }
+                throw new Error(errorData.message || "Error desconocido en GitHub API");
+            }
             
             const data = await res.json();
             fileSha = data.content.sha;
@@ -2552,8 +2556,10 @@
             console.error(e);
             alert("❌ Error crítico de sincronización: " + e.message);
         } finally {
-            btn.innerHTML = btnOriginalText;
-            btn.disabled = false;
+            if(btnSave) {
+                btnSave.innerHTML = btnOriginalText;
+                btnSave.disabled = false;
+            }
         }
     }
 
