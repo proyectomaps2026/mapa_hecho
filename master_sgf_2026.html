@@ -887,6 +887,34 @@
     </div>
 </div>
 
+<!-- MODAL DE MAPEO DE COLUMNAS CSV -->
+<div id="modal-mapeo-csv" class="modal-overlay" style="z-index: 11000;">
+    <div class="glass-panel modal-box" style="width: 450px;">
+        <h2 class="modal-title"><i class="fas fa-table"></i> MAPEO DE COLUMNAS CSV</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Seleccione las columnas correspondientes del archivo RAW.</p>
+        
+        <div class="form-group">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA COORDENADAS (Lat, Lng)</span>
+            <select id="mapeo-coords" class="modal-select"></select>
+        </div>
+        
+        <div class="form-group">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA NOMBRE (Contribuyente)</span>
+            <select id="mapeo-nombre" class="modal-select"></select>
+        </div>
+        
+        <div class="form-group">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA IMAGEN (Link Foto)</span>
+            <select id="mapeo-imagen" class="modal-select"></select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('modal-mapeo-csv').style.display='none'">CANCELAR</button>
+            <button class="btn btn-save" style="flex: 1;" onclick="procesarMapeoCSV()">PROCESAR E IMPORTAR</button>
+        </div>
+    </div>
+</div>
+
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
@@ -920,7 +948,7 @@
         </button>
         
         <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNube()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
+        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarRawCSV()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
             <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
         </button>
 
@@ -2720,6 +2748,125 @@
             });
         }
         actualizarUIYMapa();
+    }
+
+    /* ==========================================================================
+       MODULO DE IMPORTACIÓN RAW CSV (MAPEADO DINÁMICO)
+       ========================================================================== */
+    let RAW_CSV_DATA = [];
+    let RAW_CSV_HEADERS = [];
+
+    async function cargarRawCSV() {
+        if(!SYSTEM_AUTH.urlRaw) return alert("❌ No se ha configurado la URL del RAW (CSV) en los Ajustes de Super Admin.");
+        
+        const btn = document.getElementById('btn-cargar-raw');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> CARGANDO...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${SYSTEM_AUTH.urlRaw}?t=${Date.now()}`);
+            if(!res.ok) throw new Error("No se pudo obtener el archivo CSV desde GitHub.");
+            
+            const texto = await res.text();
+            // Parser simple de CSV (Soporta comas y saltos de línea básicos)
+            const filas = texto.split(/\r?\n/).filter(line => line.trim() !== "");
+            if(filas.length < 2) throw new Error("El archivo CSV parece estar vacío o mal formado.");
+
+            RAW_CSV_HEADERS = filas[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            RAW_CSV_DATA = filas.slice(1).map(f => f.split(',').map(v => v.trim().replace(/^"|"$/g, '')));
+
+            // Llenar los Selects del Modal
+            const selects = ['mapeo-coords', 'mapeo-nombre', 'mapeo-imagen'];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                el.innerHTML = '<option value="">-- Seleccione Columna --</option>' + 
+                               RAW_CSV_HEADERS.map((h, i) => `<option value="${i}">${h}</option>`).join('');
+            });
+
+            document.getElementById('modal-mapeo-csv').style.display = 'flex';
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error al cargar RAW: " + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function procesarMapeoCSV() {
+        const idxCoords = document.getElementById('mapeo-coords').value;
+        const idxNombre = document.getElementById('mapeo-nombre').value;
+        const idxImagen = document.getElementById('mapeo-imagen').value;
+
+        if(!idxCoords || !idxNombre) return alert("❌ Debe seleccionar al menos las columnas de Coordenadas y Nombre.");
+
+        if(!confirm(`Se importarán ${RAW_CSV_DATA.length} registros. ¿Desea continuar?`)) return;
+
+        // Crear una nueva capa para la importación
+        const idCapa = 'sec_raw_' + Date.now();
+        capasSectores[idCapa] = new L.FeatureGroup();
+        STORE[idCapa] = {
+            nombreSector: "IMPORTACIÓN RAW (" + new Date().toLocaleDateString() + ")",
+            visible: true,
+            isMaster: false,
+            isExpanded: true,
+            visibilidadPorEstatus: {},
+            coloresPorEstatus: {},
+            colorPrincipal: '#8e44ad',
+            registros: []
+        };
+
+        let errores = 0;
+        RAW_CSV_DATA.forEach(fila => {
+            try {
+                const rawCoords = fila[idxCoords];
+                const nombre = fila[idxNombre] || "Sin Nombre";
+                const imagen = idxImagen ? fila[idxImagen] : "";
+
+                // Limpiar coordenadas (pueden venir como "lat, lng" o "lat; lng")
+                const coordsClean = rawCoords.replace(/[()]/g, '').split(/[,;]/);
+                if(coordsClean.length < 2) throw new Error("Coordenadas inválidas");
+
+                const lat = parseFloat(coordsClean[0].trim());
+                const lng = parseFloat(coordsClean[1].trim());
+
+                if(isNaN(lat) || isNaN(lng)) throw new Error("Coordenadas no numéricas");
+
+                const capa = L.marker([lat, lng], { 
+                    icon: crearPinFiscal('#8e44ad'), 
+                    draggable: true 
+                });
+                capa.on('dragend', () => actualizarUIYMapa());
+
+                const newIdFisico = L.stamp(capa);
+                const nuevoReg = {
+                    idFisico: newIdFisico,
+                    tipoGeometria: 'marker',
+                    capaLeaflet: capa,
+                    colorPersonalizado: '#8e44ad',
+                    visibleIndividual: true,
+                    _modoPopup: 'lectura',
+                    datosGenerales: {
+                        "Contribuyente": nombre.toUpperCase(),
+                        "Estatus": "CENSO / NUEVO",
+                        "Link Fotografía": imagen
+                    },
+                    camposOcultos: []
+                };
+
+                STORE[idCapa].registros.push(nuevoReg);
+                vincularEventosCapa(capa, idCapa, newIdFisico);
+            } catch(err) {
+                errores++;
+            }
+        });
+
+        capaActivaId = idCapa;
+        document.getElementById('modal-mapeo-csv').style.display = 'none';
+        actualizarUIYMapa();
+        
+        alert(`✅ Importación finalizada.\nÉxito: ${RAW_CSV_DATA.length - errores}\nErrores: ${errores}`);
     }
 
     function initSecurity() {
