@@ -2374,7 +2374,10 @@
 
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': 'token ' + rawToken }
+                headers: { 
+                    'Authorization': 'token ' + rawToken,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
 
             if (res.ok) {
@@ -2387,8 +2390,10 @@
                 throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
             }
         } catch(e) {
-            console.error(e);
-            alert(`❌ Error de verificación: ${e.message}`);
+            console.error("Verificación de Token Fallida:", e);
+            let msg = e.message;
+            if (msg === "Failed to fetch") msg = "Error de red: No se pudo alcanzar GitHub API.";
+            alert(`❌ Error de verificación: ${msg}`);
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
@@ -2419,7 +2424,7 @@
 
         try {
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim() }
             });
             if (res.ok) {
                 const data = await res.json();
@@ -2457,9 +2462,9 @@
                 throw new Error(`GitHub API error: ${res.status}`);
             }
         } catch (e) {
-            console.error("Failed to load cloud data:", e);
+            console.error("Error al cargar datos desde la nube:", e);
             actualizarUIYMapa();
-            throw e; // Lanzar para que intentarLogin sepa que falló
+            throw new Error(e.message === "Failed to fetch" ? "Error de conexión con GitHub (Fetch Error)" : e.message);
         }
     }
 
@@ -2470,6 +2475,8 @@
     async function guardarEnServidor(retry = true) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
+        
+        console.log("Token detectado, longitud:", GITHUB_TOKEN_DYNAMIC.length);
 
         const btnSave = document.getElementById('btn-save-server');
         const btnOriginalText = btnSave ? btnSave.innerHTML : "GUARDAR NUBE";
@@ -2488,11 +2495,8 @@
             const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim(),
+                    'Accept': 'application/vnd.github.v3+json'
                 }
             });
             
@@ -2539,7 +2543,7 @@
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim(),
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
@@ -2561,8 +2565,12 @@
             fileSha = data.content.sha;
             alert("✅ Sincronización Exitosa: Los datos están protegidos en la Nube.");
         } catch(e) {
-            console.error(e);
-            alert("❌ Error crítico de sincronización: " + e.message);
+            console.error("Sincronización Fallida:", e);
+            let msg = e.message;
+            if (msg === "Failed to fetch") {
+                msg = "No se pudo conectar con GitHub. Verifique su conexión a internet o el Token.";
+            }
+            alert("❌ Error crítico de sincronización: " + msg);
         } finally {
             if(btnSave && retry) {
                 btnSave.innerHTML = btnOriginalText;
