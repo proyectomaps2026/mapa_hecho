@@ -2803,8 +2803,8 @@
 
         if(!confirm(`Se importarán ${RAW_CSV_DATA.length} registros. ¿Desea continuar?`)) return;
 
-        // Crear una nueva capa para la importación
-        const idCapa = 'sec_raw_' + Date.now();
+        // Crear una nueva capa para la importación con el ID sugerido
+        const idCapa = 'IMPORT_' + Date.now();
         capasSectores[idCapa] = new L.FeatureGroup();
         STORE[idCapa] = {
             nombreSector: "IMPORTACIÓN RAW (" + new Date().toLocaleDateString() + ")",
@@ -2874,11 +2874,18 @@
             }
         });
 
-        // 4. FORZAR ACTUALIZACIÓN DE UI Y ENFOQUE
+        // 4. LIMPIEZA DEL BUSCADOR Y RENDERIZADO FINAL
         capaActivaId = idCapa;
         document.getElementById('modal-mapeo-csv').style.display = 'none';
         
-        // Refrescar mapa y panel lateral
+        // Limpiar el buscador global para asegurar que los nuevos registros sean visibles
+        const buscador = document.getElementById('buscador-global');
+        if(buscador) {
+            buscador.value = '';
+            textoFiltroGlobal = ''; // Resetear también la variable interna del filtro
+        }
+        
+        // Refrescar mapa y panel lateral (renderizarListaLateral)
         actualizarUIYMapa();
         
         // Enfocar la nueva capa si tiene registros válidos
