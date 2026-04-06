@@ -975,8 +975,10 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
+            
             <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (CSV)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR CONFIGURACIÓN</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URL DEL RAW</button>
         </div>
     </div>
 
@@ -2363,7 +2365,6 @@
     
     async function verificarYGuardarTokenMaestro() {
         const rawToken = document.getElementById('ajuste-repo-token').value.trim();
-        const rawUrlRaw = document.getElementById('ajuste-repo-urlraw').value.trim();
         if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
 
         const btn = document.querySelector('#ajustes-servidor button');
@@ -2379,8 +2380,7 @@
             if (res.ok) {
                 // Guardamos en SYSTEM_AUTH y Sincronizamos
                 SYSTEM_AUTH.token = rawToken;
-                SYSTEM_AUTH.urlRaw = rawUrlRaw;
-                alert("✅ Configuración Verificada. Sincronizando con la Nube...");
+                alert("✅ Token Verificado. Sincronizando con la Nube...");
                 await guardarEnServidor();
                 await cargarDatosNube(); 
             } else {
@@ -2392,6 +2392,21 @@
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
+        }
+    }
+
+    async function guardarUrlRawMaestra() {
+        const rawUrlRaw = document.getElementById('ajuste-repo-urlraw').value.trim();
+        if(!rawUrlRaw) return alert("Ingrese la URL del RAW (CSV).");
+
+        try {
+            SYSTEM_AUTH.urlRaw = rawUrlRaw;
+            alert("✅ URL del RAW actualizada. Sincronizando con la Nube...");
+            await guardarEnServidor();
+            await cargarDatosNube();
+        } catch(e) {
+            console.error(e);
+            alert(`❌ Error al guardar la URL: ${e.message}`);
         }
     }
     
