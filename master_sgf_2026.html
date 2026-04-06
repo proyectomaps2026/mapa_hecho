@@ -1546,10 +1546,10 @@
 
     const DICCIONARIO_ESTATUS = {
         "VIGENTE": { color: "#238636" },
-        "VENCIDA": { color: "#da3633" },
-        "TEMPORAL": { color: "#fbbc04" },
-        "CENSO / NUEVO": { color: "#00f2ff" },
+        "VENCIDA": { color: "#fbbc04" },
+        "TEMPORAL": { color: "#0078ff" },
         "SIN LICENCIA": { color: "#da3633" },
+        "CENSO / NUEVO": { color: "#00f2ff" },
         "SIN CATEGORÍA": { color: "#6e7681" }
     };
 
@@ -2820,7 +2820,7 @@
         if (!confirm(`¿Proceder a mapear ${csvDataTemp.length} puntos? Se creará una nueva capa de trabajo.`)) return;
 
         const idSector = 'IMPORT_' + Date.now();
-        const nombreSector = "IMPORTACIÓN CSV " + new Date().toLocaleTimeString();
+        const nombreSector = "CENSO IMPORTADO (" + new Date().toLocaleTimeString() + ")";
         
         capasSectores[idSector] = new L.FeatureGroup();
         STORE[idSector] = {
@@ -2830,7 +2830,7 @@
             isExpanded: true,
             visibilidadPorEstatus: {},
             coloresPorEstatus: {},
-            colorPrincipal: '#8e44ad',
+            colorPrincipal: '#00f2ff',
             registros: []
         };
 
@@ -2843,15 +2843,31 @@
                 const lng = parseFloat(row[lngCol]);
                 const contribuyente = row[nameCol] || "SIN NOMBRE";
                 const imagen = imgCol ? row[imgCol] : "";
+                
+                // AUTO-DETECCIÓN DE ESTATUS (Para que se vea como la imagen 2)
+                let estatus = "CENSO / NUEVO";
+                const posiblesCols = ['Estatus', 'ESTATUS', 'Estado', 'ESTADO', 'Status', 'STATUS', 'Categoría', 'Categoría ', 'Categoría'];
+                for (let col of posiblesCols) {
+                    if (row[col]) {
+                        const val = String(row[col]).toUpperCase().trim();
+                        // Mapeo flexible de nombres de estatus
+                        if (val.includes("VIGENTE")) estatus = "VIGENTE";
+                        else if (val.includes("VENCIDA")) estatus = "VENCIDA";
+                        else if (val.includes("TEMPORAL")) estatus = "TEMPORAL";
+                        else if (val.includes("LICENCIA") || val.includes("SIN")) estatus = "SIN LICENCIA";
+                        else if (DICCIONARIO_ESTATUS[val]) estatus = val;
+                        break;
+                    }
+                }
 
                 if (isNaN(lat) || isNaN(lng)) {
                     errores++;
                     return;
                 }
 
-                // Usamos el icono fiscal morado por defecto para importaciones RAW
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["CENSO / NUEVO"];
                 const capa = L.marker([lat, lng], { 
-                    icon: crearPinFiscal('#8e44ad'), 
+                    icon: crearPinFiscal(confEst.color), 
                     draggable: !modoLecturaGlobal 
                 });
                 
@@ -2860,12 +2876,12 @@
                     idFisico: newIdFisico,
                     tipoGeometria: 'marker',
                     capaLeaflet: capa,
-                    colorPersonalizado: '#8e44ad',
+                    colorPersonalizado: null, // Usará el color del estatus
                     visibleIndividual: true,
                     _modoPopup: 'lectura',
                     datosGenerales: {
                         "Contribuyente": contribuyente.toUpperCase(),
-                        "Estatus": "CENSO / NUEVO",
+                        "Estatus": estatus,
                         "Link Fotografía": imagen,
                         ...row 
                     },
