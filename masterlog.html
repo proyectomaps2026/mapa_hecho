@@ -59,9 +59,6 @@
 <div class="main">
     <div class="header">
         <h1>MasterLog de Transparencia</h1>
-        <button class="btn btn-primary" onclick="descargarExcelAuditoria()">
-            <i class="fa-solid fa-file-arrow-down"></i> EXPORTAR ACTA DE CONTROL
-        </button>
     </div>
 
     <div id="legal-banner">
@@ -114,26 +111,6 @@
                 </tr>
             `;
         });
-    }
-
-    function descargarExcelAuditoria() {
-        const confirmacion = confirm("¿Confirmar descarga de Acta Legal para la Contraloría?");
-        if(!confirmacion) return;
-
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "FECHA,AUTORIDAD,ACCION,DETALLE,ZONA,ESTADO\n";
-        
-        MASTER_LOG.forEach(row => {
-            csvContent += `${row.fecha},${row.usuario},${row.accion},${row.detalle},${row.zona},FIRMADO\n`;
-        });
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `MasterLog_Ayacucho_Auditoria_${new Date().toLocaleDateString()}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 
     // Inicializar

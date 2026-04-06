@@ -841,11 +841,10 @@
     <div class="glass-panel modal-box" style="width: 420px; max-width: 92%; padding: 32px 28px; text-align: center; box-sizing: border-box;">
         <i class="fas fa-key" style="font-size: 44px; color: var(--color-temporal); margin-bottom: 16px;"></i>
         <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 12px 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
-        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF). Puede descargar respaldo Word o Excel antes de activar.</p>
+        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF) para activar.</p>
         <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 12px;">
         <button type="button" class="btn btn-save" style="width: 100%; padding: 14px; margin-bottom: 10px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
         <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
-        <button type="button" class="btn btn-solid-yellow" style="width: 100%; padding: 12px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO (EXCEL)</button>
     </div>
 </div>
 
@@ -976,7 +975,8 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">ENCRIPTAR Y GUARDAR TOKEN</button>
+            <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (CSV)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR CONFIGURACIÓN</button>
         </div>
     </div>
 
@@ -990,7 +990,6 @@
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
             <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
-            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
     </div>
 
@@ -1236,7 +1235,7 @@
             if (lockH && lockP) {
                 if (!est.valid) {
                     lockH.textContent = 'ACTIVACIÓN REQUERIDA';
-                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word o Excel antes de continuar.';
+                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word antes de continuar.';
                 } else {
                     lockH.textContent = 'LICENCIA SGF VENCIDA';
                     lockP.innerHTML = 'Su período de acceso ha finalizado. Ingrese una licencia vigente o descargue un respaldo de sus datos.';
@@ -1286,45 +1285,8 @@
     }
 
     /* ==========================================================================
-       NUEVO BLOQUE: EXPORTACIÓN A EXCEL (SECTORIZACIÓN POR COORDENADAS)
+       RESPALDO WORD
        ========================================================================== */
-    function exportarExcelInstitucional() {
-        if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
-        const wb = XLSX.utils.book_new();
-        let datosParaExcel = [];
-        
-        // Recorremos los registros que están cargados en el mapa
-        Object.keys(STORE).forEach(idCapa => {
-            STORE[idCapa].registros.forEach(reg => {
-                const d = reg.datosGenerales;
-                // IMPORTANTE: El nombre del sector se toma del contenedor donde está el punto
-                const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
-
-                datosParaExcel.push({
-                    "SECTOR": nombreSector, 
-                    "RIF/CÉDULA": d["RIF"] || d["Cédula"] || d["Identificacion"] || "S/D",
-                    "CONTRIBUYENTE": d["Contribuyente"] || d["Razon Social"] || "Sin Nombre",
-                    "ESTADO FISCAL": d["Estatus"] || "Pendiente",
-                });
-            });
-        });
-
-        // Ordenar por Sector y luego por Nombre
-        datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
-
-        const ws = XLSX.utils.json_to_sheet(datosParaExcel);
-        
-        // PIE DE PÁGINA LEGAL CON LOS ARTÍCULOS SOLICITADOS
-        const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
-        
-        const filaFinal = datosParaExcel.length + 3;
-        XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
-        XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
-        
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte Fiscal");
-        XLSX.writeFile(wb, "Reporte_Fiscal_Ayacucho.xlsx");
-    }
-
     function descargarRespaldoWord() {
         if (typeof docx === 'undefined') {
             return alert("Error: La librería de generación de documentos no se cargó correctamente.");
@@ -2383,7 +2345,8 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = getRealToken() || '';
+            document.getElementById('ajuste-repo-token').value = SYSTEM_AUTH.token || '';
+            document.getElementById('ajuste-repo-urlraw').value = SYSTEM_AUTH.urlRaw || '';
         } else {
             div.style.display = 'none';
         }
@@ -2400,6 +2363,7 @@
     
     async function verificarYGuardarTokenMaestro() {
         const rawToken = document.getElementById('ajuste-repo-token').value.trim();
+        const rawUrlRaw = document.getElementById('ajuste-repo-urlraw').value.trim();
         if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
 
         const btn = document.querySelector('#ajustes-servidor button');
@@ -2415,7 +2379,8 @@
             if (res.ok) {
                 // Guardamos en SYSTEM_AUTH y Sincronizamos
                 SYSTEM_AUTH.token = rawToken;
-                alert("✅ Llave Maestra Verificada. Sincronizando con la Nube...");
+                SYSTEM_AUTH.urlRaw = rawUrlRaw;
+                alert("✅ Configuración Verificada. Sincronizando con la Nube...");
                 await guardarEnServidor();
                 await cargarDatosNube(); 
             } else {
