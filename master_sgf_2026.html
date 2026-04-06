@@ -2869,6 +2869,9 @@
                     draggable: !modoLecturaGlobal 
                 });
                 
+                // Asegurar que se agrega al objeto de mapa correcto
+                capa.addTo(mapa);
+                
                 const newIdFisico = L.stamp(capa);
                 const nuevoReg = {
                     idFisico: newIdFisico,
@@ -2901,7 +2904,7 @@
         });
 
         document.getElementById('csv-mapping-modal').style.display = 'none';
-        capaActivaId = idSector;
+        capaActivaId = idSector; 
         
         // Limpiar buscador
         const buscador = document.getElementById('buscador-global');
