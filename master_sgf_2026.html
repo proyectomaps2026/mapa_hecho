@@ -2874,11 +2874,19 @@
             }
         });
 
+        // 4. FORZAR ACTUALIZACIÓN DE UI Y ENFOQUE
         capaActivaId = idCapa;
         document.getElementById('modal-mapeo-csv').style.display = 'none';
+        
+        // Refrescar mapa y panel lateral
         actualizarUIYMapa();
         
-        alert(`✅ Importación finalizada.\nÉxito: ${RAW_CSV_DATA.length - errores}\nErrores: ${errores}`);
+        // Enfocar la nueva capa si tiene registros válidos
+        if (STORE[idCapa].registros.length > 0) {
+            enfocarSector(idCapa);
+        }
+        
+        alert(`✅ Importación finalizada.\nÉxito: ${RAW_CSV_DATA.length - errores}\nErrores: ${errores}\n\nLos registros ya son visibles en el panel lateral bajo la nueva capa de importación.`);
     }
 
     function initSecurity() {
