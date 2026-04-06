@@ -1158,8 +1158,8 @@
 
     function obtenerEstatusParaCuadro(reg) {
         const d = reg.datosGenerales || {};
-        const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '];
-        if (v != null && String(v).trim() !== '') return String(v).trim();
+        const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '] || d['ESTATUS'];
+        if (v != null && String(v).trim() !== '') return String(v).trim().toUpperCase();
         return 'SIN CATEGORÍA';
     }
 
@@ -2845,18 +2845,16 @@
                 const imagen = imgCol ? row[imgCol] : "";
                 
                 // AUTO-DETECCIÓN DE ESTATUS (Para que se vea como la imagen 2)
-                let estatus = "CENSO / NUEVO";
-                const posiblesCols = ['Estatus', 'ESTATUS', 'Estado', 'ESTADO', 'Status', 'STATUS', 'Categoría', 'Categoría ', 'Categoría'];
+                let estatus = "SIN CATEGORÍA";
+                const posiblesCols = ['Estatus', 'ESTATUS', 'Estado', 'ESTADO', 'Status', 'STATUS', 'Categoría', 'Categoría ', 'Categoria', 'Semáforo'];
                 for (let col of posiblesCols) {
                     if (row[col]) {
                         const val = String(row[col]).toUpperCase().trim();
-                        // Mapeo flexible de nombres de estatus
-                        if (val.includes("VIGENTE")) estatus = "VIGENTE";
-                        else if (val.includes("VENCIDA")) estatus = "VENCIDA";
-                        else if (val.includes("TEMPORAL")) estatus = "TEMPORAL";
-                        else if (val.includes("LICENCIA") || val.includes("SIN")) estatus = "SIN LICENCIA";
-                        else if (DICCIONARIO_ESTATUS[val]) estatus = val;
-                        break;
+                        if (val.includes("VIGENTE")) { estatus = "VIGENTE"; break; }
+                        if (val.includes("VENCIDA")) { estatus = "VENCIDA"; break; }
+                        if (val.includes("TEMPORAL")) { estatus = "TEMPORAL"; break; }
+                        if (val.includes("LICENCIA") || val.includes("SIN")) { estatus = "SIN LICENCIA"; break; }
+                        if (DICCIONARIO_ESTATUS[val]) { estatus = val; break; }
                     }
                 }
 
@@ -2865,7 +2863,7 @@
                     return;
                 }
 
-                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["CENSO / NUEVO"];
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
                 const capa = L.marker([lat, lng], { 
                     icon: crearPinFiscal(confEst.color), 
                     draggable: !modoLecturaGlobal 
