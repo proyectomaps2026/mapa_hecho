@@ -1062,6 +1062,33 @@
     let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
     let CHECK_LICENSE_INTERVAL = null;
 
+    // PROTOCOLO PORTABILIDAD TOTAL: Carga inicial de config.json (sin token, vÃ­a fetch directo)
+    (async function precargarConfiguracion() {
+        try {
+            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if (res.ok) {
+                const config = await res.json();
+                
+                // Mapeo Inteligente con DesofuscaciÃ³n
+                if (config.userAdmin) SYSTEM_AUTH.userAdmin = config.userAdmin;
+                if (config.passAdmin) SYSTEM_AUTH.passAdmin = config.passAdmin;
+                if (config.urlRaw || config.csvUrl) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
+                
+                // DesofuscaciÃ³n de Seguridad (Reverse)
+                if (config.token) {
+                    SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
+                }
+                if (config.licenciaSGF || config.license) {
+                    const l = config.licenciaSGF || config.license;
+                    SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
+                }
+                console.log("SGF: ConfiguraciÃ³n en la Nube reconocida exitosamente.");
+            }
+        } catch (e) {
+            console.warn("SGF: No se pudo precargar la configuraciÃ³n, se usarÃ¡n valores locales.");
+        }
+    })();
+
     /* ==========================================================================
        MOTOR DE LICENCIAS Y TOKENS SGF
        ========================================================================== */
@@ -1164,7 +1191,10 @@
             
             // Muestra el botón RAW solo para SuperAdmin
             const btnRaw = document.getElementById('btn-cargar-raw');
-            if(btnRaw) btnRaw.style.display = 'flex';
+            if(btnRaw) {
+                btnRaw.style.display = 'flex';
+                btnRaw.disabled = false;
+            }
             
             // Limpieza de DOM: Remueve elementos del cliente
             const panelAdmin = document.getElementById('panel-admin-licencia');
@@ -2588,6 +2618,13 @@
             const data = await res.json();
             fileSha = data.content.sha;
             alert("✅ Sincronización Exitosa: Los datos están protegidos en la Nube.");
+            
+            // Recargar datos y activar paneles necesarios
+            await cargarDatosNube();
+            if(CURRENT_ROLE === 'SUPERADMIN') {
+                const btnRaw = document.getElementById('btn-cargar-raw');
+                if(btnRaw) btnRaw.style.display = 'flex';
+            }
         } catch(e) {
             console.error("Sincronización Fallida:", e);
             let msg = e.message;
