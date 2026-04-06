@@ -1050,7 +1050,14 @@
     let fileSha = null;
     
     // JERARQUÍA DE ACCESO Y ROLES
-    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' }; 
+    // ESTRUCTURA DE CONFIGURACIÓN GLOBAL (MIGRACIÓN FLAT 2026)
+    let SYSTEM_AUTH = { 
+        userAdmin: 'admin', 
+        passAdmin: 'admin', 
+        urlRaw: '', 
+        token: '', 
+        licenciaSGF: '' 
+    }; 
     let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
     let CHECK_LICENSE_INTERVAL = null;
 
@@ -1097,8 +1104,8 @@
     }
 
     function obtenerCadenaLicencia() {
-        if (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).trim().startsWith('SGF-')) {
-            return String(SYSTEM_AUTH.license).trim();
+        if (SYSTEM_AUTH && SYSTEM_AUTH.licenciaSGF && String(SYSTEM_AUTH.licenciaSGF).trim().startsWith('SGF-')) {
+            return String(SYSTEM_AUTH.licenciaSGF).trim();
         }
         const ls = localStorage.getItem('sgf_license');
         return ls ? ls.trim() : '';
@@ -1122,6 +1129,9 @@
     // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
     function getRealToken() {
         if (CURRENT_ROLE === 'SUPERADMIN') {
+            // Prioridad: 1. Token en la Nube (SYSTEM_AUTH.token) | 2. Token Local (localStorage)
+            if (SYSTEM_AUTH && SYSTEM_AUTH.token) return SYSTEM_AUTH.token;
+            
             const tk = localStorage.getItem('master_token_revert');
             return tk ? tk.split('').reverse().join('') : null;
         } else if (CURRENT_ROLE === 'ADMIN') {
@@ -1137,7 +1147,7 @@
     /* ==========================================================================
        FLUJO DE ACCESO ESTRICTO (LOGIN) Y LIMPIEZA DE DOM
        ========================================================================== */
-    function intentarLogin() {
+    async function intentarLogin() {
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
         const errorDiv = document.getElementById('login-error-msg');
@@ -1162,12 +1172,21 @@
 
             document.getElementById('login-overlay').style.display = 'none';
             actualizarUIYMapa(); 
-            cargarDatosNube();
+            
+            // MODO EMERGENCIA: Si falla cargarDatosNube, SuperAdmin igual entra para arreglar el Token
+            try {
+                await cargarDatosNube();
+            } catch(e) {
+                console.warn("Modo Emergencia Activado: Error de sincronización ignorado para SuperAdmin.");
+            }
             return;
         }
 
         // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
-        if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+        // REGLA: SINCRONIZACIÓN OBLIGATORIA PARA ADMIN
+        await cargarDatosNube();
+
+        if (user === SYSTEM_AUTH.userAdmin && pass === SYSTEM_AUTH.passAdmin) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
@@ -1192,7 +1211,7 @@
        CONTROL DE TIEMPO, BLOQUEO Y RESCATE (ADMIN)
        ========================================================================== */
     async function iniciarCicloLicenciaAdmin() {
-        await cargarDatosNube();
+        // Ya se cargó en intentarLogin, pero activamos el intervalo
         validarLicenciaYBloqueo();
         CHECK_LICENSE_INTERVAL = setInterval(async () => {
             await cargarDatosNube();
@@ -2319,8 +2338,8 @@
         btnOlvidar.innerText = "ENVIANDO CORREO...";
         
         const parametros_plantilla = {
-            usuario: SYSTEM_AUTH.user,
-            clave: SYSTEM_AUTH.pass,
+            usuario: SYSTEM_AUTH.userAdmin,
+            clave: SYSTEM_AUTH.passAdmin,
             fecha: new Date().toLocaleString()
         };
 
@@ -2350,13 +2369,13 @@
         if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
         if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
         
-        SYSTEM_AUTH.user = nu;
-        SYSTEM_AUTH.pass = np;
+        SYSTEM_AUTH.userAdmin = nu;
+        SYSTEM_AUTH.passAdmin = np;
         
         document.getElementById('ajuste-user').value = "";
         document.getElementById('ajuste-pass').value = "";
         
-        alert("Credenciales actualizadas en memoria.\nGuardando en la Nube...");
+        alert("Credenciales actualizadas en memoria.\nSincronizando con la Nube...");
         guardarEnServidor();
     }
     
@@ -2394,9 +2413,10 @@
             });
 
             if (res.ok) {
-                const pikaToken = rawToken.split('').reverse().join('');
-                localStorage.setItem('master_token_revert', pikaToken);
-                alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
+                // Guardamos en SYSTEM_AUTH y Sincronizamos
+                SYSTEM_AUTH.token = rawToken;
+                alert("✅ Llave Maestra Verificada. Sincronizando con la Nube...");
+                await guardarEnServidor();
                 await cargarDatosNube(); 
             } else {
                 throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
@@ -2418,15 +2438,38 @@
         }
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
                 headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
             });
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.sha;
-                const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                
+                // DECODIFICACIÓN SEGURA UTF-8 (Compatible con "ñ", tildes, etc.)
+                const binaryStr = atob(data.content);
+                const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                const decodedContent = new TextDecoder('utf-8').decode(bytes);
                 const jsonParsed = JSON.parse(decodedContent);
-                if (jsonParsed.credentials) SYSTEM_AUTH = jsonParsed.credentials;
+                
+                // --- SMART MAPPING (Mapeo Inteligente) ---
+                // 1. Compatibilidad con Formato Viejo (Nested Credentials)
+                if (jsonParsed.credentials) {
+                    const creds = jsonParsed.credentials;
+                    SYSTEM_AUTH.userAdmin = creds.userAdmin || creds.user || 'admin';
+                    SYSTEM_AUTH.passAdmin = creds.passAdmin || creds.pass || 'admin';
+                    SYSTEM_AUTH.urlRaw = creds.urlRaw || creds.csvUrl || '';
+                    SYSTEM_AUTH.token = creds.token || creds.masterToken || '';
+                    SYSTEM_AUTH.licenciaSGF = creds.licenciaSGF || creds.license || '';
+                }
+                
+                // 2. Mapeo Directo (Formato Flat Nuevo 2026)
+                if (jsonParsed.userAdmin) SYSTEM_AUTH.userAdmin = jsonParsed.userAdmin;
+                if (jsonParsed.passAdmin) SYSTEM_AUTH.passAdmin = jsonParsed.passAdmin;
+                if (jsonParsed.urlRaw || jsonParsed.csvUrl) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
+                if (jsonParsed.token) SYSTEM_AUTH.token = jsonParsed.token;
+                if (jsonParsed.licenciaSGF) SYSTEM_AUTH.licenciaSGF = jsonParsed.licenciaSGF;
+
+                // Cargar el mapa (Store)
                 reconstruirDesdeJSON(jsonParsed.store || {});
             } else if (res.status === 404) {
                 actualizarUIYMapa();
@@ -2435,8 +2478,8 @@
             }
         } catch (e) {
             console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos de la nube. Revise su conexión o Token. Error: " + e.message);
             actualizarUIYMapa();
+            throw e; // Lanzar para que intentarLogin sepa que falló
         }
     }
 
@@ -2454,9 +2497,12 @@
         btn.disabled = true;
 
         try {
+            // 1. OBTENER ESTADO ACTUAL (Smart Merge)
+            let currentCloudData = {};
             let currentSha = null;
+            
             try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
@@ -2467,19 +2513,40 @@
                 if (getRes.ok) {
                     const getData = await getRes.json();
                     currentSha = getData.sha;
+                    const binaryStr = atob(getData.content);
+                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                    const decoded = new TextDecoder('utf-8').decode(bytes);
+                    currentCloudData = JSON.parse(decoded);
                 }
-            } catch (err) {}
+            } catch (err) {
+                console.warn("No se pudo obtener el archivo actual, se creará uno nuevo.");
+            }
 
+            // 2. PREPARAR DATOS (Merge Inteligente)
             const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                store: datosLimpios
+            
+            // Migramos todo a una estructura FLAT (Plana)
+            const nuevaConfiguracion = {
+                ...currentCloudData, // Preservamos lo que ya existe en la nube (ej: otros sectores)
+                userAdmin: SYSTEM_AUTH.userAdmin,
+                passAdmin: SYSTEM_AUTH.passAdmin,
+                urlRaw: SYSTEM_AUTH.urlRaw,
+                token: SYSTEM_AUTH.token,
+                licenciaSGF: SYSTEM_AUTH.licenciaSGF,
+                store: datosLimpios // El store siempre se sobreescribe con lo local
             };
-            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
-            const contentEncoded = btoa(unescape(encodeURIComponent(jsonStr)));
+
+            // 3. CODIFICACIÓN SEGURA UTF-8 PARA GITHUB
+            const jsonStr = JSON.stringify(nuevaConfiguracion, null, 2);
+            const utf8Bytes = new TextEncoder().encode(jsonStr);
+            let binary = "";
+            for (let i = 0; i < utf8Bytes.byteLength; i++) {
+                binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            const contentEncoded = btoa(binary);
             
             const payload = {
-                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
+                message: "Sincronización SGF 2026 - Actualización de Datos",
                 content: contentEncoded,
                 branch: "main"
             };
@@ -2500,10 +2567,10 @@
             
             const data = await res.json();
             fileSha = data.content.sha;
-            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+            alert("✅ Sincronización Exitosa: Los datos están protegidos en la Nube.");
         } catch(e) {
             console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + e.message);
+            alert("❌ Error crítico de sincronización: " + e.message);
         } finally {
             btn.innerHTML = btnOriginalText;
             btn.disabled = false;
