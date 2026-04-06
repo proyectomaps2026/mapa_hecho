@@ -1129,18 +1129,20 @@
 
     // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
     function getRealToken() {
+        // Prioridad: 1. Token en la Nube (SYSTEM_AUTH.token)
+        if (SYSTEM_AUTH && SYSTEM_AUTH.token) return SYSTEM_AUTH.token;
+        
+        // 2. Si no hay token directo, intentamos extraerlo de la licencia
+        const lic = obtenerCadenaLicencia();
+        const parsed = analizarLicenciaSGF(lic);
+        if (parsed.valid && !parsed.expired && parsed.tokenRev) {
+            return parsed.tokenRev.split('').reverse().join('');
+        }
+        
+        // 3. Casos especiales de recuperación (Solo SuperAdmin)
         if (CURRENT_ROLE === 'SUPERADMIN') {
-            // Prioridad: 1. Token en la Nube (SYSTEM_AUTH.token) | 2. Token Local (localStorage)
-            if (SYSTEM_AUTH && SYSTEM_AUTH.token) return SYSTEM_AUTH.token;
-            
             const tk = localStorage.getItem('master_token_revert');
             return tk ? tk.split('').reverse().join('') : null;
-        } else if (CURRENT_ROLE === 'ADMIN') {
-            const lic = obtenerCadenaLicencia();
-            const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired && parsed.tokenRev) {
-                return parsed.tokenRev.split('').reverse().join('');
-            }
         }
         return null;
     }
@@ -1266,7 +1268,7 @@
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
-        SYSTEM_AUTH.license = val;
+        SYSTEM_AUTH.licenciaSGF = val;
         alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
         const lockOv = document.getElementById('license-lock-overlay');
         if (lockOv) lockOv.style.display = 'none';
@@ -1281,7 +1283,7 @@
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
-        SYSTEM_AUTH.license = val;
+        SYSTEM_AUTH.licenciaSGF = val;
         alert("Licencia Renovada con éxito.");
         validarLicenciaYBloqueo();
     }
@@ -2527,6 +2529,7 @@
                 urlRaw: SYSTEM_AUTH.urlRaw,
                 token: SYSTEM_AUTH.token,
                 licenciaSGF: SYSTEM_AUTH.licenciaSGF,
+                license: SYSTEM_AUTH.licenciaSGF, // COMPATIBILIDAD CON VISOR (INDEX.HTML)
                 store: datosLimpios 
             };
 
