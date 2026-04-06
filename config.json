@@ -1,5 +1,8 @@
 {
   "token": "x7HN24x2ONNGrf9dpKQ0og67HYPcM3xKF7zw_phg",
   "urlRaw": "https://raw.githubusercontent.com/proyectomaps2026/mapa-censo/refs/heads/main/datos_censo.csv",
-  "licenciaSGF": "SGF-YOXX-x7HN24x2ONNGrf9dpKQ0og67HYPcM3xKF7zw_phg-MjAyNi0wNS0wNg"
+  "licenciaSGF": "SGF-YOXX-x7HN24x2ONNGrf9dpKQ0og67HYPcM3xKF7zw_phg-MjAyNi0wNS0wNg",
+  "userAdmin": "admin",
+  "passAdmin": "admin",
+  "store": {}
 }
