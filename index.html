@@ -1252,8 +1252,11 @@
             const jsonParsed = await resWeb.json();
             
             // Si hay una licencia en el config, intentamos usarla para validar
-            if (jsonParsed.license) {
-                const validacion = validarLicenciaSGF(jsonParsed.license);
+            const rawLic = jsonParsed.licenciaSGF || jsonParsed.license;
+            if (rawLic) {
+                // DESOFUSCACIÓN
+                const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
+                const validacion = validarLicenciaSGF(finalLic);
                 if (validacion.valid && !validacion.expired) {
                     _decon_token = validacion.token; // DescodificaciÃ³n exitosa
                     reconstruirDesdeJSON(jsonParsed.store || {});
@@ -1512,8 +1515,11 @@
             if (config.credentials) SYSTEM_AUTH = config.credentials;
             
             // Si hay licencia vÃ¡lida en la nube, entramos directo sin pedir login
-            if (config.license) {
-                const validacion = analizarLicenciaSGF(config.license);
+            const rawLic = config.licenciaSGF || config.license;
+            if (rawLic) {
+                // DESOFUSCACIÓN: Revertimos si está invertida
+                const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
+                const validacion = analizarLicenciaSGF(finalLic);
                 if (validacion.valid && !validacion.expired) {
                     document.getElementById('login-overlay').style.display = 'none';
                     reconstruirDesdeJSON(config.store || {});

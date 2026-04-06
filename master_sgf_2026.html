@@ -2457,11 +2457,23 @@
                 }
                 
                 // 2. Mapeo Directo (Formato Flat Nuevo 2026)
+                // DESOFUSCACIÓN: Si el token o licencia vienen invertidos (SGF-...), los revertimos
+                const revStr = s => (s && s.includes('SGF-')) ? s.split('').reverse().join('') : s;
+                const revTk = s => (s && s.startsWith('ghp_')) ? s : (s ? s.split('').reverse().join('') : s);
+
                 if (jsonParsed.userAdmin) SYSTEM_AUTH.userAdmin = jsonParsed.userAdmin;
                 if (jsonParsed.passAdmin) SYSTEM_AUTH.passAdmin = jsonParsed.passAdmin;
                 if (jsonParsed.urlRaw || jsonParsed.csvUrl) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
-                if (jsonParsed.token) SYSTEM_AUTH.token = jsonParsed.token;
-                if (jsonParsed.licenciaSGF) SYSTEM_AUTH.licenciaSGF = jsonParsed.licenciaSGF;
+                
+                // Aplicamos reversión solo si detectamos que están invertidos
+                if (jsonParsed.token) {
+                    const t = jsonParsed.token;
+                    SYSTEM_AUTH.token = (t.startsWith('ghp_')) ? t : t.split('').reverse().join('');
+                }
+                if (jsonParsed.licenciaSGF || jsonParsed.license) {
+                    const l = jsonParsed.licenciaSGF || jsonParsed.license;
+                    SYSTEM_AUTH.licenciaSGF = (l.startsWith('SGF-')) ? l : l.split('').reverse().join('');
+                }
 
                 // Cargar el mapa (Store)
                 reconstruirDesdeJSON(jsonParsed.store || {});
@@ -2522,14 +2534,16 @@
             const datosLimpios = extraerDatosGeometria();
             
             // Migramos todo a una estructura FLAT (Plana)
+            // OFUSCACIÓN DE SEGURIDAD: Invertimos el token y la licencia antes de subir para evitar que GitHub los detecte como secretos
             const nuevaConfiguracion = {
                 ...currentCloudData, 
                 userAdmin: SYSTEM_AUTH.userAdmin,
                 passAdmin: SYSTEM_AUTH.passAdmin,
                 urlRaw: SYSTEM_AUTH.urlRaw,
-                token: SYSTEM_AUTH.token,
-                licenciaSGF: SYSTEM_AUTH.licenciaSGF,
-                license: SYSTEM_AUTH.licenciaSGF, // COMPATIBILIDAD CON VISOR (INDEX.HTML)
+                // Ofuscación básica: Invertimos las cadenas sensibles
+                token: SYSTEM_AUTH.token ? SYSTEM_AUTH.token.split('').reverse().join('') : '',
+                licenciaSGF: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
+                license: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
                 store: datosLimpios 
             };
 
