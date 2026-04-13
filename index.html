@@ -583,8 +583,8 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">Â© 2026 - Sistema Protegido - AlcaldÃ­a Bolivariana de ColÃ³n</div>
 
-<!-- OVERLAY DE SEGURIDAD (LOGIN VISOR) -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+<!-- OVERLAY DE SEGURIDAD (LOGIN VISOR OCULTO) -->
+<div class="modal-overlay" id="login-overlay" style="display: none; background: var(--bg-dark); z-index: 9999;">
     <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
         <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
         <h2 class="modal-title" style="margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase;">ACCESO AL VISOR FISCAL</h2>
@@ -655,6 +655,9 @@
         </div>
 
     <div class="sidebar-footer">
+        <button class="btn btn-outline" id="btn-actualizar-nube" onclick="actualizarDatosDesdeNube()" style="background: var(--color-vigente); border-color:var(--color-vigente); color: white; margin-bottom: 10px;">
+            <i class="fas fa-sync-alt"></i> ACTUALIZAR DATOS DESDE LA NUBE
+        </button>
         <button class="btn btn-outline" onclick="descargarRespaldoTotalWord()" style="background: #0d6efd; border-color:#0d6efd; color: white;">
             ðŸ“„ DESCARGAR RESPALDO CERTIFICADO (WORD)
         </button>
@@ -1474,6 +1477,46 @@
         document.body.removeChild(link);
     }
     
+    async function actualizarDatosDesdeNube() {
+        const btn = document.getElementById('btn-actualizar-nube');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> ACTUALIZANDO...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if(!res.ok) throw new Error("Fallo de red al conectar con config.json");
+            const config = await res.json();
+            
+            // Reconstruir Store
+            reconstruirDesdeJSON(config.store || {});
+            
+            // Validar Licencia y actualizar banner
+            const rawLic = config.licenciaSGF || config.license;
+            if (rawLic) {
+                const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
+                const validacion = analizarLicenciaSGF(finalLic);
+                if (validacion.valid) {
+                    const banner = document.getElementById('license-banner');
+                    const diasSpan = document.getElementById('dias-restantes');
+                    banner.style.display = 'block';
+                    diasSpan.innerText = validacion.days;
+                    if (validacion.days <= 0) {
+                        bloquearSistemaModoForense();
+                    }
+                }
+            }
+            
+            alert("✅ DATOS ACTUALIZADOS CORRECTAMENTE DESDE LA NUBE.");
+        } catch(e) {
+            console.error(e);
+            alert("❌ ERROR AL ACTUALIZAR: " + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
@@ -1506,33 +1549,51 @@
         }
     }
 
-    // ARRANQUE DIRECTO CON CARGA DE CREDENCIALES (MODO VISOR AUTO-ACTIVADO)
+    // ARRANQUE DIRECTO (MODO VISOR PARA JEFES - SIN LOGIN)
     window.onload = () => {
-        // PROTOCOLO PORTABILIDAD TOTAL: Intentamos cargar config.json primero
+        console.log("SGF VISOR: Cargando configuraciÃ³n para Jefes...");
+        
         fetch(`${FILE_PATH}?t=${Date.now()}`)
         .then(res => res.json())
         .then(config => {
+            // Cargar credenciales si existen (aunque no las usemos para login, pueden ser Ãºtiles)
             if (config.credentials) SYSTEM_AUTH = config.credentials;
             
-            // Si hay licencia vÃ¡lida en la nube, entramos directo sin pedir login
+            // Cargar datos del Store inmediatamente
+            reconstruirDesdeJSON(config.store || {});
+            
+            // Procesar Licencia y Banner
             const rawLic = config.licenciaSGF || config.license;
             if (rawLic) {
-                // DESOFUSCACIÓN: Revertimos si está invertida
                 const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
                 const validacion = analizarLicenciaSGF(finalLic);
-                if (validacion.valid && !validacion.expired) {
-                    document.getElementById('login-overlay').style.display = 'none';
-                    reconstruirDesdeJSON(config.store || {});
-                    console.log("ACCESO CONCEDIDO: LICENCIA NUBE RECONOCIDA");
-                    return;
+                
+                if (validacion.valid) {
+                    const banner = document.getElementById('license-banner');
+                    const diasSpan = document.getElementById('dias-restantes');
+                    banner.style.display = 'block';
+                    diasSpan.innerText = validacion.days;
+                    
+                    if (validacion.expired) {
+                        console.warn("LICENCIA EXPIRADA");
+                        bloquearSistemaModoForense();
+                    } else {
+                        console.log(`Licencia vÃ¡lida: ${validacion.days} dÃ­as restantes.`);
+                    }
+                } else {
+                    console.error("Licencia no vÃ¡lida detectada en config.");
                 }
+            } else {
+                console.warn("No se encontrÃ³ licencia en el archivo de configuraciÃ³n.");
             }
-            // Si no hay licencia o expirÃ³, el login overlay se queda visible
-            document.getElementById('login-overlay').style.display = 'flex';
+            
+            // Aseguramos que el login overlay estÃ© oculto
+            document.getElementById('login-overlay').style.display = 'none';
         })
         .catch(e => {
-            console.error("Error en portabilidad inicial:", e);
-            document.getElementById('login-overlay').style.display = 'flex';
+            console.error("Error cargando config.json:", e);
+            // Si falla la carga, mostramos el bloqueo de red
+            bloquearSistemaPorLicencia();
         });
     };
 
