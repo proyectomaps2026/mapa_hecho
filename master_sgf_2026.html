@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -211,6 +210,17 @@
         .leaflet-editing-icon { border-radius: 50% !important; border: 2px solid var(--border-color) !important; background-color: #fff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 
         /* ==========================================================================
+           REPARACIÓN VISUAL DE PINCHETAS / MARCADORES
+           ========================================================================== */
+        .pin-fiscal-ayacucho {
+            background: transparent !important;
+            border: none !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ==========================================================================
            MODALES GENERALES
            ========================================================================== */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
@@ -272,9 +282,9 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
 
-<!-- VISOR DE IMAGEN COMPLETA (LIGHTBOX) -->
-<div id="visor-imagen-modal" class="modal-overlay" style="z-index: 9999999; display: none; background: rgba(0,0,0,0.95); flex-direction: column; justify-content: center; align-items: center;" onclick="this.style.display='none'">
-    <span style="position: absolute; top: 20px; right: 30px; color: var(--cyan-neon); font-size: 40px; font-weight: bold; cursor: pointer; text-shadow: 0 0 10px rgba(0,242,255,0.5);">&times;</span>
+<!-- VISOR DE IMAGEN COMPLETA (LIGHTBOX / AMPLIAR FOTO) -->
+<div id="visor-imagen-modal" class="modal-overlay" style="z-index: 9999999; background: rgba(0,0,0,0.95); flex-direction: column; justify-content: center; align-items: center; cursor: zoom-out;" onclick="this.style.display='none'">
+    <span style="position: absolute; top: 20px; right: 30px; color: var(--cyan-neon); font-size: 40px; font-weight: bold; text-shadow: 0 0 10px rgba(0,242,255,0.5);">&times;</span>
     <img id="visor-imagen-src" src="" style="max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); object-fit: contain;">
 </div>
 
@@ -573,20 +583,20 @@
     let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
     let CHECK_LICENSE_INTERVAL = null;
 
-    // PROTOCOLO PORTABILIDAD TOTAL: Carga inicial de config.json (sin token, vÃ­a fetch directo)
+    // PROTOCOLO PORTABILIDAD TOTAL: Carga inicial de config.json (sin token, vía fetch directo)
     (async function precargarConfiguracion() {
         try {
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
                 const config = await res.json();
                 
-                // Mapeo Inteligente con DesofuscaciÃ³n
+                // Mapeo Inteligente con Desofuscación
                 if (config.userAdmin) SYSTEM_AUTH.userAdmin = config.userAdmin;
                 if (config.passAdmin) SYSTEM_AUTH.passAdmin = config.passAdmin;
                 if (config.urlRaw || config.csvUrl) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
                 if (config.wordConfig) SYSTEM_AUTH.wordConfig = config.wordConfig;
                 
-                // DesofuscaciÃ³n de Seguridad (Reverse)
+                // Desofuscación de Seguridad (Reverse)
                 if (config.token) {
                     SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
                 }
@@ -594,10 +604,10 @@
                     const l = config.licenciaSGF || config.license;
                     SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
                 }
-                console.log("SGF: ConfiguraciÃ³n en la Nube reconocida exitosamente.");
+                console.log("SGF: Configuración en la Nube reconocida exitosamente.");
             }
         } catch (e) {
-            console.warn("SGF: No se pudo precargar la configuraciÃ³n, se usarÃ¡n valores locales.");
+            console.warn("SGF: No se pudo precargar la configuración, se usarán valores locales.");
         }
     })();
 
@@ -1110,7 +1120,7 @@
         if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
         if(!capaActiva) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
         if(!STORE[capaActiva].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
-        if(STORE[capaActiva].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("⚠️ CAPA PROTEGIDA: Solo el SuperAdmin puede agregar puntos en esta capa maestra. Por favor, clónela para trabajar.");
+        if(STORE[capaActiva].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("⚠️ CAPA PROTEGIDA: Solo el Super Admin puede agregar puntos en esta capa maestra. Por favor, clónela para trabajar.");
         
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
@@ -1230,7 +1240,7 @@
     // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
     function eliminarDelClon(idSector, idFisico) {
         if(modoLecturaGlobal) return;
-        if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Registro Protegido en Capa Maestra.");
+        if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Capa Maestra (Protegida). No se pueden eliminar registros de esta capa.");
         if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
         
         const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
@@ -1258,8 +1268,7 @@
                 capasSectores[idSector] = new L.FeatureGroup();
             }
 
-            capasSectores[idSector].clearLayers();
-
+            // NOTA: Se eliminó el clearLayers() destructivo. Las siguientes líneas controlan los marcadores con inteligencia.
             const gruposPorEstatus = {};
             let hayResultadosBusqueda = false;
 
@@ -1595,7 +1604,7 @@
             </div>
             
             <div class="form-group">
-                <span class="form-label" style="color: #656d76;">COLOR DE PINCHETA (PERSONALIZADO)</span>
+                <span class="form-label" style="color: #656d76;">COLOR DE MARCADOR (PERSONALIZADO)</span>
                 <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
             </div>
 
@@ -1805,7 +1814,7 @@
         STORE[newId] = {
             nombreSector: nombre.toUpperCase(),
             visible: true,
-            isMaster: false,
+            isMaster: false, // Las copias clonadas nacen DESBLOQUEADAS para que el Admin pueda modificarlas
             isExpanded: true,
             visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus)),
             coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus)),
@@ -1837,6 +1846,7 @@
         
         capaActiva = newId;
         actualizarUIYMapa();
+        alert("✅ Capa Clonada. Usted tiene control total sobre este clon.");
     }
     
     function limpiarSector(idSector) {
@@ -1874,6 +1884,8 @@
 
     function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
         if(modoLecturaGlobal) return alert("Desactive el Modo Lectura para eliminar registros.");
+        if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Capa Maestra (Protegida). No se pueden eliminar registros de esta capa.");
+        
         const contenedor = document.getElementById(idContenedor);
         if (!contenedor) return;
         const seleccionados = contenedor.querySelectorAll('.chk-registro:checked');
@@ -2315,14 +2327,27 @@
                 }
                 const colorAUsar = reg.colorPersonalizado || colorBase;
                 
-                if (reg.tipoGeometria === 'marker' && reg.coords) {
-                    const latParseada = parseFloat(reg.coords.lat);
-                    const lngParseada = parseFloat(reg.coords.lng);
+                if (reg.tipoGeometria === 'marker') {
+                    // LECTURA DE COORDENADAS A PRUEBA DE FALLOS
+                    let latParseada, lngParseada;
+                    if (reg.coords && reg.coords.lat !== undefined) {
+                        latParseada = parseFloat(reg.coords.lat);
+                        lngParseada = parseFloat(reg.coords.lng);
+                    } else if (reg._latlng) { 
+                        latParseada = parseFloat(reg._latlng.lat);
+                        lngParseada = parseFloat(reg._latlng.lng);
+                    } else {
+                        return; // Continuar al siguiente si no hay coordenadas válidas
+                    }
+
+                    if(isNaN(latParseada) || isNaN(lngParseada)) return;
+
                     capa = L.marker([latParseada, lngParseada], { 
                         icon: crearPinFiscal(colorAUsar), 
                         draggable: !modoLecturaGlobal 
                     });
                     capa.on('dragend', () => actualizarUIYMapa());
+                    
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
                     const coordenadasPoligono = analizarCoordenadasProfundas(reg.coords);
                     capa = L.polygon(coordenadasPoligono, { 
@@ -2363,7 +2388,7 @@
     let RAW_CSV_HEADERS = [];
 
     async function cargarRawCSV() {
-        if(!SYSTEM_AUTH.urlRaw) return alert("❌ No se ha configurado la URL del RAW (CSV) en los Ajustes de Super Admin.");
+        if(!SYSTEM_AUTH.urlRaw) return alert("❌ No se ha configurado la URL del RAW (CSV) en los Ajustes de Súper Admin.");
         
         const btn = document.getElementById('btn-cargar-raw');
         const originalText = btn.innerHTML;
@@ -2510,9 +2535,6 @@
                     draggable: !modoLecturaGlobal 
                 });
                 
-                // REPARACIÓN CRÍTICA 1: AÑADIR AL MAPA
-                capa.addTo(mapa);
-                
                 const newIdFisico = L.stamp(capa);
                 
                 const datosGenerales = {
@@ -2533,7 +2555,7 @@
                     tipoGeometria: 'marker',
                     capaLeaflet: capa,
                     colorPersonalizado: colorPunto, // Color atado al estatus
-                    visibleIndividual: true, // REPARACIÓN CRÍTICA 3
+                    visibleIndividual: true, 
                     _modoPopup: 'lectura',
                     datosGenerales: datosGenerales,
                     camposOcultos: []
@@ -2558,11 +2580,11 @@
         });
 
         // Ocultar cualquier modal de CSV abierto
-        document.getElementById('csv-mapping-modal').style.display = 'none';
+        const m1 = document.getElementById('csv-mapping-modal');
+        if(m1) m1.style.display = 'none';
         const m2 = document.getElementById('modal-mapeo-csv');
         if(m2) m2.style.display = 'none';
 
-        // REPARACIÓN CRÍTICA 2 Y 3: VARIABLE CORRECTA Y ACTUALIZAR UI
         capaActiva = idSector;
         actualizarUIYMapa();
         
