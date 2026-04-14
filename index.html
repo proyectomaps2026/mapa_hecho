@@ -63,6 +63,7 @@
 
         .leaflet-top.leaflet-right { margin-top: 100px !important; z-index: 10001 !important; margin-right: 15px !important; }
 
+        /* BARRA SUPERIOR */
         .top-nav { 
             top: 15px; left: 15px; right: 15px; height: 64px; display: flex; 
             align-items: center; padding: 0 20px; gap: 15px; justify-content: space-between; 
@@ -83,7 +84,7 @@
             align-items: center; font-size: 18px; background: rgba(0,0,0,0.4); 
             border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; transition: 0.2s; 
         }
-        .tool-btn:hover, .tool-btn.active { border-color: var(--cyan-neon); color: var(--cyan-neon); background: rgba(0, 242, 255, 0.1); }
+        .tool-btn:hover { border-color: var(--cyan-neon); color: var(--cyan-neon); background: rgba(0, 242, 255, 0.1); }
 
         @media print {
             .ui-layer, .leaflet-control-container, .modal-overlay, #mira-captura { display: none !important; }
@@ -91,51 +92,48 @@
             body, html { overflow: visible; background: white; }
         }
 
-        .toggle-container { 
-            display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 800; color: #a5b0bf; 
-            background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border-color); 
-        }
-        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #da3633; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--color-vigente); }
-        input:checked + .slider:before { transform: translateX(16px); }
-
         /* SIDEBAR (PANEL MAESTRO) */
         #sidebar { top: 95px; left: 15px; bottom: 20px; width: 420px; display: flex; flex-direction: column; overflow: hidden; }
-        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
+        
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); position: relative; }
         .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
-        .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: #6e7681; font-weight: 800; letter-spacing: 0.5px; }
+        .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; }
 
+        /* ETIQUETA DE LICENCIA */
+        .visor-license-box {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid #555;
+            color: white; padding: 10px; border-radius: 8px; font-size: 12px; margin-top: 15px;
+            font-weight: 800; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
         .layers-container { flex: 1; overflow-y: auto; padding: 15px; }
         .layers-container::-webkit-scrollbar { width: 6px; }
         .layers-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
+        /* TARJETAS DE SECTOR */
         .sector-card { margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.3); overflow: hidden; transition: all 0.3s ease; }
         .sector-card.is-active { border-color: var(--cyan-neon); background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); }
         .sector-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent; cursor: pointer; }
         .sector-header:hover { background: rgba(255,255,255,0.05); }
+        
         .sector-title-group { display: flex; align-items: center; gap: 10px; }
         .sector-controls { display: flex; align-items: center; gap: 8px; }
         
         .radio-active { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 50%; outline: none; cursor: pointer; position: relative; }
         .radio-active:checked { border-color: var(--cyan-neon); }
         .radio-active:checked::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; background: var(--cyan-neon); border-radius: 50%; }
+        
+        .sector-title { font-size: 13px; font-weight: 800; color: var(--text-main); cursor: pointer; border:none; background:transparent; outline:none; font-family:inherit; width: 140px; text-transform:uppercase; }
         .sector-trash { padding: 5px; font-size: 13px; color: #6e7681; cursor: pointer; transition: 0.2s; }
         .sector-trash:hover { color: var(--color-vencida); text-shadow: 0 0 10px var(--color-vencida); }
 
+        /* ACORDEÓN DE ESTATUS */
         .status-group { border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
         .status-header { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
         .status-header:hover { background: rgba(255,255,255,0.04); }
-        .status-row-label { flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .status-count { background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: var(--text-main); border: 1px solid rgba(255, 255, 255, 0.2); text-align: center; }
-
-        .status-row-actions { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
-        .status-color-wrap { width: 20px; height: 20px; flex-shrink: 0; border-radius: 4px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }
-        .status-cat-color-input { -webkit-appearance: none; appearance: none; display: block; width: 22px; height: 22px; margin: -1px 0 0 -1px; padding: 0; border: none; cursor: pointer; }
-        .status-cat-color-input::-webkit-color-swatch-wrapper { padding: 0; }
-        .status-cat-color-input::-webkit-color-swatch { border: none; }
+        .status-row-label { flex: 1; min-width: 0; font-weight: 600; font-size: 12px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .status-count { background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: var(--text-main); text-align: center; }
 
         .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
         .local-row { padding: 8px 16px 8px 24px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
@@ -162,11 +160,7 @@
         .form-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
         .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #000; background: transparent; outline: none; }
         .form-input:focus { color: var(--color-vigente); }
-        .input-oculto { opacity: 0.6; font-family: monospace; letter-spacing: 1px; }
-
         .form-select { width: 100%; padding: 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; outline: none; cursor: pointer; }
-        .eye-btn { position: absolute; right: 5px; top: 20px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; z-index: 10; padding: 5px; }
-        .eye-btn:hover, .eye-btn.is-hidden { color: var(--color-vencida); }
 
         .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; transition: 0.2s; }
         .btn-popup-action:hover { filter: brightness(1.1); }
@@ -174,22 +168,40 @@
         .btn-edit { background: var(--cyan-neon); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); }
         .btn-del { background: var(--color-vencida); margin-top: 15px; }
 
-        .readonly-mode .form-input { pointer-events: none; color: #555; }
-        .readonly-mode .form-select { pointer-events: none; background: #eee; }
-        .readonly-mode .eye-btn { display: none; }
-        .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
+        /* VÉRTICES EDICIÓN */
+        .leaflet-editing-icon {
+            border-radius: 50% !important; border: 2px solid var(--border-color) !important;
+            background-color: #fff !important; width: 12px !important; height: 12px !important;
+            margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
 
-        .leaflet-editing-icon { border-radius: 50% !important; border: 2px solid var(--border-color) !important; background-color: #fff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        /* REPARACIÓN VISUAL DE PINCHETAS */
+        .pin-fiscal-ayacucho {
+            background: transparent !important;
+            border: none !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
+        /* REPORTES */
         .audit-report.glass-panel { padding: 20px 22px; margin: 0; text-align: left; }
         .audit-title { margin: 0 0 14px; font-size: 12px; font-weight: 900; color: var(--color-temporal); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; }
         .audit-resumen-cuerpo { margin: 0; color: var(--text-main); font-size: 13px; font-weight: 600; line-height: 1.55; }
         .audit-total-inline { color: var(--cyan-neon); font-weight: 800; white-space: nowrap; }
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { width: 420px; padding: 30px; max-height: 90vh; overflow-y: auto; text-align: center; }
+        /* MODAL (CAPTURA Y BLOQUEO) */
+        .notif-modal {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(18, 22, 29, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--cyan-neon);
+            color: white; padding: 30px 40px; border-radius: 12px; font-size: 16px; font-weight: 800;
+            z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
+            text-align: center; display: none; flex-direction: column; gap: 15px;
+        }
 
-        .notif-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(18, 22, 29, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--cyan-neon); color: white; padding: 30px 40px; border-radius: 12px; font-size: 16px; font-weight: 800; z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4); text-align: center; display: none; flex-direction: column; gap: 15px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+        .modal-box { width: 420px; padding: 32px 28px; max-height: 90vh; overflow-y: auto; text-align: center; border-top: 5px solid var(--color-vencida); }
+
         .footer-protegido { position: fixed; bottom: 5px; right: 15px; font-size: 9px; color: rgba(255,255,255,0.4); z-index: 9999; pointer-events: none; font-weight: 600; }
     </style>
 </head>
@@ -197,6 +209,22 @@
 
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
+
+<!-- MODAL BLOQUEO TOTAL POR LICENCIA -->
+<div id="license-lock-overlay" class="modal-overlay">
+    <div class="glass-panel modal-box">
+        <i class="fas fa-lock" style="font-size: 44px; color: var(--color-vencida); margin-bottom: 16px;"></i>
+        <h1 id="lock-title" style="color: var(--color-vencida); font-weight: 900; margin: 0 0 12px 0; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase;">SISTEMA BLOQUEADO</h1>
+        <p id="lock-desc" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.</p>
+        <button type="button" class="btn btn-outline" style="width: 100%; padding: 14px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
+    </div>
+</div>
+
+<!-- VISOR DE IMAGEN COMPLETA (LIGHTBOX / AMPLIAR FOTO) -->
+<div id="visor-imagen-modal" class="modal-overlay" style="z-index: 9999999; background: rgba(0,0,0,0.95); flex-direction: column; justify-content: center; align-items: center; cursor: zoom-out;" onclick="this.style.display='none'">
+    <span style="position: absolute; top: 20px; right: 30px; color: var(--cyan-neon); font-size: 40px; font-weight: bold; text-shadow: 0 0 10px rgba(0,242,255,0.5);">&times;</span>
+    <img id="visor-imagen-src" src="" style="max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); object-fit: contain;">
+</div>
 
 <!-- MODALES DEL FLUJO DE CAPTURA -->
 <div id="capture-modal" class="notif-modal">
@@ -209,16 +237,6 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
-<!-- BLOQUEO POR LICENCIA -->
-<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.78); backdrop-filter: blur(10px); align-items: center; justify-content: center;">
-    <div class="glass-panel modal-box">
-        <i class="fas fa-lock" style="font-size: 44px; color: var(--color-vencida); margin-bottom: 16px;"></i>
-        <h1 id="lock-title" style="color: var(--color-vencida); font-weight: 900; margin: 0 0 12px 0; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase;">SISTEMA BLOQUEADO</h1>
-        <p id="lock-desc" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.</p>
-        <button type="button" class="btn btn-outline" style="width: 100%; padding: 14px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
-    </div>
-</div>
-
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
@@ -228,14 +246,7 @@
     </div>
     
     <div class="tools-container">
-        <div class="toggle-container" title="Bloquea la edición para evitar cambios accidentales">
-            <label class="switch">
-                <input type="checkbox" id="toggle-readonly" onchange="alternarModoLectura()">
-                <span class="slider"></span>
-            </label>
-            SOLO LECTURA
-        </div>
-
+        <!-- Herramientas de dibujo locales para simulaciones -->
         <button class="btn tool-btn" id="btn-draw-marker" title="Simular Nuevo Contribuyente" onclick="activarHerramienta('punto')">
             <i class="fas fa-map-marker-alt"></i>
         </button>
@@ -262,92 +273,69 @@
 
     <div class="sidebar-header">
         <h1>VISOR EJECUTIVO</h1>
-        <div id="visor-license-box" style="margin-top: 10px; font-size: 11px; padding: 6px; background: rgba(255,255,255,0.05); border-radius: 6px; text-align: center; color: var(--cyan-neon); font-weight: 800;">
-            <i class="fas fa-spinner fa-spin"></i> Verificando Licencia...
+        <p id="indicador-capa-activa">HACIENDA MUNICIPAL</p>
+        
+        <!-- ETIQUETA LICENCIA DEL SISTEMA CLOUD -->
+        <div class="visor-license-box" id="visor-license-box">
+            <i class="fas fa-key"></i> <span id="visor-license-text">Licencia del Sistema Cloud: Verificando...</span>
         </div>
-        <p id="indicador-capa-activa" style="margin-top: 10px;">HACIENDA MUNICIPAL - MODO LECTURA</p>
     </div>
     
     <div class="layers-container" id="arbol-datos"></div>
 
     <div class="sidebar-footer">
         <button class="btn btn-outline" onclick="crearNuevoSector()" style="grid-column: span 1;">
-            <i class="fas fa-folder-plus"></i> CREAR SECTOR
+            <i class="fas fa-folder-plus"></i> CREAR CARPETA (SIMULACIÓN)
         </button>
         <button class="btn btn-outline" onclick="descargarRespaldoWord()" style="grid-column: span 1; border-color: var(--cyan-neon); color: var(--cyan-neon);">
-            <i class="fas fa-file-word"></i> DESCARGAR RESPALDO
+            <i class="fas fa-file-word"></i> DESCARGAR RESPALDO WORD
         </button>
     </div>
 </aside>
-
-<script>
-    /* ==========================================================================
-       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
-       ========================================================================== */
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
-            e.preventDefault();
-        }
-    });
-
-    setInterval(function() {
-        const widthThreshold = window.outerWidth - window.innerWidth > 160;
-        const heightThreshold = window.outerHeight - window.innerHeight > 160;
-        if(widthThreshold || heightThreshold) {
-            console.clear();
-            document.getElementById('map').style.display = 'none';
-            document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
-        }
-    }, 1000);
-</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <script>
     /* ==========================================================================
-       VARIABLES MAESTRAS
+       FASE 0: VARIABLES DE CONFIGURACIÓN Y ESTADO
        ========================================================================== */
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_hecho'; 
+    const GITHUB_REPO = 'mapa_hecho'; // REPOSITORIO MÁSTER CORRECTO
     const FILE_PATH = 'config.json';
     
-    let SYSTEM_AUTH = { token: '', licenciaSGF: '' }; 
     let STORE = {}; 
     let capasSectores = {};
     let capaActivaId = null; 
-    let modoLecturaGlobal = false;
     let textoFiltroGlobal = "";
 
-    const DICCIONARIO_ESTATUS = {
-        "VIGENTE": { color: "#238636" },
-        "VENCIDA": { color: "#fbbc04" },
-        "TEMPORAL": { color: "#0078ff" },
-        "SIN LICENCIA": { color: "#da3633" },
-        "CENSO / NUEVO": { color: "#00f2ff" },
-        "SIN CATEGORÍA": { color: "#6e7681" }
+    // Objeto maestro de autenticación
+    let SYSTEM_AUTH = { 
+        token: '', 
+        licenciaSGF: '' 
     };
 
-    /* ==========================================================================
-       MOTOR DE LICENCIAS Y SEGURIDAD (LECTURA)
-       ========================================================================== */
+    // Evitar inspección básica
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Analizador de licencia SGF
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
         if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
 
-        const usuario = parts[1];
-        const tokenRev = parts[2];
         let dateStr;
-        
         try {
-            dateStr = atob(parts[3]); 
+            let b64 = parts[3].trim();
+            while (b64.length % 4 !== 0) b64 += '=';
+            dateStr = atob(b64); 
         } catch(e) {
             return { valid: false, expired: true, days: 0 };
         }
 
+        // LIMPIEZA DE GUIONES
         dateStr = dateStr.replace(/[-/]/g, '');
+
         if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
         
         const expYear = parseInt(dateStr.substring(0,4));
@@ -359,47 +347,46 @@
         const diffTime = expDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        return { valid: true, expired: diffDays <= 0, days: diffDays, tokenRev: tokenRev, usuario: usuario };
-    }
-
-    function obtenerEstatusParaCuadro(reg) {
-        const d = reg.datosGenerales || {};
-        const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '] || d['ESTATUS'];
-        if (v != null && String(v).trim() !== '') return String(v).trim().toUpperCase();
-        return 'SIN CATEGORÍA';
-    }
-
-    function escHtmlBasico(s) {
-        return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return { 
+            valid: true, 
+            expired: diffDays <= 0, 
+            days: diffDays 
+        };
     }
 
     /* ==========================================================================
-       ARRANQUE AUTÓNOMO DEL VISOR (CONEXIÓN Y LECTURA)
+       CONEXIÓN DIRECTA Y CARGA DEL MAPA (SIN CACHÉ)
        ========================================================================== */
     async function iniciarSistemaVisor() {
+        const badgeLicencia = document.getElementById('visor-license-text');
+        const boxLicencia = document.getElementById('visor-license-box');
         const lockOverlay = document.getElementById('license-lock-overlay');
         const lockTitle = document.getElementById('lock-title');
         const lockDesc = document.getElementById('lock-desc');
-        const visorLic = document.getElementById('visor-license-box');
+
         let configFinal = null;
 
-        // 1. EXTRAER TOKEN Y LICENCIA LOCALMENTE (Opcional, de fallback)
+        // PASO 1: EXTRAER EL TOKEN DESDE EL CONFIG.JSON LOCAL O DE PAGES
         try {
             const resLocal = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (resLocal.ok) {
                 const config = await resLocal.json();
-                if (config.token) SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
+                
+                if (config.token) {
+                    SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
+                }
                 if (config.licenciaSGF || config.license) {
                     const l = config.licenciaSGF || config.license;
                     SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
                 }
-                configFinal = config;
+                
+                configFinal = config; 
             }
         } catch (e) {
-            console.warn("No se pudo precargar localmente.");
+            console.warn("No se pudo precargar localmente.", e);
         }
 
-        // 2. CONECTAR A GITHUB PARA DATOS EN VIVO (Bypass Caché)
+        // PASO 2: CONECTAR A LA API DE GITHUB (Asegura actualización en vivo evadiendo caché)
         if (SYSTEM_AUTH.token) {
             try {
                 const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
@@ -418,587 +405,239 @@
                     const decodedContent = new TextDecoder('utf-8').decode(bytes);
                     
                     configFinal = JSON.parse(decodedContent);
+                    console.log("✅ Datos obtenidos EN TIEMPO REAL desde el servidor.");
                     
-                    if (configFinal.token) {
-                        const t = configFinal.token;
-                        SYSTEM_AUTH.token = (t.startsWith('ghp_')) ? t : t.split('').reverse().join('');
-                    }
                     if (configFinal.licenciaSGF || configFinal.license) {
                         const l = configFinal.licenciaSGF || configFinal.license;
                         SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
                     }
                 }
             } catch(e) {
-                console.warn("Fallo API GitHub. Usando fallback...");
+                console.warn("Fallo API GitHub. Intentando fallback...", e);
             }
         }
 
+        // SI TODO FALLA, CORTAMOS CON ERROR
         if (!configFinal) {
+            badgeLicencia.innerHTML = "Error de Lectura";
+            boxLicencia.style.background = "rgba(218, 54, 51, 0.2)";
+            boxLicencia.style.borderColor = "var(--color-vencida)";
+            boxLicencia.style.color = "var(--color-vencida)";
+            
+            lockTitle.innerText = "ERROR DE CONEXIÓN";
+            lockDesc.innerHTML = "No se pudo leer la base de datos del censo.<br>Verifique su conexión a internet.";
             if(lockOverlay) lockOverlay.style.display = 'flex';
-            if(lockTitle) lockTitle.innerText = "ERROR DE CONEXIÓN";
-            if(lockDesc) lockDesc.innerHTML = "No se pudo leer la base de datos.<br>Verifique su conexión a internet.";
             return;
         }
 
-        // 3. VALIDAR LA LICENCIA MAESTRA
+        // PASO 3: VALIDAR LA LICENCIA
         const estatusLicencia = analizarLicenciaSGF(SYSTEM_AUTH.licenciaSGF);
+        
         if (!estatusLicencia.valid || estatusLicencia.expired) {
-            if(lockTitle) lockTitle.innerText = "SISTEMA BLOQUEADO";
-            if(lockDesc) lockDesc.innerHTML = "Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.";
+            // BLOQUEAR SISTEMA
+            badgeLicencia.innerHTML = "LICENCIA VENCIDA O INACTIVA";
+            boxLicencia.style.background = "rgba(218, 54, 51, 0.2)";
+            boxLicencia.style.borderColor = "var(--color-vencida)";
+            boxLicencia.style.color = "var(--color-vencida)";
+            
+            lockTitle.innerText = "SISTEMA BLOQUEADO";
+            lockDesc.innerHTML = "Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.";
             if(lockOverlay) lockOverlay.style.display = 'flex';
-            if(visorLic) {
-                visorLic.innerHTML = `<i class="fas fa-ban"></i> LICENCIA VENCIDA`;
-                visorLic.style.color = 'var(--color-vencida)';
-            }
         } else {
+            // ACTIVAR SISTEMA
+            badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${estatusLicencia.days} Días`;
+            boxLicencia.style.background = "rgba(35, 134, 54, 0.2)";
+            boxLicencia.style.borderColor = "var(--color-vigente)";
+            boxLicencia.style.color = "white";
             if(lockOverlay) lockOverlay.style.display = 'none';
-            if(visorLic) {
-                visorLic.innerHTML = `<i class="fas fa-key"></i> Licencia Cloud: ${estatusLicencia.days} Días`;
-                visorLic.style.color = 'var(--cyan-neon)';
-            }
         }
 
-        // 4. CONSTRUIR EL MAPA
+        // PASO 4: CONSTRUIR EL MAPA SIEMPRE (Incluso bloqueado para que el Word sirva)
         reconstruirDesdeJSON(configFinal.store || {});
     }
 
     /* ==========================================================================
-       CONFIGURACIÓN DEL MAPA LEAFLET
+       CONSTRUCTOR DEL MAPA (Dibuja los pines leídos del JSON con lectura segura)
        ========================================================================== */
-    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
-    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - VISOR');
-
-    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
-    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
-    googleSat.addTo(mapa); 
-
-    const capaMaestraSectores = L.featureGroup().addTo(mapa);
-    L.control.layers({"Vista Satélite": googleSat, "Vista Mapa Urbano": googleStreets}, {"Sectores Digitalizados": capaMaestraSectores}, {position: 'topright'}).addTo(mapa);
-
-    const crearPinFiscal = (color) => L.divIcon({ 
-        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
-        className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
-    });
-
-    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
-    const herramientaPoligono = new L.Draw.Polygon(mapa, { shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' } });
-
-    function activarHerramienta(tipo) {
-        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
-        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
-        if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
-        tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
-    }
-
-    mapa.on(L.Draw.Event.CREATED, (evento) => {
-        const idFisico = L.stamp(evento.layer);
+    function reconstruirDesdeJSON(storeData) {
+        STORE = {};
+        for(let id in capasSectores) capaMaestraSectores.removeLayer(capasSectores[id]);
         
-        if(evento.layer instanceof L.Marker) {
-            if (!modoLecturaGlobal) evento.layer.options.draggable = true;
-            evento.layer.on('dragend', () => actualizarUIYMapa());
-        } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
-            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
-            if (!modoLecturaGlobal) evento.layer.editing.enable();
-            evento.layer.on('edit', () => actualizarUIYMapa());
-        }
+        const analizarCoordenadasProfundas = (coords) => {
+            if (Array.isArray(coords)) return coords.map(analizarCoordenadasProfundas);
+            else if (coords && coords.lat !== undefined && coords.lng !== undefined) return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
+            return coords;
+        };
 
-        STORE[capaActivaId].registros.push({
-            idFisico: idFisico, tipoGeometria: evento.layerType, capaLeaflet: evento.layer, colorPersonalizado: null, visibleIndividual: true, _modoPopup: 'lectura',
-            datosGenerales: { "Contribuyente": "NUEVO ESTABLECIMIENTO", "RIF": "J-00000000-0", "Estatus": "CENSO / NUEVO", "Link Fotografía": "" }, camposOcultos: []
-        });
+        for(let idSector in storeData) {
+            const sec = storeData[idSector];
+            capasSectores[idSector] = new L.FeatureGroup();
+            
+            STORE[idSector] = {
+                nombreSector: sec.nombreSector, 
+                visible: sec.visible !== false, 
+                isMaster: true, // Siempre TRUE porque viene de la nube, no se puede borrar
+                isExpanded: true,
+                coloresPorEstatus: sec.coloresPorEstatus || {}, 
+                registros: []
+            };
 
-        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
-        actualizarUIYMapa();
-        setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
-        setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
-    });
-
-    /* ==========================================================================
-       LÓGICA DEL ÁRBOL (UI Y MAPA)
-       ========================================================================== */
-    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
-
-    function alternarModoLectura() {
-        modoLecturaGlobal = document.getElementById('toggle-readonly').checked;
-        const bMarker = document.getElementById('btn-draw-marker');
-        const bPoly = document.getElementById('btn-draw-poly');
+            if(sec.registros) {
+                sec.registros.forEach(reg => {
+                    try {
+                        let capa;
+                        const estActual = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
+                        const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                        let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
+                        
+                        if (reg.tipoGeometria === 'marker') {
+                            // LECTURA DE COORDENADAS A PRUEBA DE FALLOS
+                            let latParseada, lngParseada;
+                            if (reg.coords && reg.coords.lat !== undefined) {
+                                latParseada = parseFloat(reg.coords.lat);
+                                lngParseada = parseFloat(reg.coords.lng);
+                            } else if (reg._latlng) { 
+                                latParseada = parseFloat(reg._latlng.lat);
+                                lngParseada = parseFloat(reg._latlng.lng);
+                            } else {
+                                return; 
+                            }
         
-        if(modoLecturaGlobal) {
-            bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
-            bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
-            if(mapa._popup) mapa.closePopup(); 
-        } else {
-            bMarker.style.opacity = "1"; bMarker.style.pointerEvents = "auto";
-            bPoly.style.opacity = "1"; bPoly.style.pointerEvents = "auto";
-        }
-
-        for(let id in STORE) {
-            STORE[id].registros.forEach(reg => {
-                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    if (modoLecturaGlobal) { if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.disable(); } 
-                    else { if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.enable(); }
-                } else if (reg.tipoGeometria === 'marker') {
-                    if (modoLecturaGlobal) { if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.disable(); } 
-                    else { if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.enable(); }
-                }
-            });
-        }
-    }
-
-    function ejecutarMotorBusqueda() { textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase(); actualizarUIYMapa(); }
-    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
-    function toggleVisibilidadCapa(idSector, isVisible) { STORE[idSector].visible = isVisible; actualizarUIYMapa(); }
-    function toggleVisibilidadIndividual(idSector, idFisico, isVisible) { const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)); if(reg) { reg.visibleIndividual = isVisible; actualizarUIYMapa(); } }
-    function toggleVisibilidadEstatus(idSector, estatus, isVisible) { if (!STORE[idSector]) return; if (!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {}; STORE[idSector].visibilidadPorEstatus[estatus] = isVisible; actualizarUIYMapa(); }
-    function actualizarNombreSector(id, valor) { if(!STORE[id]) return; STORE[id].nombreSector = valor.toUpperCase(); actualizarUIYMapa(); }
-    function toggleSectorBodyManual(e, idSector) { if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return; if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = true; STORE[idSector].isExpanded = !STORE[idSector].isExpanded; actualizarUIYMapa(); }
-    function enfocarSector(idSector) { if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero."); const limites = capasSectores[idSector].getBounds(); if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] }); }
-
-    function crearNuevoSector() {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        const nombre = prompt("Nombre del Nuevo Sector de Simulación:");
-        if(!nombre) return;
-        const id = 'sec_' + Date.now();
-        capasSectores[id] = new L.FeatureGroup();
-        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, isMaster: false, isExpanded: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
-        capaActivaId = id;
-        actualizarUIYMapa();
-    }
-
-    function clonarSector(idSectorOriginal) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        const sectorOriginal = STORE[idSectorOriginal];
-        const nombre = prompt("Nombre de la nueva capa clonada:", sectorOriginal.nombreSector + " (SIMULACIÓN)");
-        if(!nombre) return;
+                            if(isNaN(latParseada) || isNaN(lngParseada)) return;
         
-        const newId = 'sec_' + Date.now();
-        capasSectores[newId] = new L.FeatureGroup();
-        STORE[newId] = { nombreSector: nombre.toUpperCase(), visible: true, isMaster: false, isExpanded: true, visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus||{})), coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus||{})), colorPrincipal: sectorOriginal.colorPrincipal, registros: [] };
-        
-        sectorOriginal.registros.forEach(reg => {
-            let capaNueva = reg.tipoGeometria === 'marker' ? L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !modoLecturaGlobal}) : L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
-            const newIdFisico = L.stamp(capaNueva);
-            STORE[newId].registros.push({ idFisico: newIdFisico, tipoGeometria: reg.tipoGeometria, capaLeaflet: capaNueva, colorPersonalizado: reg.colorPersonalizado, visibleIndividual: reg.visibleIndividual, _modoPopup: 'lectura', datosGenerales: JSON.parse(JSON.stringify(reg.datosGenerales)), camposOcultos: [...(reg.camposOcultos||[])] });
-            vincularEventosCapa(capaNueva, newId, newIdFisico);
-        });
-        
-        capaActivaId = newId;
-        actualizarUIYMapa();
-    }
-    
-    function limpiarSector(idSector) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede limpiar.");
-        if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}"?`)) return;
-        if (capasSectores[idSector]) capasSectores[idSector].clearLayers();
-        STORE[idSector].registros = [];
-        actualizarUIYMapa();
-    }
+                            capa = L.marker([latParseada, lngParseada], { 
+                                icon: crearPinFiscal(colorBase), 
+                                draggable: false 
+                            });
+                        } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                            capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
+                        }
 
-    function eliminarSectorDefinitivo(idSector) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        if(STORE[idSector].isMaster) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
-        if(!confirm(`⚠️ PELIGRO:\n¿Borrar la simulación "${STORE[idSector].nombreSector}"?`)) return;
-        if (capasSectores[idSector]) { capaMaestraSectores.removeLayer(capasSectores[idSector]); delete capasSectores[idSector]; }
-        delete STORE[idSector]; 
-        if(capaActivaId === idSector) capaActivaId = null;
-        actualizarUIYMapa();
-    }
-
-    function seleccionarTodoEnCat(checkMaster, idContenedor) { const contenedor = document.getElementById(idContenedor); if (!contenedor) return; contenedor.querySelectorAll('.chk-registro').forEach(c => c.checked = checkMaster.checked); }
-
-    function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
-        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
-        const contenedor = document.getElementById(idContenedor);
-        if (!contenedor) return;
-        const seleccionados = contenedor.querySelectorAll('.chk-registro:checked');
-        if (seleccionados.length === 0) return alert("Seleccione al menos un registro en esta categoría.");
-
-        if (confirm(`¿Eliminar los ${seleccionados.length} registros seleccionados?`)) {
-            const idsABorrar = Array.from(seleccionados).map(c => c.getAttribute('data-id'));
-            const capaSector = capasSectores[idSector];
-            if(capaSector) {
-                const registrosABorrar = STORE[idSector].registros.filter(r => idsABorrar.includes(String(r.idFisico)));
-                registrosABorrar.forEach(reg => { if (capaSector.hasLayer(reg.capaLeaflet)) capaSector.removeLayer(reg.capaLeaflet); });
-            }
-            STORE[idSector].registros = STORE[idSector].registros.filter(r => !idsABorrar.includes(String(r.idFisico)));
-            if (mapa._popup) { const sourceId = L.stamp(mapa._popup._source); if (idsABorrar.includes(String(sourceId))) mapa.closePopup(); }
-            actualizarUIYMapa(); 
-        }
-    }
-
-    function eliminarDelClon(idSector, idFisico) {
-        if(modoLecturaGlobal) return;
-        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Maestra.");
-        if(!confirm("¿Eliminar este registro de la simulación?")) return;
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(reg && capasSectores[idSector].hasLayer(reg.capaLeaflet)) capasSectores[idSector].removeLayer(reg.capaLeaflet);
-        STORE[idSector].registros = STORE[idSector].registros.filter(r => String(r.idFisico) !== String(idFisico));
-        if(mapa._popup) mapa.closePopup();
-        actualizarUIYMapa();
-    }
-
-    function cambiarColorEstatusSector(idSector, estatus, colorHex) {
-        if (modoLecturaGlobal) return alert("Modo lectura activo.");
-        if (!STORE[idSector]) return;
-        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-        STORE[idSector].coloresPorEstatus[estatus] = colorHex;
-        STORE[idSector].registros.forEach(reg => {
-            if (obtenerEstatusParaCuadro(reg) === estatus) {
-                reg.colorPersonalizado = colorHex;
-                if (reg.tipoGeometria === 'marker') reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-                else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-            }
-        });
-        actualizarUIYMapa();
-    }
-
-    function actualizarUIYMapa() {
-        const contenedor = document.getElementById('arbol-datos');
-        contenedor.innerHTML = "";
-        
-        for(let idSector in STORE) {
-            const sectorData = STORE[idSector];
-            if (!capasSectores[idSector]) capasSectores[idSector] = new L.FeatureGroup();
-            capasSectores[idSector].clearLayers();
-
-            const gruposPorEstatus = {};
-            let hayResultadosBusqueda = false;
-
-            sectorData.registros.forEach(reg => {
-                if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
-                const estatus = obtenerEstatusParaCuadro(reg);
-                if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
-                const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
-                const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
-                const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
-
-                const isPhysicallyVisible = sectorData.visible && reg.visibleIndividual && estatusVisible && cumpleFiltro;
-                const hasLayer = capasSectores[idSector].hasLayer(reg.capaLeaflet);
-
-                if (isPhysicallyVisible && !hasLayer) capasSectores[idSector].addLayer(reg.capaLeaflet);
-                else if (!isPhysicallyVisible && hasLayer) capasSectores[idSector].removeLayer(reg.capaLeaflet);
-
-                if(cumpleFiltro) {
-                    hayResultadosBusqueda = true;
-                    if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
-                    gruposPorEstatus[estatus].conteo++;
-                    gruposPorEstatus[estatus].lista.push(reg);
-                }
-            });
-
-            if (sectorData.visible) { if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) capaMaestraSectores.addLayer(capasSectores[idSector]); } 
-            else { if (capaMaestraSectores.hasLayer(capasSectores[idSector])) capaMaestraSectores.removeLayer(capasSectores[idSector]); }
-
-            if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
-
-            let htmlSector = `
-            <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
-                <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
-                    <div class="sector-title-group">
-                        <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
-                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" title="Mostrar/Ocultar todo el Sector" style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;" onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
-                        <input type="text" value="${sectorData.nombreSector}" title="Doble clic para enfocar sector en el mapa" onclick="event.stopPropagation();" ondblclick="enfocarSector('${idSector}')" onchange="actualizarNombreSector('${idSector}', this.value)" style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 140px; outline:none; text-transform:uppercase;">
-                    </div>
-                    <div class="sector-controls">
-                        <i class="fas fa-copy sector-trash" title="Clonar Sector para Simular" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
-                        ${(!sectorData.isMaster) ? `
-                        <i class="fas fa-broom sector-trash" title="Limpiar Lista" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
-                        <i class="fas fa-trash-alt sector-trash" title="Eliminar Simulación" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
-                        ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
-                    </div>
-                </div>
-                <div class="sector-body" id="sector-body-${idSector}" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
-
-            for(let estatus in gruposPorEstatus) {
-                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-                if(!STORE[idSector].visibilidadPorEstatus) STORE[idSector].visibilidadPorEstatus = {};
-                
-                const colorActual = STORE[idSector].coloresPorEstatus[estatus] || confEst.color;
-                const estatusVisible = STORE[idSector].visibilidadPorEstatus[estatus] !== false; 
-                const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
-
-                htmlSector += `
-                <div class="status-group">
-                    <div class="status-header">
-                        <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" title="Mostrar/Ocultar" style="cursor: pointer; width: 18px; text-align: center; color: ${estatusVisible ? 'var(--text-main)' : '#6e7681'}; font-size: 14px; flex-shrink: 0;" onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                        <div class="status-row-label" onclick="event.stopPropagation(); document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">${estatus}</div>
-                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
-                        <div class="status-color-wrap">
-                        <input type="color" class="status-cat-color-input" title="Color de categoría" value="${colorActual}" onclick="event.stopPropagation();" onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" ${sectorData.isMaster ? 'disabled' : ''}>
-                        </div>
-                        ${(!sectorData.isMaster) ? `
-                        <div class="status-row-actions">
-                            <input type="checkbox" style="cursor:pointer;" onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" title="Marcar todos">
-                            <i class="fas fa-trash-alt sector-trash" style="font-size: 13px;" onclick="event.stopPropagation(); eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')"></i>
-                        </div>` : ''}
-                    </div>
-                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
-
-                gruposPorEstatus[estatus].lista.forEach(local => {
-                    htmlSector += `
-                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
-                            <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" title="Ocultar individualmente" style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};" onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
-                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
-                                <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
-                            ${(!sectorData.isMaster) ? `
-                                <input type="checkbox" class="chk-registro" data-id="${local.idFisico}" onclick="event.stopPropagation();" style="cursor:pointer;">
-                                <i class="fas fa-trash sector-trash" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>
-                            ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;"></i>`}
-                            </div>
-                        </div>`;
+                        if(capa) {
+                            const newIdFisico = L.stamp(capa);
+                            STORE[idSector].registros.push({ 
+                                idFisico: newIdFisico, 
+                                tipoGeometria: reg.tipoGeometria, 
+                                capaLeaflet: capa, 
+                                colorPersonalizado: reg.colorPersonalizado, 
+                                visibleIndividual: reg.visibleIndividual !== false,
+                                datosGenerales: reg.datosGenerales || {}, 
+                                camposOcultos: reg.camposOcultos || [] 
+                            });
+                            vincularEventosCapa(capa, idSector, newIdFisico);
+                        }
+                    } catch (err) {
+                        console.warn("Punto omitido por error en sus coordenadas.");
+                    }
                 });
-                htmlSector += `</div></div>`;
             }
-            htmlSector += `</div></div>`;
-            contenedor.insertAdjacentHTML('beforeend', htmlSector);
         }
+        
+        const keys = Object.keys(STORE);
+        if(keys.length > 0) { 
+            capaActivaId = keys[0]; 
+        }
+        
+        actualizarUIYMapa();
 
-        const indicador = document.getElementById('indicador-capa-activa');
-        if(capaActivaId && STORE[capaActivaId]) {
-            indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector;
-            indicador.style.color = varCSS('--cyan-neon');
-        } else {
-            indicador.innerText = "HACIENDA MUNICIPAL";
-            indicador.style.color = "#6e7681";
+        // CENTRAR CÁMARA AUTOMÁTICAMENTE AL TERMINAR DE CARGAR
+        if (capaMaestraSectores.getLayers().length > 0) {
+            try {
+                mapa.fitBounds(capaMaestraSectores.getBounds(), { padding: [30, 30] });
+            } catch(e){}
         }
     }
+
 
     /* ==========================================================================
-       POPUPS DINÁMICOS
-       ========================================================================== */
-    function vincularEventosCapa(capaFisica, idSector, idFisico) {
-        capaFisica.on('click', () => { const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)); if(reg) reg._modoPopup = 'lectura'; abrirPopupDinamico(idSector, idFisico, false); });
-    }
-
-    function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
-        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!registro) return;
-        const capaMapa = registro.capaLeaflet;
-        if(centrarMapa) { mapa.flyTo(capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter(), 19, { duration: 0.5 }); registro._modoPopup = 'lectura'; }
-        const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
-        capaMapa.unbindPopup().bindPopup(htmlContenido, { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
-        mapa._popup = capaMapa.getPopup(); mapa._popup._source = capaMapa; 
-    }
-
-    function toggleModoPopup(idFisico, modo) {
-        const divRead = document.getElementById(`view-mode-${idFisico}`);
-        const divEdit = document.getElementById(`edit-mode-${idFisico}`);
-        if (!divRead || !divEdit) return;
-        if (modo === 'edit') { divRead.style.display = 'none'; divEdit.style.display = 'block'; } 
-        else { divRead.style.display = 'block'; divEdit.style.display = 'none'; }
-    }
-
-    function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
-        const sectorData = STORE[idSector];
-        const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
-        let html = `<div class="pop-wrapper">`;
-
-        if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
-            const rep = calcularAuditoria(registro.capaLeaflet);
-            const cuerpoEstatus = rep.textoCompacto ? escHtmlBasico(rep.textoCompacto) : '—';
-            html += `<div class="audit-report glass-panel"><h3 class="audit-title">RESUMEN DE CENSO - HACIENDA</h3><p class="audit-resumen-cuerpo">ESTATUS: ${cuerpoEstatus} · <span class="audit-total-inline">Total: ${rep.total}</span></p></div>`;
-        } else {
-            const estActual = registro.datosGenerales["Estatus"];
-            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-            const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
-            const colorFinal = registro.colorPersonalizado || colorSector;
-            const imgUrl = registro.datosGenerales["Link Fotografía"];
-            const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
-            
-            html += `
-            <div class="pop-cover">
-                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
-                <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
-            </div>
-            <div class="pop-content">
-            <div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
-            
-            for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                if(registro.camposOcultos.includes(clave)) continue; 
-                html += `<div class="read-field"><span class="read-label">${clave}</span><div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div></div>`;
-            }
-            if(!modoLecturaGlobal) html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN (SIMULACIÓN)</button>`;
-            html += `</div>`;
-
-            html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
-            for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                const isOculto = registro.camposOcultos.includes(clave);
-                html += `
-                <div class="form-group">
-                    <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
-                    <span class="form-label">${clave}</span>
-                    <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" ${isOculto ? 'type="password"' : ''} onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;">
-                </div>`;
-            }
-
-            html += `
-            <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
-                <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
-                <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">
-                    ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
-                </select>
-            </div>
-            <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 10px;">
-                <span class="form-label" style="color: #111;">COLOR PERSONALIZADO</span>
-                <input type="color" style="width: 100%; height: 32px; border: none; cursor: pointer; border-radius: 6px; background: transparent; padding: 0;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
-            </div>
-            <div class="form-group">
-                <i class="fas ${isFotoOculta ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', 'Link Fotografía')"></i>
-                <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
-                <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
-            </div>
-            <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR SIMULACIÓN</button>`;
-            
-            if(!sectorData.isMaster) html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
-            html += `</div></div>`;
-        }
-        html += `</div>`;
-        return html;
-    }
-
-    function cambiarColorPin(idSector, idFisico, colorHex) {
-        if(modoLecturaGlobal) return;
-        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!regOrigen) return;
-        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
-
-        STORE[idSector].registros.forEach(reg => {
-            if ((reg.datosGenerales["Estatus"] || "SIN CATEGORÍA") === estatusTarget) {
-                reg.colorPersonalizado = colorHex;
-                if (reg.tipoGeometria === 'marker') reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-                else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-            }
-        });
-        actualizarUIYMapa();
-        const badge = document.getElementById(`badge-estatus-${idFisico}`);
-        if (badge) badge.style.background = colorHex;
-    }
-
-    function ejecutarToggleOjo(eventoClick, idSector, idFisico, claveCampo) {
-        eventoClick.stopPropagation(); 
-        if(modoLecturaGlobal) return;
-        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!regOrigen) return;
-        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-        const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
-
-        STORE[idSector].registros.forEach(reg => {
-            if ((reg.datosGenerales["Estatus"] || "SIN CATEGORÍA") === estatusTarget) {
-                if (isCurrentlyHidden) { const idx = reg.camposOcultos.indexOf(claveCampo); if (idx > -1) reg.camposOcultos.splice(idx, 1); } 
-                else { if (!reg.camposOcultos.includes(claveCampo)) reg.camposOcultos.push(claveCampo); }
-            }
-        });
-        actualizarUIYMapa(); 
-        if(mapa._popup) regOrigen.capaLeaflet.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' }).openPopup();
-    }
-
-    function actualizarDatoCampo(idSector, idFisico, clave, valor) { STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor; actualizarUIYMapa(); }
-
-    function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        reg.datosGenerales["Estatus"] = nuevoEst;
-        const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[nuevoEst]) ? STORE[idSector].coloresPorEstatus[nuevoEst] : (DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"]).color;
-        reg.colorPersonalizado = colorSector; 
-        if (reg.tipoGeometria === 'marker') reg.capaLeaflet.setIcon(crearPinFiscal(colorSector));
-        else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') reg.capaLeaflet.setStyle({ color: colorSector, fillColor: colorSector, fillOpacity: 0.2 });
-        actualizarUIYMapa();
-        const badge = document.getElementById(`badge-estatus-${idFisico}`);
-        if (badge) { badge.innerText = nuevoEst; badge.style.background = colorSector; }
-    }
-
-    function calcularAuditoria(poligonoActivo) {
-        const porEstatus = {}; let total = 0; const box = poligonoActivo.getBounds();
-        for (let id in STORE) {
-            STORE[id].registros.forEach((r) => {
-                if (r.tipoGeometria !== 'marker' || !r.capaLeaflet) return;
-                let ll; try { ll = r.capaLeaflet.getLatLng(); } catch (e) { return; }
-                if (!ll || !box.contains(ll)) return;
-                total++; const est = obtenerEstatusParaCuadro(r);
-                porEstatus[est] = (porEstatus[est] || 0) + 1;
-            });
-        }
-        const claves = Object.keys(porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
-        const textoCompacto = claves.map((k) => `${porEstatus[k]} ${k}`).join(', ');
-        return { porEstatus, total, textoCompacto };
-    }
-
-    /* ==========================================================================
-       GENERACIÓN DE REPORTE WORD
+       RESPALDO WORD (FORMATO EJECUTIVO DE ALTO NIVEL)
        ========================================================================== */
     function descargarRespaldoWord() {
-        if (typeof docx === 'undefined') return alert("Error: La librería de generación de documentos no se cargó correctamente.");
+        if (typeof docx === 'undefined') return alert("Error: La librería de generación no se cargó.");
         if (Object.keys(STORE).length === 0) return alert("No hay datos cargados para generar un respaldo.");
 
         const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
         const systemId = `SGF-CLOUD-${new Date().getFullYear()}`;
+
         const allRecords = [];
         Object.values(STORE).forEach(sector => allRecords.push(...sector.registros));
 
         const tableRows = [];
-        tableRows.push(new TableRow({
+        const headerRow = new TableRow({
             children: [
-                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "UBICACIÓN", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTADO FISCAL", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "DOCUMENTACIÓN", bold: true, size: 16 })] })] }),
-            ], tableHeader: true,
-        }));
+                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 14 })], alignment: AlignmentType.CENTER })], shading: { fill: "f0f3f6" } }),
+                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "UBICACIÓN", bold: true, size: 14 })], alignment: AlignmentType.CENTER })], shading: { fill: "f0f3f6" } }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTADO FISCAL", bold: true, size: 14 })], alignment: AlignmentType.CENTER })], shading: { fill: "f0f3f6" } }),
+                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "DOCUMENTACIÓN", bold: true, size: 14 })], alignment: AlignmentType.CENTER })], shading: { fill: "f0f3f6" } }),
+            ],
+            tableHeader: true,
+        });
+        tableRows.push(headerRow);
 
         allRecords.forEach(reg => {
             const d = reg.datosGenerales || {};
-            const identidad = d["Razón Social"] || d["Nombre Comercial"] || d["Contribuyente"] || "Sin Identificar";
-            const registro = d["RIF / Registro"] || d["RIF"] || "N/A";
+            const identidad = d["Contribuyente"] || d["Razón Social"] || d["Nombre Comercial"] || "Sin Identificar";
+            const registro = d["RIF"] || d["RIF / Registro"] || "N/A";
             const latLng = reg.capaLeaflet && reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
             const coordsText = `GPS: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
-            const ubicacion = `${d["Dirección (Referencia Manual)"] || "No especificada."}\n${coordsText}`;
-            const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}\nAuditoría: ${d["ID_Auditoria"] || "N/A"}`;
-            const estadoFiscal = `Validación: ${d["Validación Fiscal"] || d["Estatus"] || "N/A"}\nLicencia: ${d["Situación Sin Licencia"] || "N/A"}\nPago: ${d["Semáforo de Acuerdo de Pago"] || "N/A"}`;
+            const dirCruda = d["Dirección"] || d["Direccion"] || d["Dirección (Referencia Manual)"];
+            const ubicacion = `${dirCruda || "No especificada."}\n${coordsText}`;
+            const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}`;
+            const estadoFiscal = `Estatus: ${d["Estatus"] || "N/A"}\nLicencia: ${d["Licencia Act. Econ."] || "N/A"}`;
+            
             tableRows.push(new TableRow({
                 children: [
-                    new TableCell({ children: [ new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 18 })] }), new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] }) ]}),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ubicacion, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 16 })] })] }),
+                    new TableCell({ children: [ new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 14 })] }), new Paragraph({ children: [new TextRun({ text: registro, size: 12 })] }) ]}),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ubicacion, size: 12 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 12 })] })] }),
+                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 12 })] })] }),
                 ],
             }));
         });
 
         const table = new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE }, columnWidths: [2500, 3000, 2000, 2000] });
+
         const doc = new Document({
             sections: [{
                 headers: { default: new Header({ children: [new Paragraph({ text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO", alignment: AlignmentType.CENTER })] }) },
                 footers: { default: new Footer({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [ new TextRun(`Documento generado por SGF-CLOUD - ID Sistema: ${systemId} - Página `), new TextRun({ children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES] }) ] })] }) },
                 children: [
                     new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.RIGHT }),
-                    new Paragraph(" "), table, new Paragraph(" "),
-                    new Paragraph({ children: [ new TextRun({ text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ", bold: true, size: 20, break: 1 }), new TextRun({ text: "Respaldo maestro de fiscalización conforme a normativa municipal.", size: 20 }) ], alignment: AlignmentType.JUSTIFIED }),
+                    new Paragraph(" "), 
+                    new Paragraph({ children: [new TextRun({ text: "CUADRO DE REGISTRO FISCAL", bold: true, size: 24 })], alignment: AlignmentType.CENTER }),
+                    new Paragraph(" "),
+                    table, 
+                    new Paragraph(" "),
+                    new Paragraph({ children: [ new TextRun({ text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ", bold: true, size: 16 }), new TextRun({ text: "Respaldo maestro de fiscalización conforme a normativa municipal.", size: 16 }) ], alignment: AlignmentType.JUSTIFIED }),
                 ],
             }],
         });
-        Packer.toBlob(doc).then(blob => { saveAs(blob, `Respaldo_Maestro_Fiscal_Ayacucho_${Date.now()}.docx`); });
+
+        Packer.toBlob(doc).then(blob => { saveAs(blob, `Resumen_Ejecutivo_Ayacucho_${Date.now()}.docx`); });
     }
 
     /* ==========================================================================
-       GENERACIÓN DE REPORTE FOTOGRÁFICO
+       MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
        ========================================================================== */
     function previsualizarCaptura() {
         const modalCapture = document.getElementById('capture-modal');
         const modalSuccess = document.getElementById('success-modal');
+        
+        modalCapture.querySelector('span').innerHTML = '🔄 INICIANDO CAPTURA...<br><small style="color: #a5b0bf; font-size: 12px;">Preparando el área de reporte.</small>';
         modalCapture.style.display = 'flex';
         mapa.invalidateSize();
 
         const watermark = document.createElement('div');
         watermark.id = 'report-watermark';
-        watermark.innerHTML = `<div style="border-left: 4px solid #da3633; padding-left: 12px; font-family:Inter,sans-serif; text-align:left; line-height:1.5;"><strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br><span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br><em style="color: #ff0000; font-size: 11px; font-weight: 900;">¡PORQUE CON TRABAJO SE PRODUCE!</em><br><strong style="color: #000000; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong><span style="color: #aaaaaa; font-size: 10px;">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</span></div>`;
+        watermark.innerHTML = `
+            <div style="border-left: 4px solid #da3633; padding-left: 12px; font-family:Inter,sans-serif; text-align:left; line-height:1.5;">
+                <strong style="color: #111; font-size: 14px;">Reporte Generado por el sistema fiscal de Hacienda municipal</strong><br>
+                <span style="color: #555555; font-size: 11px;">Plan piloto rumbo a la modernización fiscal</span><br>
+                <em style="color: #ff0000; font-size: 11px; font-weight: 900;">¡PORQUE CON TRABAJO SE PRODUCE!</em><br>
+                <strong style="color: #000000; font-size: 12px; display:block; margin-top:3px;">ALCALDESA YOIRA VARGAS</strong>
+                <span style="color: #aaaaaa; font-size: 10px;">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</span>
+            </div>
+        `;
         watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
         document.getElementById('map').appendChild(watermark);
 
@@ -1007,16 +646,19 @@
             setTimeout(() => {
                 const mapElement = document.getElementById('map');
                 const mapCanvas = mapElement.getBoundingClientRect();
+
                 const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container, .footer-protegido');
                 uiLayers.forEach(el => el.style.visibility = 'hidden');
 
                 html2canvas(document.body, { x: mapCanvas.left, y: mapCanvas.top, width: mapCanvas.width, height: mapCanvas.height, scrollX: 0, scrollY: 0, scroll: false, useCORS: true, allowTaint: false, scale: 2 }).then(canvas => {
                     uiLayers.forEach(el => el.style.visibility = 'visible');
                     if(document.getElementById('report-watermark')) document.getElementById('report-watermark').remove();
+
                     const imageLink = document.createElement('a');
                     imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
                     imageLink.href = canvas.toDataURL("image/png");
                     imageLink.click();
+
                     modalSuccess.style.display = 'flex';
                     setTimeout(() => { modalSuccess.style.display = 'none'; }, 3000);
                 }).catch(err => {
@@ -1028,51 +670,324 @@
         }, 1000); 
     }
 
-    const analizarCoordenadasProfundas = (coords) => {
-        if (Array.isArray(coords)) return coords.map(analizarCoordenadasProfundas);
-        else if (coords && coords.lat !== undefined && coords.lng !== undefined) return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
-        return coords;
+    /* ==========================================================================
+       CONFIGURACIÓN DEL MAPA
+       ========================================================================== */
+    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
+    mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - VISOR');
+
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
+    googleSat.addTo(mapa); 
+
+    const capaMaestraSectores = L.featureGroup().addTo(mapa);
+    L.control.layers({"Vista Satélite": googleSat, "Vista Urbana": googleStreets}, {"Sectores": capaMaestraSectores}, {position: 'topright'}).addTo(mapa);
+
+    const DICCIONARIO_ESTATUS = {
+        "VIGENTE": { color: "#238636" }, "VENCIDA": { color: "#da3633" }, "TEMPORAL": { color: "#fbbc04" },
+        "SIN LICENCIA": { color: "#da3633" }, "CENSO / NUEVO": { color: "#00f2ff" }, "SIN CATEGORÍA": { color: "#6e7681" }
     };
-    
-    function reconstruirDesdeJSON(datosCargados) {
-        STORE = {};
-        for(let id in capasSectores) { if(capaMaestraSectores.hasLayer(capasSectores[id])) capaMaestraSectores.removeLayer(capasSectores[id]); }
+
+    const crearPinFiscal = (color) => L.divIcon({ 
+        html: `<i class="fas fa-map-marker-alt" style="color:${color}; font-size:32px; text-shadow: 0 4px 10px rgba(0,0,0,0.8);"></i>`, 
+        className: 'pin-fiscal-ayacucho', iconSize: [32, 32], iconAnchor: [16, 32], popupAnchor: [0, -30] 
+    });
+
+    const herramientaPunto = new L.Draw.Marker(mapa, { icon: crearPinFiscal(DICCIONARIO_ESTATUS["CENSO / NUEVO"].color) });
+    const herramientaPoligono = new L.Draw.Polygon(mapa, { shapeOptions: { color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' } });
+
+    function activarHerramienta(tipo) {
+        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa de Simulación en el panel izquierdo antes de dibujar.");
+        if(STORE[capaActivaId] && STORE[capaActivaId].isMaster) return alert("⚠️ CAPA PROTEGIDA: No puede dibujar en la capa base oficial. Por favor clone la capa o cree una nueva para realizar simulaciones.");
+        tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
+    }
+
+    mapa.on(L.Draw.Event.CREATED, (evento) => {
+        const idFisico = L.stamp(evento.layer);
         
-        for(let idSector in datosCargados) {
-            const sec = datosCargados[idSector];
-            capasSectores[idSector] = new L.FeatureGroup();
-            
-            STORE[idSector] = { nombreSector: sec.nombreSector, visible: sec.visible !== false, isMaster: true, visibilidadPorEstatus: sec.visibilidadPorEstatus || {}, coloresPorEstatus: sec.coloresPorEstatus || {}, colorPrincipal: sec.colorPrincipal || '#00f2ff', isExpanded: true, registros: [] };
-
-            sec.registros.forEach(reg => {
-                let capa;
-                const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                let colorBase = confEst.color;
-                if (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) colorBase = STORE[idSector].coloresPorEstatus[estActual];
-                const colorAUsar = reg.colorPersonalizado || colorBase;
-                
-                if (reg.tipoGeometria === 'marker' && reg.coords) {
-                    capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { icon: crearPinFiscal(colorAUsar), draggable: !modoLecturaGlobal });
-                    capa.on('dragend', () => actualizarUIYMapa());
-                } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                    capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorAUsar, fillColor: colorAUsar, fillOpacity: 0.2, weight: 3, dashArray: '5, 5' });
-                    if (!modoLecturaGlobal) capa.editing.enable();
-                    capa.on('edit', () => actualizarUIYMapa());
-                }
-
-                if(capa) {
-                    const newIdFisico = L.stamp(capa);
-                    STORE[idSector].registros.push({ idFisico: newIdFisico, tipoGeometria: reg.tipoGeometria, capaLeaflet: capa, colorPersonalizado: reg.colorPersonalizado, visibleIndividual: reg.visibleIndividual !== false, _modoPopup: 'lectura', datosGenerales: reg.datosGenerales, camposOcultos: reg.camposOcultos || [] });
-                    vincularEventosCapa(capa, idSector, newIdFisico);
-                }
-            });
+        if(evento.layer instanceof L.Marker) {
+            evento.layer.options.draggable = true;
+            evento.layer.on('dragend', () => actualizarUIYMapa());
+        } else {
+            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
+            evento.layer.editing.enable();
+            evento.layer.on('edit', () => actualizarUIYMapa());
         }
+
+        STORE[capaActivaId].registros.push({
+            idFisico: idFisico, tipoGeometria: evento.layerType, capaLeaflet: evento.layer, colorPersonalizado: null, visibleIndividual: true,
+            datosGenerales: { "Contribuyente": "NUEVO ESTABLECIMIENTO SIMULADO", "Estatus": "CENSO / NUEVO" }, camposOcultos: []
+        });
+
+        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
+        actualizarUIYMapa();
+        setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
+        setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
+    });
+
+    /* ==========================================================================
+       CONTROL INTERNO DE LA UI DEL PANEL LATERAL
+       ========================================================================== */
+    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
+    
+    function toggleVisibilidadCapa(idSector, isVisible) { 
+        STORE[idSector].visible = isVisible;
+        if(isVisible) capaMaestraSectores.addLayer(capasSectores[idSector]);
+        else capaMaestraSectores.removeLayer(capasSectores[idSector]);
+        actualizarUIYMapa(); 
+    }
+
+    function crearNuevoSector() {
+        const nombre = prompt("Nombre de la Carpeta de Simulación:");
+        if(!nombre) return;
+        const id = 'sec_' + Date.now();
+        capasSectores[id] = new L.FeatureGroup();
+        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, isMaster: false, isExpanded: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
+        capaActivaId = id;
         actualizarUIYMapa();
     }
 
+    function clonarSector(idSectorOriginal) {
+        const sectorOriginal = STORE[idSectorOriginal];
+        const nombre = prompt("Nombre de la nueva capa clonada (Para simulaciones):", sectorOriginal.nombreSector + " (SIMULACIÓN)");
+        if(!nombre) return;
+        
+        const newId = 'sec_' + Date.now();
+        capasSectores[newId] = new L.FeatureGroup();
+        STORE[newId] = {
+            nombreSector: nombre.toUpperCase(), visible: true, isMaster: false, isExpanded: true,
+            visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus || {})),
+            coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus || {})), colorPrincipal: sectorOriginal.colorPrincipal, registros: []
+        };
+        
+        sectorOriginal.registros.forEach(reg => {
+            let capaNueva = reg.tipoGeometria === 'marker' ? 
+                L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: true}) : 
+                L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
+            
+            const newIdFisico = L.stamp(capaNueva);
+            STORE[newId].registros.push({
+                idFisico: newIdFisico, tipoGeometria: reg.tipoGeometria, capaLeaflet: capaNueva, colorPersonalizado: reg.colorPersonalizado,
+                visibleIndividual: reg.visibleIndividual, _modoPopup: 'lectura', datosGenerales: JSON.parse(JSON.stringify(reg.datosGenerales)), camposOcultos: [...(reg.camposOcultos || [])]
+            });
+            vincularEventosCapa(capaNueva, newId, newIdFisico);
+        });
+        
+        capaActivaId = newId;
+        actualizarUIYMapa();
+    }
+
+    function eliminarSectorDefinitivo(idSector) {
+        if(STORE[idSector].isMaster) return alert("Capa Base Protegida. No se puede eliminar en el Visor.");
+        if(!confirm(`¿Borrar la simulación "${STORE[idSector].nombreSector}"?`)) return;
+        if (capasSectores[idSector]) { capaMaestraSectores.removeLayer(capasSectores[idSector]); delete capasSectores[idSector]; }
+        delete STORE[idSector]; 
+        if(capaActivaId === idSector) capaActivaId = null;
+        actualizarUIYMapa();
+    }
+
+    function eliminarDelClon(idSector, idFisico) {
+        if(STORE[idSector].isMaster) return alert("Registro Protegido en Capa Base.");
+        if(!confirm("¿Eliminar este registro de la simulación?")) return;
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(reg && capasSectores[idSector].hasLayer(reg.capaLeaflet)) capasSectores[idSector].removeLayer(reg.capaLeaflet);
+        STORE[idSector].registros = STORE[idSector].registros.filter(r => String(r.idFisico) !== String(idFisico));
+        if(mapa._popup) mapa.closePopup();
+        actualizarUIYMapa();
+    }
+
+    function ejecutarMotorBusqueda() { textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase(); actualizarUIYMapa(); }
+    function enfocarSector(idSector) { if(STORE[idSector].visible) mapa.fitBounds(capasSectores[idSector].getBounds(), { padding: [50, 50] }); }
+
+    function actualizarUIYMapa() {
+        const contenedor = document.getElementById('arbol-datos');
+        contenedor.innerHTML = "";
+        
+        for(let idSector in STORE) {
+            const sectorData = STORE[idSector];
+            if (!capasSectores[idSector]) capasSectores[idSector] = new L.FeatureGroup();
+            
+            // Limpiar visualmente para repintar
+            capasSectores[idSector].clearLayers();
+
+            const gruposPorEstatus = {};
+            let hayResultadosBusqueda = false;
+
+            if (sectorData.registros) {
+                sectorData.registros.forEach(reg => {
+                    if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+                    const estatus = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
+                    const searchString = reg.datosGenerales ? Object.values(reg.datosGenerales).join(" ").toLowerCase() : "";
+                    const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+
+                    if (sectorData.visible && reg.visibleIndividual && cumpleFiltro) {
+                        if (reg.capaLeaflet) capasSectores[idSector].addLayer(reg.capaLeaflet);
+                    }
+
+                    if(cumpleFiltro) {
+                        hayResultadosBusqueda = true;
+                        if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
+                        gruposPorEstatus[estatus].conteo++;
+                        gruposPorEstatus[estatus].lista.push(reg);
+                    }
+                });
+            }
+
+            if (sectorData.visible) { if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) capaMaestraSectores.addLayer(capasSectores[idSector]); } 
+            else { if (capaMaestraSectores.hasLayer(capasSectores[idSector])) capaMaestraSectores.removeLayer(capasSectores[idSector]); }
+
+            if(textoFiltroGlobal !== "" && !hayResultadosBusqueda) continue;
+
+            let htmlSector = `
+            <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
+                <div class="sector-header" onclick="STORE['${idSector}'].isExpanded = !STORE['${idSector}'].isExpanded; actualizarUIYMapa();">
+                    <div class="sector-title-group">
+                        <input type="radio" class="radio-active" title="Marcar como Capa de Simulación" ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')" onclick="event.stopPropagation();">
+                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" style="cursor: pointer; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;" onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                        <span class="sector-title" ondblclick="event.stopPropagation(); enfocarSector('${idSector}')">${sectorData.nombreSector}</span>
+                    </div>
+                    <div class="sector-controls">
+                        <i class="fas fa-copy sector-trash" title="Clonar Capa para Simulaciones" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
+                        ${sectorData.isMaster ? `<i class="fas fa-shield-alt" style="color:var(--color-vigente); font-size: 13px;" title="Capa Base Protegida"></i>` : `<i class="fas fa-trash-alt sector-trash" style="color: var(--color-vencida);" title="Eliminar Simulación" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>`}
+                    </div>
+                </div>
+                <div class="sector-body" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
+
+            for(let estatus in gruposPorEstatus) {
+                const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
+                htmlSector += `
+                <div class="status-group">
+                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                        <div class="status-row-label">${estatus}</div>
+                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
+                    </div>
+                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+
+                gruposPorEstatus[estatus].lista.forEach(local => {
+                    htmlSector += `
+                        <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
+                            <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
+                                <span>${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
+                            ${sectorData.isMaster ? `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>` : `<i class="fas fa-trash sector-trash" title="Borrar este registro" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>`}
+                            </div>
+                        </div>`;
+                });
+                htmlSector += `</div></div>`;
+            }
+            htmlSector += `</div></div>`;
+            contenedor.insertAdjacentHTML('beforeend', htmlSector);
+        }
+
+        const indicador = document.getElementById('indicador-capa-activa');
+        if(capaActivaId && STORE[capaActivaId]) { indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector; indicador.style.color = varCSS('--cyan-neon'); } 
+        else { indicador.innerText = "HACIENDA MUNICIPAL"; indicador.style.color = "#6e7681"; }
+    }
+
+    /* ==========================================================================
+       POPUPS Y EDICIÓN LOCAL (SANDBOX)
+       ========================================================================== */
+    function vincularEventosCapa(capaFisica, idSector, idFisico) { capaFisica.on('click', () => { abrirPopupDinamico(idSector, idFisico, false); }); }
+    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+    function abrirVisorImagen(url) {
+        document.getElementById('visor-imagen-src').src = url;
+        document.getElementById('visor-imagen-modal').style.display = 'flex';
+    }
+
+    function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!registro) return;
+        const capaMapa = registro.capaLeaflet;
+        
+        if(centrarMapa) { mapa.flyTo(capaMapa.getLatLng ? capaMapa.getLatLng() : capaMapa.getBounds().getCenter(), 19, { duration: 0.5 }); }
+
+        let html = `<div class="pop-wrapper">`;
+        if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
+            const rep = calcularAuditoria(capaMapa);
+            html += `<div class="audit-report glass-panel"><h3 class="audit-title">RESUMEN DE ÁREA</h3><p class="audit-resumen-cuerpo">ESTATUS: ${rep.textoCompacto} · <span class="audit-total-inline">Total: ${rep.total}</span></p></div>`;
+        } else {
+            const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+            const colorFinal = registro.colorPersonalizado || confEst.color;
+            const imgUrl = registro.datosGenerales["Link Fotografía"];
+            
+            html += `
+            <div class="pop-cover">
+                ${(imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" style="cursor: zoom-in; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="abrirVisorImagen('${imgUrl}')" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
+            </div>
+            <div class="pop-content">`;
+
+            html += `<div id="view-mode-${idFisico}">`;
+            for(let clave in registro.datosGenerales) {
+                if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                html += `<div class="read-field"><span class="read-label">${clave}</span><div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div></div>`;
+            }
+            if(!STORE[idSector].isMaster) html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN (SIMULACIÓN)</button>`;
+            html += `</div>`;
+
+            if(!STORE[idSector].isMaster) {
+                html += `<div id="edit-mode-${idFisico}" style="display: none;">`;
+                for(let clave in registro.datosGenerales) {
+                    if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                    html += `<div class="form-group"><span class="form-label">${clave}</span><input type="text" class="form-input" value="${registro.datosGenerales[clave]}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;"></div>`;
+                }
+                html += `<div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;"><span class="form-label" style="color: #111;">ESTADO FISCAL</span><select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>`;
+                html += `<button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR SIMULACIÓN</button>`;
+                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button></div>`;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+        capaMapa.unbindPopup().bindPopup(html, { minWidth: 320, closeButton: true }).openPopup();
+    }
+
+    function toggleModoPopup(idFisico, modo) {
+        const divRead = document.getElementById(`view-mode-${idFisico}`);
+        const divEdit = document.getElementById(`edit-mode-${idFisico}`);
+        if (!divRead || !divEdit) return;
+        if (modo === 'edit') { divRead.style.display = 'none'; divEdit.style.display = 'block'; } 
+        else { divRead.style.display = 'block'; divEdit.style.display = 'none'; }
+    }
+
+    function actualizarDatoCampo(idSector, idFisico, clave, valor) {
+        STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
+        actualizarUIYMapa(); 
+    }
+
+    function cambiarEstatusFisico(idSector, idFisico, nuevoEst) {
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        reg.datosGenerales["Estatus"] = nuevoEst;
+        const conf = DICCIONARIO_ESTATUS[nuevoEst] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+        reg.colorPersonalizado = conf.color; 
+        if (reg.tipoGeometria === 'marker') reg.capaLeaflet.setIcon(crearPinFiscal(conf.color));
+        else reg.capaLeaflet.setStyle({ color: conf.color, fillColor: conf.color });
+        actualizarUIYMapa();
+        const badge = document.getElementById(`badge-estatus-${idFisico}`);
+        if (badge) { badge.innerText = nuevoEst; badge.style.background = conf.color; }
+    }
+
+    function calcularAuditoria(poligonoActivo) {
+        const porEstatus = {}; let total = 0; const box = poligonoActivo.getBounds();
+        for (let id in STORE) {
+            STORE[id].registros.forEach((r) => {
+                if (r.tipoGeometria !== 'marker' || !r.capaLeaflet) return;
+                let ll; try { ll = r.capaLeaflet.getLatLng(); } catch (e) { return; }
+                if (!ll || !box.contains(ll)) return;
+                total++; const est = r.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                porEstatus[est] = (porEstatus[est] || 0) + 1;
+            });
+        }
+        const claves = Object.keys(porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
+        const textoCompacto = claves.map((k) => `${porEstatus[k]} ${k}`).join(', ');
+        return { porEstatus, total, textoCompacto };
+    }
+
     // ARRANQUE DIRECTO (Llamada inicial al cargar la página)
-    window.onload = iniciarSistemaVisor;
+    window.onload = () => { iniciarSistemaVisor(); };
 
 </script>
 </body>
