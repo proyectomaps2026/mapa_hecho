@@ -44,23 +44,6 @@
         
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* BANNER DE ALERTA DE LICENCIA */
-        #license-banner {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            background: #FF8C00;
-            color: #ffffff;
-            text-align: center;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 900;
-            z-index: 999999;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
         /* ==========================================================================
            2. COMPONENTES DE INTERFAZ (UI)
            ========================================================================== */
@@ -196,7 +179,7 @@
         .audit-resumen-cuerpo { margin: 0; color: var(--text-main); font-size: 13px; font-weight: 600; line-height: 1.55; }
         .audit-total-inline { color: var(--cyan-neon); font-weight: 800; white-space: nowrap; }
 
-        /* MODAL CAPTURA */
+        /* MODAL (CAPTURA Y BLOQUEO) */
         .notif-modal {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(18, 22, 29, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--cyan-neon);
@@ -204,6 +187,9 @@
             z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
             text-align: center; display: none; flex-direction: column; gap: 15px;
         }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
+        .modal-box { width: 420px; padding: 32px 28px; max-height: 90vh; overflow-y: auto; text-align: center; border-top: 5px solid var(--color-vencida); }
 
         .footer-protegido { position: fixed; bottom: 5px; right: 15px; font-size: 9px; color: rgba(255,255,255,0.4); z-index: 9999; pointer-events: none; font-weight: 600; }
     </style>
@@ -213,9 +199,19 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
 
-<!-- BANNER DE ALERTA PREVENTIVA LICENCIA -->
-<div id="license-banner">
+<!-- BANNER DE ALERTA PREVENTIVA LICENCIA (OPCIONAL) -->
+<div id="license-banner" style="display: none; position: absolute; top: 0; left: 0; right: 0; background: #FF8C00; color: #ffffff; text-align: center; padding: 12px; font-size: 14px; font-weight: 900; z-index: 999999; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-transform: uppercase;">
     ⚠️ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> días. Avise al Administrador.
+</div>
+
+<!-- MODAL BLOQUEO TOTAL POR LICENCIA -->
+<div id="license-lock-overlay" class="modal-overlay">
+    <div class="glass-panel modal-box">
+        <i class="fas fa-lock" style="font-size: 44px; color: var(--color-vencida); margin-bottom: 16px;"></i>
+        <h1 style="color: var(--color-vencida); font-weight: 900; margin: 0 0 12px 0; font-size: 16px; letter-spacing: 0.06em; text-transform: uppercase;">SISTEMA BLOQUEADO</h1>
+        <p style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.</p>
+        <button type="button" class="btn btn-outline" style="width: 100%; padding: 14px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
+    </div>
 </div>
 
 <!-- MODALES DEL FLUJO DE CAPTURA -->
@@ -285,15 +281,10 @@
     </div>
 </aside>
 
-<script>
-    /* ==========================================================================
-       PROTECCIÓN (Evitar inspección con teclado)
-       ========================================================================== */
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) { e.preventDefault(); }
-    });
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
+<script>
     /* ==========================================================================
        FASE 0: VARIABLES DE CONFIGURACIÓN Y ESTADO
        ========================================================================== */
@@ -303,25 +294,6 @@
     
     let SYSTEM_AUTH = { token: '', licenciaSGF: '' }; 
 
-    // Carga Inicial
-    async function precargarConfiguracion() {
-        try {
-            // Buscamos primero localmente para sacar el token
-            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
-            if (res.ok) {
-                const config = await res.json();
-                if (config.token) SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
-                if (config.licenciaSGF || config.license) {
-                    const l = config.licenciaSGF || config.license;
-                    SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
-                }
-            }
-        } catch (e) {
-            console.warn("Visor: Error leyendo configuración local inicial.");
-        }
-        await cargarDatosNube(); 
-    }
-
     // Análisis de Licencia (Con reparación de padding de Base64)
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
@@ -329,7 +301,7 @@
         if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
         try {
             let b64 = parts[3];
-            // Reparación del padding Base64 que provocaba el error
+            // Reparación del padding Base64 que provocaba el error al leer
             while (b64.length % 4 !== 0) b64 += '=';
             
             const dateStr = atob(b64).replace(/[-/]/g, '');
@@ -787,53 +759,25 @@
     };
 
     /* ==========================================================================
-       CONEXIÓN DIRECTA A LA NUBE (En Vivo / API + RAW)
+       CONEXIÓN A LA NUBE (CARGA DEL RAW) Y VALIDACIÓN DE LICENCIA
        ========================================================================== */
     async function cargarDatosNube() {
         const badgeLicencia = document.getElementById('visor-license-text');
-        badgeLicencia.innerHTML = 'Conectando a la Base de Datos... <i class="fas fa-spinner fa-spin"></i>';
+        badgeLicencia.innerHTML = 'Conectando a la BD... <i class="fas fa-spinner fa-spin"></i>';
 
         let configFinal = null;
 
-        // 1. Intentar API en Vivo (evade el caché por completo)
-        if (SYSTEM_AUTH.token) {
-            try {
-                const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
-                    headers: { 
-                        'Authorization': 'token ' + SYSTEM_AUTH.token, 
-                        'Accept': 'application/vnd.github.v3+json', 
-                        'Cache-Control': 'no-cache' 
-                    }
-                });
-                if (resApi.ok) {
-                    const data = await resApi.json();
-                    const binaryStr = atob(data.content);
-                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
-                    const decodedContent = new TextDecoder('utf-8').decode(bytes);
-                    configFinal = JSON.parse(decodedContent);
-                    console.log("✅ Datos leídos 100% en tiempo real mediante API.");
-                }
-            } catch(e) { console.warn("API de lectura falló, pasando a RAW...", e); }
-        }
-
-        // 2. Si la API falla, usamos el RAW de Github Público (también en vivo)
-        if (!configFinal) {
-            try {
-                const resRaw = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?t=${Date.now()}`);
-                if (resRaw.ok) {
-                    configFinal = await resRaw.json();
-                    console.log("✅ Datos leídos desde el servidor RAW público.");
-                }
-            } catch(e) { console.warn("RAW falló.", e); }
-        }
-
-        // 3. Fallback final local (en caso de que todo lo anterior falle)
-        if (!configFinal) {
-            try {
+        try {
+            // CONEXIÓN DIRECTA A GITHUB RAW (Evade el Caché al 100%)
+            const resRaw = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?t=${Date.now()}`);
+            if (resRaw.ok) {
+                configFinal = await resRaw.json();
+            } else {
+                // Fallback a ruta local
                 const resLocal = await fetch(`${FILE_PATH}?t=${Date.now()}`);
-                if (resLocal.ok) { configFinal = await resLocal.json(); }
-            } catch(e) {}
-        }
+                if (resLocal.ok) configFinal = await resLocal.json();
+            }
+        } catch(e) { console.warn("Fallo lectura inicial", e); }
 
         if (!configFinal) {
             badgeLicencia.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error de Conexión`;
@@ -841,35 +785,35 @@
             return;
         }
 
-        // Evaluar Licencia
+        // EVALUAR LICENCIA
         const rawLic = configFinal.licenciaSGF || configFinal.license || SYSTEM_AUTH.licenciaSGF;
+        let finalLic = null;
         if (rawLic) {
-            const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
-            const validacion = analizarLicenciaSGF(finalLic);
-            if (validacion.valid) {
-                if (validacion.expired) {
-                    badgeLicencia.innerHTML = `LICENCIA VENCIDA (Contacte al Admin)`;
-                    document.getElementById('visor-license-box').style.background = "rgba(218, 54, 51, 0.2)";
-                    document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
-                    document.getElementById('visor-license-box').style.color = "var(--color-vencida)";
-                } else {
-                    badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${validacion.days} Días`;
-                    document.getElementById('visor-license-box').style.background = "rgba(35, 134, 54, 0.2)";
-                    document.getElementById('visor-license-box').style.borderColor = "var(--color-vigente)";
-                    document.getElementById('visor-license-box').style.color = "white";
-                }
-                if(validacion.days <= 10 && validacion.days > 0) {
-                    document.getElementById('license-banner').style.display = 'block';
-                    document.getElementById('dias-restantes').innerText = validacion.days;
-                }
-            } else {
-                badgeLicencia.innerHTML = `LICENCIA INVÁLIDA`;
-                document.getElementById('visor-license-box').style.background = "rgba(218, 54, 51, 0.2)";
-                document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
-            }
+            finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
+        }
+        
+        const validacion = analizarLicenciaSGF(finalLic);
+        const lockOverlay = document.getElementById('license-lock-overlay');
+
+        if (!validacion.valid || validacion.expired) {
+            badgeLicencia.innerHTML = `LICENCIA VENCIDA O NO INGRESADA`;
+            document.getElementById('visor-license-box').style.background = "rgba(218, 54, 51, 0.2)";
+            document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
+            document.getElementById('visor-license-box').style.color = "var(--color-vencida)";
+            
+            // MOSTRAR BANNER DE BLOQUEO
+            if (lockOverlay) lockOverlay.style.display = 'flex';
+        } else {
+            badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${validacion.days} Días`;
+            document.getElementById('visor-license-box').style.background = "rgba(35, 134, 54, 0.2)";
+            document.getElementById('visor-license-box').style.borderColor = "var(--color-vigente)";
+            document.getElementById('visor-license-box').style.color = "white";
+            
+            // OCULTAR BANNER DE BLOQUEO
+            if (lockOverlay) lockOverlay.style.display = 'none';
         }
 
-        // Reconstruir mapa con los datos cargados
+        // CARGAR LOS DATOS (EL RAW) EN EL MAPA SIEMPRE (para que el Word Backup funcione incluso bloqueado)
         STORE = {};
         for(let id in capasSectores) capaMaestraSectores.removeLayer(capasSectores[id]);
         
@@ -892,7 +836,8 @@
                     if (reg.tipoGeometria === 'marker' && reg.coords) {
                         capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { icon: crearPinFiscal(colorBase), draggable: false });
                     } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                        capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
+                        const coordsLimpia = Array.isArray(reg.coords) ? reg.coords.map(c => ({lat: parseFloat(c.lat), lng: parseFloat(c.lng)})) : reg.coords;
+                        capa = L.polygon(coordsLimpia, { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
                     }
 
                     if(capa) {
