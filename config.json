@@ -9,14 +9,14 @@
     "sec_1776191222794": {
       "nombreSector": "IMPORTACIÓN CSV 14:27:02",
       "visible": true,
-      "isMaster": false,
+      "isMaster": true,
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {},
       "colorPrincipal": "#8e44ad",
       "isExpanded": true,
       "registros": [
         {
-          "idFisico": 514,
+          "idFisico": 843,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -64,7 +64,7 @@
           }
         },
         {
-          "idFisico": 515,
+          "idFisico": 844,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -112,7 +112,7 @@
           }
         },
         {
-          "idFisico": 516,
+          "idFisico": 845,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -160,7 +160,7 @@
           }
         },
         {
-          "idFisico": 517,
+          "idFisico": 846,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -208,7 +208,7 @@
           }
         },
         {
-          "idFisico": 518,
+          "idFisico": 847,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -256,7 +256,7 @@
           }
         },
         {
-          "idFisico": 519,
+          "idFisico": 848,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -304,7 +304,7 @@
           }
         },
         {
-          "idFisico": 520,
+          "idFisico": 849,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -352,7 +352,7 @@
           }
         },
         {
-          "idFisico": 521,
+          "idFisico": 850,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -400,7 +400,7 @@
           }
         },
         {
-          "idFisico": 522,
+          "idFisico": 851,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#238636",
           "visibleIndividual": true,
@@ -448,7 +448,7 @@
           }
         },
         {
-          "idFisico": 523,
+          "idFisico": 852,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -496,7 +496,7 @@
           }
         },
         {
-          "idFisico": 524,
+          "idFisico": 853,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -544,7 +544,7 @@
           }
         },
         {
-          "idFisico": 525,
+          "idFisico": 854,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -592,7 +592,7 @@
           }
         },
         {
-          "idFisico": 526,
+          "idFisico": 855,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -640,7 +640,7 @@
           }
         },
         {
-          "idFisico": 527,
+          "idFisico": 856,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -688,7 +688,7 @@
           }
         },
         {
-          "idFisico": 528,
+          "idFisico": 857,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -736,7 +736,7 @@
           }
         },
         {
-          "idFisico": 529,
+          "idFisico": 858,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -784,7 +784,7 @@
           }
         },
         {
-          "idFisico": 530,
+          "idFisico": 859,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -832,7 +832,7 @@
           }
         },
         {
-          "idFisico": 531,
+          "idFisico": 860,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -880,7 +880,7 @@
           }
         },
         {
-          "idFisico": 532,
+          "idFisico": 861,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -928,7 +928,7 @@
           }
         },
         {
-          "idFisico": 533,
+          "idFisico": 862,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -976,7 +976,7 @@
           }
         },
         {
-          "idFisico": 534,
+          "idFisico": 863,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1024,7 +1024,7 @@
           }
         },
         {
-          "idFisico": 535,
+          "idFisico": 864,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1072,7 +1072,7 @@
           }
         },
         {
-          "idFisico": 536,
+          "idFisico": 865,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1120,7 +1120,7 @@
           }
         },
         {
-          "idFisico": 537,
+          "idFisico": 866,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1168,7 +1168,7 @@
           }
         },
         {
-          "idFisico": 538,
+          "idFisico": 867,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1216,7 +1216,7 @@
           }
         },
         {
-          "idFisico": 539,
+          "idFisico": 868,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1264,7 +1264,7 @@
           }
         },
         {
-          "idFisico": 540,
+          "idFisico": 869,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1312,7 +1312,7 @@
           }
         },
         {
-          "idFisico": 541,
+          "idFisico": 870,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1360,7 +1360,7 @@
           }
         },
         {
-          "idFisico": 542,
+          "idFisico": 871,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1408,7 +1408,7 @@
           }
         },
         {
-          "idFisico": 543,
+          "idFisico": 872,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1456,7 +1456,7 @@
           }
         },
         {
-          "idFisico": 544,
+          "idFisico": 873,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1504,7 +1504,7 @@
           }
         },
         {
-          "idFisico": 545,
+          "idFisico": 874,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1552,7 +1552,7 @@
           }
         },
         {
-          "idFisico": 546,
+          "idFisico": 875,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1600,7 +1600,7 @@
           }
         },
         {
-          "idFisico": 547,
+          "idFisico": 876,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1648,7 +1648,7 @@
           }
         },
         {
-          "idFisico": 548,
+          "idFisico": 877,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1696,7 +1696,7 @@
           }
         },
         {
-          "idFisico": 549,
+          "idFisico": 878,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1744,7 +1744,7 @@
           }
         },
         {
-          "idFisico": 550,
+          "idFisico": 879,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#fbbc04",
           "visibleIndividual": true,
@@ -1792,7 +1792,7 @@
           }
         },
         {
-          "idFisico": 551,
+          "idFisico": 880,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#238636",
           "visibleIndividual": true,
@@ -1840,7 +1840,7 @@
           }
         },
         {
-          "idFisico": 552,
+          "idFisico": 881,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1888,7 +1888,7 @@
           }
         },
         {
-          "idFisico": 553,
+          "idFisico": 882,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1936,7 +1936,7 @@
           }
         },
         {
-          "idFisico": 554,
+          "idFisico": 883,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1984,7 +1984,7 @@
           }
         },
         {
-          "idFisico": 555,
+          "idFisico": 884,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2032,7 +2032,7 @@
           }
         },
         {
-          "idFisico": 556,
+          "idFisico": 885,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2080,7 +2080,7 @@
           }
         },
         {
-          "idFisico": 557,
+          "idFisico": 886,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2128,7 +2128,7 @@
           }
         },
         {
-          "idFisico": 558,
+          "idFisico": 887,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2176,7 +2176,7 @@
           }
         },
         {
-          "idFisico": 559,
+          "idFisico": 888,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2224,7 +2224,7 @@
           }
         },
         {
-          "idFisico": 560,
+          "idFisico": 889,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2272,7 +2272,7 @@
           }
         },
         {
-          "idFisico": 561,
+          "idFisico": 890,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2320,7 +2320,7 @@
           }
         },
         {
-          "idFisico": 562,
+          "idFisico": 891,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2368,7 +2368,7 @@
           }
         },
         {
-          "idFisico": 563,
+          "idFisico": 892,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2416,7 +2416,7 @@
           }
         },
         {
-          "idFisico": 564,
+          "idFisico": 893,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2464,7 +2464,7 @@
           }
         },
         {
-          "idFisico": 565,
+          "idFisico": 894,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2512,7 +2512,7 @@
           }
         },
         {
-          "idFisico": 566,
+          "idFisico": 895,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2560,7 +2560,7 @@
           }
         },
         {
-          "idFisico": 567,
+          "idFisico": 896,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2608,7 +2608,7 @@
           }
         },
         {
-          "idFisico": 568,
+          "idFisico": 897,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2656,7 +2656,7 @@
           }
         },
         {
-          "idFisico": 569,
+          "idFisico": 898,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2704,7 +2704,7 @@
           }
         },
         {
-          "idFisico": 570,
+          "idFisico": 899,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2752,7 +2752,7 @@
           }
         },
         {
-          "idFisico": 571,
+          "idFisico": 900,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2800,7 +2800,7 @@
           }
         },
         {
-          "idFisico": 572,
+          "idFisico": 901,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2848,7 +2848,7 @@
           }
         },
         {
-          "idFisico": 573,
+          "idFisico": 902,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
