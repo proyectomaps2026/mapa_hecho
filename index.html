@@ -44,6 +44,23 @@
         
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
+        /* BANNER DE ALERTA DE LICENCIA */
+        #license-banner {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            background: #FF8C00;
+            color: #ffffff;
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            z-index: 999999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
         /* ==========================================================================
            2. COMPONENTES DE INTERFAZ (UI)
            ========================================================================== */
@@ -95,7 +112,7 @@
         /* SIDEBAR (PANEL MAESTRO) */
         #sidebar { top: 95px; left: 15px; bottom: 20px; width: 420px; display: flex; flex-direction: column; overflow: hidden; }
         
-        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); position: relative; }
         .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
         .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; }
 
@@ -196,6 +213,11 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
 
+<!-- BANNER DE ALERTA PREVENTIVA LICENCIA -->
+<div id="license-banner">
+    ⚠️ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> días. Avise al Administrador.
+</div>
+
 <!-- MODALES DEL FLUJO DE CAPTURA -->
 <div id="capture-modal" class="notif-modal">
     <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
@@ -265,7 +287,7 @@
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN
+       PROTECCIÓN (Evitar inspección con teclado)
        ========================================================================== */
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('keydown', e => {
@@ -279,12 +301,12 @@
     const GITHUB_REPO = 'mapa_hecho'; // REPOSITORIO MÁSTER CORRECTO
     const FILE_PATH = 'config.json';
     
-    let SYSTEM_AUTH = { userAdmin: 'admin', passAdmin: 'admin', urlRaw: '', token: '', licenciaSGF: '' }; 
+    let SYSTEM_AUTH = { token: '', licenciaSGF: '' }; 
 
-    // PROTOCOLO PORTABILIDAD TOTAL: Carga Inicial Directa (Lee token)
+    // Carga Inicial
     async function precargarConfiguracion() {
         try {
-            // Buscamos primero localmente para sacar el token y poder usar la API (evadiendo caché)
+            // Buscamos primero localmente para sacar el token
             const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
             if (res.ok) {
                 const config = await res.json();
@@ -295,23 +317,35 @@
                 }
             }
         } catch (e) {
-            console.warn("Visor: No se pudo precargar la configuración local.");
+            console.warn("Visor: Error leyendo configuración local inicial.");
         }
-        await cargarDatosNube(); // Ahora llamamos a la carga en vivo
+        await cargarDatosNube(); 
     }
 
+    // Análisis de Licencia (Con reparación de padding de Base64)
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
         if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
         try {
-            const dateStr = atob(parts[3]).replace(/[-/]/g, '');
+            let b64 = parts[3];
+            // Reparación del padding Base64 que provocaba el error
+            while (b64.length % 4 !== 0) b64 += '=';
+            
+            const dateStr = atob(b64).replace(/[-/]/g, '');
             if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
             
-            const expDate = new Date(parseInt(dateStr.substring(0,4)), parseInt(dateStr.substring(4,6)) - 1, parseInt(dateStr.substring(6,8)), 23, 59, 59);
+            const expYear = parseInt(dateStr.substring(0,4));
+            const expMonth = parseInt(dateStr.substring(4,6)) - 1;
+            const expDay = parseInt(dateStr.substring(6,8));
+            
+            const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
             const diffDays = Math.ceil((expDate - new Date()) / (1000 * 60 * 60 * 24));
             return { valid: true, expired: diffDays <= 0, days: diffDays };
-        } catch(e) { return { valid: false, expired: true, days: 0 }; }
+        } catch(e) { 
+            console.error("Error validando licencia: ", e);
+            return { valid: false, expired: true, days: 0 }; 
+        }
     }
 
     function escHtmlBasico(s) {
@@ -746,119 +780,133 @@
         return { porEstatus, total, textoCompacto };
     }
 
+    const analizarCoordenadasProfundas = (coords) => {
+        if (Array.isArray(coords)) return coords.map(analizarCoordenadasProfundas);
+        else if (coords && coords.lat !== undefined && coords.lng !== undefined) return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
+        return coords;
+    };
+
     /* ==========================================================================
-       CONEXIÓN DIRECTA Y ANTI-CACHÉ A GITHUB API (LECTURA EN VIVO)
+       CONEXIÓN DIRECTA A LA NUBE (En Vivo / API + RAW)
        ========================================================================== */
     async function cargarDatosNube() {
         const badgeLicencia = document.getElementById('visor-license-text');
         badgeLicencia.innerHTML = 'Conectando a la Base de Datos... <i class="fas fa-spinner fa-spin"></i>';
 
-        try {
-            let config = null;
-            let apiExitosa = false;
+        let configFinal = null;
 
-            // 1. OBTENER TOKEN LOCAL (Necesario para usar la API y evadir el caché)
+        // 1. Intentar API en Vivo (evade el caché por completo)
+        if (SYSTEM_AUTH.token) {
+            try {
+                const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                    headers: { 
+                        'Authorization': 'token ' + SYSTEM_AUTH.token, 
+                        'Accept': 'application/vnd.github.v3+json', 
+                        'Cache-Control': 'no-cache' 
+                    }
+                });
+                if (resApi.ok) {
+                    const data = await resApi.json();
+                    const binaryStr = atob(data.content);
+                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                    const decodedContent = new TextDecoder('utf-8').decode(bytes);
+                    configFinal = JSON.parse(decodedContent);
+                    console.log("✅ Datos leídos 100% en tiempo real mediante API.");
+                }
+            } catch(e) { console.warn("API de lectura falló, pasando a RAW...", e); }
+        }
+
+        // 2. Si la API falla, usamos el RAW de Github Público (también en vivo)
+        if (!configFinal) {
+            try {
+                const resRaw = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?t=${Date.now()}`);
+                if (resRaw.ok) {
+                    configFinal = await resRaw.json();
+                    console.log("✅ Datos leídos desde el servidor RAW público.");
+                }
+            } catch(e) { console.warn("RAW falló.", e); }
+        }
+
+        // 3. Fallback final local (en caso de que todo lo anterior falle)
+        if (!configFinal) {
             try {
                 const resLocal = await fetch(`${FILE_PATH}?t=${Date.now()}`);
-                if(resLocal.ok) config = await resLocal.json();
-            } catch(e) { console.warn("Fallo lectura inicial:", e); }
+                if (resLocal.ok) { configFinal = await resLocal.json(); }
+            } catch(e) {}
+        }
 
-            // 2. CONEXIÓN API DIRECTA A GITHUB (100% Tiempo Real, Salta el caché de Github Pages)
-            if (config && config.token) {
-                let tokenMaster = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
-                try {
-                    const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
-                        headers: { 'Authorization': 'token ' + tokenMaster, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache' }
-                    });
-                    
-                    if (resApi.ok) {
-                        const data = await resApi.json();
-                        const binaryStr = atob(data.content);
-                        const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
-                        const decodedContent = new TextDecoder('utf-8').decode(bytes);
-                        config = JSON.parse(decodedContent);
-                        apiExitosa = true;
-                        console.log("✅ Datos obtenidos EN TIEMPO REAL desde el Servidor Central.");
-                    }
-                } catch(apiErr) { console.warn("Fallo API Github, usando RAW de respaldo:", apiErr); }
-            }
+        if (!configFinal) {
+            badgeLicencia.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Error de Conexión`;
+            document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
+            return;
+        }
 
-            // 3. FALLBACK RAW PÚBLICO (Si no hay token o la API falla)
-            if (!apiExitosa) {
-                const resRaw = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?t=${Date.now()}`);
-                if(resRaw.ok) { config = await resRaw.json(); } 
-                else if (!config) { throw new Error("No se pudo conectar con la base de datos."); }
-            }
-
-            // Evaluar Licencia
-            const rawLic = config.licenciaSGF || config.license;
-            if (rawLic) {
-                const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
-                const validacion = analizarLicenciaSGF(finalLic);
-                if (validacion.valid) {
-                    if (validacion.expired) {
-                        badgeLicencia.innerHTML = `LICENCIA VENCIDA (Comuníquese con el Admin)`;
-                        document.getElementById('visor-license-box').style.background = "rgba(218, 54, 51, 0.2)";
-                        document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
-                        document.getElementById('visor-license-box').style.color = "var(--color-vencida)";
-                    } else {
-                        badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${validacion.days} Días`;
-                        document.getElementById('visor-license-box').style.background = "rgba(35, 134, 54, 0.2)";
-                        document.getElementById('visor-license-box').style.borderColor = "var(--color-vigente)";
-                        document.getElementById('visor-license-box').style.color = "white";
-                    }
+        // Evaluar Licencia
+        const rawLic = configFinal.licenciaSGF || configFinal.license || SYSTEM_AUTH.licenciaSGF;
+        if (rawLic) {
+            const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
+            const validacion = analizarLicenciaSGF(finalLic);
+            if (validacion.valid) {
+                if (validacion.expired) {
+                    badgeLicencia.innerHTML = `LICENCIA VENCIDA (Contacte al Admin)`;
+                    document.getElementById('visor-license-box').style.background = "rgba(218, 54, 51, 0.2)";
+                    document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
+                    document.getElementById('visor-license-box').style.color = "var(--color-vencida)";
+                } else {
+                    badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${validacion.days} Días`;
+                    document.getElementById('visor-license-box').style.background = "rgba(35, 134, 54, 0.2)";
+                    document.getElementById('visor-license-box').style.borderColor = "var(--color-vigente)";
+                    document.getElementById('visor-license-box').style.color = "white";
                 }
+                if(validacion.days <= 10 && validacion.days > 0) {
+                    document.getElementById('license-banner').style.display = 'block';
+                    document.getElementById('dias-restantes').innerText = validacion.days;
+                }
+            } else {
+                badgeLicencia.innerHTML = `LICENCIA INVÁLIDA`;
+                document.getElementById('visor-license-box').style.background = "rgba(218, 54, 51, 0.2)";
+                document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
             }
+        }
 
-            // Reconstruir mapa (Fuerza isMaster = true para blindar la capa principal)
-            STORE = {};
-            for(let id in capasSectores) capaMaestraSectores.removeLayer(capasSectores[id]);
-            
-            const datosCargados = config.store || {};
-            const analizarCoordenadasProfundas = (coords) => {
-                if (Array.isArray(coords)) return coords.map(analizarCoordenadasProfundas);
-                else if (coords && coords.lat !== undefined && coords.lng !== undefined) return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
-                return coords;
+        // Reconstruir mapa con los datos cargados
+        STORE = {};
+        for(let id in capasSectores) capaMaestraSectores.removeLayer(capasSectores[id]);
+        
+        const datosCargados = configFinal.store || {};
+        for(let idSector in datosCargados) {
+            const sec = datosCargados[idSector];
+            capasSectores[idSector] = new L.FeatureGroup();
+            STORE[idSector] = {
+                nombreSector: sec.nombreSector, visible: true, isMaster: true, isExpanded: false,
+                coloresPorEstatus: sec.coloresPorEstatus || {}, registros: []
             };
 
-            for(let idSector in datosCargados) {
-                const sec = datosCargados[idSector];
-                capasSectores[idSector] = new L.FeatureGroup();
-                STORE[idSector] = {
-                    nombreSector: sec.nombreSector, visible: true, isMaster: true, isExpanded: false,
-                    coloresPorEstatus: sec.coloresPorEstatus || {}, registros: []
-                };
+            if(sec.registros){
+                sec.registros.forEach(reg => {
+                    let capa;
+                    const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                    const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                    let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
+                    
+                    if (reg.tipoGeometria === 'marker' && reg.coords) {
+                        capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { icon: crearPinFiscal(colorBase), draggable: false });
+                    } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                        capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
+                    }
 
-                if(sec.registros){
-                    sec.registros.forEach(reg => {
-                        let capa;
-                        const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                        const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                        let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
-                        
-                        if (reg.tipoGeometria === 'marker' && reg.coords) {
-                            capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { icon: crearPinFiscal(colorBase), draggable: false });
-                        } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                            capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
-                        }
-
-                        if(capa) {
-                            const newIdFisico = L.stamp(capa);
-                            STORE[idSector].registros.push({ idFisico: newIdFisico, tipoGeometria: reg.tipoGeometria, capaLeaflet: capa, colorPersonalizado: reg.colorPersonalizado, datosGenerales: reg.datosGenerales, camposOcultos: reg.camposOcultos || [] });
-                            vincularEventosCapa(capa, idSector, newIdFisico);
-                        }
-                    });
-                }
+                    if(capa) {
+                        const newIdFisico = L.stamp(capa);
+                        STORE[idSector].registros.push({ idFisico: newIdFisico, tipoGeometria: reg.tipoGeometria, capaLeaflet: capa, colorPersonalizado: reg.colorPersonalizado, datosGenerales: reg.datosGenerales, camposOcultos: reg.camposOcultos || [] });
+                        vincularEventosCapa(capa, idSector, newIdFisico);
+                    }
+                });
             }
-            
-            const keys = Object.keys(STORE);
-            if(keys.length > 0) { capaActivaId = keys[0]; STORE[capaActivaId].isExpanded = true; }
-            actualizarUIYMapa();
-        } catch(e) {
-            console.error("Error en la carga:", e);
-            badgeLicencia.innerHTML = `Error de Conexión al Servidor`;
-            document.getElementById('visor-license-box').style.borderColor = "var(--color-vencida)";
         }
+        
+        const keys = Object.keys(STORE);
+        if(keys.length > 0) { capaActivaId = keys[0]; STORE[capaActivaId].isExpanded = true; }
+        actualizarUIYMapa();
     }
 
     // ARRANQUE DIRECTO
