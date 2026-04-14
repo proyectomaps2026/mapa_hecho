@@ -5,18 +5,7 @@
   "license": "gNw0SNw0iNyAjM-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-XXOY-FGS",
   "userAdmin": "admin",
   "passAdmin": "admin",
-  "store": {
-    "IMPORT_1776187588325": {
-      "nombreSector": "CENSO IMPORTADO (13:26:28)",
-      "visible": true,
-      "isMaster": false,
-      "visibilidadPorEstatus": {},
-      "coloresPorEstatus": {},
-      "colorPrincipal": "#00f2ff",
-      "isExpanded": false,
-      "registros": []
-    }
-  },
+  "store": {},
   "wordConfig": {
     "columnas": [
       "Contribuyente",
