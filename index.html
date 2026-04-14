@@ -44,6 +44,23 @@
         
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
+        /* BANNER DE ALERTA DE LICENCIA */
+        #license-banner {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            background: #FF8C00;
+            color: #ffffff;
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 900;
+            z-index: 999999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
         /* ==========================================================================
            2. COMPONENTES DE INTERFAZ (UI)
            ========================================================================== */
@@ -201,6 +218,11 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
 
+<!-- BANNER DE ALERTA PREVENTIVA LICENCIA -->
+<div id="license-banner" style="display: none; position: absolute; top: 0; left: 0; right: 0; background: #FF8C00; color: #ffffff; text-align: center; padding: 12px; font-size: 14px; font-weight: 900; z-index: 999999; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-transform: uppercase;">
+    ⚠️ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> días. Avise al Administrador.
+</div>
+
 <!-- MODAL BLOQUEO TOTAL POR LICENCIA (O ERROR DE DATOS) -->
 <div id="license-lock-overlay" class="modal-overlay">
     <div class="glass-panel modal-box">
@@ -294,7 +316,7 @@
     let capaActivaId = null; 
     let textoFiltroGlobal = "";
 
-    // Evitar inspección
+    // Evitar inspección básica
     document.addEventListener('contextmenu', e => e.preventDefault());
 
     // Análisis de Licencia Seguro (Soluciona el error de Padding Base64)
@@ -304,7 +326,7 @@
         if(parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true, days: 0 };
         try {
             let b64 = parts[3].trim();
-            // Solución mágica para el error de decodificación Base64:
+            // Solución para el error de decodificación Base64 en strings grandes
             while (b64.length % 4 !== 0) { b64 += '='; }
             
             const decodedStr = atob(b64);
@@ -329,26 +351,48 @@
        CONEXIÓN DE LECTURA DIRECTA A GITHUB (MOTOR INFALIBLE)
        ========================================================================== */
     async function obtenerDatosJSON() {
-        // Opción 1: Extraer el RAW de GitHub directo (Esquiva la caché de Github Pages)
-        try {
-            const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?nocache=${Date.now()}`;
-            const res = await fetch(rawUrl);
-            if (res.ok) {
-                console.log("✅ Conexión establecida: Datos obtenidos del servidor RAW.");
-                return await res.json();
-            }
-        } catch(e) { console.warn("Fallo lectura RAW, intentando ruta local."); }
+        let configFinal = null;
 
-        // Opción 2: Fallback local (Por si GitHub Raw bloquea por CORS momentáneamente)
+        // Opción 1: Obtener la configuración local (Para sacar el Token y poder usar API anti-caché)
         try {
             const resLocal = await fetch(`${FILE_PATH}?nocache=${Date.now()}`);
-            if (resLocal.ok) {
-                console.log("✅ Conexión establecida: Datos obtenidos de ruta local.");
-                return await resLocal.json();
+            if (resLocal.ok) configFinal = await resLocal.json();
+        } catch(e) { console.warn("Fallo lectura local:", e); }
+
+        // Opción 2: Si tenemos Token, usamos la API de GitHub para asegurar que los datos son 100% en vivo
+        if (configFinal && configFinal.token) {
+            let tokenMaster = configFinal.token.startsWith('ghp_') ? configFinal.token : configFinal.token.split('').reverse().join('');
+            try {
+                const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?nocache=${Date.now()}`, {
+                    headers: { 'Authorization': 'token ' + tokenMaster, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+                });
+
+                if (resApi.ok) {
+                    const data = await resApi.json();
+                    // FIX CRÍTICO: Limpiar saltos de línea del Base64 que enviaba la API para archivos grandes
+                    const base64Clean = data.content.replace(/\s/g, ''); 
+                    const binaryStr = atob(base64Clean);
+                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                    const decodedContent = new TextDecoder('utf-8').decode(bytes);
+                    console.log("✅ Datos obtenidos EN TIEMPO REAL vía API GitHub.");
+                    return JSON.parse(decodedContent);
+                }
+            } catch(apiErr) { console.warn("Fallo API Github, pasando a RAW:", apiErr); }
+        }
+
+        // Opción 3: Fallback a RAW público si la API falló
+        try {
+            const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?nocache=${Date.now()}`;
+            const resRaw = await fetch(rawUrl);
+            if (resRaw.ok) {
+                console.log("✅ Datos obtenidos vía RAW GitHub.");
+                return await resRaw.json();
             }
-        } catch(e) {}
-        
-        throw new Error("No se pudo obtener la base de datos.");
+        } catch(e) { console.warn("Fallo lectura RAW."); }
+
+        // Si falló todo lo anterior, retornar lo local si lo hubiere
+        if (configFinal) return configFinal;
+        throw new Error("No se pudo conectar a la base de datos.");
     }
 
     async function iniciarSistemaVisor() {
@@ -359,7 +403,7 @@
         const lockDesc = document.getElementById('lock-desc');
 
         try {
-            // 1. OBTENER DATOS
+            // 1. OBTENER DATOS (Usa el motor de conexión infalible)
             const configData = await obtenerDatosJSON();
             
             // 2. VALIDAR LICENCIA
@@ -373,7 +417,7 @@
             const estatusLicencia = analizarLicenciaSGF(finalLic);
             
             if (!estatusLicencia.valid || estatusLicencia.expired) {
-                // BLOQUEAR SISTEMA (Pero cargar el mapa al fondo para que sirva el Word)
+                // BLOQUEAR SISTEMA VISUALMENTE
                 badgeLicencia.innerHTML = "LICENCIA VENCIDA O INACTIVA";
                 boxLicencia.style.background = "rgba(218, 54, 51, 0.2)";
                 boxLicencia.style.borderColor = "var(--color-vencida)";
@@ -391,7 +435,7 @@
                 if(lockOverlay) lockOverlay.style.display = 'none';
             }
 
-            // 3. CONSTRUIR EL MAPA SIEMPRE (Detrás del bloqueo si lo hay)
+            // 3. CONSTRUIR EL MAPA SIEMPRE (Detrás del bloqueo si lo hay, para que funcione el Backup Word)
             reconstruirDesdeJSON(configData.store || {});
 
         } catch (error) {
@@ -431,7 +475,7 @@
             if(sec.registros) {
                 sec.registros.forEach(reg => {
                     let capa;
-                    const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                    const estActual = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
                     const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
                     let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
                     
@@ -443,7 +487,15 @@
 
                     if(capa) {
                         const newIdFisico = L.stamp(capa);
-                        STORE[idSector].registros.push({ idFisico: newIdFisico, tipoGeometria: reg.tipoGeometria, capaLeaflet: capa, colorPersonalizado: reg.colorPersonalizado, datosGenerales: reg.datosGenerales, camposOcultos: reg.camposOcultos || [] });
+                        STORE[idSector].registros.push({ 
+                            idFisico: newIdFisico, 
+                            tipoGeometria: reg.tipoGeometria, 
+                            capaLeaflet: capa, 
+                            colorPersonalizado: reg.colorPersonalizado, 
+                            visibleIndividual: reg.visibleIndividual !== false,
+                            datosGenerales: reg.datosGenerales || {}, 
+                            camposOcultos: reg.camposOcultos || [] 
+                        });
                         vincularEventosCapa(capa, idSector, newIdFisico);
                     }
                 });
@@ -573,7 +625,7 @@
     }
 
     /* ==========================================================================
-       CONFIGURACIÓN DEL MAPA Y RENDERIZADO BÁSICO
+       CONFIGURACIÓN DEL MAPA
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - VISOR');
@@ -600,7 +652,7 @@
 
     function activarHerramienta(tipo) {
         if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa de Simulación en el panel izquierdo antes de dibujar.");
-        if(STORE[capaActivaId].isMaster) return alert("⚠️ CAPA PROTEGIDA: No puede dibujar en la capa base. Por favor clone la capa o cree una nueva para realizar simulaciones.");
+        if(STORE[capaActivaId] && STORE[capaActivaId].isMaster) return alert("⚠️ CAPA PROTEGIDA: No puede dibujar en la capa base. Por favor clone la capa o cree una nueva para realizar simulaciones.");
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
 
@@ -713,23 +765,25 @@
             const gruposPorEstatus = {};
             let hayResultadosBusqueda = false;
 
-            sectorData.registros.forEach(reg => {
-                if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
-                const estatus = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-                const searchString = Object.values(reg.datosGenerales).join(" ").toLowerCase();
-                const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+            if (sectorData.registros) {
+                sectorData.registros.forEach(reg => {
+                    if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
+                    const estatus = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
+                    const searchString = reg.datosGenerales ? Object.values(reg.datosGenerales).join(" ").toLowerCase() : "";
+                    const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
-                if (sectorData.visible && reg.visibleIndividual && cumpleFiltro) {
-                    capasSectores[idSector].addLayer(reg.capaLeaflet);
-                }
+                    if (sectorData.visible && reg.visibleIndividual && cumpleFiltro) {
+                        if (reg.capaLeaflet) capasSectores[idSector].addLayer(reg.capaLeaflet);
+                    }
 
-                if(cumpleFiltro) {
-                    hayResultadosBusqueda = true;
-                    if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
-                    gruposPorEstatus[estatus].conteo++;
-                    gruposPorEstatus[estatus].lista.push(reg);
-                }
-            });
+                    if(cumpleFiltro) {
+                        hayResultadosBusqueda = true;
+                        if(!gruposPorEstatus[estatus]) gruposPorEstatus[estatus] = { conteo: 0, lista: [] };
+                        gruposPorEstatus[estatus].conteo++;
+                        gruposPorEstatus[estatus].lista.push(reg);
+                    }
+                });
+            }
 
             if (sectorData.visible) { if (!capaMaestraSectores.hasLayer(capasSectores[idSector])) capaMaestraSectores.addLayer(capasSectores[idSector]); } 
             else { if (capaMaestraSectores.hasLayer(capasSectores[idSector])) capaMaestraSectores.removeLayer(capasSectores[idSector]); }
@@ -780,7 +834,7 @@
         }
 
         const indicador = document.getElementById('indicador-capa-activa');
-        if(capaActivaId && STORE[capaActivaId]) { indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector; indicador.style.color = "var(--cyan-neon)"; } 
+        if(capaActivaId && STORE[capaActivaId]) { indicador.innerText = "CAPA ACTIVA: " + STORE[capaActivaId].nombreSector; indicador.style.color = varCSS('--cyan-neon'); } 
         else { indicador.innerText = "HACIENDA MUNICIPAL"; indicador.style.color = "#6e7681"; }
     }
 
@@ -788,6 +842,7 @@
        POPUPS Y EDICIÓN LOCAL (SANDBOX)
        ========================================================================== */
     function vincularEventosCapa(capaFisica, idSector, idFisico) { capaFisica.on('click', () => { abrirPopupDinamico(idSector, idFisico, false); }); }
+    function varCSS(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
 
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
         const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
