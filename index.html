@@ -264,11 +264,11 @@
 
 <script>
     /* ==========================================================================
-       CONFIGURACIÓN MAESTRA DE REPOSITORIO (Ajuste para API Directa)
+       CONFIGURACIÓN MAESTRA DE REPOSITORIO (CORREGIDA AL REPOSITORIO REAL)
        ========================================================================== */
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa-censo'; // Tu repositorio real
-    const FILE_PATH = 'config.json'; // Archivo donde se guarda la BD
+    const GITHUB_REPO = 'mapa_hecho'; // <-- EL REPOSITORIO CORRECTO DONDE GUARDA EL SUPER ADMIN
+    const FILE_PATH = 'config.json'; 
 
     /* ==========================================================================
        PROTECCIÓN BÁSICA
@@ -540,7 +540,7 @@
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL PUNTOS:</span> <span>${rep.total}</span></div>
             </div>`;
         } else {
-            const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
@@ -580,7 +580,7 @@
     }
 
     /* ==========================================================================
-       CONEXIÓN DIRECTA Y ANTI-CACHÉ A GITHUB RAW (LECTURA EN VIVO)
+       CONEXIÓN DIRECTA Y ANTI-CACHÉ A GITHUB (LECTURA EN VIVO)
        ========================================================================== */
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
@@ -601,21 +601,26 @@
         if(btn) { btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> ACTUALIZANDO...'; btn.disabled = true; }
 
         try {
-            // 1. OBTENER CONFIGURACIÓN LOCAL (Para sacar el Token y evitar el caché)
             let config = null;
-            let resLocal = await fetch(`config.json?t=${Date.now()}`);
-            if(!resLocal.ok) throw new Error("No se pudo conectar con el servidor base.");
-            config = await resLocal.json();
+            let apiExitosa = false;
 
-            // 2. CONEXIÓN API DIRECTA A GITHUB (Rompe el caché para ver el RAW instantáneamente)
-            let tokenMaster = config.token;
-            if (tokenMaster) {
-                tokenMaster = tokenMaster.startsWith('ghp_') ? tokenMaster : tokenMaster.split('').reverse().join('');
+            // 1. OBTENER TOKEN LOCAL (Necesario para usar la API de Github y evadir el caché por completo)
+            try {
+                const resLocal = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+                if(resLocal.ok) config = await resLocal.json();
+            } catch(e) { 
+                console.warn("Fallo lectura local:", e); 
+            }
+
+            // 2. CONEXIÓN API DIRECTA A GITHUB (100% Tiempo Real, Salta el caché de Pages)
+            if (config && config.token) {
+                let tokenMaster = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
                 try {
                     const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
                         headers: { 
                             'Authorization': 'token ' + tokenMaster,
-                            'Accept': 'application/vnd.github.v3+json'
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Cache-Control': 'no-cache'
                         }
                     });
                     
@@ -625,10 +630,22 @@
                         const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
                         const decodedContent = new TextDecoder('utf-8').decode(bytes);
                         config = JSON.parse(decodedContent);
-                        console.log("✅ Datos RAW obtenidos en TIEMPO REAL desde la Nube.");
+                        apiExitosa = true;
+                        console.log("✅ Conexión directa establecida. Datos 100% en vivo.");
                     }
-                } catch(apiErr) {
-                    console.warn("⚠️ Usando caché de emergencia:", apiErr);
+                } catch(apiErr) { 
+                    console.warn("Fallo API Github, procediendo a RAW:", apiErr); 
+                }
+            }
+
+            // 3. FALLBACK RAW PÚBLICO (Por si el token falla)
+            if (!apiExitosa) {
+                const resRaw = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?t=${Date.now()}`);
+                if(resRaw.ok) {
+                    config = await resRaw.json();
+                    console.log("✅ Datos obtenidos del RAW público.");
+                } else if (!config) {
+                    throw new Error("No se pudo conectar con la base de datos en la nube.");
                 }
             }
 
@@ -657,7 +674,7 @@
                 }
             }
 
-            // Reconstruir mapa con los datos frescos
+            // Reconstruir mapa con los datos descargados
             STORE = {};
             for(let id in capasSectores) capaMaestraSectores.removeLayer(capasSectores[id]);
             
