@@ -251,7 +251,7 @@
 
     <div class="sidebar-footer">
         <button class="btn btn-outline" id="btn-actualizar-nube" onclick="cargarDatosNube()" style="background: var(--color-vigente); border-color:var(--color-vigente); color: white; margin-bottom: 5px;">
-            <i class="fas fa-sync-alt"></i> RECARGAR DESDE LA NUBE
+            <i class="fas fa-sync-alt"></i> RECARGAR DATOS EN VIVO
         </button>
         <button class="btn btn-outline" onclick="descargarRespaldoTotalWord()" style="background: #0d6efd; border-color:#0d6efd; color: white;">
             📄 DESCARGAR RESPALDO (WORD)
@@ -425,7 +425,7 @@
     }
 
     function eliminarSector(idSector) {
-        if(STORE[idSector].isMaster) return alert("Esta es una capa base que proviene de la nube. No puede ser eliminada.");
+        if(STORE[idSector].isMaster) return alert("Esta es una capa base protegida. No puede ser eliminada.");
         if(confirm(`¿Desea eliminar la capa de simulación "${STORE[idSector].nombreSector}"?`)) {
             if(capasSectores[idSector]) { capaMaestraSectores.removeLayer(capasSectores[idSector]); delete capasSectores[idSector]; }
             delete STORE[idSector];
@@ -573,7 +573,7 @@
     }
 
     /* ==========================================================================
-       CONEXIÓN A LA NUBE Y LICENCIA (LECTURA)
+       CONEXIÓN DIRECTA Y ANTI-CACHÉ A GITHUB RAW (LECTURA)
        ========================================================================== */
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
@@ -594,8 +594,16 @@
         if(btn) { btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> ACTUALIZANDO...'; btn.disabled = true; }
 
         try {
-            const res = await fetch(`config.json?t=${Date.now()}`);
-            if(!res.ok) throw new Error("No se pudo conectar con el servidor de la base de datos.");
+            // CONEXIÓN DIRECTA A RAW GITHUB PARA EVITAR CACHÉ DEL PAGES
+            const urlRawGithub = `https://raw.githubusercontent.com/proyectomaps2026/mapa_hecho/main/config.json?t=${Date.now()}`;
+            let res = await fetch(urlRawGithub);
+            
+            if(!res.ok) {
+                // Si falla por alguna razón, intenta cargar de manera local
+                res = await fetch(`config.json?t=${Date.now()}`);
+                if(!res.ok) throw new Error("No se pudo conectar con el servidor de la base de datos.");
+            }
+            
             const config = await res.json();
             
             // Evaluar Licencia
@@ -611,7 +619,7 @@
                         badgeLicencia.style.borderColor = "var(--color-vencida)";
                         badgeLicencia.style.color = "var(--color-vencida)";
                     } else {
-                        badgeLicencia.innerHTML = `<i class="fas fa-check-circle"></i> Licencia Admin: ${validacion.days} Días`;
+                        badgeLicencia.innerHTML = `<i class="fas fa-check-circle"></i> Licencia del Sistema Cloud: ${validacion.days} Días`;
                         badgeLicencia.style.background = "rgba(35, 134, 54, 0.2)";
                         badgeLicencia.style.borderColor = "var(--color-vigente)";
                         badgeLicencia.style.color = "white";
@@ -665,7 +673,7 @@
             badgeLicencia.style.background = "rgba(218, 54, 51, 0.2)";
             badgeLicencia.style.borderColor = "var(--color-vencida)";
         } finally {
-            if(btn) { btn.innerHTML = '<i class="fas fa-sync-alt"></i> RECARGAR DESDE LA NUBE'; btn.disabled = false; }
+            if(btn) { btn.innerHTML = '<i class="fas fa-sync-alt"></i> RECARGAR DATOS EN VIVO'; btn.disabled = false; }
         }
     }
 
