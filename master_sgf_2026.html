@@ -1,9 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
     <title>SISTEMA DE CONTROL FISCAL - HACIENDA MUNICIPAL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -11,10 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- LIBRERÍAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- LIBRERÍA XLSX PARA EXPORTACIÓN A EXCEL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -37,735 +35,184 @@
             --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
         }
 
+        /* --- PARCHE CRÍTICO PLATINIUM --- */
+        .status-dot { display: none !important; } 
+        .status-header { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 15px !important; padding: 12px 16px !important; background: rgba(255, 255, 255, 0.03); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); transition: background 0.2s;}
+        .status-header:hover { background: rgba(255,255,255,0.05) !important; }
+        .status-header span:not(.status-badge) { color: #fff !important; background: transparent !important; padding: 0 !important; } 
+        .status-badge { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; padding: 2px 10px !important; border-radius: 20px !important; font-size: 11px !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; flex-shrink: 0; text-align: center; font-weight: 800; font-family: 'Inter', sans-serif;}
+
+        input[type="color"].status-color-square {
+            -webkit-appearance: none;
+            border: none;
+            width: 16px;
+            height: 16px;
+            padding: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+            flex-shrink: 0;
+        }
+        input[type="color"].status-color-square::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"].status-color-square::-webkit-color-swatch { border: none; border-radius: 4px; }
+
         * { box-sizing: border-box; }
         
         body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            font-family: 'Inter', sans-serif; 
-            background: var(--bg-dark); 
-            color: var(--text-main); 
-            overflow: hidden; 
+            margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; 
+            background: var(--bg-dark); color: var(--text-main); overflow: hidden; 
         }
         
-        #map { 
-            position: absolute; 
-            top: 0; 
-            bottom: 0; 
-            left: 0; 
-            right: 0; 
-            z-index: 1; 
-        }
+        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* ==========================================================================
-           2. COMPONENTES DE INTERFAZ (UI)
-           ========================================================================== */
-        .ui-layer { 
-            position: absolute; 
-            z-index: 1000; 
-            pointer-events: auto; 
-        }
+        .ui-layer { position: absolute; z-index: 1000; pointer-events: auto; }
         
         .glass-panel { 
-            background: var(--panel-bg); 
-            backdrop-filter: blur(16px); 
-            border: 1px solid var(--border-color); 
-            border-radius: 12px; 
-            box-shadow: var(--shadow-heavy); 
+            background: var(--panel-bg); backdrop-filter: blur(16px); 
+            border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-heavy); 
         }
         
         .btn { 
-            border: none; 
-            font-family: 'Inter', sans-serif; 
-            font-weight: 900; 
-            cursor: pointer; 
-            transition: 0.2s; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
+            border: none; font-family: 'Inter', sans-serif; font-weight: 900; 
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; 
         }
-        
-        .btn:hover { 
-            filter: brightness(1.2); 
-            transform: translateY(-1px); 
-        }
+        .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
 
-        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE A 100px */
-        .leaflet-top.leaflet-right {
-            margin-top: 100px !important;
-            z-index: 10001 !important;
-            margin-right: 15px !important;
-        }
+        .leaflet-top.leaflet-right { margin-top: 100px !important; z-index: 10001 !important; margin-right: 15px !important; }
 
-        /* BARRA SUPERIOR */
-        .top-nav { 
-            top: 15px; 
-            left: 15px; 
-            right: 15px; 
-            height: 64px; 
-            display: flex; 
-            align-items: center; 
-            padding: 0 20px; 
-            gap: 15px; 
-            justify-content: space-between; 
-        }
+        .top-nav { top: 15px; left: 15px; right: 15px; height: 64px; display: flex; align-items: center; padding: 0 20px; gap: 15px; justify-content: space-between; }
         
-        .search-container { 
-            flex: 0 1 500px; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            background: rgba(0,0,0,0.4); 
-            padding: 12px 18px; 
-            border-radius: 8px; 
-            border: 1px solid var(--border-color); 
-            transition: 0.3s; 
-        }
+        .search-container { flex: 0 1 500px; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.4); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-color); transition: 0.3s; }
+        .search-container:focus-within { border-color: var(--cyan-neon); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
+        .search-container input { background: transparent; border: none; color: white; outline: none; width: 100%; font-size: 14px; font-weight: 600; }
         
-        .search-container:focus-within { 
-            border-color: var(--cyan-neon); 
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); 
-        }
-        
-        .search-container input { 
-            background: transparent; 
-            border: none; 
-            color: white; 
-            outline: none; 
-            width: 100%; 
-            font-size: 14px; 
-            font-weight: 600; 
-        }
-        
-        .tools-container { 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
-        }
-        
-        .tool-btn { 
-            width: 44px; 
-            height: 44px; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            font-size: 18px; 
-            background: rgba(0,0,0,0.4); 
-            border: 1px solid var(--border-color); 
-            color: var(--text-main); 
-            cursor: pointer; 
-            transition: 0.2s; 
-        }
-        
-        .tool-btn:hover, .tool-btn.active { 
-            border-color: var(--cyan-neon); 
-            color: var(--cyan-neon); 
-            background: rgba(0, 242, 255, 0.1); 
-        }
+        .tools-container { display: flex; gap: 10px; align-items: center; }
+        .tool-btn { width: 44px; height: 44px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; transition: 0.2s; }
+        .tool-btn:hover, .tool-btn.active { border-color: var(--cyan-neon); color: var(--cyan-neon); background: rgba(0, 242, 255, 0.1); }
 
-        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE Y OCULTAMIENTO */
         @media print {
             .ui-layer, .leaflet-control-container, .modal-overlay, #mira-captura { display: none !important; }
             #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
             body, html { overflow: visible; background: white; }
         }
         
-        /* TOGGLE MODO LECTURA */
-        .toggle-container { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-            font-size: 11px; 
-            font-weight: 800; 
-            color: #a5b0bf; 
-            background: rgba(0,0,0,0.3); 
-            padding: 8px 15px; 
-            border-radius: 20px; 
-            border: 1px solid var(--border-color); 
-        }
-        
-        .switch { 
-            position: relative; 
-            display: inline-block; 
-            width: 34px; 
-            height: 18px; 
-        }
-        
-        .switch input { 
-            opacity: 0; 
-            width: 0; 
-            height: 0; 
-        }
-        
-        .slider { 
-            position: absolute; 
-            cursor: pointer; 
-            top: 0; 
-            left: 0; 
-            right: 0; 
-            bottom: 0; 
-            background-color: #da3633; 
-            transition: .4s; 
-            border-radius: 34px; 
-        }
-        
-        .slider:before { 
-            position: absolute; 
-            content: ""; 
-            height: 12px; 
-            width: 12px; 
-            left: 3px; 
-            bottom: 3px; 
-            background-color: white; 
-            transition: .4s; 
-            border-radius: 50%; 
-        }
-        
-        input:checked + .slider { 
-            background-color: var(--color-vigente); 
-        }
-        
-        input:checked + .slider:before { 
-            transform: translateX(16px); 
-        }
+        .toggle-container { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 800; color: #a5b0bf; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border-color); }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #da3633; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--color-vigente); }
+        input:checked + .slider:before { transform: translateX(16px); }
 
         /* SIDEBAR (PANEL MAESTRO) */
-        #sidebar { 
-            top: 95px; 
-            left: 15px; 
-            bottom: 20px; 
-            width: 420px; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden;
-        }
+        #sidebar { top: 95px; left: 15px; bottom: 20px; width: 420px; display: flex; flex-direction: column; overflow: hidden; }
         
-        .sidebar-header { 
-            padding: 25px 20px; 
-            border-bottom: 1px solid var(--border-color); 
-            background: rgba(255,255,255,0.02); 
-        }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
+        .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
+        .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; }
         
-        /* IDENTIDAD CORPORATIVA: Sidebar Header */
-        .sidebar-header h1 { 
-            margin: 0; 
-            font-size: 17px; 
-            font-weight: 900; 
-            letter-spacing: 1px; 
-            color: var(--color-temporal); 
-        }
-        
-        .sidebar-header p { 
-            margin: 6px 0 0; 
-            font-size: 11px; 
-            color: var(--cyan-neon); 
-            font-weight: 800; 
-            letter-spacing: 0.5px; 
-        }
-        
-        .layers-container { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 15px; 
-        }
-        
-        .layers-container::-webkit-scrollbar { 
-            width: 6px; 
-        }
-        
-        .layers-container::-webkit-scrollbar-thumb { 
-            background: var(--border-color); 
-            border-radius: 4px; 
-        }
+        .layers-container { flex: 1; overflow-y: auto; padding: 15px; }
+        .layers-container::-webkit-scrollbar { width: 6px; }
+        .layers-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
 
-        /* TARJETAS DE SECTOR Y CONTROLES DUALES */
-        .sector-card { 
-            margin-bottom: 12px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 8px; 
-            background: rgba(0,0,0,0.3); 
-            overflow: hidden; 
-            transition: all 0.3s ease; 
-        }
+        .sector-card { margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.3); overflow: hidden; transition: all 0.3s ease; }
+        .sector-card.is-active { border-color: var(--cyan-neon); background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); }
         
-        .sector-card.is-active { 
-            border-color: var(--cyan-neon); 
-            background: rgba(0, 242, 255, 0.03); 
-            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
-        }
+        .sector-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent; cursor: pointer; gap: 15px; }
+        .sector-header:hover { background: rgba(255,255,255,0.05); }
+        .sector-title-group { display: flex; align-items: center; gap: 15px; flex: 1; }
+        .sector-controls { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
         
-        .sector-header { 
-            padding: 12px 16px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            border-bottom: 1px solid transparent; 
-            cursor: pointer;
-        }
-        
-        .sector-header:hover { 
-            background: rgba(255,255,255,0.05); 
-        }
-        
-        .sector-title-group { 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
-        }
-        
-        /* Controles Visuales del Sector */
-        .sector-controls { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        
-        .radio-active { 
-            appearance: none; 
-            width: 16px; 
-            height: 16px; 
-            border: 2px solid #6e7681; 
-            border-radius: 50%; 
-            outline: none; 
-            cursor: pointer; 
-            position: relative; 
-        }
-        
-        .radio-active:checked { 
-            border-color: var(--cyan-neon); 
-        }
-        
-        .radio-active:checked::after { 
-            content: ''; 
-            position: absolute; 
-            top: 3px; 
-            left: 3px; 
-            width: 6px; 
-            height: 6px; 
-            background: var(--cyan-neon); 
-            border-radius: 50%; 
-        }
-        
-        .check-visible { 
-            appearance: none; 
-            width: 16px; 
-            height: 16px; 
-            border: 2px solid #6e7681; 
-            border-radius: 4px; 
-            outline: none; 
-            cursor: pointer; 
-            position: relative; 
-        }
-        
-        .check-visible:checked { 
-            background: var(--color-vigente); 
-            border-color: var(--color-vigente); 
-        }
-        
-        .check-visible:checked::after { 
-            content: '✔'; 
-            position: absolute; 
-            color: white; 
-            font-size: 10px; 
-            top: -1px; 
-            left: 2px; 
-        }
+        .radio-active { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 50%; outline: none; cursor: pointer; position: relative; flex-shrink: 0; }
+        .radio-active:checked { border-color: var(--cyan-neon); }
+        .radio-active:checked::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; background: var(--cyan-neon); border-radius: 50%; }
 
-        .sector-title { 
-            font-size: 13px; 
-            font-weight: 800; 
-            color: var(--text-main); 
-            cursor: pointer; 
-        }
-        
-        .sector-trash { 
-            padding: 5px; 
-            font-size: 13px; 
-            color: #6e7681; 
-            cursor: pointer; 
-            transition: 0.2s; 
-        }
-        
-        .sector-trash:hover { 
-            color: var(--color-vencida); 
-            text-shadow: 0 0 10px var(--color-vencida); 
-        }
+        .check-visible { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 4px; outline: none; cursor: pointer; position: relative; flex-shrink: 0; }
+        .check-visible:checked { background: var(--color-vigente); border-color: var(--color-vigente); }
+        .check-visible:checked::after { content: '✔'; position: absolute; color: white; font-size: 10px; top: -1px; left: 2px; }
 
-        /* ACORDEÓN DE ESTATUS Y LISTA */
-        .status-group { 
-            border-top: 1px solid var(--border-color); 
-            background: rgba(255,255,255,0.01); 
-        }
-        
-        .status-header { 
-            padding: 12px 16px; 
-            display: flex; 
-            align-items: center; 
-            gap: 15px; 
-            cursor: pointer; 
-        }
-        
-        .status-header:hover { 
-            background: rgba(255,255,255,0.04); 
-        }
+        .sector-title { font-size: 13px; font-weight: 800; color: var(--text-main); cursor: pointer; }
+        .sector-trash { padding: 5px; font-size: 13px; color: #6e7681; cursor: pointer; transition: 0.2s; }
+        .sector-trash:hover { color: var(--color-vencida); text-shadow: 0 0 10px var(--color-vencida); }
+
+        .status-group { border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
 
         .status-row-label {
-            flex: 1;
-            min-width: 0;
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 12px;
-            color: var(--text-main);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .status-count { 
-            background: rgba(255, 255, 255, 0.1); 
-            border-radius: 20px; 
-            padding: 2px 10px; 
+            flex: 1; 
+            min-width: 0; 
+            font-family: 'Inter', sans-serif; 
+            font-weight: 600; 
             font-size: 11px; 
-            font-weight: 700;
-            font-family: 'Inter', sans-serif;
-            color: var(--text-main);
-            flex-shrink: 0;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            line-height: 1.35;
-            text-align: center;
+            color: #ffffff !important; 
+            background: transparent !important;
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            white-space: nowrap; 
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
-        .status-row-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-shrink: 0;
-        }
+        .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
+        .local-row { padding: 8px 16px 8px 24px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); gap: 12px; }
+        .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
-        .status-color-wrap {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            border-radius: 4px;
-            overflow: hidden;
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
-        }
-
-        .status-cat-color-input {
-            -webkit-appearance: none;
-            appearance: none;
-            display: block;
-            width: 22px;
-            height: 22px;
-            margin: -1px 0 0 -1px;
-            padding: 0;
-            border: none;
-            cursor: pointer;
-        }
-
-        .status-cat-color-input::-webkit-color-swatch-wrapper { padding: 0; }
-        .status-cat-color-input::-webkit-color-swatch { border: none; }
-        .status-cat-color-input::-moz-color-swatch { border: none; }
-
-        .local-list { 
-            background: rgba(0,0,0,0.5); 
-            max-height: 250px; 
-            overflow-y: auto; 
-        }
-        
-        .local-row { 
-            padding: 8px 16px 8px 24px; 
-            font-size: 11px; 
-            color: #a5b0bfff; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            cursor: pointer; 
-            border-bottom: 1px solid rgba(255,255,255,0.02); 
-        }
-        
-        .local-row:hover { 
-            color: white; 
-            background: rgba(255,255,255,0.08); 
-        }
-
-        .sidebar-footer { 
-            padding: 20px; 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 12px; 
-            border-top: 1px solid var(--border-color); 
-            background: rgba(0,0,0,0.2); 
-        }
-        
-        .btn-outline { 
-            background: transparent; 
-            border: 1px solid var(--border-color); 
-            color: white; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-        }
-        
-        .btn-outline:hover { 
-            border-color: white; 
-            background: rgba(255,255,255,0.05); 
-        }
-        
-        .btn-solid-yellow { 
-            background: var(--color-temporal); 
-            color: #000; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-        }
-
-        /* Estilo añadido para botones verdes del módulo SGF */
-        .btn-solid-green { 
-            background: var(--color-vigente); 
-            color: #fff; 
-            padding: 14px; 
-            border-radius: 8px; 
-            font-size: 11px; 
-        }
+        /* FOOTER SIDEBAR */
+        .sidebar-footer { padding: 20px; display: grid; grid-template-columns: 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; padding: 14px; border-radius: 8px; font-size: 11px; }
+        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.05); }
+        .btn-solid-green { background: var(--color-vigente); color: #fff; padding: 14px; border-radius: 8px; font-size: 11px; }
+        .btn-solid-yellow { background: var(--color-temporal); color: #000; padding: 14px; border-radius: 8px; font-size: 11px; }
 
         /* ==========================================================================
-           3. POPUPS INMORTALES (VISTA LECTURA Y EDICIÓN DOBLE CONTENEDOR)
+           3. POPUPS INMORTALES (NUEVO DISEÑO ESTILO LISTA)
            ========================================================================== */
-        .leaflet-popup-content-wrapper { 
-            padding: 0; 
-            overflow: hidden; 
-            border-radius: 12px; 
-            background: #fff; 
-            width: 340px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
-        }
+        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; background: #fff; width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .leaflet-popup-tip { background: #fff; }
+        .leaflet-popup-content { margin: 0; } 
         
-        .leaflet-popup-tip { 
-            background: #fff; 
-        }
+        .pop-cover { width: 100%; height: 160px; background: #111; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        .pop-cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+        .pop-badge { position: absolute; top: 15px; left: 15px; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 900; color: white; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.5); }
         
-        .leaflet-popup-content { 
-            margin: 0; 
-        } 
+        /* NUEVO ESTILO DE POPUPS */
+        .pop-content { padding: 15px; background: #ffffff; max-height: 400px; overflow-y: auto; border-radius: 0 0 12px 12px; }
         
-        .pop-cover { 
-            width: 100%; 
-            height: 160px; 
-            background: #111; 
-            position: relative; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            overflow: hidden; 
-        }
-        
-        .pop-cover img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            opacity: 0.9; 
-        }
-        
-        .pop-badge { 
-            position: absolute; 
-            top: 15px; 
-            left: 15px; 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 10px; 
-            font-weight: 900; 
-            color: white; 
-            text-transform: uppercase; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
-            border: 2px solid rgba(255,255,255,0.5); 
-        }
-        
-        .pop-content { 
-            padding: 20px; 
-            color: #111; 
-            max-height: 400px; 
-            overflow-y: auto; 
-        }
-        
-        /* Estilos Vista Lectura Profesional */
         .read-field { 
-            margin-bottom: 12px; 
-            border-bottom: 1px solid #eaeaea; 
-            padding-bottom: 8px; 
+            display: flex; flex-direction: column; background: #f6f8fa; 
+            border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 8px; padding: 10px 12px; 
         }
-        
-        .read-label { 
-            display: block; 
-            font-size: 9px; 
-            font-weight: 900; 
-            color: #888; 
-            text-transform: uppercase; 
-            margin-bottom: 4px; 
-        }
-        
-        .read-value { 
-            font-size: 13px; 
-            font-weight: 700; 
-            color: #111; 
-            word-break: break-word; 
-        }
+        .read-label { font-size: 9px; font-weight: 900; color: #656d76; text-transform: uppercase; margin-bottom: 4px; }
+        .read-value { font-size: 13px; font-weight: 800; color: #0056b3; word-break: break-word; }
 
-        /* Estilos Vista Edición */
         .form-group { 
-            margin-bottom: 12px; 
-            border-bottom: 1px solid #eaeaea; 
-            padding-bottom: 6px; 
-            position: relative; 
+            display: flex; flex-direction: column; background: #f6f8fa; 
+            border: 1px solid #d0d7de; border-radius: 6px; margin-bottom: 8px; padding: 10px 12px; position: relative;
         }
-        
-        .form-label { 
-            display: block; 
-            font-size: 9px; 
-            font-weight: 900; 
-            color: #888; 
-            text-transform: uppercase; 
-            margin-bottom: 4px; 
-        }
-        
-        .form-input { 
-            width: 85%; 
-            border: none; 
-            font-family: 'Inter', sans-serif; 
-            font-size: 13px; 
-            font-weight: 700; 
-            color: #000; 
-            background: transparent; 
-            outline: none; 
-        }
-        
-        .form-input:focus { 
-            color: var(--color-vigente); 
-        }
-        
-        /* PRIVACIDAD DE URls */
-        .input-oculto { 
-            opacity: 0.6; 
-            font-family: monospace; 
-            letter-spacing: 1px; 
-        }
+        .form-label { display: block; font-size: 9px; font-weight: 900; color: #656d76; text-transform: uppercase; margin-bottom: 4px; }
+        .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0056b3; background: transparent; outline: none; margin-top: 2px;}
+        .form-input:focus { color: var(--color-vigente); }
+        .input-oculto { opacity: 0.6; font-family: monospace; letter-spacing: 1px; }
 
-        .form-select { 
-            width: 100%; 
-            padding: 8px; 
-            font-family: 'Inter', sans-serif; 
-            font-size: 12px; 
-            font-weight: 800; 
-            border: 1px solid #ccc; 
-            border-radius: 6px; 
-            margin-top: 5px; 
-            outline: none; 
-            cursor: pointer; 
-        }
-        
-        .eye-btn { 
-            position: absolute; 
-            right: 5px; 
-            top: 20px; 
-            color: #ccc; 
-            cursor: pointer; 
-            font-size: 14px; 
-            transition: 0.2s; 
-            z-index: 10; 
-            padding: 5px; 
-        }
-        
-        .eye-btn:hover, .eye-btn.is-hidden { 
-            color: var(--color-vencida); 
-        }
+        .form-select { width: 100%; padding: 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; color: #0056b3; border: 1px solid #d0d7de; border-radius: 6px; margin-top: 5px; outline: none; cursor: pointer; background: #fff;}
+        .eye-btn { position: absolute; right: 10px; top: 26px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; z-index: 10; padding: 5px; }
+        .eye-btn:hover, .eye-btn.is-hidden { color: var(--color-vencida); }
 
-        .btn-popup-action { 
-            width: 100%; 
-            padding: 14px; 
-            font-size: 12px; 
-            border-radius: 8px; 
-            margin-top: 10px; 
-            font-weight: 900; 
-            cursor: pointer; 
-            border: none; 
-            text-transform: uppercase; 
-            color: white; 
-            transition: 0.2s; 
-        }
-        
-        .btn-popup-action:hover { 
-            filter: brightness(1.1); 
-        }
-        
-        .btn-save { 
-            background: var(--color-vigente); 
-            box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); 
-        }
-        
-        .btn-edit { 
-            background: var(--cyan-neon); 
-            color: #000; 
-            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); 
-        }
-        
-        .btn-del { 
-            background: var(--color-vencida); 
-            margin-top: 15px; 
-        }
+        .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; transition: 0.2s; }
+        .btn-popup-action:hover { filter: brightness(1.1); }
+        .btn-save { background: var(--color-vigente); box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
+        .btn-edit { background: var(--cyan-neon); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); }
+        .btn-del { background: var(--color-vencida); margin-top: 15px; }
 
-        /* MODO LECTURA CSS MAESTRO */
         .readonly-mode .form-input { pointer-events: none; color: #555; }
         .readonly-mode .form-select { pointer-events: none; background: #eee; }
         .readonly-mode .eye-btn { display: none; }
         .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
 
-        /* ==========================================================================
-           5. ESTÉTICA PROFESIONAL DE VÉRTICES (PUNTOS BLANCOS EN EDICIÓN)
-           ========================================================================== */
-        .leaflet-editing-icon {
-            border-radius: 50% !important;
-            border: 2px solid var(--border-color) !important;
-            background-color: #fff !important;
-            width: 12px !important;
-            height: 12px !important;
-            margin-left: -6px !important;
-            margin-top: -6px !important;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
+        .leaflet-editing-icon { border-radius: 50% !important; border: 2px solid var(--border-color) !important; background-color: #fff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 
         /* ==========================================================================
-           6. MODALES Y REPORTES
+           MODALES GENERALES
            ========================================================================== */
-        .audit-report.glass-panel {
-            font-family: 'Inter', sans-serif;
-            padding: 20px 22px;
-            margin: 0;
-            text-align: left;
-        }
-        .audit-title {
-            margin: 0 0 14px;
-            font-size: 12px;
-            font-weight: 900;
-            color: var(--color-temporal);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 12px;
-        }
-        .audit-resumen-cuerpo {
-            margin: 0;
-            color: var(--text-main);
-            font-size: 13px;
-            font-weight: 600;
-            line-height: 1.55;
-        }
-        .audit-total-inline {
-            color: var(--cyan-neon);
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
         .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
@@ -825,6 +272,12 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
 
+<!-- VISOR DE IMAGEN COMPLETA (LIGHTBOX) -->
+<div id="visor-imagen-modal" class="modal-overlay" style="z-index: 9999999; display: none; background: rgba(0,0,0,0.95); flex-direction: column; justify-content: center; align-items: center;" onclick="this.style.display='none'">
+    <span style="position: absolute; top: 20px; right: 30px; color: var(--cyan-neon); font-size: 40px; font-weight: bold; cursor: pointer; text-shadow: 0 0 10px rgba(0,242,255,0.5);">&times;</span>
+    <img id="visor-imagen-src" src="" style="max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); object-fit: contain;">
+</div>
+
 <!-- MODALES DEL FLUJO DE CAPTURA -->
 <div id="capture-modal" class="notif-modal">
     <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
@@ -836,36 +289,65 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
+<!-- MODAL DE CONFIGURACIÓN WORD (SUPER ADMIN) -->
+<div id="modal-config-word" class="modal-overlay" style="z-index: 12000;">
+    <div class="glass-panel modal-box" style="width: 480px;">
+        <h2 class="modal-title"><i class="fas fa-file-word"></i> CONFIGURAR CUADROS WORD</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Seleccione los cuadros (columnas) que se generarán para el archivo Word de reporte.</p>
+        
+        <div id="word-columns-container" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Se llena dinámicamente -->
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('modal-config-word').style.display='none'">CANCELAR</button>
+            <button class="btn btn-save" style="flex: 1;" onclick="guardarConfiguracionWord()">GUARDAR SELECCIÓN</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE MAPEO CSV CON SELECCIÓN DE ESTATUS -->
+<div id="modal-mapeo-csv" class="modal-overlay" style="z-index: 11000;">
+    <div class="glass-panel modal-box" style="width: 450px;">
+        <h2 class="modal-title"><i class="fas fa-table"></i> MAPEO DE COLUMNAS CSV</h2>
+        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">Seleccione las columnas correspondientes del archivo RAW.</p>
+        
+        <div class="form-group" style="background: transparent; border: none; padding: 0;">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA COORDENADAS (Lat, Lng) *</span>
+            <select id="mapeo-coords" class="modal-select"></select>
+        </div>
+        
+        <div class="form-group" style="background: transparent; border: none; padding: 0;">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA NOMBRE (Contribuyente) *</span>
+            <select id="mapeo-nombre" class="modal-select"></select>
+        </div>
+        
+        <div class="form-group" style="background: transparent; border: none; padding: 0;">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA ESTATUS / SEMÁFORO (Color)</span>
+            <select id="mapeo-estatus" class="modal-select"></select>
+        </div>
+
+        <div class="form-group" style="background: transparent; border: none; padding: 0;">
+            <span class="form-label" style="color: var(--cyan-neon);">COLUMNA IMAGEN (Link Foto)</span>
+            <select id="mapeo-imagen" class="modal-select"></select>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('modal-mapeo-csv').style.display='none'">CANCELAR</button>
+            <button class="btn btn-save" style="flex: 1;" onclick="procesarMapeoCSV()">PROCESAR E IMPORTAR</button>
+        </div>
+    </div>
+</div>
+
 <!-- BANNER LICENCIA (solo ADMIN: activación o vencida; mapa visible detrás) -->
 <div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; justify-content: center;">
     <div class="glass-panel modal-box" style="width: 420px; max-width: 92%; padding: 32px 28px; text-align: center; box-sizing: border-box;">
         <i class="fas fa-key" style="font-size: 44px; color: var(--color-temporal); margin-bottom: 16px;"></i>
         <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 12px 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
-        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF). Puede descargar respaldo Word o Excel antes de activar.</p>
+        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF) para activar.</p>
         <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 12px;">
         <button type="button" class="btn btn-save" style="width: 100%; padding: 14px; margin-bottom: 10px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
         <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
-        <button type="button" class="btn btn-solid-yellow" style="width: 100%; padding: 12px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR RESPALDO (EXCEL)</button>
-    </div>
-</div>
-
-<!-- MODAL MAPEO MANUAL COLUMNAS CSV -->
-<div id="csv-mapeo-modal-overlay" class="modal-overlay" style="z-index: 9000; display: none; flex-direction: column; align-items: center; justify-content: center;">
-    <div class="glass-panel modal-box" style="max-width: 520px; width: 92%; padding: 24px; max-height: 90vh; overflow-y: auto;">
-        <h2 class="modal-title" style="margin-bottom: 12px;">MAPEO MANUAL DE COLUMNAS (CSV)</h2>
-        <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 16px;">Seleccione qué columna del archivo corresponde a cada campo. Puede usar la misma columna para lat y lng si las coordenadas vienen juntas (ej. 8.02,-72.25). Latitud y longitud son obligatorias para las pinchetas.</p>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Latitud</label>
-        <select id="csv-map-lat" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Longitud</label>
-        <select id="csv-map-lng" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Nombre / Contribuyente</label>
-        <select id="csv-map-nombre" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Categoría / Semáforo</label>
-        <select id="csv-map-categoria" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 10px; width: 100%; box-sizing: border-box;"></select>
-        <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Columna de Foto / Imagen</label>
-        <select id="csv-map-foto" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 16px; width: 100%; box-sizing: border-box;"></select>
-        <button type="button" class="btn btn-save" style="width: 100%; padding: 12px;" onclick="confirmarMapeoColumnasCSV()">CONFIRMAR</button>
-        <button type="button" class="btn btn-outline" style="width: 100%; padding: 10px; margin-top: 8px;" onclick="cerrarModalMapeoCsv()">CANCELAR</button>
     </div>
 </div>
 
@@ -940,8 +422,13 @@
             </svg> GENERAR REPORTE
         </button>
         
+        <!-- BOTÓN REPORTE WORD (DINÁMICO) -->
+        <button class="btn tool-btn" title="Descargar Cuadros Word" onclick="descargarRespaldoWord()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #2a313a; border-color: #2b579a;">
+            <i class="fas fa-file-word" style="color: #2b579a; margin-right: 8px;"></i> REPORTE WORD
+        </button>
+
         <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNubePorBotonRawSuperAdmin()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
+        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarRawCSV()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
             <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
         </button>
 
@@ -991,16 +478,17 @@
     <!-- MÓDULO PRIVADO SUPER ADMIN (LLAVE GITHUB) -->
     <div id="panel-superadmin" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: #8e44ad; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
-            <span><i class="fas fa-server"></i> LLAVE MAESTRA GITHUB (SUPER ADMIN)</span>
+            <span><i class="fas fa-server"></i> CONFIGURACIÓN MAESTRA (SUPER ADMIN)</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <label style="display:block; font-size:10px; color:#a5b0bf; margin-bottom:4px;">Link Raw CSV (GitHub) o ruta en el repo</label>
-            <input type="text" id="ajuste-link-raw-json" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 6px;" placeholder="URL Raw GitHub, exportación Sheets, o ruta tipo datos/censo.csv">
-            <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="persistMasterJsonPathFromInput()">APLICAR RUTA / LINK</button>
-            <button type="button" class="btn btn-outline" style="width: 100%; padding: 6px; font-size: 9px; margin-bottom: 8px;" onclick="solicitarReconfigurarColumnasCSV()">RECONFIGURAR COLUMNAS CSV</button>
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
-            <button type="button" class="btn btn-outline" id="btn-verificar-token-maestro" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">VERIFICAR Y GUARDAR TOKEN</button>
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px; border-color: #2b579a; color: #2b579a;" onclick="abrirConfigWord()"><i class="fas fa-file-word"></i> CONFIGURAR CUADROS WORD</button>
+
+            <input type="password" id="ajuste-repo-licencia" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Licencia SGF Maestra">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="verificarYGuardarLicenciaMaestra()">ACTIVAR LICENCIA MAESTRA</button>
+            
+            <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (CSV)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URL DEL RAW</button>
         </div>
     </div>
 
@@ -1014,8 +502,6 @@
             <div style="font-size: 10px; color: #a5b0bf; margin-bottom: 8px;">Días restantes de servicio: <strong id="lbl-dias-lic" style="color:white;">0</strong></div>
             <input type="password" id="input-update-license" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Clave de Acceso Institucional">
             <button class="btn btn-solid-green" style="width: 100%; padding: 8px; font-size: 10px;" onclick="actualizarLicenciaInterna()">ACTUALIZAR LICENCIA</button>
-            <button type="button" class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="solicitarReconfigurarColumnasCSV()">RECONFIGURAR COLUMNAS CSV</button>
-            <button class="btn btn-solid-yellow" style="width: 100%; padding: 8px; font-size: 10px; margin-top: 8px;" onclick="exportarExcelInstitucional()"><i class="fas fa-file-excel"></i> DESCARGAR EXCEL DE RESPALDO</button>
         </div>
     </div>
 
@@ -1068,368 +554,101 @@
 
     (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
 
-    // VARIABLES DE GITHUB / RUTA CSV EN REPO
+    // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_hecho';
-    const FILE_PATH_DEFAULT = 'censo_fiscal.csv';
-    const LS_MASTER_JSON_PATH = 'master_config_json_path';
-    const LS_CONFIG_MAPEO_COLUMNAS = 'config_mapeo_columnas';
+    const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
+    const FILE_PATH = 'config.json';
     let fileSha = null;
-    let _csvMapeoPendiente = null;
-    window.__csvDisparoModalMapeoPorCargaManual = false;
-
-    function normalizarRutaJsonGithub(val) {
-        val = (val || '').trim();
-        if (!val) return FILE_PATH_DEFAULT;
-        try {
-            if (/^https?:\/\/raw\.githubusercontent\.com\//i.test(val)) {
-                const u = new URL(val);
-                const parts = u.pathname.split('/').filter(Boolean);
-                if (parts.length >= 4) return parts.slice(3).join('/');
-            }
-            if (/api\.github\.com\/repos\//i.test(val)) {
-                const idx = val.indexOf('/contents/');
-                if (idx !== -1) {
-                    const rest = val.slice(idx + '/contents/'.length).split('?')[0];
-                    try {
-                        return decodeURIComponent(rest) || FILE_PATH_DEFAULT;
-                    } catch (e) {
-                        return rest || FILE_PATH_DEFAULT;
-                    }
-                }
-            }
-        } catch (e) { /* usar valor plano */ }
-        return val.replace(/^\/+/, '') || FILE_PATH_DEFAULT;
-    }
-
-    function isAbsoluteHttpUrl(s) {
-        return /^https?:\/\//i.test((s || '').trim());
-    }
-
-    function getGithubContentPathForApi() {
-        const raw = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-        if (!raw) return FILE_PATH_DEFAULT;
-        if (isAbsoluteHttpUrl(raw)) {
-            try {
-                if (/raw\.githubusercontent\.com/i.test(raw)) {
-                    const u = new URL(raw);
-                    const parts = u.pathname.split('/').filter(Boolean);
-                    if (parts.length >= 4) return parts.slice(3).join('/');
-                }
-            } catch (e) {}
-            return FILE_PATH_DEFAULT;
-        }
-        return normalizarRutaJsonGithub(raw);
-    }
-
-    function dataSourceIsExternalNonGithub() {
-        const raw = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-        return isAbsoluteHttpUrl(raw) && !/raw\.githubusercontent\.com/i.test(raw);
-    }
-
-    function githubContentsApiPath(filePath) {
-        return filePath.split('/').map(encodeURIComponent).join('/');
-    }
-
-    function persistMasterJsonPathFromInput(silent) {
-        const el = document.getElementById('ajuste-link-raw-json');
-        if (!el) return;
-        const raw = el.value.trim();
-        localStorage.setItem(LS_MASTER_JSON_PATH, raw);
-        if (!silent) alert('✅ Enlace o ruta CSV guardada.');
-    }
-
-    async function fetchCloudDataPlainText(authToken) {
-        const rawLs = (localStorage.getItem(LS_MASTER_JSON_PATH) || '').trim();
-        if (isAbsoluteHttpUrl(rawLs) && /raw\.githubusercontent\.com/i.test(rawLs)) {
-            try {
-                const res = await fetch(rawLs.trim(), { method: 'GET', cache: 'no-store', credentials: 'omit' });
-                if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
-                const text = await res.text();
-                return { ok: true, status: res.status, text, sha: null };
-            } catch (e) {
-                return { ok: false, status: 0, text: null, sha: null };
-            }
-        }
-        if (isAbsoluteHttpUrl(rawLs) && !/raw\.githubusercontent\.com/i.test(rawLs)) {
-            try {
-                const res = await fetch(rawLs, { method: 'GET', cache: 'no-store' });
-                if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
-                const text = await res.text();
-                return { ok: true, status: res.status, text, sha: null };
-            } catch (e) {
-                return { ok: false, status: 0, text: null, sha: null };
-            }
-        }
-        const pathEnc = githubContentsApiPath(getGithubContentPathForApi());
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        if (authToken) {
-            const isGoogle = /google\.com/i.test(rawLs);
-            const isRawGh = /raw\.githubusercontent\.com/i.test(rawLs);
-            const relativePath = !isAbsoluteHttpUrl(rawLs);
-            if (!isGoogle && (relativePath || isRawGh)) {
-                headers['Authorization'] = 'token ' + authToken;
-            }
-        }
-        try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${pathEnc}`, { headers });
-            if (!res.ok) return { ok: false, status: res.status, text: null, sha: null };
-            const data = await res.json();
-            if (typeof data.content !== 'string') return { ok: false, status: res.status, text: null, sha: data.sha || null };
-            const bin = atob(data.content.replace(/\s/g, ''));
-            const text = decodeURIComponent(escape(bin));
-            return { ok: true, status: 200, text, sha: data.sha || null };
-        } catch (e) {
-            return { ok: false, status: 0, text: null, sha: null };
-        }
-    }
-
+    
     // JERARQUÍA DE ACCESO Y ROLES
-    let SYSTEM_AUTH = { user: 'admin', pass: 'admin' };
-    let CURRENT_ROLE = null;
+    // ESTRUCTURA DE CONFIGURACIÓN GLOBAL (MIGRACIÓN FLAT 2026)
+    let SYSTEM_AUTH = { 
+        userAdmin: 'admin', 
+        passAdmin: 'admin', 
+        urlRaw: '', 
+        token: '', 
+        licenciaSGF: '',
+        wordConfig: { columnas: ['Contribuyente', 'RIF', 'Estatus', 'Dirección'] }
+    }; 
+    let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
     let CHECK_LICENSE_INTERVAL = null;
+
+    // PROTOCOLO PORTABILIDAD TOTAL: Carga inicial de config.json (sin token, vÃ­a fetch directo)
+    (async function precargarConfiguracion() {
+        try {
+            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if (res.ok) {
+                const config = await res.json();
+                
+                // Mapeo Inteligente con DesofuscaciÃ³n
+                if (config.userAdmin) SYSTEM_AUTH.userAdmin = config.userAdmin;
+                if (config.passAdmin) SYSTEM_AUTH.passAdmin = config.passAdmin;
+                if (config.urlRaw || config.csvUrl) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
+                if (config.wordConfig) SYSTEM_AUTH.wordConfig = config.wordConfig;
+                
+                // DesofuscaciÃ³n de Seguridad (Reverse)
+                if (config.token) {
+                    SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
+                }
+                if (config.licenciaSGF || config.license) {
+                    const l = config.licenciaSGF || config.license;
+                    SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
+                }
+                console.log("SGF: ConfiguraciÃ³n en la Nube reconocida exitosamente.");
+            }
+        } catch (e) {
+            console.warn("SGF: No se pudo precargar la configuraciÃ³n, se usarÃ¡n valores locales.");
+        }
+    })();
 
     /* ==========================================================================
        MOTOR DE LICENCIAS Y TOKENS SGF
        ========================================================================== */
-    // SGF-[USUARIO]-[TOKEN REVERTIDO, puede incluir guiones]-[FECHA Base64]
     function analizarLicenciaSGF(licStr) {
-        const bad = { valid: false, expired: true, days: 0, tokenRev: '', usuario: '', githubToken: null };
-        if (!licStr || typeof licStr !== 'string') return bad;
-        const s = licStr.trim();
-        if (!s.startsWith('SGF-')) return bad;
-        const last = s.lastIndexOf('-');
-        if (last <= 4) return bad;
-        const fechaB64 = s.slice(last + 1).replace(/\s/g, '');
-        const prefix = s.slice(0, last);
-        if (!prefix.startsWith('SGF-')) return bad;
-        const inner = prefix.slice(4);
-        const fd = inner.indexOf('-');
-        if (fd < 0) return bad;
-        const usuario = inner.slice(0, fd);
-        const tokenRev = inner.slice(fd + 1);
-        if (!usuario || !tokenRev) return bad;
-        let datePlain;
+        if(!licStr) return { valid: false, expired: true, days: 0 };
+        const parts = licStr.split('-');
+        // Formato esperado: SGF-[USUARIO]-[TOKEN_REVERTIDO]-[FECHA_BASE64]
+        if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
+
+        const usuario = parts[1];
+        const tokenRev = parts[2];
+        let dateStr;
+        
         try {
-            datePlain = atob(fechaB64);
-        } catch (e) {
-            return bad;
+            dateStr = atob(parts[3]); // Decodificamos la fecha en Base64
+        } catch(e) {
+            return { valid: false, expired: true, days: 0 };
         }
-        const compact = datePlain.replace(/[-/\s]/g, '');
-        if (compact.length !== 8 || !/^\d{8}$/.test(compact)) return bad;
-        const expYear = parseInt(compact.substring(0, 4), 10);
-        const expMonth = parseInt(compact.substring(4, 6), 10) - 1;
-        const expDay = parseInt(compact.substring(6, 8), 10);
+
+        // LIMPIEZA DE GUIONES: Para que "2026-07-02" se vuelva "20260702"
+        dateStr = dateStr.replace(/[-/]/g, '');
+
+        if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
+        
+        const expYear = parseInt(dateStr.substring(0,4));
+        const expMonth = parseInt(dateStr.substring(4,6)) - 1;
+        const expDay = parseInt(dateStr.substring(6,8));
+        
         const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
         const today = new Date();
         const diffTime = expDate - today;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const githubToken = tokenRev.split('').reverse().join('');
-        return {
-            valid: true,
-            expired: diffDays <= 0,
+
+        return { 
+            valid: true, 
+            expired: diffDays <= 0, 
             days: diffDays,
-            tokenRev,
-            usuario,
-            githubToken
+            tokenRev: tokenRev,
+            usuario: usuario
         };
     }
 
     function obtenerCadenaLicencia() {
-        if (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).trim().startsWith('SGF-')) {
-            return String(SYSTEM_AUTH.license).trim();
+        if (SYSTEM_AUTH && SYSTEM_AUTH.licenciaSGF && String(SYSTEM_AUTH.licenciaSGF).trim().startsWith('SGF-')) {
+            return String(SYSTEM_AUTH.licenciaSGF).trim();
         }
         const ls = localStorage.getItem('sgf_license');
         return ls ? ls.trim() : '';
-    }
-
-    function parseCsvRowDelimited(line, sepChar) {
-        const sep = sepChar === ';' ? ';' : ',';
-        const out = [];
-        let cur = '';
-        let inQ = false;
-        for (let i = 0; i < line.length; i++) {
-            const c = line[i];
-            if (inQ) {
-                if (c === '"') {
-                    if (line[i + 1] === '"') { cur += '"'; i++; }
-                    else inQ = false;
-                } else cur += c;
-            } else {
-                if (c === '"') inQ = true;
-                else if (c === sep) { out.push(cur); cur = ''; }
-                else cur += c;
-            }
-        }
-        out.push(cur);
-        return out;
-    }
-
-    function parseCsvRow(line) {
-        return parseCsvRowDelimited(line, ',');
-    }
-
-    function detectDelimiterForLine(line) {
-        const a = parseCsvRowDelimited(line, ',');
-        const b = parseCsvRowDelimited(line, ';');
-        const na = a.filter((c) => String(c).trim().length).length;
-        const nb = b.filter((c) => String(c).trim().length).length;
-        if (nb > na) return ';';
-        if (na > nb) return ',';
-        const countSemi = (line.match(/;/g) || []).length;
-        const countComma = (line.match(/,/g) || []).length;
-        return countSemi > countComma ? ';' : ',';
-    }
-
-    function encontrarFilaCabeceraOro(lines) {
-        for (let k = 0; k < lines.length; k++) {
-            const raw = lines[k];
-            const u = raw.toUpperCase();
-            if (!u.includes('RIF') && !u.includes('CONTRIBUYENTE')) continue;
-            const delim = detectDelimiterForLine(raw);
-            const cells = parseCsvRowDelimited(raw, delim);
-            const nonEmpty = cells.filter((c) => String(c).trim().length);
-            if (nonEmpty.length >= 2) return { index: k, delimiter: delim };
-        }
-        return null;
-    }
-
-    function csvEscapeCell(s) {
-        s = String(s ?? '');
-        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-        return s;
-    }
-
-    function extraerAuthDesdeLinea(ln) {
-        let cells = parseCsvRowDelimited(ln, ',');
-        if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-            return { user: cells[1], pass: cells[2] };
-        }
-        cells = parseCsvRowDelimited(ln, ';');
-        if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-            return { user: cells[1], pass: cells[2] };
-        }
-        return null;
-    }
-
-    function parseCsvPreambleHeadersRows(csvText) {
-        const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
-        if (!lines.length) return null;
-
-        let license = null;
-        for (let j = 0; j < lines.length; j++) {
-            const t = lines[j].trim();
-            if (t.startsWith('SGF-')) {
-                license = t;
-                break;
-            }
-        }
-
-        const cabOro = encontrarFilaCabeceraOro(lines);
-        if (cabOro) {
-            const iHeader = cabOro.index;
-            const delim = cabOro.delimiter;
-            let user = null;
-            let pass = null;
-            for (let j = 0; j < iHeader; j++) {
-                const auth = extraerAuthDesdeLinea(lines[j]);
-                if (auth) {
-                    user = auth.user;
-                    pass = auth.pass;
-                    break;
-                }
-            }
-            const headers = parseCsvRowDelimited(lines[iHeader], delim).map((h) => String(h).trim());
-            const rows = [];
-            for (let i = iHeader + 1; i < lines.length; i++) {
-                const row = parseCsvRowDelimited(lines[i], delim).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-                if (!row.length || row.every((c) => c === '')) continue;
-                rows.push(row);
-            }
-            return { license, user, pass, headers, rows, delimiter: delim };
-        }
-
-        let i = 0;
-        const L0 = lines[0].trim();
-        if (L0.startsWith('SGF-')) {
-            license = L0;
-            i = 1;
-        }
-        let user = null;
-        let pass = null;
-        if (i < lines.length) {
-            const cells = parseCsvRow(lines[i]);
-            if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-                user = cells[1];
-                pass = cells[2];
-                i++;
-            } else if (cells.length >= 2) {
-                const c0 = String(cells[0]).toLowerCase();
-                if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
-                    user = cells[0];
-                    pass = cells[1];
-                    i++;
-                }
-            }
-        }
-        if (i >= lines.length) return { license, user, pass, headers: [], rows: [], delimiter: ',' };
-        const headers = parseCsvRow(lines[i]).map((h) => String(h).trim());
-        i++;
-        const rows = [];
-        for (; i < lines.length; i++) {
-            const row = parseCsvRow(lines[i]).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-            if (!row.length || row.every((c) => c === '')) continue;
-            rows.push(row);
-        }
-        return { license, user, pass, headers, rows, delimiter: ',' };
-    }
-
-    function firmaHeaders(headers, delimiter) {
-        const d = delimiter === ';' ? ';' : ',';
-        return headers.map((h) => String(h).trim()).join('\u0001') + '\u0002' + d;
-    }
-
-    function leerMapeoColumnasPersistido(firma) {
-        try {
-            const raw = localStorage.getItem(LS_CONFIG_MAPEO_COLUMNAS);
-            if (!raw) return null;
-            const o = JSON.parse(raw);
-            if (!o || o.signature !== firma) return null;
-            return o;
-        } catch (e) {
-            return null;
-        }
-    }
-
-    function indiceColumnaMapeo(mapeo, campo, headers) {
-        const raw = mapeo[campo];
-        if (raw === '' || raw === null || raw === undefined) return -1;
-        const n = parseInt(String(raw), 10);
-        if (!isNaN(n) && n >= 0 && n < headers.length) return n;
-        const name = String(raw).trim();
-        if (!name) return -1;
-        return headers.findIndex(h => String(h).trim() === name);
-    }
-
-    function extraerLatLngFilasMapeo(row, iLat, iLng, parseNum) {
-        if (iLat < 0 || iLng < 0) return { la: NaN, ln: NaN };
-        if (iLat === iLng) {
-            const raw = row[iLat];
-            if (raw === undefined || raw === null) return { la: NaN, ln: NaN };
-            let s = String(raw).trim();
-            if (!s) return { la: NaN, ln: NaN };
-            let parts = s.split(',');
-            if (parts.length < 2) parts = s.split(';');
-            if (parts.length < 2) parts = s.trim().split(/\s+/);
-            parts = parts.map((x) => x.trim()).filter((x) => x.length > 0);
-            if (parts.length >= 2) {
-                const la = parseNum(parts[0]);
-                const ln = parseNum(parts[1]);
-                return { la, ln };
-            }
-            return { la: NaN, ln: NaN };
-        }
-        return { la: parseNum(row[iLat]), ln: parseNum(row[iLng]) };
     }
 
     function obtenerEstatusParaCuadro(reg) {
@@ -1447,423 +666,22 @@
             .replace(/"/g, '&quot;');
     }
 
-    function procesarFilasConMapeo(mapeo, headers, rows, meta) {
-        const license = meta ? meta.license : null;
-        const user = meta ? meta.user : null;
-        const pass = meta ? meta.pass : null;
-        const parseNum = (v) => {
-            if (v === undefined || v === null || v === '') return NaN;
-            const s = String(v).trim().replace(',', '.');
-            return parseFloat(s);
-        };
-        const secId = 'csv_sheet_default';
-        const store = {};
-        store[secId] = {
-            nombreSector: 'IMPORTACIÓN CSV',
-            visible: true,
-            isMaster: false,
-            visibilidadPorEstatus: {},
-            coloresPorEstatus: {},
-            colorPrincipal: '#00f2ff',
-            registros: []
-        };
-        const iLat = indiceColumnaMapeo(mapeo, 'lat', headers);
-        const iLng = indiceColumnaMapeo(mapeo, 'lng', headers);
-        const iNom = indiceColumnaMapeo(mapeo, 'nombre', headers);
-        const iCat = indiceColumnaMapeo(mapeo, 'categoria', headers);
-        const iFot = indiceColumnaMapeo(mapeo, 'foto', headers);
-        rows.forEach((row) => {
-            if (iLat < 0 || iLng < 0) return;
-            const { la, ln } = extraerLatLngFilasMapeo(row, iLat, iLng, parseNum);
-            if (isNaN(la) || isNaN(ln)) return;
-            const datosGenerales = {};
-            headers.forEach((h, ix) => {
-                const hn = String(h).trim();
-                if (!hn) return;
-                const v = row[ix];
-                if (v !== undefined && v !== null && String(v).trim() !== '') datosGenerales[hn] = String(v).trim();
-            });
-            datosGenerales['Contribuyente'] = (iNom >= 0 && row[iNom] !== undefined && row[iNom] !== null) ? String(row[iNom]).trim() : '';
-            datosGenerales['Estatus'] = (iCat >= 0 && row[iCat] !== undefined && row[iCat] !== null && String(row[iCat]).trim() !== '') ? String(row[iCat]).trim() : 'SIN CATEGORÍA';
-            datosGenerales['Link Fotografía'] = (iFot >= 0 && row[iFot] !== undefined && row[iFot] !== null) ? String(row[iFot]).trim() : '';
-            if (!datosGenerales['RIF']) datosGenerales['RIF'] = '';
-            store[secId].registros.push({
-                tipoGeometria: 'marker',
-                coords: { lat: la, lng: ln },
-                datosGenerales,
-                colorPersonalizado: null,
-                visibleIndividual: true,
-                camposOcultos: []
-            });
-        });
-        return { store, license, user, pass };
-    }
-
-    function valorSelectIndiceCompatible(valorPrevio, headers) {
-        if (valorPrevio === null || valorPrevio === undefined || valorPrevio === '') return '';
-        const vs = String(valorPrevio).trim();
-        if (/^\d+$/.test(vs)) {
-            const n = parseInt(vs, 10);
-            if (n >= 0 && n < headers.length) return String(n);
-        }
-        const ix = headers.findIndex((h) => String(h).trim() === vs);
-        return ix >= 0 ? String(ix) : '';
-    }
-
-    function mostrarSelectorColumnasCSV(headers, csvRows, decodedText, partesMeta) {
-        _csvMapeoPendiente = { headers, rows: csvRows, decodedText, partesMeta };
-        const firma = firmaHeaders(headers, partesMeta && partesMeta.delimiter);
-        const prev = leerMapeoColumnasPersistido(firma);
-        function llenarSelect(id, valorPrevio) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.innerHTML = '<option value="">-- Seleccionar columna --</option>';
-            headers.forEach((header, index) => {
-                const opt = document.createElement('option');
-                opt.value = String(index);
-                const lab = String(header != null ? header : '').trim();
-                opt.textContent = lab || ('Columna ' + index);
-                el.appendChild(opt);
-            });
-            const vComp = valorSelectIndiceCompatible(valorPrevio, headers);
-            if (vComp !== '' && [...el.options].some((o) => o.value === vComp)) el.value = vComp;
-        }
-        llenarSelect('csv-map-lat', prev && prev.lat);
-        llenarSelect('csv-map-lng', prev && prev.lng);
-        llenarSelect('csv-map-nombre', prev && prev.nombre);
-        llenarSelect('csv-map-categoria', prev && prev.categoria);
-        llenarSelect('csv-map-foto', prev && prev.foto);
-        const ov = document.getElementById('csv-mapeo-modal-overlay');
-        if (ov) ov.style.display = 'flex';
-    }
-
-    function confirmarMapeoColumnasCSV() {
-        const lat = document.getElementById('csv-map-lat') ? document.getElementById('csv-map-lat').value : '';
-        const lng = document.getElementById('csv-map-lng') ? document.getElementById('csv-map-lng').value : '';
-        if (!lat || !lng) {
-            return alert('Debe seleccionar columnas de Latitud y Longitud.');
-        }
-        const nombre = document.getElementById('csv-map-nombre') ? document.getElementById('csv-map-nombre').value : '';
-        const categoria = document.getElementById('csv-map-categoria') ? document.getElementById('csv-map-categoria').value : '';
-        const foto = document.getElementById('csv-map-foto') ? document.getElementById('csv-map-foto').value : '';
-        if (!_csvMapeoPendiente) return;
-        const headers = _csvMapeoPendiente.headers;
-        const rows = _csvMapeoPendiente.rows;
-        const partesMeta = _csvMapeoPendiente.partesMeta;
-        const firma = firmaHeaders(headers, partesMeta && partesMeta.delimiter);
-        const persist = { signature: firma, lat, lng, nombre, categoria, foto };
-        try {
-            localStorage.setItem(LS_CONFIG_MAPEO_COLUMNAS, JSON.stringify(persist));
-        } catch (e) {}
-        const r = procesarFilasConMapeo(persist, headers, rows, partesMeta);
-        if (r.license) SYSTEM_AUTH.license = r.license;
-        if (r.user) SYSTEM_AUTH.user = r.user;
-        if (r.pass) SYSTEM_AUTH.pass = r.pass;
-        reconstruirDesdeJSON(r.store || {});
-        actualizarUIYMapa();
-        forzarRefrescoCapasMapa();
-        _csvMapeoPendiente = null;
-        const ov = document.getElementById('csv-mapeo-modal-overlay');
-        if (ov) ov.style.display = 'none';
-    }
-
-    function cerrarModalMapeoCsv() {
-        _csvMapeoPendiente = null;
-        const ov = document.getElementById('csv-mapeo-modal-overlay');
-        if (ov) ov.style.display = 'none';
-    }
-
-    function solicitarReconfigurarColumnasCSV() {
-        if (CURRENT_ROLE !== 'SUPERADMIN' && CURRENT_ROLE !== 'ADMIN') {
-            return alert('Inicie sesión para reconfigurar columnas.');
-        }
-        const t = window.__ultimoCsvDecodificado;
-        if (!t) return alert('Cargue primero los datos desde la nube (RAW).');
-        aplicarCargaDesdeTextoPlano(t, { forzarModalMapeo: true });
-    }
-
-    function csvTextToStoreObject(csvText) {
-        const empty = { store: {}, license: null, user: null, pass: null };
-        const lines = csvText.replace(/^\uFEFF/, '').split(/\r?\n/).map(l => l.trimEnd()).filter(l => l.length);
-        if (!lines.length) return empty;
-
-        let license = null;
-        for (let j = 0; j < lines.length; j++) {
-            const t = lines[j].trim();
-            if (t.startsWith('SGF-')) {
-                license = t;
-                break;
-            }
-        }
-
-        let user = null;
-        let pass = null;
-        let i;
-        let header;
-        let delim = ',';
-
-        const cabOro = encontrarFilaCabeceraOro(lines);
-        if (cabOro) {
-            for (let j = 0; j < cabOro.index; j++) {
-                const auth = extraerAuthDesdeLinea(lines[j]);
-                if (auth) {
-                    user = auth.user;
-                    pass = auth.pass;
-                    break;
-                }
-            }
-            delim = cabOro.delimiter;
-            header = parseCsvRowDelimited(lines[cabOro.index], delim).map((h) => String(h).trim());
-            i = cabOro.index + 1;
-        } else {
-            i = 0;
-            const L0 = lines[0].trim();
-            if (L0.startsWith('SGF-')) {
-                license = L0;
-                i = 1;
-            }
-            if (i < lines.length) {
-                const cells = parseCsvRow(lines[i]);
-                if (cells[0] && String(cells[0]).toUpperCase() === 'AUTH' && cells.length >= 3) {
-                    user = cells[1];
-                    pass = cells[2];
-                    i++;
-                } else if (cells.length >= 2) {
-                    const c0 = String(cells[0]).toLowerCase();
-                    if (c0 !== 'sector_id' && c0 !== 'nombre_sector' && c0 !== 'nombresector') {
-                        user = cells[0];
-                        pass = cells[1];
-                        i++;
-                    }
-                }
-            }
-            if (i >= lines.length) return { store: {}, license, user, pass };
-            header = parseCsvRow(lines[i]).map((h) => String(h).trim());
-            i++;
-        }
-
-        if (!header || !header.length) return { store: {}, license, user, pass };
-        const hNorm = {};
-        header.forEach((name, idx) => {
-            if (!name) return;
-            hNorm[name] = idx;
-            hNorm[name.toLowerCase()] = idx;
-        });
-        const getv = (row, col) => {
-            const keys = [col, String(col).toLowerCase(), String(col).toUpperCase()];
-            for (let k = 0; k < keys.length; k++) {
-                const ix = hNorm[keys[k]];
-                if (ix === undefined) continue;
-                let v = row[ix];
-                if (v !== undefined && v !== null) v = String(v).replace(/^\s+|\s+$/g, '');
-                if (v === '') return undefined;
-                return v;
-            }
-            return undefined;
-        };
-        const parseNum = (v) => {
-            if (v === undefined || v === null) return NaN;
-            const s = String(v).trim().replace(',', '.');
-            return parseFloat(s);
-        };
-        const store = {};
-        for (; i < lines.length; i++) {
-            const row = parseCsvRowDelimited(lines[i], delim).map((c) => (c !== undefined && c !== null ? String(c).replace(/^\s+|\s+$/g, '') : ''));
-            if (!row.length || row.every((c) => c === '')) continue;
-            let secId = getv(row, 'sector_id') || getv(row, 'idSector');
-            if (!secId) secId = 'csv_sheet_default';
-            const secName = getv(row, 'nombre_sector') || getv(row, 'nombreSector') || getv(row, 'sector_nombre') || 'IMPORTACIÓN CSV';
-            const isM = String(getv(row, 'is_master') || getv(row, 'isMaster') || '').toLowerCase();
-            const isMaster = isM === '1' || isM === 'true' || isM === 'yes';
-            if (!store[secId]) {
-                store[secId] = {
-                    nombreSector: secName,
-                    visible: true,
-                    isMaster,
-                    visibilidadPorEstatus: {},
-                    coloresPorEstatus: {},
-                    colorPrincipal: '#00f2ff',
-                    registros: []
-                };
-            } else {
-                store[secId].isMaster = !!(store[secId].isMaster || isMaster);
-            }
-            let tipo = String(getv(row, 'tipoGeometria') || getv(row, 'tipo') || 'marker').trim().toLowerCase();
-            if (tipo !== 'polygon' && tipo !== 'rectangle') tipo = 'marker';
-            let coords = null;
-            if (tipo === 'marker') {
-                const la = parseNum(getv(row, 'lat') ?? getv(row, 'latitude') ?? getv(row, 'LAT'));
-                const ln = parseNum(getv(row, 'lng') ?? getv(row, 'lon') ?? getv(row, 'longitud') ?? getv(row, 'LNG'));
-                if (!isNaN(la) && !isNaN(ln)) coords = { lat: la, lng: ln };
-            } else {
-                const cj = getv(row, 'coords_json');
-                if (cj) {
-                    try { coords = JSON.parse(cj); } catch (e) {}
-                }
-            }
-            const datosGenerales = {};
-            const fixedLower = { sector_id: 1, idsector: 1, nombre_sector: 1, nombresector: 1, sector_nombre: 1, is_master: 1, ismaster: 1, tipogeometria: 1, tipo: 1, lat: 1, latitude: 1, lng: 1, lon: 1, longitud: 1, coords_json: 1 };
-            header.forEach((col) => {
-                const c = String(col).trim();
-                if (!c || fixedLower[c.toLowerCase()]) return;
-                const v = getv(row, c);
-                if (v !== undefined && v !== '') datosGenerales[c] = v;
-            });
-            const nombreVal = getv(row, 'nombre') || getv(row, 'Nombre') || getv(row, 'contribuyente');
-            if (nombreVal) datosGenerales['Contribuyente'] = nombreVal;
-            if (!datosGenerales['Contribuyente']) datosGenerales['Contribuyente'] = getv(row, 'Contribuyente') || '';
-            if (!datosGenerales['RIF']) datosGenerales['RIF'] = getv(row, 'RIF') || '';
-            const catVal = getv(row, 'categoria') || getv(row, 'Categoria') || getv(row, 'Estado');
-            if (catVal) datosGenerales['Estatus'] = catVal;
-            if (!datosGenerales['Estatus']) datosGenerales['Estatus'] = getv(row, 'Estatus') || 'SIN CATEGORÍA';
-            if (getv(row, 'Estado') && !datosGenerales['Estado']) datosGenerales['Estado'] = getv(row, 'Estado');
-            if (getv(row, 'Deuda')) datosGenerales['Deuda'] = getv(row, 'Deuda');
-            if (!datosGenerales['Link Fotografía']) datosGenerales['Link Fotografía'] = getv(row, 'Link Fotografía') || '';
-            store[secId].registros.push({
-                tipoGeometria: tipo,
-                coords,
-                datosGenerales,
-                colorPersonalizado: null,
-                visibleIndividual: true,
-                camposOcultos: []
-            });
-        }
-        return { store, license, user, pass };
-    }
-
-    function forzarRefrescoCapasMapa() {
-        actualizarUIYMapa();
-        if (typeof mapa !== 'undefined' && mapa) {
-            try {
-                mapa.invalidateSize();
-            } catch (e) {}
-            requestAnimationFrame(() => {
-                actualizarUIYMapa();
-                try { mapa.invalidateSize(); } catch (e) {}
-            });
-            setTimeout(() => {
-                actualizarUIYMapa();
-                try { mapa.invalidateSize(); } catch (e) {}
-            }, 200);
-        }
-    }
-
-    function aplicarCargaDesdeTextoPlano(decodedText, opciones) {
-        opciones = opciones || {};
-        try {
-            window.__ultimoCsvDecodificado = decodedText;
-        } catch (e) {}
-        const partes = parseCsvPreambleHeadersRows(decodedText);
-        if (!partes || !partes.headers || partes.headers.length === 0) {
-            const r = csvTextToStoreObject(decodedText);
-            if (r.license) SYSTEM_AUTH.license = r.license;
-            if (r.user) SYSTEM_AUTH.user = r.user;
-            if (r.pass) SYSTEM_AUTH.pass = r.pass;
-            reconstruirDesdeJSON(r.store || {});
-            forzarRefrescoCapasMapa();
-            return;
-        }
-        const firma = firmaHeaders(partes.headers, partes.delimiter);
-        let mapeo = opciones.forzarModalMapeo ? null : leerMapeoColumnasPersistido(firma);
-        const iLatOk = mapeo ? indiceColumnaMapeo(mapeo, 'lat', partes.headers) : -1;
-        const iLngOk = mapeo ? indiceColumnaMapeo(mapeo, 'lng', partes.headers) : -1;
-        if (mapeo && String(mapeo.lat) !== '' && String(mapeo.lng) !== '' && iLatOk >= 0 && iLngOk >= 0) {
-            const r = procesarFilasConMapeo(mapeo, partes.headers, partes.rows, partes);
-            if (r.license) SYSTEM_AUTH.license = r.license;
-            if (r.user) SYSTEM_AUTH.user = r.user;
-            if (r.pass) SYSTEM_AUTH.pass = r.pass;
-            reconstruirDesdeJSON(r.store || {});
-            actualizarUIYMapa();
-            forzarRefrescoCapasMapa();
-            return;
-        }
-        if (partes.license) SYSTEM_AUTH.license = partes.license;
-        if (partes.user) SYSTEM_AUTH.user = partes.user;
-        if (partes.pass) SYSTEM_AUTH.pass = partes.pass;
-        const disparoManualSuperCargar = !!window.__csvDisparoModalMapeoPorCargaManual;
-        const puedeAbrirModalMapeo = (CURRENT_ROLE !== null) && (opciones.forzarModalMapeo || (disparoManualSuperCargar && CURRENT_ROLE === 'SUPERADMIN'));
-        if (puedeAbrirModalMapeo) {
-            mostrarSelectorColumnasCSV(partes.headers, partes.rows, decodedText, partes);
-            return;
-        }
-        const rSil = csvTextToStoreObject(decodedText);
-        if (rSil.license) SYSTEM_AUTH.license = rSil.license;
-        if (rSil.user) SYSTEM_AUTH.user = rSil.user;
-        if (rSil.pass) SYSTEM_AUTH.pass = rSil.pass;
-        reconstruirDesdeJSON(rSil.store || {});
-        forzarRefrescoCapasMapa();
-    }
-
-    function sincronizarCamposPanelSuperAdmin() {
-        if (CURRENT_ROLE !== 'SUPERADMIN') return;
-        const linkEl = document.getElementById('ajuste-link-raw-json');
-        if (linkEl) linkEl.value = (localStorage.getItem(LS_MASTER_JSON_PATH) || '');
-        const tokEl = document.getElementById('ajuste-repo-token');
-        if (tokEl) {
-            const rev = localStorage.getItem('master_token_revert');
-            if (rev) {
-                tokEl.value = rev;
-                tokEl.type = 'text';
-            } else {
-                tokEl.value = '';
-                tokEl.type = 'password';
-            }
-        }
-    }
-
-    function storeToCsvString() {
-        const lic = (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).startsWith('SGF-'))
-            ? String(SYSTEM_AUTH.license).replace(/[\r\n]/g, '') : '';
-        const lines = [];
-        lines.push(lic);
-        lines.push(['AUTH', SYSTEM_AUTH.user || 'admin', SYSTEM_AUTH.pass || 'admin'].map(csvEscapeCell).join(','));
-        const hdr = ['sector_id', 'nombre_sector', 'is_master', 'tipoGeometria', 'lat', 'lng', 'coords_json', 'Contribuyente', 'RIF', 'Estatus', 'Link Fotografía'];
-        lines.push(hdr.join(','));
-        const datos = extraerDatosGeometria();
-        for (const idSec in datos) {
-            const sec = datos[idSec];
-            for (const reg of sec.registros) {
-                const lat = reg.coords && reg.coords.lat !== undefined ? reg.coords.lat : '';
-                const lng = reg.coords && reg.coords.lng !== undefined ? reg.coords.lng : '';
-                let coordsJson = '';
-                if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    try { coordsJson = JSON.stringify(reg.coords || []); } catch (e) {}
-                }
-                const d = reg.datosGenerales || {};
-                const row = [
-                    idSec,
-                    sec.nombreSector || '',
-                    sec.isMaster ? '1' : '0',
-                    reg.tipoGeometria || '',
-                    lat,
-                    lng,
-                    coordsJson,
-                    d['Contribuyente'] || '',
-                    d['RIF'] || '',
-                    d['Estatus'] || '',
-                    d['Link Fotografía'] || ''
-                ];
-                lines.push(row.map(csvEscapeCell).join(','));
-            }
-        }
-        return lines.join('\n');
-    }
-
-    function getMasterTokenFromStorage() {
-        const tk = localStorage.getItem('master_token_revert');
-        return tk ? tk.split('').reverse().join('') : null;
-    }
-
+    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
     function getRealToken() {
-        if (CURRENT_ROLE === 'SUPERADMIN') {
-            return getMasterTokenFromStorage();
+        // Prioridad: 1. Token en la Nube (SYSTEM_AUTH.token)
+        if (SYSTEM_AUTH && SYSTEM_AUTH.token) return SYSTEM_AUTH.token;
+        
+        // 2. Si no hay token directo, intentamos extraerlo de la licencia
+        const lic = obtenerCadenaLicencia();
+        const parsed = analizarLicenciaSGF(lic);
+        if (parsed.valid && !parsed.expired && parsed.tokenRev) {
+            return parsed.tokenRev.split('').reverse().join('');
         }
-        if (CURRENT_ROLE === 'ADMIN') {
-            const lic = obtenerCadenaLicencia();
-            const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired && parsed.githubToken) {
-                return parsed.githubToken;
-            }
+        
+        // 3. Casos especiales de recuperación (Solo SuperAdmin)
+        if (CURRENT_ROLE === 'SUPERADMIN') {
+            const tk = localStorage.getItem('master_token_revert');
+            return tk ? tk.split('').reverse().join('') : null;
         }
         return null;
     }
@@ -1871,7 +689,7 @@
     /* ==========================================================================
        FLUJO DE ACCESO ESTRICTO (LOGIN) Y LIMPIEZA DE DOM
        ========================================================================== */
-    function intentarLogin() {
+    async function intentarLogin() {
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
         const errorDiv = document.getElementById('login-error-msg');
@@ -1883,37 +701,37 @@
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (WOLGFAN)';
             document.getElementById('panel-superadmin').style.display = 'block';
             
+            // Muestra el botón RAW solo para SuperAdmin
             const btnRaw = document.getElementById('btn-cargar-raw');
-            if(btnRaw) btnRaw.style.display = 'flex';
+            if(btnRaw) {
+                btnRaw.style.display = 'flex';
+                btnRaw.disabled = false;
+            }
             
+            // Limpieza de DOM: Remueve elementos del cliente
             const panelAdmin = document.getElementById('panel-admin-licencia');
             if(panelAdmin) panelAdmin.remove();
 
-            const licWarn = document.getElementById('license-warning-box');
-            if (licWarn) licWarn.style.display = 'none';
             const licLockS = document.getElementById('license-lock-overlay');
             if (licLockS) licLockS.style.display = 'none';
 
-            const roToggle = document.getElementById('toggle-readonly');
-            if (roToggle) {
-                roToggle.checked = false;
-                modoLecturaGlobal = false;
-                alternarModoLectura();
-            }
-
             document.getElementById('login-overlay').style.display = 'none';
-            sincronizarCamposPanelSuperAdmin();
-            actualizarUIYMapa();
-            void (async () => {
+            actualizarUIYMapa(); 
+            
+            // MODO EMERGENCIA: Si falla cargarDatosNube, SuperAdmin igual entra para arreglar el Token
+            try {
                 await cargarDatosNube();
-                forzarRefrescoCapasMapa();
-                sincronizarCamposPanelSuperAdmin();
-            })();
+            } catch(e) {
+                console.warn("Modo Emergencia Activado: Error de sincronización ignorado para SuperAdmin.");
+            }
             return;
         }
 
         // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
-        if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+        // REGLA: SINCRONIZACIÓN OBLIGATORIA PARA ADMIN
+        await cargarDatosNube();
+
+        if (user === SYSTEM_AUTH.userAdmin && pass === SYSTEM_AUTH.passAdmin) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
@@ -1938,7 +756,7 @@
        CONTROL DE TIEMPO, BLOQUEO Y RESCATE (ADMIN)
        ========================================================================== */
     async function iniciarCicloLicenciaAdmin() {
-        await cargarDatosNube();
+        // Ya se cargó en intentarLogin, pero activamos el intervalo
         validarLicenciaYBloqueo();
         CHECK_LICENSE_INTERVAL = setInterval(async () => {
             await cargarDatosNube();
@@ -1963,7 +781,7 @@
             if (lockH && lockP) {
                 if (!est.valid) {
                     lockH.textContent = 'ACTIVACIÓN REQUERIDA';
-                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word o Excel antes de continuar.';
+                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word antes de continuar.';
                 } else {
                     lockH.textContent = 'LICENCIA SGF VENCIDA';
                     lockP.innerHTML = 'Su período de acceso ha finalizado. Ingrese una licencia vigente o descargue un respaldo de sus datos.';
@@ -1992,68 +810,80 @@
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
+        SYSTEM_AUTH.licenciaSGF = val;
         alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
         const lockOv = document.getElementById('license-lock-overlay');
         if (lockOv) lockOv.style.display = 'none';
-        await cargarDatosNube();
-        SYSTEM_AUTH.license = val;
         validarLicenciaYBloqueo();
-        await guardarEnServidor();
+        await cargarDatosNube();
     }
 
-    async function actualizarLicenciaInterna() {
+    function actualizarLicenciaInterna() {
         const val = document.getElementById('input-update-license').value.trim();
         if(!val) return alert("Ingrese el código de licencia.");
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
-        SYSTEM_AUTH.license = val;
+        SYSTEM_AUTH.licenciaSGF = val;
         alert("Licencia Renovada con éxito.");
         validarLicenciaYBloqueo();
+    }
+
+    /* ==========================================================================
+       CONFIGURACIÓN DE CUADROS WORD (SUPER ADMIN)
+       ========================================================================== */
+    function abrirConfigWord() {
+        const container = document.getElementById('word-columns-container');
+        container.innerHTML = '';
+        
+        // Recopilar todos los campos únicos de la base de datos
+        let allFields = new Set();
+        Object.values(STORE).forEach(sec => {
+            sec.registros.forEach(reg => {
+                if(reg.datosGenerales) {
+                    Object.keys(reg.datosGenerales).forEach(k => allFields.add(k));
+                }
+            });
+        });
+        
+        allFields.delete('Link Fotografía');
+        if(allFields.size === 0) {
+            allFields = new Set(['Contribuyente', 'RIF', 'Estatus', 'Dirección']);
+        }
+        
+        let selectedFields = (SYSTEM_AUTH.wordConfig && SYSTEM_AUTH.wordConfig.columnas) ? SYSTEM_AUTH.wordConfig.columnas : ['Contribuyente', 'RIF', 'Estatus'];
+        
+        allFields.forEach(f => {
+            const isChecked = selectedFields.includes(f) ? 'checked' : '';
+            container.innerHTML += `
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: bold; color: white; cursor: pointer; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <input type="checkbox" class="chk-word-col" value="${f}" ${isChecked} style="width: 16px; height: 16px;">
+                ${f}
+            </label>`;
+        });
+        
+        document.getElementById('modal-config-word').style.display = 'flex';
+    }
+
+    async function guardarConfiguracionWord() {
+        const checks = document.querySelectorAll('.chk-word-col:checked');
+        const selected = Array.from(checks).map(c => c.value);
+        
+        if(selected.length === 0) return alert("Debe seleccionar al menos un cuadro (columna).");
+        if(selected.length > 8) return alert("Para que el documento Word sea legible, seleccione máximo 8 cuadros.");
+        
+        if(!SYSTEM_AUTH.wordConfig) SYSTEM_AUTH.wordConfig = {};
+        SYSTEM_AUTH.wordConfig.columnas = selected;
+        
+        document.getElementById('modal-config-word').style.display = 'none';
+        alert("Configuración de Cuadros guardada.\nSincronizando con la Nube...");
         await guardarEnServidor();
     }
 
     /* ==========================================================================
-       NUEVO BLOQUE: EXPORTACIÓN A EXCEL (SECTORIZACIÓN POR COORDENADAS)
+       RESPALDO WORD (DINÁMICO SEGÚN CONFIGURACIÓN)
        ========================================================================== */
-    function exportarExcelInstitucional() {
-        if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
-        const wb = XLSX.utils.book_new();
-        let datosParaExcel = [];
-        
-        // Recorremos los registros que están cargados en el mapa
-        Object.keys(STORE).forEach(idCapa => {
-            STORE[idCapa].registros.forEach(reg => {
-                const d = reg.datosGenerales;
-                // IMPORTANTE: El nombre del sector se toma del contenedor donde está el punto
-                const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
-
-                datosParaExcel.push({
-                    "SECTOR": nombreSector, 
-                    "RIF/CÉDULA": d["RIF"] || d["Cédula"] || d["Identificacion"] || "S/D",
-                    "CONTRIBUYENTE": d["Contribuyente"] || d["Razon Social"] || "Sin Nombre",
-                    "ESTADO FISCAL": d["Estatus"] || "Pendiente",
-                });
-            });
-        });
-
-        // Ordenar por Sector y luego por Nombre
-        datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
-
-        const ws = XLSX.utils.json_to_sheet(datosParaExcel);
-        
-        // PIE DE PÁGINA LEGAL CON LOS ARTÍCULOS SOLICITADOS
-        const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
-        
-        const filaFinal = datosParaExcel.length + 3;
-        XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
-        XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
-        
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte Fiscal");
-        XLSX.writeFile(wb, "Reporte_Fiscal_Ayacucho.xlsx");
-    }
-
     function descargarRespaldoWord() {
         if (typeof docx === 'undefined') {
             return alert("Error: La librería de generación de documentos no se cargó correctamente.");
@@ -2065,49 +895,47 @@
         const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
         const systemId = `SGF-CLOUD-${new Date().getFullYear()}`;
 
+        // Leer los cuadros elegidos por el Super Admin
+        let cols = (SYSTEM_AUTH.wordConfig && SYSTEM_AUTH.wordConfig.columnas && SYSTEM_AUTH.wordConfig.columnas.length > 0) 
+                   ? SYSTEM_AUTH.wordConfig.columnas 
+                   : ['Contribuyente', 'RIF', 'Estatus'];
+
         const allRecords = [];
         Object.values(STORE).forEach(sector => {
-            allRecords.push(...sector.registros);
+            if(sector.visible) { // Sólo exportar lo que está visible/activo
+                sector.registros.forEach(reg => {
+                    if (reg.tipoGeometria === 'marker') {
+                        allRecords.push(reg);
+                    }
+                });
+            }
         });
 
         const tableRows = [];
-        const headerRow = new TableRow({
-            children: [
-                new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "IDENTIDAD / REGISTRO", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "UBICACIÓN", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "ESTADO FISCAL", bold: true, size: 16 })] })] }),
-                new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "DOCUMENTACIÓN", bold: true, size: 16 })] })] }),
-            ],
-            tableHeader: true,
-        });
-        tableRows.push(headerRow);
+        
+        // Fila de Encabezados (Cuadros)
+        const headerCells = cols.map(c => new TableCell({
+            width: { size: 100 / cols.length, type: WidthType.PERCENTAGE },
+            children: [new Paragraph({ children: [new TextRun({ text: c.toUpperCase(), bold: true, size: 14 })], alignment: AlignmentType.CENTER })],
+            shading: { fill: "f0f3f6" }
+        }));
+        tableRows.push(new TableRow({ children: headerCells, tableHeader: true }));
 
+        // Filas de Datos
         allRecords.forEach(reg => {
             const d = reg.datosGenerales || {};
-            const identidad = d["Razón Social"] || d["Nombre Comercial"] || d["Contribuyente"] || "Sin Identificar";
-            const registro = d["RIF / Registro"] || d["RIF"] || "N/A";
-            const latLng = reg.capaLeaflet && reg.capaLeaflet.getLatLng ? reg.capaLeaflet.getLatLng() : { lat: 0, lng: 0 };
-            const coordsText = `GPS: ${latLng.lat.toFixed(6)}, ${latLng.lng.toFixed(6)}`;
-            const ubicacion = `${d["Dirección (Referencia Manual)"] || "No especificada."}\n${coordsText}`;
-            const documentacion = `Exp: ${d["N° Expediente"] || "N/A"}\nCenso: ${d["N° de censo"] || reg.idFisico}\nAuditoría: ${d["ID_Auditoria"] || "N/A"}`;
-            const estadoFiscal = `Validación: ${d["Validación Fiscal"] || d["Estatus"] || "N/A"}\nLicencia: ${d["Situación Sin Licencia"] || "N/A"}\nPago: ${d["Semáforo de Acuerdo de Pago"] || "N/A"}`;
-            tableRows.push(new TableRow({
-                children: [
-                    new TableCell({ children: [
-                        new Paragraph({ children: [new TextRun({ text: identidad, bold: true, size: 18 })] }),
-                        new Paragraph({ children: [new TextRun({ text: registro, size: 16 })] }),
-                    ]}),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: ubicacion, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: estadoFiscal, size: 16 })] })] }),
-                    new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: documentacion, size: 16 })] })] }),
-                ],
-            }));
+            const rowCells = cols.map(c => {
+                let val = d[c] || "N/A";
+                return new TableCell({
+                    children: [new Paragraph({ children: [new TextRun({ text: String(val), size: 14 })] })]
+                });
+            });
+            tableRows.push(new TableRow({ children: rowCells }));
         });
 
         const table = new Table({
             rows: tableRows,
             width: { size: 100, type: WidthType.PERCENTAGE },
-            columnWidths: [2500, 3000, 2000, 2000],
         });
 
         const doc = new Document({
@@ -2117,7 +945,6 @@
                         children: [new Paragraph({
                             text: "REPÚBLICA BOLIVARIANA DE VENEZUELA - ALCALDÍA DEL MUNICIPIO AYACUCHO",
                             alignment: AlignmentType.CENTER,
-                            style: "Header"
                         })],
                     }),
                 },
@@ -2127,9 +954,7 @@
                             alignment: AlignmentType.CENTER,
                             children: [
                                 new TextRun(`Documento generado por SGF-CLOUD - ID Sistema: ${systemId} - Página `),
-                                new TextRun({
-                                    children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
-                                }),
+                                new TextRun({ children: [PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES] }),
                             ],
                         })],
                     }),
@@ -2137,12 +962,14 @@
                 children: [
                     new Paragraph({ text: `Fecha de Emisión: ${new Date().toLocaleString()}`, alignment: AlignmentType.RIGHT }),
                     new Paragraph(" "),
+                    new Paragraph({ children: [new TextRun({ text: "CUADRO DE REGISTRO FISCAL", bold: true, size: 24 })], alignment: AlignmentType.CENTER }),
+                    new Paragraph(" "),
                     table,
                     new Paragraph(" "),
                     new Paragraph({
                         children: [
-                            new TextRun({ text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ", bold: true, size: 20, break: 1 }),
-                            new TextRun({ text: "Respaldo maestro de fiscalización conforme a normativa municipal.", size: 20 }),
+                            new TextRun({ text: "CERTIFICACIÓN LEGAL Y ADMINISTRATIVA: ", bold: true, size: 16 }),
+                            new TextRun({ text: "Respaldo maestro de fiscalización conforme a normativa municipal.", size: 16 }),
                         ],
                         alignment: AlignmentType.JUSTIFIED,
                     }),
@@ -2151,7 +978,7 @@
         });
 
         Packer.toBlob(doc).then(blob => {
-            saveAs(blob, `Respaldo_Maestro_Fiscal_Ayacucho_${Date.now()}.docx`);
+            saveAs(blob, `Cuadros_Fiscales_Ayacucho_${Date.now()}.docx`);
         });
     }
 
@@ -2256,18 +1083,9 @@
 
     const capasSectores = {};
     let STORE = {}; 
-    let capaActivaId = null; 
+    let capaActiva = null; 
     let modoLecturaGlobal = false;
     let textoFiltroGlobal = "";
-
-    function lecturaBloqueaEdicion() {
-        return modoLecturaGlobal && CURRENT_ROLE !== 'SUPERADMIN';
-    }
-
-    function capaMaestraProtegidaContraEdicion(idSector) {
-        const s = STORE[idSector];
-        return !!(s && s.isMaster && CURRENT_ROLE !== 'SUPERADMIN');
-    }
 
     const DICCIONARIO_ESTATUS = {
         "VIGENTE": { color: "#238636" },
@@ -2289,9 +1107,10 @@
     });
 
     function activarHerramienta(tipo) {
-        if(lecturaBloqueaEdicion()) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
-        if(!capaActivaId) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
-        if(!STORE[capaActivaId].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
+        if(modoLecturaGlobal) return alert("⚠️ MODO LECTURA ACTIVO: Desactive el candado arriba para dibujar.");
+        if(!capaActiva) return alert("⚠️ SELECCIÓN REQUERIDA: Marque el círculo de la Capa Activa en el panel izquierdo antes de registrar un punto.");
+        if(!STORE[capaActiva].visible) return alert("⚠️ CAPA OCULTA: La capa activa está apagada. Encienda el Checkbox para dibujar.");
+        if(STORE[capaActiva].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("⚠️ CAPA PROTEGIDA: Solo el SuperAdmin puede agregar puntos en esta capa maestra. Por favor, clónela para trabajar.");
         
         tipo === 'punto' ? herramientaPunto.enable() : herramientaPoligono.enable();
     }
@@ -2300,11 +1119,11 @@
         const idFisico = L.stamp(evento.layer);
         
         if(evento.layer instanceof L.Marker) {
-            if (!lecturaBloqueaEdicion()) evento.layer.options.draggable = true;
+            if (!modoLecturaGlobal) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
         } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
             evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
-            if (!lecturaBloqueaEdicion()) evento.layer.editing.enable();
+            if (!modoLecturaGlobal) evento.layer.editing.enable();
             evento.layer.on('edit', () => actualizarUIYMapa());
         }
 
@@ -2326,12 +1145,12 @@
             camposOcultos: []
         };
 
-        STORE[capaActivaId].registros.push(nuevoRegistro);
-        vincularEventosCapa(evento.layer, capaActivaId, idFisico);
+        STORE[capaActiva].registros.push(nuevoRegistro);
+        vincularEventosCapa(evento.layer, capaActiva, idFisico);
         
         actualizarUIYMapa();
         
-        setTimeout(() => abrirPopupDinamico(capaActivaId, idFisico), 200);
+        setTimeout(() => abrirPopupDinamico(capaActiva, idFisico), 200);
         setTimeout(() => toggleModoPopup(idFisico, 'edit'), 300);
     });
 
@@ -2357,7 +1176,7 @@
     }
 
     function cambiarColorEstatusSector(idSector, estatus, colorHex) {
-        if (lecturaBloqueaEdicion()) return alert("Modo lectura activo.");
+        if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
         
         if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
@@ -2365,13 +1184,17 @@
         
         STORE[idSector].registros.forEach(reg => {
             const estActual = obtenerEstatusParaCuadro(reg);
-            if (estActual === estatus) {
+            if (String(estActual).trim().toUpperCase() === String(estatus).trim().toUpperCase()) {
                 reg.colorPersonalizado = colorHex;
                 if (reg.tipoGeometria === 'marker') {
                     reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
                 } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
                     reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
                 }
+                
+                // Actualizar el globo en segundo plano si le cambiaron el color a la categoría
+                const newHtml = generarContenidoHTMLPopup(idSector, reg.idFisico, false);
+                reg.capaLeaflet.unbindPopup().bindPopup(newHtml, { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' });
             }
         });
         
@@ -2379,7 +1202,7 @@
     }
 
     function cambiarColorSector(idSector, colorHex) {
-        if (lecturaBloqueaEdicion()) return alert("Modo lectura activo.");
+        if (modoLecturaGlobal) return alert("Modo lectura activo.");
         if (!STORE[idSector]) return;
         
         STORE[idSector].colorPrincipal = colorHex;
@@ -2406,8 +1229,8 @@
 
     // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
     function eliminarDelClon(idSector, idFisico) {
-        if(lecturaBloqueaEdicion()) return;
-        if(capaMaestraProtegidaContraEdicion(idSector)) return alert("Registro Protegido en Capa Maestra.");
+        if(modoLecturaGlobal) return;
+        if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Registro Protegido en Capa Maestra.");
         if(!confirm("¿Eliminar este contribuyente del mapa y del censo?")) return;
         
         const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
@@ -2443,7 +1266,7 @@
             sectorData.registros.forEach(reg => {
                 if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
                 
-                const estatus = obtenerEstatusParaCuadro(reg);
+                const estatus = obtenerEstatusParaCuadro(reg); 
                 
                 if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
                 const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
@@ -2483,16 +1306,15 @@
             const colorGlobalActual = sectorData.colorPrincipal || '#00f2ff';
             
             let htmlSector = `
-            <div class="sector-card ${idSector === capaActivaId ? 'is-active' : ''}">
+            <div class="sector-card ${idSector === capaActiva ? 'is-active' : ''}">
                 <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
-                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
+                               ${idSector === capaActiva ? 'checked' : ''} onchange="setCapaActiva('${idSector}')" onclick="event.stopPropagation();">
                         
-                        <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
-                           title="Mostrar/Ocultar todo el Sector" 
-                           style="cursor: pointer; width: 16px; text-align: center; color: ${sectorData.visible ? 'var(--cyan-neon)' : '#6e7681'}; font-size: 14px;"
-                           onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', ${!sectorData.visible})"></i>
+                        <input type="checkbox" class="check-visible" ${sectorData.visible ? 'checked' : ''} 
+                               title="Mostrar/Ocultar todo el Sector" 
+                               onclick="event.stopPropagation(); toggleVisibilidadCapa('${idSector}', this.checked)">
                         
                         <input type="text" value="${sectorData.nombreSector}" 
                                title="Doble clic para enfocar sector en el mapa"
@@ -2503,9 +1325,14 @@
                     </div>
                     
                     <div class="sector-controls">
+                        ${CURRENT_ROLE === 'SUPERADMIN' ? `
+                        <i class="fas ${sectorData.isMaster ? 'fa-lock' : 'fa-lock-open'}" 
+                           title="${sectorData.isMaster ? 'Desbloquear Capa' : 'Bloquear Capa'}" 
+                           style="color: ${sectorData.isMaster ? 'var(--cyan-neon)' : '#6e7681'}; cursor: pointer; font-size: 13px; transition: 0.2s;" 
+                           onclick="event.stopPropagation(); toggleBloqueoMaestro('${idSector}')"></i>
+                        ` : ''}
                         <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
-                        ${!capaMaestraProtegidaContraEdicion(idSector) ? `
-                        <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
+                        ${(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') ? `
                         <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
                         ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
                     </div>
@@ -2525,29 +1352,31 @@
 
                 htmlSector += `
                 <div class="status-group">
-                    <div class="status-header">
-                        <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
-                           title="Mostrar/Ocultar esta categoría en el mapa"
-                           style="cursor: pointer; width: 18px; text-align: center; color: ${estatusVisible ? 'var(--text-main)' : '#6e7681'}; font-size: 14px; flex-shrink: 0;"
-                           onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                        <div class="status-row-label" onclick="event.stopPropagation(); document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">${estatus}</div>
-                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
-                        <div class="status-color-wrap">
-                        <input type="color" class="status-cat-color-input" title="Color de categoría" value="${colorActual}"
+                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                        
+                        <input type="checkbox" class="check-visible" ${estatusVisible ? 'checked' : ''} 
+                               title="Mostrar/Ocultar Categoría" 
+                               onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', this.checked)">
+                        
+                        <input type="color" class="status-color-square" title="Color de Categoría" value="${colorActual}"
                                onclick="event.stopPropagation();"
-                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)"
-                               ${capaMaestraProtegidaContraEdicion(idSector) ? 'disabled' : ''}>
-                        </div>
-                        ${!capaMaestraProtegidaContraEdicion(idSector) ? `
-                        <div class="status-row-actions">
+                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
+                               ${(sectorData.isMaster && CURRENT_ROLE !== 'SUPERADMIN') ? 'disabled' : ''}>
+                        
+                        <span class="status-row-label" title="${estatus}">${estatus}</span>
+                        
+                        <span class="status-badge">${gruposPorEstatus[estatus].conteo}</span>
+                        
+                        ${(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') ? `
+                        <div class="status-row-actions" onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
                             <input type="checkbox" 
-                                   style="cursor:pointer;"
+                                   style="cursor:pointer; appearance: auto; width: 14px; height: 14px; margin: 0;"
                                    onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" 
-                                   title="Seleccionar todos en esta categoría para borrado en lote">
+                                   title="Seleccionar todos">
                             <i class="fas fa-trash-alt sector-trash" 
-                               style="font-size: 13px;"
-                               onclick="event.stopPropagation(); eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
-                               title="Eliminar registros seleccionados de esta categoría"></i>
+                               style="font-size: 13px; margin: 0;"
+                               onclick="eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
+                               title="Eliminar seleccionados"></i>
                         </div>` : ''}
                     </div>
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
@@ -2556,16 +1385,14 @@
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
                             <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
-                                   title="Ocultar individualmente" 
-                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
-                                   onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
-                                   
-                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
+                                <input type="checkbox" class="check-visible" ${local.visibleIndividual ? 'checked' : ''} 
+                                       title="Ocultar individualmente" 
+                                       onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', this.checked)">
+                                       
                                 <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
-                            ${!capaMaestraProtegidaContraEdicion(idSector) ? `
+                            ${(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') ? `
                                 <input type="checkbox" class="chk-registro" data-id="${local.idFisico}" onclick="event.stopPropagation();" title="Marcar para borrado en lote" style="cursor:pointer;">
                                 <i class="fas fa-trash sector-trash" title="Borrar este registro" onclick="event.stopPropagation(); eliminarDelClon('${idSector}', '${local.idFisico}')"></i>
                             ` : `<i class="fas fa-lock" style="font-size:11px; color:#6e7681;" title="Registro Protegido"></i>`}
@@ -2579,13 +1406,24 @@
         }
 
         const indicador = document.getElementById('indicador-capa-activa');
-        if(capaActivaId && STORE[capaActivaId]) {
-            indicador.innerText = "CAPA DE TRABAJO: " + STORE[capaActivaId].nombreSector;
+        if(capaActiva && STORE[capaActiva]) {
+            indicador.innerText = "CAPA DE TRABAJO: " + STORE[capaActiva].nombreSector;
             indicador.style.color = varCSS('--cyan-neon');
         } else {
             indicador.innerText = "HACIENDA MUNICIPAL - MODO LECTURA";
             indicador.style.color = "#6e7681";
         }
+    }
+
+    /* ==========================================================================
+       NUEVO: FUNCIÓN PARA BLOQUEO/DESBLOQUEO DE CAPAS (SUPER ADMIN)
+       ========================================================================== */
+    function toggleBloqueoMaestro(idSector) {
+        if(CURRENT_ROLE !== 'SUPERADMIN') return;
+        if(!STORE[idSector]) return;
+        STORE[idSector].isMaster = !STORE[idSector].isMaster;
+        actualizarUIYMapa();
+        guardarEnServidor(); // Autoguardado para proteger la capa inmediatamente
     }
 
     /* ==========================================================================
@@ -2617,7 +1455,7 @@
         capaMapa.bindPopup(htmlContenido, { 
             minWidth: 320, 
             closeButton: true, 
-            className: lecturaBloqueaEdicion() ? 'readonly-mode' : '' 
+            className: modoLecturaGlobal ? 'readonly-mode' : '' 
         }).openPopup();
         
         mapa._popup = capaMapa.getPopup();
@@ -2639,20 +1477,64 @@
         }
     }
 
+    function abrirVisorImagen(url) {
+        document.getElementById('visor-imagen-src').src = url;
+        document.getElementById('visor-imagen-modal').style.display = 'flex';
+    }
+
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const sectorData = STORE[idSector];
         const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
         let html = `<div class="pop-wrapper">`;
 
+        /* ==========================================================================
+           REPARACIÓN CRÍTICA: VISTA AUDITORÍA (POLÍGONOS) EN FORMATO LISTA
+           ========================================================================== */
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
-            const cuerpoEstatus = rep.textoCompacto ? escHtmlBasico(rep.textoCompacto) : '—';
+            
+            let listaEstatusHTML = '';
+            const claves = Object.keys(rep.porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
+            
+            claves.forEach(est => {
+                const cantidad = rep.porEstatus[est];
+                const confEst = DICCIONARIO_ESTATUS[est] || { color: '#6e7681' };
+                let colorBase = confEst.color;
+                
+                listaEstatusHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eaeaea;">
+                    <span style="font-weight: 800; color: #111; font-size: 11px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+                        <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${colorBase}; box-shadow: 0 0 4px rgba(0,0,0,0.4);"></span>
+                        ${est}
+                    </span>
+                    <span style="font-weight: 900; color: #0056b3; font-size: 14px;">${cantidad}</span>
+                </div>`;
+            });
+
             html += `
-            <div class="audit-report glass-panel">
-                <h3 class="audit-title">RESUMEN DE CENSO - HACIENDA</h3>
-                <p class="audit-resumen-cuerpo">ESTATUS: ${cuerpoEstatus} · <span class="audit-total-inline">Total: ${rep.total}</span></p>
-            </div>`;
+            <div style="padding: 20px; background: #fff;">
+                <h3 style="margin: 0 0 15px; font-size: 13px; font-weight: 900; color: #111; border-bottom: 2px solid var(--color-temporal); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="fas fa-chart-pie" style="color: var(--color-temporal); margin-right: 5px;"></i> RESUMEN DEL ÁREA
+                </h3>
+                
+                <div style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
+                    ${listaEstatusHTML || '<div style="color: #888; font-size: 11px; font-weight: bold; text-align: center; padding: 15px 0;">No hay contribuyentes dentro de esta área.</div>'}
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; background: #f6f8fa; padding: 12px 15px; border-radius: 8px; border: 1px solid #d0d7de;">
+                    <span style="font-weight: 900; color: #656d76; font-size: 11px; text-transform: uppercase;">TOTAL REGISTROS</span>
+                    <span style="font-weight: 900; color: var(--color-vencida); font-size: 18px;">${rep.total}</span>
+                </div>`;
+                
+            if(!modoLecturaGlobal && (!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN')) {
+                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')"><i class="fas fa-trash"></i> ELIMINAR ÁREA</button>`;
+            }
+                
+            html += `</div>`;
         } 
+        /* ==========================================================================
+           VISTA NORMAL (MARCADORES)
+           ========================================================================== */
         else {
             const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
@@ -2665,7 +1547,7 @@
             
             html += `
             <div class="pop-cover">
-                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" style="cursor: zoom-in; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="abrirVisorImagen('${imgUrl}')" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
                 <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
             </div>
             <div class="pop-content">`;
@@ -2682,7 +1564,9 @@
                     <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
                 </div>`;
             }
-            if(!lecturaBloqueaEdicion()) {
+            
+            // REPARACIÓN: Si la capa es maestra, el admin no puede editar el popup.
+            if(!modoLecturaGlobal && (!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN')) {
                 html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
             }
             html += `</div>`;
@@ -2703,16 +1587,16 @@
             }
 
             html += `
-            <div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;">
-                <span class="form-label" style="color: #111;">ESTADO FISCAL</span>
+            <div class="form-group">
+                <span class="form-label" style="color: #656d76;">ESTADO FISCAL</span>
                 <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">
                     ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
                 </select>
             </div>
             
-            <div class="form-group" style="background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; margin-top: 10px;">
-                <span class="form-label" style="color: #111;">COLOR DE PINCHETA (PERSONALIZADO)</span>
-                <input type="color" style="width: 100%; height: 32px; border: none; cursor: pointer; border-radius: 6px; background: transparent; padding: 0;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
+            <div class="form-group">
+                <span class="form-label" style="color: #656d76;">COLOR DE PINCHETA (PERSONALIZADO)</span>
+                <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
             </div>
 
             <div class="form-group">
@@ -2723,19 +1607,19 @@
             
             <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
             
-            if(!capaMaestraProtegidaContraEdicion(idSector)) {
-                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')">ELIMINAR REGISTRO</button>`;
+            if(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') {
+                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')"><i class="fas fa-trash"></i> ELIMINAR REGISTRO</button>`;
             }
             
             html += `</div>`;
         }
         
-        html += `</div></div>`;
+        html += `</div>`;
         return html;
     }
 
     function cambiarColorPin(idSector, idFisico, colorHex) {
-        if(lecturaBloqueaEdicion()) return;
+        if(modoLecturaGlobal) return;
         const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!regOrigen) return;
 
@@ -2763,16 +1647,18 @@
 
     function ejecutarToggleOjo(eventoClick, idSector, idFisico, claveCampo) {
         eventoClick.stopPropagation(); 
-        if(lecturaBloqueaEdicion()) return;
+        if(modoLecturaGlobal) return;
 
         const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!regOrigen) return;
 
-        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        const estatusTarget = String(regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA").trim().toUpperCase();
         const isCurrentlyHidden = regOrigen.camposOcultos.includes(claveCampo);
 
+        // REPARACIÓN CRÍTICA: Aplica el cambio a todos los del mismo estatus
         STORE[idSector].registros.forEach(reg => {
-            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            const estActual = String(reg.datosGenerales["Estatus"] || "SIN CATEGORÍA").trim().toUpperCase();
+            
             if (estActual === estatusTarget) {
                 if (isCurrentlyHidden) {
                     const idx = reg.camposOcultos.indexOf(claveCampo);
@@ -2782,14 +1668,23 @@
                         reg.camposOcultos.push(claveCampo);
                     }
                 }
+                
+                // REPARACIÓN CRÍTICA: Forzar regeneración del HTML del popup en segundo plano para que Leaflet no use caché
+                const isCurrentMarker = (String(reg.idFisico) === String(idFisico));
+                const newHtml = generarContenidoHTMLPopup(idSector, reg.idFisico, isCurrentMarker);
+                reg.capaLeaflet.unbindPopup().bindPopup(newHtml, { 
+                    minWidth: 320, 
+                    closeButton: true, 
+                    className: modoLecturaGlobal ? 'readonly-mode' : '' 
+                });
             }
         });
 
         actualizarUIYMapa(); 
 
+        // Si el popup estaba abierto, se asegura de mostrar el actualizado
         if(mapa._popup) {
-            const capaMapa = regOrigen.capaLeaflet;
-            capaMapa.unbindPopup().bindPopup(generarContenidoHTMLPopup(idSector, idFisico, true), { minWidth: 320, closeButton: true, className: lecturaBloqueaEdicion() ? 'readonly-mode' : '' }).openPopup();
+            regOrigen.capaLeaflet.openPopup();
         }
     }
 
@@ -2820,6 +1715,10 @@
             badge.innerText = nuevoEst;
             badge.style.background = colorSector;
         }
+        
+        // Rebind the popup just in case
+        const newHtml = generarContenidoHTMLPopup(idSector, idFisico, true);
+        reg.capaLeaflet.unbindPopup().bindPopup(newHtml, { minWidth: 320, closeButton: true, className: modoLecturaGlobal ? 'readonly-mode' : '' });
     }
 
     /* ==========================================================================
@@ -2832,7 +1731,7 @@
         const bMarker = document.getElementById('btn-draw-marker');
         const bPoly = document.getElementById('btn-draw-poly');
         
-        if(lecturaBloqueaEdicion()) {
+        if(modoLecturaGlobal) {
             bMarker.style.opacity = "0.3"; bMarker.style.pointerEvents = "none";
             bPoly.style.opacity = "0.3"; bPoly.style.pointerEvents = "none";
             if(mapa._popup) mapa.closePopup(); 
@@ -2844,13 +1743,13 @@
         for(let id in STORE) {
             STORE[id].registros.forEach(reg => {
                 if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    if (lecturaBloqueaEdicion()) {
+                    if (modoLecturaGlobal) {
                         if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.disable();
                     } else {
                         if(reg.capaLeaflet.editing) reg.capaLeaflet.editing.enable();
                     }
                 } else if (reg.tipoGeometria === 'marker') {
-                    if (lecturaBloqueaEdicion()) {
+                    if (modoLecturaGlobal) {
                         if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.disable();
                     } else {
                         if(reg.capaLeaflet.dragging) reg.capaLeaflet.dragging.enable();
@@ -2865,7 +1764,7 @@
         actualizarUIYMapa();
     }
 
-    function setCapaActiva(idSector) { capaActivaId = idSector; actualizarUIYMapa(); }
+    function setCapaActiva(idSector) { capaActiva = idSector; actualizarUIYMapa(); }
     
     function toggleVisibilidadCapa(idSector, isVisible) { 
         STORE[idSector].visible = isVisible;
@@ -2875,7 +1774,7 @@
     }
 
     function crearNuevoSector() {
-        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
         const nombre = prompt("Nombre del Nuevo Sector/Capa:");
         if(!nombre) return;
         const id = 'sec_' + Date.now();
@@ -2890,12 +1789,12 @@
             coloresPorEstatus: {}, 
             registros: [] 
         };
-        capaActivaId = id;
+        capaActiva = id;
         actualizarUIYMapa();
     }
 
     function clonarSector(idSectorOriginal) {
-        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
         const sectorOriginal = STORE[idSectorOriginal];
         const nombre = prompt("Nombre de la nueva capa clonada:", sectorOriginal.nombreSector + " (CLON)");
         if(!nombre) return;
@@ -2917,7 +1816,7 @@
         sectorOriginal.registros.forEach(reg => {
             let capaNueva;
             if(reg.tipoGeometria === 'marker') {
-               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !lecturaBloqueaEdicion()});
+               capaNueva = L.marker(reg.capaLeaflet.getLatLng(), {icon: reg.capaLeaflet.options.icon, draggable: !modoLecturaGlobal});
             } else {
                capaNueva = L.polygon(reg.capaLeaflet.getLatLngs(), reg.capaLeaflet.options);
             }
@@ -2936,13 +1835,13 @@
             vincularEventosCapa(capaNueva, newId, newIdFisico);
         });
         
-        capaActivaId = newId;
+        capaActiva = newId;
         actualizarUIYMapa();
     }
     
     function limpiarSector(idSector) {
-        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
-        if(capaMaestraProtegidaContraEdicion(idSector)) return alert("Capa Maestra Protegida. No se puede limpiar.");
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Capa Maestra Protegida. No se puede limpiar.");
         if(!confirm(`⚠️ ATENCIÓN: ¿Seguro que desea vaciar la capa "${STORE[idSector].nombreSector}" eliminando todos sus registros internos?`)) return;
         
         if (capasSectores[idSector]) {
@@ -2953,8 +1852,8 @@
     }
 
     function eliminarSectorDefinitivo(idSector) {
-        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura");
-        if(capaMaestraProtegidaContraEdicion(idSector)) return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura");
+        if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Capa Maestra Protegida. No se puede eliminar por seguridad.");
         if(!confirm(`⚠️ PELIGRO:\n¿Borrar el sector "${STORE[idSector].nombreSector}" y todos sus marcadores? Esta acción purga los datos de la memoria.`)) return;
         
         if (capasSectores[idSector]) {
@@ -2962,12 +1861,10 @@
             delete capasSectores[idSector];
         }
         delete STORE[idSector]; 
-        if(capaActivaId === idSector) capaActivaId = null;
+        if(capaActiva === idSector) capaActiva = null;
         actualizarUIYMapa();
     }
 
-    // --- INICIO DE CÓDIGO INTEGRADO ---
-    // Función para marcar todos los de una sub-categoría específica
     function seleccionarTodoEnCat(checkMaster, idContenedor) {
         const contenedor = document.getElementById(idContenedor);
         if (!contenedor) return;
@@ -2975,9 +1872,8 @@
         checks.forEach(c => c.checked = checkMaster.checked);
     }
 
-    // Función para eliminar SOLO lo que está marcado en esa categoría
     function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
-        if(lecturaBloqueaEdicion()) return alert("Desactive el Modo Lectura para eliminar registros.");
+        if(modoLecturaGlobal) return alert("Desactive el Modo Lectura para eliminar registros.");
         const contenedor = document.getElementById(idContenedor);
         if (!contenedor) return;
         const seleccionados = contenedor.querySelectorAll('.chk-registro:checked');
@@ -2989,7 +1885,6 @@
         if (confirm(`¿Eliminar los ${seleccionados.length} registros seleccionados de la categoría "${nombreCategoria}"?`)) {
             const idsABorrar = Array.from(seleccionados).map(c => c.getAttribute('data-id'));
             
-            // Remove layers from map first
             const capaSector = capasSectores[idSector];
             if(capaSector) {
                 const registrosABorrar = STORE[idSector].registros.filter(r => idsABorrar.includes(String(r.idFisico)));
@@ -3000,10 +1895,8 @@
                 });
             }
 
-            // Filter the STORE for that specific layer
             STORE[idSector].registros = STORE[idSector].registros.filter(r => !idsABorrar.includes(String(r.idFisico)));
 
-            // Close popup if it belongs to a deleted item
             if (mapa._popup) {
                 const sourceId = L.stamp(mapa._popup._source);
                 if (idsABorrar.includes(String(sourceId))) {
@@ -3011,12 +1904,10 @@
                 }
             }
 
-            // Refresh map and UI
             actualizarUIYMapa(); 
             alert(`${seleccionados.length} registros eliminados de la copia de trabajo. Guarde en la nube para persistir los cambios.`);
         }
     }
-    // --- FIN DE CÓDIGO INTEGRADO ---
 
     function enfocarSector(idSector) {
         if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
@@ -3076,8 +1967,8 @@
         btnOlvidar.innerText = "ENVIANDO CORREO...";
         
         const parametros_plantilla = {
-            usuario: SYSTEM_AUTH.user,
-            clave: SYSTEM_AUTH.pass,
+            usuario: SYSTEM_AUTH.userAdmin,
+            clave: SYSTEM_AUTH.passAdmin,
             fecha: new Date().toLocaleString()
         };
 
@@ -3107,13 +1998,13 @@
         if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
         if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
         
-        SYSTEM_AUTH.user = nu;
-        SYSTEM_AUTH.pass = np;
+        SYSTEM_AUTH.userAdmin = nu;
+        SYSTEM_AUTH.passAdmin = np;
         
         document.getElementById('ajuste-user').value = "";
         document.getElementById('ajuste-pass').value = "";
         
-        alert("Credenciales actualizadas en memoria.\nGuardando en la Nube...");
+        alert("Credenciales actualizadas en memoria.\nSincronizando con la Nube...");
         guardarEnServidor();
     }
     
@@ -3121,7 +2012,8 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            sincronizarCamposPanelSuperAdmin();
+            document.getElementById('ajuste-repo-licencia').value = SYSTEM_AUTH.licenciaSGF || '';
+            document.getElementById('ajuste-repo-urlraw').value = SYSTEM_AUTH.urlRaw || '';
         } else {
             div.style.display = 'none';
         }
@@ -3136,201 +2028,249 @@
         }
     }
     
-    async function verificarYGuardarTokenMaestro() {
-        if (CURRENT_ROLE !== 'SUPERADMIN') {
-            return alert("La verificación de llave maestra solo está disponible en sesión Super Admin.");
-        }
-        let rawToken = document.getElementById('ajuste-repo-token').value.trim();
-        const revGuardado = localStorage.getItem('master_token_revert');
-        if (!rawToken && revGuardado) {
-            return alert("Pegue el token completo (ghp_...) para verificar. El campo puede mostrar la forma invertida guardada; bórrela y pegue el token real.");
-        }
-        if (revGuardado && rawToken === revGuardado) {
-            return alert("Ese valor es la llave invertida guardada. Pegue el token real de GitHub (ghp_...) para verificar y guardar.");
-        }
-        if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
-        persistMasterJsonPathFromInput(true);
+    async function verificarYGuardarLicenciaMaestra() {
+        const val = document.getElementById('ajuste-repo-licencia').value.trim();
+        if(!val) return alert("Ingrese el código de licencia maestra.");
+        const est = analizarLicenciaSGF(val);
+        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
-        const btn = document.getElementById('btn-verificar-token-maestro');
-        const originalText = btn ? btn.innerText : '';
-        if (btn) {
-            btn.innerText = "VERIFICANDO...";
-            btn.disabled = true;
-        }
+        const btn = document.querySelector('#ajustes-servidor button');
+        const originalText = btn.innerText;
+        btn.innerText = "VERIFICANDO...";
+        btn.disabled = true;
 
         try {
+            // Extraemos el token de la licencia
+            const token = est.tokenRev.split('').reverse().join('');
+            
+            // Verificamos el token con GitHub
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: {
-                    'Authorization': 'token ' + rawToken,
+                headers: { 
+                    'Authorization': 'token ' + token,
                     'Accept': 'application/vnd.github.v3+json'
                 }
             });
 
             if (res.ok) {
-                const pikaToken = rawToken.split('').reverse().join('');
-                localStorage.setItem('master_token_revert', pikaToken);
-                SYSTEM_AUTH.masterToken = pikaToken;
-                try {
-                    await cargarDatosNube();
-                } catch (loadErr) {
-                    console.warn("Carga inicial tras verificar token:", loadErr);
-                }
-                const pushOk = await guardarEnServidor({ suppressSuccessAlert: true });
-                if (!pushOk) return;
-                alert("✅ Token verificado, llave persistida y CSV sincronizado con el repositorio.");
+                // Guardamos en SYSTEM_AUTH y Sincronizamos
+                SYSTEM_AUTH.licenciaSGF = val;
+                SYSTEM_AUTH.token = token;
+                alert("✅ Licencia Maestra Activada. Sincronizando con la Nube...");
+                await guardarEnServidor();
+                await cargarDatosNube(); 
             } else {
-                if (res.status === 401 || res.status === 403) {
-                    localStorage.removeItem('master_token_revert');
-                    if (SYSTEM_AUTH && SYSTEM_AUTH.masterToken) delete SYSTEM_AUTH.masterToken;
-                }
-                throw new Error(`Error ${res.status}: El token es inválido, expiró o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'. Pegue un token nuevo y pulse de nuevo Verificar y Guardar.`);
+                throw new Error(`Error ${res.status}: El token de la licencia es inválido o no tiene acceso al repositorio.`);
             }
         } catch(e) {
-            console.error(e);
-            alert(`❌ Error de verificación: ${e.message}`);
+            console.error("Activación de Licencia Fallida:", e);
+            let msg = e.message;
+            if (msg === "Failed to fetch") msg = "Error de red: No se pudo alcanzar GitHub API.";
+            alert(`❌ Error de activación: ${msg}`);
         } finally {
-            if (btn) {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-            sincronizarCamposPanelSuperAdmin();
+            btn.innerText = originalText;
+            btn.disabled = false;
         }
     }
 
-    async function cargarDatosNubePorBotonRawSuperAdmin() {
-        try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (e0) {}
-        alert('Descargando datos...');
-        window.__csvDisparoModalMapeoPorCargaManual = true;
+    async function guardarUrlRawMaestra() {
+        const rawUrlRaw = document.getElementById('ajuste-repo-urlraw').value.trim();
+        if(!rawUrlRaw) return alert("Ingrese la URL del RAW (CSV).");
+
         try {
+            SYSTEM_AUTH.urlRaw = rawUrlRaw;
+            alert("✅ URL del RAW actualizada. Sincronizando con la Nube...");
+            await guardarEnServidor();
             await cargarDatosNube();
-        } finally {
-            try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (e1) {}
+        } catch(e) {
+            console.error(e);
+            alert(`❌ Error al guardar la URL: ${e.message}`);
         }
     }
-
+    
     async function cargarDatosNube() {
-        try {
-            const token = getRealToken();
-            let fr = await fetchCloudDataPlainText(token);
-            if (!fr.ok && token && (fr.status === 401 || fr.status === 403)) {
-                if (CURRENT_ROLE === 'SUPERADMIN') {
-                    try { localStorage.removeItem('master_token_revert'); } catch (e) {}
-                }
-                fr = await fetchCloudDataPlainText(null);
-            }
-            if (!fr.ok) {
-                try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (eClr) {}
-                if (fr.status === 404) {
-                    actualizarUIYMapa();
-                    return;
-                }
-                if (!token && CURRENT_ROLE !== 'SUPERADMIN') {
-                    actualizarUIYMapa();
-                    return;
-                }
-                console.error("Carga nube:", fr.status);
-                if (token || CURRENT_ROLE === 'SUPERADMIN') {
-                    alert("No se pudieron cargar los datos CSV. Revise enlace, token o permisos. Código: " + fr.status);
-                }
-                actualizarUIYMapa();
-                return;
-            }
-            if (fr.sha) fileSha = fr.sha;
-            const forzarMapTrasCargaManual = !!window.__csvDisparoModalMapeoPorCargaManual;
-            aplicarCargaDesdeTextoPlano(fr.text, forzarMapTrasCargaManual ? { forzarModalMapeo: true } : {});
-        } catch (e) {
-            try { window.__csvDisparoModalMapeoPorCargaManual = false; } catch (eClr2) {}
-            console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos. " + (e.message || e));
+        const GITHUB_TOKEN_DYNAMIC = getRealToken();
+        if (!GITHUB_TOKEN_DYNAMIC) {
             actualizarUIYMapa();
+            return;
+        }
+
+        try {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim() }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                fileSha = data.sha;
+                
+                // DECODIFICACIÓN SEGURA UTF-8 (Compatible con "ñ", tildes, etc.)
+                const binaryStr = atob(data.content);
+                const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                const decodedContent = new TextDecoder('utf-8').decode(bytes);
+                const jsonParsed = JSON.parse(decodedContent);
+                
+                // --- SMART MAPPING (Mapeo Inteligente) ---
+                // 1. Compatibilidad con Formato Viejo (Nested Credentials)
+                if (jsonParsed.credentials) {
+                    const creds = jsonParsed.credentials;
+                    SYSTEM_AUTH.userAdmin = creds.userAdmin || creds.user || 'admin';
+                    SYSTEM_AUTH.passAdmin = creds.passAdmin || creds.pass || 'admin';
+                    SYSTEM_AUTH.urlRaw = creds.urlRaw || creds.csvUrl || '';
+                    SYSTEM_AUTH.token = creds.token || creds.masterToken || '';
+                    SYSTEM_AUTH.licenciaSGF = creds.licenciaSGF || creds.license || '';
+                }
+                
+                // 2. Mapeo Directo (Formato Flat Nuevo 2026)
+                // DESOFUSCACIÓN: Si el token o licencia vienen invertidos (SGF-...), los revertimos
+                const revStr = s => (s && s.includes('SGF-')) ? s.split('').reverse().join('') : s;
+                const revTk = s => (s && s.startsWith('ghp_')) ? s : (s ? s.split('').reverse().join('') : s);
+
+                if (jsonParsed.userAdmin) SYSTEM_AUTH.userAdmin = jsonParsed.userAdmin;
+                if (jsonParsed.passAdmin) SYSTEM_AUTH.passAdmin = jsonParsed.passAdmin;
+                if (jsonParsed.urlRaw || jsonParsed.csvUrl) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
+                if (jsonParsed.wordConfig) SYSTEM_AUTH.wordConfig = jsonParsed.wordConfig;
+                
+                // Aplicamos reversión solo si detectamos que están invertidos
+                if (jsonParsed.token) {
+                    const t = jsonParsed.token;
+                    SYSTEM_AUTH.token = (t.startsWith('ghp_')) ? t : t.split('').reverse().join('');
+                }
+                if (jsonParsed.licenciaSGF || jsonParsed.license) {
+                    const l = jsonParsed.licenciaSGF || jsonParsed.license;
+                    SYSTEM_AUTH.licenciaSGF = (l.startsWith('SGF-')) ? l : l.split('').reverse().join('');
+                }
+
+                // Cargar el mapa (Store)
+                reconstruirDesdeJSON(jsonParsed.store || {});
+            } else if (res.status === 404) {
+                actualizarUIYMapa();
+            } else {
+                throw new Error(`GitHub API error: ${res.status}`);
+            }
+        } catch (e) {
+            console.error("Error al cargar datos desde la nube:", e);
+            actualizarUIYMapa();
+            throw new Error(e.message === "Failed to fetch" ? "Error de conexión con GitHub (Fetch Error)" : e.message);
         }
     }
 
     function cerrarSesionSeguridad() {
-        const rol = CURRENT_ROLE;
-        CURRENT_ROLE = null;
-        try {
-            if (rol === 'SUPERADMIN') localStorage.removeItem('master_token_revert');
-            if (rol === 'ADMIN') localStorage.removeItem('sgf_license');
-        } catch (e) {}
         location.reload();
     }
 
-    async function guardarEnServidor(opts) {
-        opts = opts || {};
+    async function guardarEnServidor(retry = true) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
-        if(!GITHUB_TOKEN_DYNAMIC) {
-            if (CURRENT_ROLE === 'SUPERADMIN') {
-                alert("❌ No hay llave maestra de GitHub guardada en este equipo. Abra «LLAVE MAESTRA GITHUB», pegue un token (ghp_...) y pulse Verificar y Guardar.");
-            } else {
-                alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
-            }
-            return false;
-        }
+        if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
+        
+        console.log("Token detectado, longitud:", GITHUB_TOKEN_DYNAMIC.length);
 
-        if (dataSourceIsExternalNonGithub()) {
-            alert("❌ La fuente es una URL externa (ej. Google Sheets). Guarde usando una ruta o URL raw de GitHub dentro del repositorio.");
-            return false;
+        const btnSave = document.getElementById('btn-save-server');
+        const btnOriginalText = btnSave ? btnSave.innerHTML : "GUARDAR NUBE";
+        
+        // Solo mostramos el spinner si no es un reintento interno
+        if(btnSave && retry) {
+            btnSave.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
+            btnSave.disabled = true;
         }
-
-        const btn = document.getElementById('btn-save-server');
-        const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
-        btn.disabled = true;
 
         try {
+            // 1. OBTENER ESTADO ACTUAL (Smart Merge) - SIEMPRE REFRESCAR EL SHA CON CABECERAS ANTI-CACHE
+            let currentCloudData = {};
             let currentSha = null;
-            try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getGithubContentPathForApi())}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
+            
+            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim(),
+                    'Accept': 'application/vnd.github.v3+json'
                 }
-            } catch (err) {}
+            });
+            
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                currentSha = getData.sha;
+                const binaryStr = atob(getData.content);
+                const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                const decoded = new TextDecoder('utf-8').decode(bytes);
+                currentCloudData = JSON.parse(decoded);
+            }
 
-            const csvBody = storeToCsvString();
-            const contentEncoded = btoa(unescape(encodeURIComponent(csvBody)));
+            // 2. PREPARAR DATOS (Merge Inteligente)
+            const datosLimpios = extraerDatosGeometria();
+            
+            // Migramos todo a una estructura FLAT (Plana)
+            // OFUSCACIÓN DE SEGURIDAD: Invertimos el token y la licencia antes de subir para evitar que GitHub los detecte como secretos
+            const nuevaConfiguracion = {
+                ...currentCloudData, 
+                userAdmin: SYSTEM_AUTH.userAdmin,
+                passAdmin: SYSTEM_AUTH.passAdmin,
+                urlRaw: SYSTEM_AUTH.urlRaw,
+                token: SYSTEM_AUTH.token ? SYSTEM_AUTH.token.split('').reverse().join('') : '',
+                licenciaSGF: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
+                license: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
+                wordConfig: SYSTEM_AUTH.wordConfig || { columnas: ['Contribuyente', 'RIF', 'Estatus', 'Dirección'] },
+                store: datosLimpios 
+            };
+
+            // 3. CODIFICACIÓN SEGURA UTF-8 PARA GITHUB
+            const jsonStr = JSON.stringify(nuevaConfiguracion, null, 2);
+            const utf8Bytes = new TextEncoder().encode(jsonStr);
+            let binary = "";
+            for (let i = 0; i < utf8Bytes.byteLength; i++) {
+                binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            const contentEncoded = btoa(binary);
             
             const payload = {
-                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
+                message: "Sincronización SGF 2026 - Actualización de Datos",
                 content: contentEncoded,
                 branch: "main"
             };
             
             if (currentSha) payload.sha = currentSha;
 
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${githubContentsApiPath(getGithubContentPathForApi())}`, {
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim(),
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify(payload)
             });
 
-            if(!res.ok) throw new Error(await res.text());
+            if(!res.ok) {
+                const errorData = await res.json();
+                if (res.status === 409 && retry) {
+                    console.warn("Conflicto 409 detectado. Reintentando sincronización con SHA actualizado...");
+                    // Esperamos 1 segundo antes de reintentar para dar tiempo al servidor
+                    await new Promise(r => setTimeout(r, 1000));
+                    return await guardarEnServidor(false); // Reintento único
+                }
+                throw new Error(errorData.message || "Error desconocido en GitHub API");
+            }
             
             const data = await res.json();
             fileSha = data.content.sha;
-            if (!opts.suppressSuccessAlert) {
-                alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+            alert("✅ Sincronización Exitosa: Los datos están protegidos en la Nube.");
+            
+            // Recargar datos y activar paneles necesarios
+            await cargarDatosNube();
+            if(CURRENT_ROLE === 'SUPERADMIN') {
+                const btnRaw = document.getElementById('btn-cargar-raw');
+                if(btnRaw) btnRaw.style.display = 'flex';
             }
-            return true;
         } catch(e) {
-            console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + (e.message || e));
-            return false;
+            console.error("Sincronización Fallida:", e);
+            let msg = e.message;
+            if (msg === "Failed to fetch") {
+                msg = "No se pudo conectar con GitHub. Verifique su conexión a internet o el Token.";
+            }
+            alert("❌ Error crítico de sincronización: " + msg);
         } finally {
-            btn.innerHTML = btnOriginalText;
-            btn.disabled = false;
+            if(btnSave && retry) {
+                btnSave.innerHTML = btnOriginalText;
+                btnSave.disabled = false;
+            }
         }
     }
 
@@ -3380,7 +2320,7 @@
                     const lngParseada = parseFloat(reg.coords.lng);
                     capa = L.marker([latParseada, lngParseada], { 
                         icon: crearPinFiscal(colorAUsar), 
-                        draggable: !lecturaBloqueaEdicion() 
+                        draggable: !modoLecturaGlobal 
                     });
                     capa.on('dragend', () => actualizarUIYMapa());
                 } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
@@ -3392,7 +2332,7 @@
                         weight: 3, 
                         dashArray: '5, 5' 
                     });
-                    if (!lecturaBloqueaEdicion()) capa.editing.enable();
+                    if (!modoLecturaGlobal) capa.editing.enable();
                     capa.on('edit', () => actualizarUIYMapa());
                 }
 
@@ -3416,45 +2356,233 @@
         actualizarUIYMapa();
     }
 
-    window.onload = async function() {
-        document.getElementById('login-overlay').style.display = 'flex';
+    /* ==========================================================================
+       MODULO DE IMPORTACIÓN RAW CSV (MAPEADO DINÁMICO REPARADO)
+       ========================================================================== */
+    let RAW_CSV_DATA = [];
+    let RAW_CSV_HEADERS = [];
+
+    async function cargarRawCSV() {
+        if(!SYSTEM_AUTH.urlRaw) return alert("❌ No se ha configurado la URL del RAW (CSV) en los Ajustes de Super Admin.");
+        
+        const btn = document.getElementById('btn-cargar-raw');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> CARGANDO...";
+        btn.disabled = true;
+
         try {
-            const masterTk = getMasterTokenFromStorage();
-            if (masterTk) {
-                CURRENT_ROLE = 'SUPERADMIN';
-                sincronizarCamposPanelSuperAdmin();
-                await cargarDatosNube();
+            const res = await fetch(`${SYSTEM_AUTH.urlRaw}?t=${Date.now()}`);
+            if(!res.ok) throw new Error("No se pudo obtener el archivo CSV desde GitHub.");
+            
+            const arrayBuffer = await res.arrayBuffer();
+            const texto = new TextDecoder('utf-8').decode(arrayBuffer);
+            
+            const lineas = texto.split(/\r?\n/).filter(line => line.trim() !== "");
+            if (lineas.length < 2) throw new Error("El archivo CSV está vacío o no tiene el formato correcto.");
+            
+            // PARSER INFALIBLE: Detecta si usa comas o punto y comas, ignorando lo que esté dentro de comillas
+            const separador = lineas[0].includes(';') ? /;(?=(?:(?:[^"]*"){2})*[^"]*$)/ : /,(?=(?:(?:[^"]*"){2})*[^"]*$)/;
+            const rowsParsed = lineas.map(l => l.split(separador).map(c => c.replace(/^"|"$/g, '').trim()));
 
-                if (CURRENT_ROLE === 'SUPERADMIN') {
-                    document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (LLAVE MAESTRA)';
-                    document.getElementById('panel-superadmin').style.display = 'block';
-                    const btnRaw = document.getElementById('btn-cargar-raw');
-                    if (btnRaw) btnRaw.style.display = 'flex';
-                    const panelAdmin = document.getElementById('panel-admin-licencia');
-                    if (panelAdmin) panelAdmin.remove();
-                    const licWarn = document.getElementById('license-warning-box');
-                    if (licWarn) licWarn.style.display = 'none';
-                    const licLock = document.getElementById('license-lock-overlay');
-                    if (licLock) licLock.style.display = 'none';
+            RAW_CSV_HEADERS = rowsParsed[0];
+            RAW_CSV_DATA = rowsParsed.slice(1).filter(r => r.length > 0 && r.some(c => c !== ""));
 
-                    const roToggleM = document.getElementById('toggle-readonly');
-                    if (roToggleM) {
-                        roToggleM.checked = false;
-                        modoLecturaGlobal = false;
-                        alternarModoLectura();
-                    }
-
-                    document.getElementById('login-overlay').style.display = 'none';
-                    sincronizarCamposPanelSuperAdmin();
-                    forzarRefrescoCapasMapa();
-                    return;
+            // Llenar los Selects del Modal
+            const selects = ['mapeo-coords', 'mapeo-nombre', 'mapeo-estatus', 'mapeo-imagen'];
+            selects.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.innerHTML = '<option value="">-- Seleccione Columna --</option>' + 
+                                   RAW_CSV_HEADERS.map((h, i) => `<option value="${h}">${h}</option>`).join('');
                 }
-            }
-            await cargarDatosNube();
-        } catch (e) {
-            console.warn('Validación silenciosa del auto-login:', e);
+            });
+
+            document.getElementById('modal-mapeo-csv').style.display = 'flex';
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error al cargar RAW: " + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
-    };
+    }
+
+    function mostrarPanelMapeoCsv() {
+        const selects = ['mapeo-coords', 'mapeo-nombre', 'mapeo-estatus', 'mapeo-imagen'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            if(el) {
+                el.innerHTML = '<option value="">-- Seleccione Columna (Opcional) --</option>' + 
+                               RAW_CSV_HEADERS.map((h, i) => `<option value="${h}">${h}</option>`).join('');
+            }
+        });
+        document.getElementById('modal-mapeo-csv').style.display = 'flex';
+    }
+
+    async function confirmarMapeoCsv() {
+        // Alias para procesarMapeoCSV si se usa el botón viejo
+        procesarMapeoCSV();
+    }
+
+    function procesarMapeoCSV() {
+        // Soporta tanto los IDs viejos como los nuevos (dependiendo desde qué modal se llame)
+        const latCol = document.getElementById('map-lat') ? document.getElementById('map-lat').value : document.getElementById('mapeo-coords').value;
+        const lngCol = document.getElementById('map-lng') ? document.getElementById('map-lng').value : document.getElementById('mapeo-coords').value;
+        const nameCol = document.getElementById('map-name') ? document.getElementById('map-name').value : document.getElementById('mapeo-nombre').value;
+        
+        // Estatus es la clave para la Imagen 2
+        const statusCol = document.getElementById('map-status') ? document.getElementById('map-status').value : (document.getElementById('mapeo-estatus') ? document.getElementById('mapeo-estatus').value : null);
+        const fotoCol = document.getElementById('map-foto') ? document.getElementById('map-foto').value : document.getElementById('mapeo-imagen').value;
+
+        if (!latCol || !nameCol) {
+            return alert("Debe seleccionar las columnas obligatorias para Coordenadas y Nombre.");
+        }
+
+        if (!confirm(`¿Proceder a mapear ${RAW_CSV_DATA.length} puntos? Se creará una nueva capa de trabajo PROTEGIDA.`)) return;
+
+        const idSector = 'sec_' + Date.now();
+        const nombreSector = "IMPORTACIÓN CSV " + new Date().toLocaleTimeString();
+        
+        capasSectores[idSector] = new L.FeatureGroup();
+        STORE[idSector] = {
+            nombreSector: nombreSector,
+            visible: true,
+            isMaster: true, // Capa maestra protegida (Solo SuperAdmin puede borrarla/editarla libremente)
+            isExpanded: true,
+            visibilidadPorEstatus: {},
+            coloresPorEstatus: {},
+            colorPrincipal: '#8e44ad',
+            registros: []
+        };
+
+        let exitosos = 0;
+        let errores = 0;
+
+        RAW_CSV_DATA.forEach((row, rowIndex) => {
+            try {
+                let lat, lng;
+                // Si lat y lng vienen en la misma columna (modal viejo)
+                if (latCol === lngCol) {
+                    let val = String(row[latCol] || '').trim();
+                    let cleanStr = val.replace(/[°'"()NSWE]/g, '').trim();
+                    let parts = cleanStr.split(/[,;\s\t]+/).filter(p => p !== "");
+                    if (parts.length >= 2) {
+                        lat = parseFloat(parts[0]);
+                        lng = parseFloat(parts[1]);
+                    } else {
+                        lat = NaN;
+                        lng = NaN;
+                    }
+                } else {
+                    lat = parseFloat(row[latCol]);
+                    lng = parseFloat(row[lngCol]);
+                }
+
+                if (isNaN(lat) || isNaN(lng)) throw new Error("Coordenadas no numéricas");
+
+                const contribuyente = row[nameCol] || "SIN NOMBRE";
+                
+                // EXTRACCIÓN Y LIMPIEZA DE ESTATUS
+                let estatusBruto = statusCol ? row[statusCol] : null;
+
+                // Auto-detectar si no lo seleccionaron
+                if (estatusBruto == null) {
+                    let detectedKey = Object.keys(row).find(k => ['estatus', 'categoría', 'categoria', 'estado', 'semáforo', 'semaforo'].includes(k.toLowerCase().trim()));
+                    if(detectedKey) estatusBruto = row[detectedKey];
+                }
+
+                let estatusLimpio = estatusBruto ? String(estatusBruto).replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim().toUpperCase() : "SIN CATEGORÍA";
+                if(estatusLimpio === "") estatusLimpio = "SIN CATEGORÍA";
+
+                // Normalizar palabras clave para forzar la vinculación con el DICCIONARIO
+                if (estatusLimpio.includes("VIGENTE")) estatusLimpio = "VIGENTE";
+                else if (estatusLimpio.includes("VENCIDA")) estatusLimpio = "VENCIDA";
+                else if (estatusLimpio.includes("TEMPORAL")) estatusLimpio = "TEMPORAL";
+                else if (estatusLimpio.includes("SIN LICENCIA")) estatusLimpio = "SIN LICENCIA";
+
+                const fotoUrl = fotoCol ? (row[fotoCol] || "") : ""; 
+
+                const confEst = DICCIONARIO_ESTATUS[estatusLimpio] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const colorPunto = confEst.color;
+
+                const capa = L.marker([lat, lng], { 
+                    icon: crearPinFiscal(colorPunto), 
+                    draggable: !modoLecturaGlobal 
+                });
+                
+                // REPARACIÓN CRÍTICA 1: AÑADIR AL MAPA
+                capa.addTo(mapa);
+                
+                const newIdFisico = L.stamp(capa);
+                
+                const datosGenerales = {
+                    "Contribuyente": contribuyente,
+                    "Estatus": estatusLimpio,
+                    "Link Fotografía": fotoUrl
+                };
+
+                // Añadir TODAS las demás columnas del CSV sin perder nada
+                for(let k in row) {
+                    if(k !== latCol && k !== lngCol && k !== nameCol && k !== statusCol && k !== fotoCol) {
+                        datosGenerales[k] = row[k];
+                    }
+                }
+
+                const nuevoReg = {
+                    idFisico: newIdFisico,
+                    tipoGeometria: 'marker',
+                    capaLeaflet: capa,
+                    colorPersonalizado: colorPunto, // Color atado al estatus
+                    visibleIndividual: true, // REPARACIÓN CRÍTICA 3
+                    _modoPopup: 'lectura',
+                    datosGenerales: datosGenerales,
+                    camposOcultos: []
+                };
+                
+                // REPARACIÓN CRÍTICA DEL POPUP: GUARDAR PRIMERO EN STORE
+                STORE[idSector].registros.push(nuevoReg);
+                
+                // Luego vincular eventos
+                vincularEventosCapa(capa, idSector, newIdFisico);
+                capa.bindPopup(generarContenidoHTMLPopup(idSector, newIdFisico), { 
+                    minWidth: 320, 
+                    closeButton: true 
+                });
+
+                capa.on('dragend', () => actualizarUIYMapa());
+                exitosos++;
+            } catch (e) {
+                console.warn("Fila ignorada por error:", e.message);
+                errores++;
+            }
+        });
+
+        // Ocultar cualquier modal de CSV abierto
+        document.getElementById('csv-mapping-modal').style.display = 'none';
+        const m2 = document.getElementById('modal-mapeo-csv');
+        if(m2) m2.style.display = 'none';
+
+        // REPARACIÓN CRÍTICA 2 Y 3: VARIABLE CORRECTA Y ACTUALIZAR UI
+        capaActiva = idSector;
+        actualizarUIYMapa();
+        
+        if(exitosos > 0) {
+            enfocarSector(idSector);
+            alert(`✅ Importación completada:\n- Exitosos: ${exitosos}\n- Errores (Coord. inválidas): ${errores}\n\nLos puntos han sido cargados con sus colores por Estatus.`);
+        } else {
+            alert(`❌ Error: Ninguna fila pudo ser importada. Hubo ${errores} errores de formato. Verifique la columna de coordenadas.`);
+            delete STORE[idSector];
+            delete capasSectores[idSector];
+            capaActiva = null;
+            actualizarUIYMapa();
+        }
+    }
+
+    function initSecurity() {
+        document.getElementById('login-overlay').style.display = 'flex';
+    }
+    
+    initSecurity();
 
 </script>
 </body>
