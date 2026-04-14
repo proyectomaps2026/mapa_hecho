@@ -264,6 +264,13 @@
 
 <script>
     /* ==========================================================================
+       CONFIGURACIÓN MAESTRA DE REPOSITORIO (Ajuste para API Directa)
+       ========================================================================== */
+    const GITHUB_USER = 'proyectomaps2026';
+    const GITHUB_REPO = 'mapa-censo'; // Tu repositorio real
+    const FILE_PATH = 'config.json'; // Archivo donde se guarda la BD
+
+    /* ==========================================================================
        PROTECCIÓN BÁSICA
        ========================================================================== */
     document.addEventListener('contextmenu', e => e.preventDefault());
@@ -425,7 +432,7 @@
     }
 
     function eliminarSector(idSector) {
-        if(STORE[idSector].isMaster) return alert("Esta es una capa base protegida. No puede ser eliminada.");
+        if(STORE[idSector].isMaster) return alert("Esta es una capa base que proviene de la nube. No puede ser eliminada.");
         if(confirm(`¿Desea eliminar la capa de simulación "${STORE[idSector].nombreSector}"?`)) {
             if(capasSectores[idSector]) { capaMaestraSectores.removeLayer(capasSectores[idSector]); delete capasSectores[idSector]; }
             delete STORE[idSector];
@@ -533,7 +540,7 @@
                 <div class="audit-stat" style="color:#000; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;"><span>TOTAL PUNTOS:</span> <span>${rep.total}</span></div>
             </div>`;
         } else {
-            const estActual = registro.datosGenerales["Estatus"];
+            const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
@@ -573,7 +580,7 @@
     }
 
     /* ==========================================================================
-       CONEXIÓN DIRECTA Y ANTI-CACHÉ A GITHUB RAW (LECTURA)
+       CONEXIÓN DIRECTA Y ANTI-CACHÉ A GITHUB RAW (LECTURA EN VIVO)
        ========================================================================== */
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
@@ -594,19 +601,38 @@
         if(btn) { btn.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> ACTUALIZANDO...'; btn.disabled = true; }
 
         try {
-            // CONEXIÓN DIRECTA A RAW GITHUB PARA EVITAR CACHÉ DEL PAGES
-            const urlRawGithub = `https://raw.githubusercontent.com/proyectomaps2026/mapa_hecho/main/config.json?t=${Date.now()}`;
-            let res = await fetch(urlRawGithub);
-            
-            if(!res.ok) {
-                // Si falla por alguna razón, intenta cargar de manera local
-                res = await fetch(`config.json?t=${Date.now()}`);
-                if(!res.ok) throw new Error("No se pudo conectar con el servidor de la base de datos.");
+            // 1. OBTENER CONFIGURACIÓN LOCAL (Para sacar el Token y evitar el caché)
+            let config = null;
+            let resLocal = await fetch(`config.json?t=${Date.now()}`);
+            if(!resLocal.ok) throw new Error("No se pudo conectar con el servidor base.");
+            config = await resLocal.json();
+
+            // 2. CONEXIÓN API DIRECTA A GITHUB (Rompe el caché para ver el RAW instantáneamente)
+            let tokenMaster = config.token;
+            if (tokenMaster) {
+                tokenMaster = tokenMaster.startsWith('ghp_') ? tokenMaster : tokenMaster.split('').reverse().join('');
+                try {
+                    const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                        headers: { 
+                            'Authorization': 'token ' + tokenMaster,
+                            'Accept': 'application/vnd.github.v3+json'
+                        }
+                    });
+                    
+                    if (resApi.ok) {
+                        const data = await resApi.json();
+                        const binaryStr = atob(data.content);
+                        const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                        const decodedContent = new TextDecoder('utf-8').decode(bytes);
+                        config = JSON.parse(decodedContent);
+                        console.log("✅ Datos RAW obtenidos en TIEMPO REAL desde la Nube.");
+                    }
+                } catch(apiErr) {
+                    console.warn("⚠️ Usando caché de emergencia:", apiErr);
+                }
             }
-            
-            const config = await res.json();
-            
-            // Evaluar Licencia
+
+            // Evaluar Licencia del Sistema Cloud
             const rawLic = config.licenciaSGF || config.license;
             if (rawLic) {
                 const finalLic = rawLic.startsWith('SGF-') ? rawLic : rawLic.split('').reverse().join('');
@@ -631,7 +657,7 @@
                 }
             }
 
-            // Reconstruir mapa (Forzando isMaster = true para lo que viene de la nube)
+            // Reconstruir mapa con los datos frescos
             STORE = {};
             for(let id in capasSectores) capaMaestraSectores.removeLayer(capasSectores[id]);
             
