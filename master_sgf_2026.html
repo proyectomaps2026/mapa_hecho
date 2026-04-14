@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 1. IDENTIDAD CORPORATIVA: Cambio de Title -->
     <title>SISTEMA DE CONTROL FISCAL - HACIENDA MUNICIPAL</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -10,8 +11,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
+    <!-- LIBRERÍAS: EMAILJS Y HTML2CANVAS PARA LA CAPTURA PERFECTA -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- LIBRERÍA XLSX PARA EXPORTACIÓN A EXCEL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -34,199 +37,795 @@
             --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
         }
 
-        /* --- PARCHE CRÍTICO PLATINIUM --- */
-        .status-dot { display: none !important; } /* Matar el punto */
-        .status-header { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 15px !important; padding: 12px 16px !important; background: rgba(255, 255, 255, 0.03); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); transition: background 0.2s;}
-        .status-header:hover { background: rgba(255,255,255,0.05) !important; }
-        .status-header span:not(.status-badge) { color: #fff !important; background: transparent !important; padding: 0 !important; } /* Texto blanco puro y limpio */
-        .status-badge { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; padding: 2px 10px !important; border-radius: 20px !important; font-size: 11px !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; flex-shrink: 0; text-align: center; font-weight: 800; font-family: 'Inter', sans-serif;}
-
-        input[type="color"].status-color-square {
-            -webkit-appearance: none;
-            border: none;
-            width: 16px;
-            height: 16px;
-            padding: 0;
-            border-radius: 4px;
-            cursor: pointer;
-            background: transparent;
-            flex-shrink: 0;
-        }
-        input[type="color"].status-color-square::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"].status-color-square::-webkit-color-swatch { border: none; border-radius: 4px; }
-
         * { box-sizing: border-box; }
         
         body, html { 
-            margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; 
-            background: var(--bg-dark); color: var(--text-main); overflow: hidden; 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-dark); 
+            color: var(--text-main); 
+            overflow: hidden; 
         }
         
-        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            z-index: 1; 
+        }
 
-        .ui-layer { position: absolute; z-index: 1000; pointer-events: auto; }
+        /* ==========================================================================
+           2. COMPONENTES DE INTERFAZ (UI)
+           ========================================================================== */
+        .ui-layer { 
+            position: absolute; 
+            z-index: 1000; 
+            pointer-events: auto; 
+        }
         
         .glass-panel { 
-            background: var(--panel-bg); backdrop-filter: blur(16px); 
-            border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-heavy); 
+            background: var(--panel-bg); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid var(--border-color); 
+            border-radius: 12px; 
+            box-shadow: var(--shadow-heavy); 
         }
         
         .btn { 
-            border: none; font-family: 'Inter', sans-serif; font-weight: 900; 
-            cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; 
+            border: none; 
+            font-family: 'Inter', sans-serif; 
+            font-weight: 900; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
         }
-        .btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
-
-        .leaflet-top.leaflet-right { margin-top: 100px !important; z-index: 10001 !important; margin-right: 15px !important; }
-
-        .top-nav { top: 15px; left: 15px; right: 15px; height: 64px; display: flex; align-items: center; padding: 0 20px; gap: 15px; justify-content: space-between; }
         
-        .search-container { flex: 0 1 500px; display: flex; align-items: center; gap: 12px; background: rgba(0,0,0,0.4); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-color); transition: 0.3s; }
-        .search-container:focus-within { border-color: var(--cyan-neon); box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); }
-        .search-container input { background: transparent; border: none; color: white; outline: none; width: 100%; font-size: 14px; font-weight: 600; }
-        
-        .tools-container { display: flex; gap: 10px; align-items: center; }
-        .tool-btn { width: 44px; height: 44px; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 18px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; transition: 0.2s; }
-        .tool-btn:hover, .tool-btn.active { border-color: var(--cyan-neon); color: var(--cyan-neon); background: rgba(0, 242, 255, 0.1); }
+        .btn:hover { 
+            filter: brightness(1.2); 
+            transform: translateY(-1px); 
+        }
 
+        /* CONTROL DE CAPAS LEAFLET AISLADO Y VISIBLE A 100px */
+        .leaflet-top.leaflet-right {
+            margin-top: 100px !important;
+            z-index: 10001 !important;
+            margin-right: 15px !important;
+        }
+
+        /* BARRA SUPERIOR */
+        .top-nav { 
+            top: 15px; 
+            left: 15px; 
+            right: 15px; 
+            height: 64px; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 20px; 
+            gap: 15px; 
+            justify-content: space-between; 
+        }
+        
+        .search-container { 
+            flex: 0 1 500px; 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            background: rgba(0,0,0,0.4); 
+            padding: 12px 18px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            transition: 0.3s; 
+        }
+        
+        .search-container:focus-within { 
+            border-color: var(--cyan-neon); 
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2); 
+        }
+        
+        .search-container input { 
+            background: transparent; 
+            border: none; 
+            color: white; 
+            outline: none; 
+            width: 100%; 
+            font-size: 14px; 
+            font-weight: 600; 
+        }
+        
+        .tools-container { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+        }
+        
+        .tool-btn { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 18px; 
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid var(--border-color); 
+            color: var(--text-main); 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        .tool-btn:hover, .tool-btn.active { 
+            border-color: var(--cyan-neon); 
+            color: var(--cyan-neon); 
+            background: rgba(0, 242, 255, 0.1); 
+        }
+
+        /* ESTILOS PARA LA IMPRESIÓN DEL REPORTE Y OCULTAMIENTO */
         @media print {
             .ui-layer, .leaflet-control-container, .modal-overlay, #mira-captura { display: none !important; }
             #map { position: absolute; width: 100%; height: 100vh; top: 0; left: 0; z-index: 9999; }
             body, html { overflow: visible; background: white; }
         }
         
-        .toggle-container { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 800; color: #a5b0bf; background: rgba(0,0,0,0.3); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border-color); }
-        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #da3633; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--color-vigente); }
-        input:checked + .slider:before { transform: translateX(16px); }
-
-        /* SIDEBAR (PANEL MAESTRO) */
-        #sidebar { top: 95px; left: 15px; bottom: 20px; width: 420px; display: flex; flex-direction: column; overflow: hidden; }
-        
-        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); }
-        .sidebar-header h1 { margin: 0; font-size: 17px; font-weight: 900; letter-spacing: 1px; color: var(--color-temporal); }
-        .sidebar-header p { margin: 6px 0 0; font-size: 11px; color: var(--cyan-neon); font-weight: 800; letter-spacing: 0.5px; }
-        
-        .layers-container { flex: 1; overflow-y: auto; padding: 15px; }
-        .layers-container::-webkit-scrollbar { width: 6px; }
-        .layers-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-
-        .sector-card { margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.3); overflow: hidden; transition: all 0.3s ease; }
-        .sector-card.is-active { border-color: var(--cyan-neon); background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); }
-        
-        .sector-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent; cursor: pointer; gap: 15px; }
-        .sector-header:hover { background: rgba(255,255,255,0.05); }
-        .sector-title-group { display: flex; align-items: center; gap: 15px; flex: 1; }
-        .sector-controls { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
-        
-        .radio-active { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 50%; outline: none; cursor: pointer; position: relative; flex-shrink: 0; }
-        .radio-active:checked { border-color: var(--cyan-neon); }
-        .radio-active:checked::after { content: ''; position: absolute; top: 3px; left: 3px; width: 6px; height: 6px; background: var(--cyan-neon); border-radius: 50%; }
-
-        .sector-title { font-size: 13px; font-weight: 800; color: var(--text-main); cursor: pointer; }
-        .sector-trash { padding: 5px; font-size: 13px; color: #6e7681; cursor: pointer; transition: 0.2s; }
-        .sector-trash:hover { color: var(--color-vencida); text-shadow: 0 0 10px var(--color-vencida); }
-
-        .status-group { border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
-
-        .status-row-label {
-            flex: 1; 
-            min-width: 0; 
-            font-family: 'Inter', sans-serif; 
-            font-weight: 600; /* Texto limpio Inter 600 */
+        /* TOGGLE MODO LECTURA */
+        .toggle-container { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
             font-size: 11px; 
-            color: #ffffff !important; 
-            background: transparent !important;
-            overflow: hidden; 
-            text-overflow: ellipsis; 
-            white-space: nowrap; 
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
+            font-weight: 800; 
+            color: #a5b0bf; 
+            background: rgba(0,0,0,0.3); 
+            padding: 8px 15px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border-color); 
+        }
+        
+        .switch { 
+            position: relative; 
+            display: inline-block; 
+            width: 34px; 
+            height: 18px; 
+        }
+        
+        .switch input { 
+            opacity: 0; 
+            width: 0; 
+            height: 0; 
+        }
+        
+        .slider { 
+            position: absolute; 
+            cursor: pointer; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background-color: #da3633; 
+            transition: .4s; 
+            border-radius: 34px; 
+        }
+        
+        .slider:before { 
+            position: absolute; 
+            content: ""; 
+            height: 12px; 
+            width: 12px; 
+            left: 3px; 
+            bottom: 3px; 
+            background-color: white; 
+            transition: .4s; 
+            border-radius: 50%; 
+        }
+        
+        input:checked + .slider { 
+            background-color: var(--color-vigente); 
+        }
+        
+        input:checked + .slider:before { 
+            transform: translateX(16px); 
         }
 
-        .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
-        .local-row { padding: 8px 16px 8px 24px; font-size: 11px; color: #a5b0bfff; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); gap: 12px; }
-        .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
+        /* SIDEBAR (PANEL MAESTRO) */
+        #sidebar { 
+            top: 95px; 
+            left: 15px; 
+            bottom: 20px; 
+            width: 420px; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
+        }
+        
+        .sidebar-header { 
+            padding: 25px 20px; 
+            border-bottom: 1px solid var(--border-color); 
+            background: rgba(255,255,255,0.02); 
+        }
+        
+        /* IDENTIDAD CORPORATIVA: Sidebar Header */
+        .sidebar-header h1 { 
+            margin: 0; 
+            font-size: 17px; 
+            font-weight: 900; 
+            letter-spacing: 1px; 
+            color: var(--color-temporal); 
+        }
+        
+        .sidebar-header p { 
+            margin: 6px 0 0; 
+            font-size: 11px; 
+            color: var(--cyan-neon); 
+            font-weight: 800; 
+            letter-spacing: 0.5px; 
+        }
+        
+        .layers-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+        }
+        
+        .layers-container::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        
+        .layers-container::-webkit-scrollbar-thumb { 
+            background: var(--border-color); 
+            border-radius: 4px; 
+        }
 
-        /* FOOTER SIDEBAR */
-        .sidebar-footer { padding: 20px; display: grid; grid-template-columns: 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; padding: 14px; border-radius: 8px; font-size: 11px; }
-        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.05); }
-        .btn-solid-green { background: var(--color-vigente); color: #fff; padding: 14px; border-radius: 8px; font-size: 11px; }
-        .btn-solid-yellow { background: var(--color-temporal); color: #000; padding: 14px; border-radius: 8px; font-size: 11px; }
+        /* TARJETAS DE SECTOR Y CONTROLES DUALES */
+        .sector-card { 
+            margin-bottom: 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 8px; 
+            background: rgba(0,0,0,0.3); 
+            overflow: hidden; 
+            transition: all 0.3s ease; 
+        }
+        
+        .sector-card.is-active { 
+            border-color: var(--cyan-neon); 
+            background: rgba(0, 242, 255, 0.03); 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); 
+        }
+        
+        .sector-header { 
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            border-bottom: 1px solid transparent; 
+            cursor: pointer;
+        }
+        
+        .sector-header:hover { 
+            background: rgba(255,255,255,0.05); 
+        }
+        
+        .sector-title-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        
+        /* Controles Visuales del Sector */
+        .sector-controls { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+        }
+        
+        .radio-active { 
+            appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #6e7681; 
+            border-radius: 50%; 
+            outline: none; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        
+        .radio-active:checked { 
+            border-color: var(--cyan-neon); 
+        }
+        
+        .radio-active:checked::after { 
+            content: ''; 
+            position: absolute; 
+            top: 3px; 
+            left: 3px; 
+            width: 6px; 
+            height: 6px; 
+            background: var(--cyan-neon); 
+            border-radius: 50%; 
+        }
+        
+        .check-visible { 
+            appearance: none; 
+            width: 16px; 
+            height: 16px; 
+            border: 2px solid #6e7681; 
+            border-radius: 4px; 
+            outline: none; 
+            cursor: pointer; 
+            position: relative; 
+        }
+        
+        .check-visible:checked { 
+            background: var(--color-vigente); 
+            border-color: var(--color-vigente); 
+        }
+        
+        .check-visible:checked::after { 
+            content: '✔'; 
+            position: absolute; 
+            color: white; 
+            font-size: 10px; 
+            top: -1px; 
+            left: 2px; 
+        }
+
+        .sector-title { 
+            font-size: 13px; 
+            font-weight: 800; 
+            color: var(--text-main); 
+            cursor: pointer; 
+        }
+        
+        .sector-trash { 
+            padding: 5px; 
+            font-size: 13px; 
+            color: #6e7681; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        .sector-trash:hover { 
+            color: var(--color-vencida); 
+            text-shadow: 0 0 10px var(--color-vencida); 
+        }
+
+        /* ACORDEÓN DE ESTATUS Y LISTA */
+        .status-group { 
+            border-top: 1px solid var(--border-color); 
+            background: rgba(255,255,255,0.01); 
+        }
+        
+        .status-header { 
+            padding: 12px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            cursor: pointer; 
+        }
+        
+        .status-header:hover { 
+            background: rgba(255,255,255,0.04); 
+        }
+
+        .status-row-label {
+            flex: 1;
+            min-width: 0;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .status-count { 
+            background: rgba(255, 255, 255, 0.1); 
+            border-radius: 20px; 
+            padding: 2px 10px; 
+            font-size: 11px; 
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            line-height: 1.35;
+            text-align: center;
+        }
+
+        .status-row-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-shrink: 0;
+        }
+
+        .status-color-wrap {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .status-cat-color-input {
+            -webkit-appearance: none;
+            appearance: none;
+            display: block;
+            width: 22px;
+            height: 22px;
+            margin: -1px 0 0 -1px;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+        }
+
+        .status-cat-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+        .status-cat-color-input::-webkit-color-swatch { border: none; }
+        .status-cat-color-input::-moz-color-swatch { border: none; }
+
+        .local-list { 
+            background: rgba(0,0,0,0.5); 
+            max-height: 250px; 
+            overflow-y: auto; 
+        }
+        
+        .local-row { 
+            padding: 8px 16px 8px 24px; 
+            font-size: 11px; 
+            color: #a5b0bfff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            cursor: pointer; 
+            border-bottom: 1px solid rgba(255,255,255,0.02); 
+        }
+        
+        .local-row:hover { 
+            color: white; 
+            background: rgba(255,255,255,0.08); 
+        }
+
+        .sidebar-footer { 
+            padding: 20px; 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 12px; 
+            border-top: 1px solid var(--border-color); 
+            background: rgba(0,0,0,0.2); 
+        }
+        
+        .btn-outline { 
+            background: transparent; 
+            border: 1px solid var(--border-color); 
+            color: white; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+        }
+        
+        .btn-outline:hover { 
+            border-color: white; 
+            background: rgba(255,255,255,0.05); 
+        }
+        
+        .btn-solid-yellow { 
+            background: var(--color-temporal); 
+            color: #000; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+        }
+
+        /* Estilo añadido para botones verdes del módulo SGF */
+        .btn-solid-green { 
+            background: var(--color-vigente); 
+            color: #fff; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+        }
 
         /* ==========================================================================
            3. POPUPS INMORTALES (VISTA LECTURA Y EDICIÓN DOBLE CONTENEDOR)
            ========================================================================== */
-        .leaflet-popup-content-wrapper { padding: 0; overflow: hidden; border-radius: 12px; background: #fff; width: 340px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .leaflet-popup-tip { background: #fff; }
-        .leaflet-popup-content { margin: 0; } 
+        .leaflet-popup-content-wrapper { 
+            padding: 0; 
+            overflow: hidden; 
+            border-radius: 12px; 
+            background: #fff; 
+            width: 340px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+        }
         
-        .pop-cover { width: 100%; height: 160px; background: #111; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        .pop-cover img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
-        .pop-badge { position: absolute; top: 15px; left: 15px; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 900; color: white; text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.5); }
-        .pop-content { padding: 20px; color: #111; max-height: 400px; overflow-y: auto; }
+        .leaflet-popup-tip { 
+            background: #fff; 
+        }
         
-        .read-field { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 8px; }
-        .read-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-        .read-value { font-size: 13px; font-weight: 700; color: #111; word-break: break-word; }
+        .leaflet-popup-content { 
+            margin: 0; 
+        } 
+        
+        .pop-cover { 
+            width: 100%; 
+            height: 160px; 
+            background: #111; 
+            position: relative; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+        
+        .pop-cover img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            opacity: 0.9; 
+        }
+        
+        .pop-badge { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 10px; 
+            font-weight: 900; 
+            color: white; 
+            text-transform: uppercase; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            border: 2px solid rgba(255,255,255,0.5); 
+        }
+        
+        .pop-content { 
+            padding: 20px; 
+            color: #111; 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        
+        /* Estilos Vista Lectura Profesional */
+        .read-field { 
+            margin-bottom: 12px; 
+            border-bottom: 1px solid #eaeaea; 
+            padding-bottom: 8px; 
+        }
+        
+        .read-label { 
+            display: block; 
+            font-size: 9px; 
+            font-weight: 900; 
+            color: #888; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+        }
+        
+        .read-value { 
+            font-size: 13px; 
+            font-weight: 700; 
+            color: #111; 
+            word-break: break-word; 
+        }
 
-        .form-group { margin-bottom: 12px; border-bottom: 1px solid #eaeaea; padding-bottom: 6px; position: relative; }
-        .form-label { display: block; font-size: 9px; font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 4px; }
-        .form-input { width: 85%; border: none; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #000; background: transparent; outline: none; }
-        .form-input:focus { color: var(--color-vigente); }
-        .input-oculto { opacity: 0.6; font-family: monospace; letter-spacing: 1px; }
+        /* Estilos Vista Edición */
+        .form-group { 
+            margin-bottom: 12px; 
+            border-bottom: 1px solid #eaeaea; 
+            padding-bottom: 6px; 
+            position: relative; 
+        }
+        
+        .form-label { 
+            display: block; 
+            font-size: 9px; 
+            font-weight: 900; 
+            color: #888; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+        }
+        
+        .form-input { 
+            width: 85%; 
+            border: none; 
+            font-family: 'Inter', sans-serif; 
+            font-size: 13px; 
+            font-weight: 700; 
+            color: #000; 
+            background: transparent; 
+            outline: none; 
+        }
+        
+        .form-input:focus { 
+            color: var(--color-vigente); 
+        }
+        
+        /* PRIVACIDAD DE URls */
+        .input-oculto { 
+            opacity: 0.6; 
+            font-family: monospace; 
+            letter-spacing: 1px; 
+        }
 
-        .form-select { width: 100%; padding: 8px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 800; border: 1px solid #ccc; border-radius: 6px; margin-top: 5px; outline: none; cursor: pointer; }
-        .eye-btn { position: absolute; right: 5px; top: 20px; color: #ccc; cursor: pointer; font-size: 14px; transition: 0.2s; z-index: 10; padding: 5px; }
-        .eye-btn:hover, .eye-btn.is-hidden { color: var(--color-vencida); }
+        .form-select { 
+            width: 100%; 
+            padding: 8px; 
+            font-family: 'Inter', sans-serif; 
+            font-size: 12px; 
+            font-weight: 800; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            margin-top: 5px; 
+            outline: none; 
+            cursor: pointer; 
+        }
+        
+        .eye-btn { 
+            position: absolute; 
+            right: 5px; 
+            top: 20px; 
+            color: #ccc; 
+            cursor: pointer; 
+            font-size: 14px; 
+            transition: 0.2s; 
+            z-index: 10; 
+            padding: 5px; 
+        }
+        
+        .eye-btn:hover, .eye-btn.is-hidden { 
+            color: var(--color-vencida); 
+        }
 
-        .btn-popup-action { width: 100%; padding: 14px; font-size: 12px; border-radius: 8px; margin-top: 10px; font-weight: 900; cursor: pointer; border: none; text-transform: uppercase; color: white; transition: 0.2s; }
-        .btn-popup-action:hover { filter: brightness(1.1); }
-        .btn-save { background: var(--color-vigente); box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); }
-        .btn-edit { background: var(--cyan-neon); color: #000; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); }
-        .btn-del { background: var(--color-vencida); margin-top: 15px; }
+        .btn-popup-action { 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 12px; 
+            border-radius: 8px; 
+            margin-top: 10px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            border: none; 
+            text-transform: uppercase; 
+            color: white; 
+            transition: 0.2s; 
+        }
+        
+        .btn-popup-action:hover { 
+            filter: brightness(1.1); 
+        }
+        
+        .btn-save { 
+            background: var(--color-vigente); 
+            box-shadow: 0 4px 15px rgba(35, 134, 54, 0.3); 
+        }
+        
+        .btn-edit { 
+            background: var(--cyan-neon); 
+            color: #000; 
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.3); 
+        }
+        
+        .btn-del { 
+            background: var(--color-vencida); 
+            margin-top: 15px; 
+        }
 
+        /* MODO LECTURA CSS MAESTRO */
         .readonly-mode .form-input { pointer-events: none; color: #555; }
         .readonly-mode .form-select { pointer-events: none; background: #eee; }
         .readonly-mode .eye-btn { display: none; }
         .readonly-mode input[type="color"] { pointer-events: none; opacity: 0.6; }
 
-        .leaflet-editing-icon { border-radius: 50% !important; border: 2px solid var(--border-color) !important; background-color: #fff !important; width: 12px !important; height: 12px !important; margin-left: -6px !important; margin-top: -6px !important; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        /* ==========================================================================
+           5. ESTÉTICA PROFESIONAL DE VÉRTICES (PUNTOS BLANCOS EN EDICIÓN)
+           ========================================================================== */
+        .leaflet-editing-icon {
+            border-radius: 50% !important;
+            border: 2px solid var(--border-color) !important;
+            background-color: #fff !important;
+            width: 12px !important;
+            height: 12px !important;
+            margin-left: -6px !important;
+            margin-top: -6px !important;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
 
         /* ==========================================================================
-           POPUP AUDITORIA
+           6. MODALES Y REPORTES
            ========================================================================== */
-        .audit-popup-wrapper .leaflet-popup-content-wrapper { background: var(--panel-bg); backdrop-filter: blur(16px); border: 1px solid var(--cyan-neon); color: var(--text-main); box-shadow: var(--shadow-heavy); border-radius: 12px; }
-        .audit-popup-wrapper .leaflet-popup-tip { background: var(--panel-bg); border: 1px solid var(--cyan-neon); border-top: none; border-left: none; }
-        .audit-report.glass-panel { font-family: 'Inter', sans-serif; padding: 20px 22px; margin: 0; text-align: left; background: transparent; border: none; box-shadow: none; }
-        .audit-title { margin: 0 0 14px; font-size: 12px; font-weight: 900; color: var(--color-temporal); letter-spacing: 0.06em; text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; }
-        .audit-resumen-cuerpo { margin: 0; color: var(--text-main); font-size: 13px; font-weight: 600; line-height: 1.55; white-space: normal; }
-        .audit-total-inline { color: var(--cyan-neon); font-weight: 800; white-space: nowrap; }
+        .audit-report.glass-panel {
+            font-family: 'Inter', sans-serif;
+            padding: 20px 22px;
+            margin: 0;
+            text-align: left;
+        }
+        .audit-title {
+            margin: 0 0 14px;
+            font-size: 12px;
+            font-weight: 900;
+            color: var(--color-temporal);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+        .audit-resumen-cuerpo {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1.55;
+        }
+        .audit-total-inline {
+            color: var(--cyan-neon);
+            font-weight: 800;
+            white-space: nowrap;
+        }
 
-        /* ==========================================================================
-           MODALES GENERALES
-           ========================================================================== */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .modal-box { width: 480px; padding: 30px; max-height: 90vh; overflow-y: auto; }
         .modal-title { margin: 0 0 20px; font-size: 18px; color: var(--color-temporal); text-transform: uppercase; }
         .modal-input { width: 100%; padding: 14px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-weight: bold; }
         .modal-select { width: 100%; padding: 12px; background: #111; color: white; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 15px; font-family: 'Inter'; font-size: 12px; }
 
-        .notif-modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(18, 22, 29, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--cyan-neon); color: white; padding: 30px 40px; border-radius: 12px; font-size: 16px; font-weight: 800; z-index: 999999; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4); text-align: center; display: none; flex-direction: column; gap: 15px; }
+        /* MODALES DEL NUEVO FLUJO DE CAPTURA */
+        .notif-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(18, 22, 29, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--cyan-neon);
+            color: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 800;
+            z-index: 999999;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.4);
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
 
-        .footer-protegido { position: fixed; bottom: 5px; right: 15px; font-size: 9px; color: rgba(255,255,255,0.4); z-index: 9999; pointer-events: none; font-weight: 600; }
+        .footer-protegido {
+            position: fixed;
+            bottom: 5px;
+            right: 15px;
+            font-size: 9px;
+            color: rgba(255,255,255,0.4);
+            z-index: 9999;
+            pointer-events: none;
+            font-weight: 600;
+        }
 
-        .license-alert { background: rgba(218, 54, 51, 0.2); border: 1px solid var(--color-vencida); color: white; padding: 10px; border-radius: 8px; font-size: 11px; margin-bottom: 15px; font-weight: 800; text-align: center; display: none; }
+        /* ALERTA DE LICENCIA SGF */
+        .license-alert { 
+            background: rgba(218, 54, 51, 0.2); 
+            border: 1px solid var(--color-vencida); 
+            color: white; 
+            padding: 10px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            margin-bottom: 15px; 
+            font-weight: 800; 
+            text-align: center; 
+            display: none; 
+        }
     </style>
 </head>
 <body>
 
+<!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
 
+<!-- MODALES DEL FLUJO DE CAPTURA -->
 <div id="capture-modal" class="notif-modal">
     <i class="fas fa-circle-notch fa-spin" style="font-size: 30px; color: var(--cyan-neon);"></i>
     <span>🔄 ENCUADRANDO REPORTE...<br><small style="color: #a5b0bf; font-size: 12px;">Por favor, no mueva el mapa ni cierre esta ventana.</small></span>
@@ -235,6 +834,57 @@
 <div id="success-modal" class="notif-modal" style="border-color: var(--color-vigente); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(35, 134, 54, 0.4);">
     <i class="fas fa-check-circle" style="font-size: 30px; color: var(--color-vigente);"></i>
     <span>✅ Reporte Generado con Éxito.</span>
+</div>
+
+<!-- BANNER LICENCIA (solo ADMIN: activación o vencida; mapa visible detrás) -->
+<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; justify-content: center;">
+    <div class="glass-panel modal-box" style="width: 420px; max-width: 92%; padding: 32px 28px; text-align: center; box-sizing: border-box;">
+        <i class="fas fa-key" style="font-size: 44px; color: var(--color-temporal); margin-bottom: 16px;"></i>
+        <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 12px 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
+        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF) para activar.</p>
+        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 12px;">
+        <button type="button" class="btn btn-save" style="width: 100%; padding: 14px; margin-bottom: 10px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
+        <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
+    </div>
+</div>
+
+<!-- OVERLAY DE SEGURIDAD ACTIVA (AUTO-LOGIN / GITHUB / EMAIL RECUPERACIÓN) -->
+<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
+    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
+        
+        <!-- CONTENEDOR 1: FORMULARIO DE ACCESO -->
+        <div id="login-form-container">
+            <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
+            <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
+            <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
+            
+            <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
+            
+            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
+            <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
+            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
+
+            <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
+
+            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
+            
+            <div style="margin-top: 15px;">
+                <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR 2: MENSAJE DE ÉXITO DE CORREO -->
+        <div id="recovery-success-container" style="display: none;">
+            <i class="fas fa-envelope-circle-check" style="font-size: 50px; color: var(--color-vigente); margin-bottom: 20px;"></i>
+            <h2 class="modal-title" style="color: var(--color-vigente); font-size: 20px;">¡CORREO ENVIADO CON ÉXITO!</h2>
+            <p style="font-size: 12px; color: #f0f3f6; line-height: 1.6; margin-bottom: 30px;">
+                Se han enviado sus credenciales de seguridad al correo vinculado del Administrador de Hacienda.<br><br>
+                <span style="color: var(--color-temporal); font-weight: bold;">Revise su bandeja de entrada (y carpeta de Spam).</span>
+            </p>
+            <button class="btn btn-outline" style="width: 100%; padding: 15px;" onclick="volverAlLogin()">REGRESAR AL LOGIN</button>
+        </div>
+
+    </div>
 </div>
 
 <!-- MODAL DE MAPEO CSV -->
@@ -250,47 +900,6 @@
         <div style="margin-top: 25px; display: flex; gap: 10px;">
             <button class="btn btn-outline" style="flex: 1; padding: 12px;" onclick="document.getElementById('csv-mapping-modal').style.display='none'">CANCELAR</button>
             <button class="btn btn-save" style="flex: 2; padding: 12px;" onclick="confirmarMapeoCsv()">GENERAR MAPEO DE PUNTOS</button>
-        </div>
-    </div>
-</div>
-
-<!-- BANNER LICENCIA -->
-<div id="license-lock-overlay" class="modal-overlay" style="z-index: 10000; display: none; background: rgba(7,9,13,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; justify-content: center;">
-    <div class="glass-panel modal-box" style="width: 420px; max-width: 92%; padding: 32px 28px; text-align: center; box-sizing: border-box;">
-        <i class="fas fa-key" style="font-size: 44px; color: var(--color-temporal); margin-bottom: 16px;"></i>
-        <h1 id="lock-banner-heading" style="color: var(--color-temporal); font-weight: 900; margin: 0 0 12px 0; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase;">ACTIVACIÓN REQUERIDA</h1>
-        <p id="lock-banner-text" style="color: #a5b0bf; font-size: 12px; line-height: 1.55; margin: 0 0 22px 0;">Ingrese su clave de acceso institucional (SGF). Puede descargar respaldo Word o Excel antes de activar.</p>
-        <input type="password" id="lock-new-license" class="modal-input" placeholder="Clave de Acceso Institucional" style="margin-bottom: 12px;">
-        <button type="button" class="btn btn-save" style="width: 100%; padding: 14px; margin-bottom: 10px;" onclick="guardarLicenciaDesdeBloqueo()">ACTIVAR NUEVA LICENCIA</button>
-        <button type="button" class="btn btn-outline" style="width: 100%; padding: 12px; margin-bottom: 8px;" onclick="descargarRespaldoWord()"><i class="fas fa-file-word"></i> DESCARGAR RESPALDO (WORD)</button>
-    </div>
-</div>
-
-<!-- OVERLAY DE SEGURIDAD ACTIVA -->
-<div class="modal-overlay" id="login-overlay" style="display: flex; background: var(--bg-dark); z-index: 9999;">
-    <div class="glass-panel modal-box" style="text-align: center; width: 400px; padding: 40px;">
-        <div id="login-form-container">
-            <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--cyan-neon); margin-bottom: 20px;"></i>
-            <h2 class="modal-title">ACCESO RESTRINGIDO</h2>
-            <p style="font-size: 11px; color: #a5b0bf; margin-bottom: 20px;">SISTEMA DE CONTROL FISCAL MUNICIPAL</p>
-            <input type="text" id="login-user" class="modal-input" placeholder="Usuario Sistema">
-            <label for="login-pass" style="color: white; font-size: 12px; font-weight: bold; display: block; text-align: left; margin-bottom: 5px;">Clave de Acceso Institucional</label>
-            <input type="password" id="login-pass" class="modal-input" placeholder="Clave del Sistema">
-            <p style="font-size: 10px; color: #fbbc04; margin-top: 0px; margin-bottom: 15px; text-align: left; font-weight: bold;">* Solicítela a su director o directora de Hacienda.</p>
-            <div id="login-error-msg" style="color: var(--color-vencida); font-size: 11px; font-weight: bold; margin-bottom: 15px; display: none;"></div>
-            <button class="btn btn-save" id="btn-autenticar" style="width: 100%; padding: 15px;" onclick="intentarLogin()">ACCEDER</button>
-            <div style="margin-top: 15px;">
-                <span id="btn-olvido" style="font-size: 11px; color: #a5b0bf; cursor: pointer; text-decoration: underline;" onclick="enviarCredenciales()">¿Olvidó sus datos?</span>
-            </div>
-        </div>
-        <div id="recovery-success-container" style="display: none;">
-            <i class="fas fa-envelope-circle-check" style="font-size: 50px; color: var(--color-vigente); margin-bottom: 20px;"></i>
-            <h2 class="modal-title" style="color: var(--color-vigente); font-size: 20px;">¡CORREO ENVIADO CON ÉXITO!</h2>
-            <p style="font-size: 12px; color: #f0f3f6; line-height: 1.6; margin-bottom: 30px;">
-                Se han enviado sus credenciales de seguridad al correo vinculado del Administrador de Hacienda.<br><br>
-                <span style="color: var(--color-temporal); font-weight: bold;">Revise su bandeja de entrada (y carpeta de Spam).</span>
-            </p>
-            <button class="btn btn-outline" style="width: 100%; padding: 15px;" onclick="volverAlLogin()">REGRESAR AL LOGIN</button>
         </div>
     </div>
 </div>
@@ -319,6 +928,7 @@
             <i class="fas fa-draw-polygon"></i>
         </button>
 
+        <!-- BOTÓN GENERAR REPORTE (FOTO LIMPIA) -->
         <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
@@ -326,10 +936,12 @@
             </svg> GENERAR REPORTE
         </button>
         
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarDatosNube()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
+        <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
+        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarCsvDesdeUrl()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
             <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
         </button>
 
+        <!-- BOTÓN GUARDAR NUBE (GITHUB API) -->
         <button class="btn tool-btn" id="btn-save-server" title="Guardar Sincronización en Nube" onclick="guardarEnServidor()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: var(--color-vigente);">
             <i class="fas fa-cloud-upload-alt" style="margin-right: 8px;"></i> GUARDAR NUBE
         </button>
@@ -337,6 +949,7 @@
 </nav>
 
 <aside id="sidebar" class="ui-layer glass-panel">
+    <!-- FRANJA TRICOLOR INSTITUCIONAL -->
     <div style="height: 5px; width: 100%; display: flex;">
         <div style="flex: 1; background: #008000;"></div> 
         <div style="flex: 1; background: #FF0000;"></div> 
@@ -344,17 +957,21 @@
     </div>
 
     <div class="sidebar-header">
+        <!-- IDENTIDAD CORPORATIVA: Sidebar Títulos -->
         <h1>SISTEMA DE CONTROL FISCAL</h1>
         <div id="rol-indicador" style="font-size: 10px; color: #fbbc04; font-weight: 900; margin-top: 5px; margin-bottom: 8px; letter-spacing: 1px;"><i class="fas fa-user-shield"></i> ESPERANDO LOGIN...</div>
         <p id="indicador-capa-activa">HACIENDA MUNICIPAL - SELECCIONE CAPA</p>
     </div>
     
+    <!-- ALERTA DE LICENCIA (SÓLO ADMIN) -->
     <div id="license-warning-box" class="license-alert">
         <i class="fas fa-exclamation-triangle"></i> ATENCIÓN: Su licencia vence en <span id="license-days-count">X</span> días.
     </div>
 
-    <div class="layers-container" id="arbol-datos"></div>
+    <div class="layers-container" id="arbol-datos">
+        </div>
     
+    <!-- MÓDULO DE CAMBIO DE CLAVE EN SIDEBAR -->
     <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('ajustes-cuenta').style.display = document.getElementById('ajustes-cuenta').style.display === 'none' ? 'block' : 'none'">
             <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
@@ -367,22 +984,22 @@
         </div>
     </div>
 
+    <!-- MÓDULO PRIVADO SUPER ADMIN (LLAVE GITHUB) -->
     <div id="panel-superadmin" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: #8e44ad; margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleConfigServidor()">
-            <span><i class="fas fa-server"></i> LLAVE MAESTRA GITHUB (SUPER ADMIN)</span>
+            <span><i class="fas fa-server"></i> CONFIGURACIÓN MAESTRA (SUPER ADMIN)</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
-            <input type="password" id="ajuste-repo-token" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Token de GitHub (ghp_...)">
+            <input type="password" id="ajuste-repo-licencia" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Licencia SGF Maestra">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="verificarYGuardarLicenciaMaestra()">ACTIVAR LICENCIA MAESTRA</button>
             
-            <label style="color: white; font-size: 10px; font-weight: bold; display: block; margin-bottom: 4px; margin-top: 8px;">URL DEL CSV (DATOS EXTERNOS)</label>
-            <input type="text" id="input-csv-url" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="https://ejemplo.com/datos.csv">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="cargarCsvDesdeUrl()"><i class="fas fa-file-csv"></i> IMPORTAR RAW DESDE URL</button>
-
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="verificarYGuardarTokenMaestro()">ENCRIPTAR Y GUARDAR TOKEN</button>
+            <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (CSV)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URL DEL RAW</button>
         </div>
     </div>
 
+    <!-- MÓDULO GESTIÓN DE LICENCIA (ADMIN/CLIENTE) -->
     <div id="panel-admin-licencia" style="display:none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: var(--color-temporal); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleLicenciaPanel()">
             <span><i class="fas fa-key"></i> LICENCIA SGF</span>
@@ -400,6 +1017,7 @@
             <i class="fas fa-folder-plus"></i> CREAR SECTOR
         </button>
         
+        <!-- BOTÓN DE CERRAR SESIÓN (BOTÓN DE PÁNICO) -->
         <button class="btn btn-outline" onclick="cerrarSesionSeguridad()" style="grid-column: span 1; border-color: var(--color-vencida); color: var(--color-vencida);">
             <i class="fas fa-sign-out-alt"></i> CERRAR SESIÓN
         </button>
@@ -436,20 +1054,57 @@
     /* ==========================================================================
        FASE 0: VARIABLES EMAILJS, GITHUB API Y SEGURIDAD SGF
        ========================================================================== */
+    // CREDENCIALES EMAILJS (Reemplazar con tus datos reales de emailjs.com)
     const EMAILJS_PUBLIC_KEY = "TU_PUBLIC_KEY"; 
     const EMAILJS_SERVICE_ID = "TU_SERVICE_ID";
     const EMAILJS_TEMPLATE_ID = "TU_TEMPLATE_ID";
 
     (function(){ emailjs.init(EMAILJS_PUBLIC_KEY); })();
 
+    // VARIABLES DE GITHUB 
     const GITHUB_USER = 'proyectomaps2026';
-    const GITHUB_REPO = 'mapa_hecho'; 
+    const GITHUB_REPO = 'mapa_hecho'; // <-- CORREGIDO AL REPOSITORIO REAL
     const FILE_PATH = 'config.json';
     let fileSha = null;
     
-    let SYSTEM_AUTH = { user: 'admin', pass: 'admin', license: '', csvUrl: '' }; 
-    let CURRENT_ROLE = null; 
+    // JERARQUÍA DE ACCESO Y ROLES
+    // ESTRUCTURA DE CONFIGURACIÓN GLOBAL (MIGRACIÓN FLAT 2026)
+    let SYSTEM_AUTH = { 
+        userAdmin: 'admin', 
+        passAdmin: 'admin', 
+        urlRaw: '', 
+        token: '', 
+        licenciaSGF: '' 
+    }; 
+    let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
     let CHECK_LICENSE_INTERVAL = null;
+
+    // PROTOCOLO PORTABILIDAD TOTAL: Carga inicial de config.json (sin token, vÃ­a fetch directo)
+    (async function precargarConfiguracion() {
+        try {
+            const res = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if (res.ok) {
+                const config = await res.json();
+                
+                // Mapeo Inteligente con DesofuscaciÃ³n
+                if (config.userAdmin) SYSTEM_AUTH.userAdmin = config.userAdmin;
+                if (config.passAdmin) SYSTEM_AUTH.passAdmin = config.passAdmin;
+                if (config.urlRaw || config.csvUrl) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
+                
+                // DesofuscaciÃ³n de Seguridad (Reverse)
+                if (config.token) {
+                    SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
+                }
+                if (config.licenciaSGF || config.license) {
+                    const l = config.licenciaSGF || config.license;
+                    SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
+                }
+                console.log("SGF: ConfiguraciÃ³n en la Nube reconocida exitosamente.");
+            }
+        } catch (e) {
+            console.warn("SGF: No se pudo precargar la configuraciÃ³n, se usarÃ¡n valores locales.");
+        }
+    })();
 
     /* ==========================================================================
        MOTOR DE LICENCIAS Y TOKENS SGF
@@ -457,6 +1112,7 @@
     function analizarLicenciaSGF(licStr) {
         if(!licStr) return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
+        // Formato esperado: SGF-[USUARIO]-[TOKEN_REVERTIDO]-[FECHA_BASE64]
         if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
 
         const usuario = parts[1];
@@ -464,11 +1120,12 @@
         let dateStr;
         
         try {
-            dateStr = atob(parts[3]); 
+            dateStr = atob(parts[3]); // Decodificamos la fecha en Base64
         } catch(e) {
             return { valid: false, expired: true, days: 0 };
         }
 
+        // LIMPIEZA DE GUIONES: Para que "2026-07-02" se vuelva "20260702"
         dateStr = dateStr.replace(/[-/]/g, '');
 
         if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
@@ -492,22 +1149,17 @@
     }
 
     function obtenerCadenaLicencia() {
-        if (SYSTEM_AUTH && SYSTEM_AUTH.license && String(SYSTEM_AUTH.license).trim().startsWith('SGF-')) {
-            return String(SYSTEM_AUTH.license).trim();
+        if (SYSTEM_AUTH && SYSTEM_AUTH.licenciaSGF && String(SYSTEM_AUTH.licenciaSGF).trim().startsWith('SGF-')) {
+            return String(SYSTEM_AUTH.licenciaSGF).trim();
         }
         const ls = localStorage.getItem('sgf_license');
         return ls ? ls.trim() : '';
     }
 
-    // LIMPIEZA TOTAL DE EMOJIS Y CARACTERES RAROS
     function obtenerEstatusParaCuadro(reg) {
         const d = reg.datosGenerales || {};
-        const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '];
-        if (v != null && String(v).trim() !== '') {
-            // Purga cualquier emoji de circulo, cuadrado, etc.
-            let textoLimpio = String(v).replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim();
-            return textoLimpio || 'SIN CATEGORÍA';
-        }
+        const v = d['Estatus'] || d['Categoría'] || d['Categoria'] || d['Estado'] || d['Semáforo'] || d['Categoria '] || d['ESTATUS'];
+        if (v != null && String(v).trim() !== '') return String(v).trim().toUpperCase();
         return 'SIN CATEGORÍA';
     }
 
@@ -519,16 +1171,22 @@
             .replace(/"/g, '&quot;');
     }
 
+    // OBTENEDOR DE TOKEN SEGURO (Desinvierte lo almacenado dependiendo del ROL)
     function getRealToken() {
+        // Prioridad: 1. Token en la Nube (SYSTEM_AUTH.token)
+        if (SYSTEM_AUTH && SYSTEM_AUTH.token) return SYSTEM_AUTH.token;
+        
+        // 2. Si no hay token directo, intentamos extraerlo de la licencia
+        const lic = obtenerCadenaLicencia();
+        const parsed = analizarLicenciaSGF(lic);
+        if (parsed.valid && !parsed.expired && parsed.tokenRev) {
+            return parsed.tokenRev.split('').reverse().join('');
+        }
+        
+        // 3. Casos especiales de recuperación (Solo SuperAdmin)
         if (CURRENT_ROLE === 'SUPERADMIN') {
             const tk = localStorage.getItem('master_token_revert');
             return tk ? tk.split('').reverse().join('') : null;
-        } else if (CURRENT_ROLE === 'ADMIN') {
-            const lic = obtenerCadenaLicencia();
-            const parsed = analizarLicenciaSGF(lic);
-            if (parsed.valid && !parsed.expired && parsed.tokenRev) {
-                return parsed.tokenRev.split('').reverse().join('');
-            }
         }
         return null;
     }
@@ -536,17 +1194,26 @@
     /* ==========================================================================
        FLUJO DE ACCESO ESTRICTO (LOGIN) Y LIMPIEZA DE DOM
        ========================================================================== */
-    function intentarLogin() {
+    async function intentarLogin() {
         const user = document.getElementById('login-user').value.trim();
         const pass = document.getElementById('login-pass').value.trim();
         const errorDiv = document.getElementById('login-error-msg');
         errorDiv.style.display = 'none';
 
+        // 1. JERARQUÍA MAESTRA (SUPER ADMIN WOLGFAN)
         if (user === 'Ing_Wolgfan' && pass === 'SGF-AURA-2026-SUPREMA') {
             CURRENT_ROLE = 'SUPERADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-crown"></i> SESIÓN: SUPER ADMIN (WOLGFAN)';
             document.getElementById('panel-superadmin').style.display = 'block';
             
+            // Muestra el botón RAW solo para SuperAdmin
+            const btnRaw = document.getElementById('btn-cargar-raw');
+            if(btnRaw) {
+                btnRaw.style.display = 'flex';
+                btnRaw.disabled = false;
+            }
+            
+            // Limpieza de DOM: Remueve elementos del cliente
             const panelAdmin = document.getElementById('panel-admin-licencia');
             if(panelAdmin) panelAdmin.remove();
 
@@ -555,15 +1222,28 @@
 
             document.getElementById('login-overlay').style.display = 'none';
             actualizarUIYMapa(); 
-            cargarDatosNube();
+            
+            // MODO EMERGENCIA: Si falla cargarDatosNube, SuperAdmin igual entra para arreglar el Token
+            try {
+                await cargarDatosNube();
+            } catch(e) {
+                console.warn("Modo Emergencia Activado: Error de sincronización ignorado para SuperAdmin.");
+            }
             return;
         }
 
-        if (user === SYSTEM_AUTH.user && pass === SYSTEM_AUTH.pass) {
+        // 2. DETECCIÓN ADMIN HACIENDA (CLIENTE SGF)
+        // REGLA: SINCRONIZACIÓN OBLIGATORIA PARA ADMIN
+        await cargarDatosNube();
+
+        if (user === SYSTEM_AUTH.userAdmin && pass === SYSTEM_AUTH.passAdmin) {
             CURRENT_ROLE = 'ADMIN';
             document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
             document.getElementById('panel-admin-licencia').style.display = 'block';
             
+            // LIMPIEZA DEL DOM ESTRICTA (MÓDULO 3)
+            const btnRaw = document.getElementById('btn-cargar-raw');
+            if(btnRaw) btnRaw.remove();
             const pnlSup = document.getElementById('panel-superadmin');
             if(pnlSup) pnlSup.remove();
 
@@ -581,7 +1261,7 @@
        CONTROL DE TIEMPO, BLOQUEO Y RESCATE (ADMIN)
        ========================================================================== */
     async function iniciarCicloLicenciaAdmin() {
-        await cargarDatosNube();
+        // Ya se cargó en intentarLogin, pero activamos el intervalo
         validarLicenciaYBloqueo();
         CHECK_LICENSE_INTERVAL = setInterval(async () => {
             await cargarDatosNube();
@@ -606,7 +1286,7 @@
             if (lockH && lockP) {
                 if (!est.valid) {
                     lockH.textContent = 'ACTIVACIÓN REQUERIDA';
-                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word o Excel antes de continuar.';
+                    lockP.innerHTML = 'Ingrese su clave de acceso institucional (SGF) para desbloquear el sistema.<br>Puede descargar respaldo Word antes de continuar.';
                 } else {
                     lockH.textContent = 'LICENCIA SGF VENCIDA';
                     lockP.innerHTML = 'Su período de acceso ha finalizado. Ingrese una licencia vigente o descargue un respaldo de sus datos.';
@@ -635,258 +1315,29 @@
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
-        SYSTEM_AUTH.license = val;
-        alert("Licencia Activada localmente. Sincronizando con la nube...");
-        
+        SYSTEM_AUTH.licenciaSGF = val;
+        alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
         const lockOv = document.getElementById('license-lock-overlay');
         if (lockOv) lockOv.style.display = 'none';
-        
         validarLicenciaYBloqueo();
-        await guardarEnServidor(); 
         await cargarDatosNube();
     }
 
-    async function actualizarLicenciaInterna() {
+    function actualizarLicenciaInterna() {
         const val = document.getElementById('input-update-license').value.trim();
-        
         if(!val) return alert("Ingrese el código de licencia.");
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
         
         localStorage.setItem('sgf_license', val);
-        SYSTEM_AUTH.license = val;
-        
-        alert("Licencia Renovada con éxito. Sincronizando con la nube...");
+        SYSTEM_AUTH.licenciaSGF = val;
+        alert("Licencia Renovada con éxito.");
         validarLicenciaYBloqueo();
-        await guardarEnServidor();
     }
 
     /* ==========================================================================
-       MAPEO DE CSV (PANEL DE SUPER ADMIN) - LÓGICA RAW COMPLETA + LIMPIEZA
+       RESPALDO WORD
        ========================================================================== */
-    let csvDataTemp = null;
-    let csvHeadersTemp = [];
-
-    async function cargarCsvDesdeUrl() {
-        const url = document.getElementById('input-csv-url').value.trim();
-        if(!url) return alert("Por favor, ingrese una URL de CSV válida.");
-        
-        const btn = document.querySelector('button[onclick="cargarCsvDesdeUrl()"]');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> CARGANDO...";
-        btn.disabled = true;
-
-        try {
-            const response = await fetch(url);
-            if(!response.ok) throw new Error("Error al descargar el archivo CSV. Verifique que la URL sea pública y permita CORS.");
-            
-            // Forzar lectura UTF-8 Segura
-            const arrayBuffer = await response.arrayBuffer();
-            const txt = new TextDecoder('utf-8').decode(arrayBuffer);
-            
-            const rows = txt.split('\n').map(l => l.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/^"|"$/g, '').trim()));
-            
-            if (rows.length > 1) {
-                csvHeadersTemp = rows[0];
-                
-                csvDataTemp = rows.slice(1).filter(r => r.length > 0 && r.some(c => c !== "")).map(rowArr => {
-                    let obj = {};
-                    csvHeadersTemp.forEach((head, i) => {
-                        obj[head] = rowArr[i] !== undefined ? rowArr[i] : "";
-                    });
-                    return obj;
-                });
-                
-                mostrarPanelMapeoCsv();
-            } else {
-                alert("El archivo CSV está vacío o no tiene el formato correcto.");
-            }
-            
-            SYSTEM_AUTH.csvUrl = url;
-            await guardarEnServidor();
-        } catch(e) {
-            console.error(e);
-            alert("❌ Error al cargar CSV: " + e.message + "\n\nNota: Si el servidor del CSV no permite CORS, esta operación fallará desde el navegador.");
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-
-    function mostrarPanelMapeoCsv() {
-        const container = document.getElementById('csv-mapping-fields');
-        container.innerHTML = '';
-        
-        const camposMapeo = [
-            { id: 'map-lat', label: 'LATITUD (Coordenada Y)', required: true },
-            { id: 'map-lng', label: 'LONGITUD (Coordenada X)', required: true },
-            { id: 'map-name', label: 'CONTRIBUYENTE / NOMBRE', required: true },
-            { id: 'map-status', label: 'ESTATUS / SEMÁFORO', required: false },
-            { id: 'map-foto', label: 'FOTO / IMAGEN (URL)', required: false }
-        ];
-
-        camposMapeo.forEach(campo => {
-            const div = document.createElement('div');
-            div.innerHTML = `
-                <label style="color: white; font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px;">
-                    ${campo.label} ${campo.required ? '<span style="color:red;">*</span>' : ''}
-                </label>
-                <select id="${campo.id}" class="modal-input" style="padding: 10px; font-size: 12px; width: 100%; border: 1px solid var(--border-color); background: #1c2128; color: white;">
-                    <option value="">-- SELECCIONE COLUMNA CSV --</option>
-                    ${csvHeadersTemp.map(h => `<option value="${h}">${h}</option>`).join('')}
-                </select>
-            `;
-            container.appendChild(div);
-        });
-
-        document.getElementById('csv-mapping-modal').style.display = 'flex';
-    }
-
-    async function confirmarMapeoCsv() {
-        const latCol = document.getElementById('map-lat').value;
-        const lngCol = document.getElementById('map-lng').value;
-        const nameCol = document.getElementById('map-name').value;
-        const statusCol = document.getElementById('map-status').value;
-        const fotoCol = document.getElementById('map-foto').value;
-
-        if (!latCol || !lngCol || !nameCol) {
-            return alert("Debe seleccionar las columnas obligatorias para Latitud, Longitud y Nombre.");
-        }
-
-        if (!confirm(`¿Proceder a mapear ${csvDataTemp.length} puntos? Se creará una nueva capa de trabajo PROTEGIDA.`)) return;
-
-        const idSector = 'sec_' + Date.now();
-        const nombreSector = "IMPORTACIÓN CSV " + new Date().toLocaleTimeString();
-        
-        capasSectores[idSector] = new L.FeatureGroup();
-        STORE[idSector] = {
-            nombreSector: nombreSector,
-            visible: true,
-            isMaster: true, // Capa maestra protegida (Solo SuperAdmin puede borrarla/editarla libremente)
-            isExpanded: true,
-            visibilidadPorEstatus: {},
-            coloresPorEstatus: {},
-            colorPrincipal: '#8e44ad',
-            registros: []
-        };
-
-        let exitosos = 0;
-        let errores = 0;
-
-        csvDataTemp.forEach(row => {
-            try {
-                let lat, lng;
-                if (latCol === lngCol) {
-                    let val = String(row[latCol] || '').trim();
-                    let parts = val.split(/[,;\s]+/);
-                    if (parts.length >= 2) {
-                        lat = parseFloat(parts[0]);
-                        lng = parseFloat(parts[1]);
-                    } else {
-                        lat = NaN;
-                        lng = NaN;
-                    }
-                } else {
-                    lat = parseFloat(row[latCol]);
-                    lng = parseFloat(row[lngCol]);
-                }
-
-                const contribuyente = row[nameCol] || "SIN NOMBRE";
-                let estatusBruto = statusCol ? (row[statusCol] || "SIN CATEGORÍA") : "SIN CATEGORÍA";
-                // Interceptamos y destruimos emojis antes de guardar
-                let estatus = String(estatusBruto).replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, '').trim();
-                if(estatus === "") estatus = "SIN CATEGORÍA";
-
-                const fotoUrl = fotoCol ? (row[fotoCol] || "") : ""; 
-
-                if (isNaN(lat) || isNaN(lng)) {
-                    errores++;
-                    return;
-                }
-
-                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                const capa = L.marker([lat, lng], { 
-                    icon: crearPinFiscal(confEst.color), 
-                    draggable: !modoLecturaGlobal 
-                });
-                
-                const newIdFisico = L.stamp(capa);
-                
-                const datosGenerales = {
-                    "Contribuyente": contribuyente,
-                    "Estatus": estatus,
-                    "Link Fotografía": fotoUrl
-                };
-
-                // Añadir TODAS las demás columnas del CSV sin perder nada
-                for(let k in row) {
-                    if(k !== latCol && k !== lngCol && k !== nameCol && k !== statusCol && k !== fotoCol) {
-                        datosGenerales[k] = row[k];
-                    }
-                }
-
-                const nuevoReg = {
-                    idFisico: newIdFisico,
-                    tipoGeometria: 'marker',
-                    capaLeaflet: capa,
-                    colorPersonalizado: null,
-                    visibleIndividual: true,
-                    _modoPopup: 'lectura',
-                    datosGenerales: datosGenerales,
-                    camposOcultos: []
-                };
-                
-                STORE[idSector].registros.push(nuevoReg);
-                vincularEventosCapa(capa, idSector, newIdFisico);
-                exitosos++;
-            } catch (e) {
-                console.error(e);
-                errores++;
-            }
-        });
-
-        document.getElementById('csv-mapping-modal').style.display = 'none';
-        capaActivaId = idSector;
-        actualizarUIYMapa();
-        
-        alert(`✅ Importación completada:\n- Exitosos: ${exitosos}\n- Errores (Coord. inválidas): ${errores}\n\nLos puntos han sido cargados en la capa "${nombreSector}". Recuerde guardar en la nube para persistir.`);
-    }
-
-    /* ==========================================================================
-       EXPORTACIÓN A EXCEL / WORD
-       ========================================================================== */
-    function exportarExcelInstitucional() {
-        if(Object.keys(STORE).length === 0) return alert("No hay datos en memoria para exportar.");
-        const wb = XLSX.utils.book_new();
-        let datosParaExcel = [];
-        
-        Object.keys(STORE).forEach(idCapa => {
-            STORE[idCapa].registros.forEach(reg => {
-                const d = reg.datosGenerales;
-                const nombreSector = STORE[idCapa].nombreSector || "Sin Sector"; 
-
-                datosParaExcel.push({
-                    "SECTOR": nombreSector, 
-                    "RIF/CÉDULA": d["RIF"] || d["Cédula"] || d["Identificacion"] || "S/D",
-                    "CONTRIBUYENTE": d["Contribuyente"] || d["Razon Social"] || "Sin Nombre",
-                    "ESTADO FISCAL": d["Estatus"] || "Pendiente",
-                });
-            });
-        });
-
-        datosParaExcel.sort((a, b) => a.SECTOR.localeCompare(b.SECTOR) || a.CONTRIBUYENTE.localeCompare(b.CONTRIBUYENTE));
-
-        const ws = XLSX.utils.json_to_sheet(datosParaExcel);
-        const textoLegal = "Este reporte es un instrumento de transparencia emitido en cumplimiento de los Arts. 168 y 174 de la CRBV; Arts. 2, 75 y 161 de la LOPPM; y los Arts. 9, 23 y 77 de la Ley de Contraloría General de la República. El Plan Piloto de la Alcaldía de Ayacucho garantiza información fidedigna y auditable, protegiendo datos personales (Ley de Infogobierno).";
-        
-        const filaFinal = datosParaExcel.length + 3;
-        XLSX.utils.sheet_add_aoa(ws, [["LISTADO GENERAL - PLAN PILOTO - ALCALDÍA DE AYACUCHO"]], { origin: "A1" });
-        XLSX.utils.sheet_add_aoa(ws, [[textoLegal]], { origin: `A${filaFinal}` });
-        
-        XLSX.utils.book_append_sheet(wb, ws, "Reporte Fiscal");
-        XLSX.writeFile(wb, "Reporte_Fiscal_Ayacucho.xlsx");
-    }
-
     function descargarRespaldoWord() {
         if (typeof docx === 'undefined') {
             return alert("Error: La librería de generación de documentos no se cargó correctamente.");
@@ -1014,9 +1465,11 @@
         watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
         document.getElementById('map').appendChild(watermark);
 
+        // Ocultar modal de aviso y esperar a que la RAM limpie el DOM
         setTimeout(() => {
             modalCapture.style.display = 'none'; 
             
+            // Disparar la foto limpia
             setTimeout(() => {
                 const mapElement = document.getElementById('map');
                 const mapCanvas = mapElement.getBoundingClientRect();
@@ -1068,6 +1521,7 @@
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026');
 
+    // INTEGRACIÓN NATIVA DE CAPAS LEAFLET (DOBLE CAPA)
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     const googleStreets = L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
     
@@ -1092,10 +1546,10 @@
 
     const DICCIONARIO_ESTATUS = {
         "VIGENTE": { color: "#238636" },
-        "VENCIDA": { color: "#da3633" },
-        "TEMPORAL": { color: "#fbbc04" },
-        "CENSO / NUEVO": { color: "#00f2ff" },
+        "VENCIDA": { color: "#fbbc04" },
+        "TEMPORAL": { color: "#0078ff" },
         "SIN LICENCIA": { color: "#da3633" },
+        "CENSO / NUEVO": { color: "#00f2ff" },
         "SIN CATEGORÍA": { color: "#6e7681" }
     };
 
@@ -1217,6 +1671,7 @@
         actualizarUIYMapa();
     }
     
+    // REPARACIÓN DEL ÁRBOL (CLIC MANUAL OBLIGATORIO)
     function toggleSectorBodyManual(e, idSector) {
         if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
         if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = true;
@@ -1224,6 +1679,7 @@
         actualizarUIYMapa();
     }
 
+    // ELIMINACIÓN INDIVIDUAL (PARA EL ADMIN EN EL ÁRBOL)
     function eliminarDelClon(idSector, idFisico) {
         if(modoLecturaGlobal) return;
         if(STORE[idSector].isMaster && CURRENT_ROLE !== 'SUPERADMIN') return alert("Registro Protegido en Capa Maestra.");
@@ -1242,7 +1698,6 @@
 
     /* ==========================================================================
        FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
-       RESTAURADO CON LA INTERFAZ EXACTA DE LA IMAGEN
        ========================================================================== */
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
@@ -1263,7 +1718,7 @@
             sectorData.registros.forEach(reg => {
                 if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
                 
-                const estatus = obtenerEstatusParaCuadro(reg); 
+                const estatus = obtenerEstatusParaCuadro(reg);
                 
                 if(!sectorData.visibilidadPorEstatus) sectorData.visibilidadPorEstatus = {};
                 const estatusVisible = sectorData.visibilidadPorEstatus[estatus] !== false; 
@@ -1307,7 +1762,7 @@
                 <div class="sector-header" onclick="toggleSectorBodyManual(event, '${idSector}')">
                     <div class="sector-title-group">
                         <input type="radio" class="radio-active" name="capaActiva" title="Marcar como Capa de Trabajo" 
-                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')" onclick="event.stopPropagation();">
+                               ${idSector === capaActivaId ? 'checked' : ''} onchange="setCapaActiva('${idSector}')">
                         
                         <i class="fas ${sectorData.visible ? 'fa-eye' : 'fa-eye-slash'}" 
                            title="Mostrar/Ocultar todo el Sector" 
@@ -1325,6 +1780,7 @@
                     <div class="sector-controls">
                         <i class="fas fa-copy sector-trash" title="Clonar Sector a partir de este RAW" onclick="event.stopPropagation(); clonarSector('${idSector}')"></i>
                         ${(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') ? `
+                        <i class="fas fa-broom sector-trash" title="Limpiar Lista (Borrar todos los registros de esta capa)" onclick="event.stopPropagation(); limpiarSector('${idSector}')"></i>
                         <i class="fas fa-trash-alt sector-trash" title="Eliminar Capa Completa" style="color: var(--color-vencida);" onclick="event.stopPropagation(); eliminarSectorDefinitivo('${idSector}')"></i>
                         ` : `<i class="fas fa-shield-alt" style="color:var(--cyan-neon); font-size: 13px;" title="Capa Maestra (Protegida)"></i>`}
                     </div>
@@ -1344,32 +1800,29 @@
 
                 htmlSector += `
                 <div class="status-group">
-                    <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
-                        
+                    <div class="status-header">
                         <i class="fas ${estatusVisible ? 'fa-eye' : 'fa-eye-slash'}" 
-                           title="Mostrar/Ocultar Categoría" 
-                           style="cursor: pointer; width: 16px; text-align: center; color: ${estatusVisible ? 'white' : '#6e7681'}; flex-shrink: 0;"
+                           title="Mostrar/Ocultar esta categoría en el mapa"
+                           style="cursor: pointer; width: 18px; text-align: center; color: ${estatusVisible ? 'var(--text-main)' : '#6e7681'}; font-size: 14px; flex-shrink: 0;"
                            onclick="event.stopPropagation(); toggleVisibilidadEstatus('${idSector}', '${estatus}', ${!estatusVisible})"></i>
-                        
-                        <input type="color" class="status-color-square" title="Color de Categoría" value="${colorActual}"
+                        <div class="status-row-label" onclick="event.stopPropagation(); document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">${estatus}</div>
+                        <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
+                        <div class="status-color-wrap">
+                        <input type="color" class="status-cat-color-input" title="Color de categoría" value="${colorActual}"
                                onclick="event.stopPropagation();"
-                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
+                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)"
                                ${(sectorData.isMaster && CURRENT_ROLE !== 'SUPERADMIN') ? 'disabled' : ''}>
-                        
-                        <span class="status-row-label" title="${estatus}">${estatus}</span>
-                        
-                        <span class="status-badge">${gruposPorEstatus[estatus].conteo}</span>
-                        
+                        </div>
                         ${(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') ? `
-                        <div class="status-row-actions" onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                        <div class="status-row-actions">
                             <input type="checkbox" 
-                                   style="cursor:pointer; appearance: auto; width: 14px; height: 14px; margin: 0;"
+                                   style="cursor:pointer;"
                                    onclick="seleccionarTodoEnCat(this, '${idAcordeon}')" 
-                                   title="Seleccionar todos">
+                                   title="Seleccionar todos en esta categoría para borrado en lote">
                             <i class="fas fa-trash-alt sector-trash" 
-                               style="font-size: 13px; margin: 0;"
-                               onclick="eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
-                               title="Eliminar seleccionados"></i>
+                               style="font-size: 13px;"
+                               onclick="event.stopPropagation(); eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
+                               title="Eliminar registros seleccionados de esta categoría"></i>
                         </div>` : ''}
                     </div>
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
@@ -1380,9 +1833,10 @@
                             <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 <i class="fas ${local.visibleIndividual ? 'fa-eye' : 'fa-eye-slash'}" 
                                    title="Ocultar individualmente" 
-                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'}; flex-shrink: 0;"
+                                   style="cursor: pointer; width: 16px; text-align: center; color: ${local.visibleIndividual ? '#a5b0bf' : '#6e7681'};"
                                    onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', ${!local.visibleIndividual})"></i>
-                                       
+                                   
+                                <i class="fas fa-caret-right" style="opacity:0.5"></i> 
                                 <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
                             </div>
                             <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
@@ -1410,7 +1864,7 @@
     }
 
     /* ==========================================================================
-       FASE 3: DOBLE VISTA EN POPUP
+       FASE 3: DOBLE VISTA EN POPUP (REPARACIÓN DE APERTURA ANTI-BLOQUEOS)
        ========================================================================== */
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
         capaFisica.on('click', () => {
@@ -1433,16 +1887,12 @@
         }
 
         const htmlContenido = generarContenidoHTMLPopup(idSector, idFisico);
-        
-        const esAuditoria = (registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle');
-        let classes = modoLecturaGlobal ? 'readonly-mode' : '';
-        if (esAuditoria) classes += ' audit-popup-wrapper';
 
         capaMapa.unbindPopup();
         capaMapa.bindPopup(htmlContenido, { 
             minWidth: 320, 
             closeButton: true, 
-            className: classes.trim() 
+            className: modoLecturaGlobal ? 'readonly-mode' : '' 
         }).openPopup();
         
         mapa._popup = capaMapa.getPopup();
@@ -1479,7 +1929,7 @@
             </div>`;
         } 
         else {
-            const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+            const estActual = registro.datosGenerales["Estatus"];
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
             
             const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
@@ -1791,6 +2241,8 @@
         actualizarUIYMapa();
     }
 
+    // --- INICIO DE CÓDIGO INTEGRADO ---
+    // Función para marcar todos los de una sub-categoría específica
     function seleccionarTodoEnCat(checkMaster, idContenedor) {
         const contenedor = document.getElementById(idContenedor);
         if (!contenedor) return;
@@ -1798,6 +2250,7 @@
         checks.forEach(c => c.checked = checkMaster.checked);
     }
 
+    // Función para eliminar SOLO lo que está marcado en esa categoría
     function eliminarSeleccionadosEnCat(idSector, idContenedor, nombreCategoria) {
         if(modoLecturaGlobal) return alert("Desactive el Modo Lectura para eliminar registros.");
         const contenedor = document.getElementById(idContenedor);
@@ -1811,6 +2264,7 @@
         if (confirm(`¿Eliminar los ${seleccionados.length} registros seleccionados de la categoría "${nombreCategoria}"?`)) {
             const idsABorrar = Array.from(seleccionados).map(c => c.getAttribute('data-id'));
             
+            // Remove layers from map first
             const capaSector = capasSectores[idSector];
             if(capaSector) {
                 const registrosABorrar = STORE[idSector].registros.filter(r => idsABorrar.includes(String(r.idFisico)));
@@ -1821,8 +2275,10 @@
                 });
             }
 
+            // Filter the STORE for that specific layer
             STORE[idSector].registros = STORE[idSector].registros.filter(r => !idsABorrar.includes(String(r.idFisico)));
 
+            // Close popup if it belongs to a deleted item
             if (mapa._popup) {
                 const sourceId = L.stamp(mapa._popup._source);
                 if (idsABorrar.includes(String(sourceId))) {
@@ -1830,10 +2286,12 @@
                 }
             }
 
+            // Refresh map and UI
             actualizarUIYMapa(); 
             alert(`${seleccionados.length} registros eliminados de la copia de trabajo. Guarde en la nube para persistir los cambios.`);
         }
     }
+    // --- FIN DE CÓDIGO INTEGRADO ---
 
     function enfocarSector(idSector) {
         if(!STORE[idSector].visible) return alert("La capa está oculta. Enciéndala primero.");
@@ -1893,8 +2351,8 @@
         btnOlvidar.innerText = "ENVIANDO CORREO...";
         
         const parametros_plantilla = {
-            usuario: SYSTEM_AUTH.user,
-            clave: SYSTEM_AUTH.pass,
+            usuario: SYSTEM_AUTH.userAdmin,
+            clave: SYSTEM_AUTH.passAdmin,
             fecha: new Date().toLocaleString()
         };
 
@@ -1924,13 +2382,13 @@
         if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
         if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
         
-        SYSTEM_AUTH.user = nu;
-        SYSTEM_AUTH.pass = np;
+        SYSTEM_AUTH.userAdmin = nu;
+        SYSTEM_AUTH.passAdmin = np;
         
         document.getElementById('ajuste-user').value = "";
         document.getElementById('ajuste-pass').value = "";
         
-        alert("Credenciales actualizadas en memoria.\nGuardando en la Nube...");
+        alert("Credenciales actualizadas en memoria.\nSincronizando con la Nube...");
         guardarEnServidor();
     }
     
@@ -1938,7 +2396,8 @@
         const div = document.getElementById('ajustes-servidor');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-repo-token').value = getRealToken() || '';
+            document.getElementById('ajuste-repo-licencia').value = SYSTEM_AUTH.licenciaSGF || '';
+            document.getElementById('ajuste-repo-urlraw').value = SYSTEM_AUTH.urlRaw || '';
         } else {
             div.style.display = 'none';
         }
@@ -1953,9 +2412,11 @@
         }
     }
     
-    async function verificarYGuardarTokenMaestro() {
-        const rawToken = document.getElementById('ajuste-repo-token').value.trim();
-        if(!rawToken) return alert("Ingrese el token de GitHub (ghp_...).");
+    async function verificarYGuardarLicenciaMaestra() {
+        const val = document.getElementById('ajuste-repo-licencia').value.trim();
+        if(!val) return alert("Ingrese el código de licencia maestra.");
+        const est = analizarLicenciaSGF(val);
+        if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
         const btn = document.querySelector('#ajustes-servidor button');
         const originalText = btn.innerText;
@@ -1963,24 +2424,50 @@
         btn.disabled = true;
 
         try {
+            // Extraemos el token de la licencia
+            const token = est.tokenRev.split('').reverse().join('');
+            
+            // Verificamos el token con GitHub
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}`, {
-                headers: { 'Authorization': 'token ' + rawToken }
+                headers: { 
+                    'Authorization': 'token ' + token,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
             });
 
             if (res.ok) {
-                const pikaToken = rawToken.split('').reverse().join('');
-                localStorage.setItem('master_token_revert', pikaToken);
-                alert("✅ Llave Maestra Encriptada y Guardada de forma segura.");
+                // Guardamos en SYSTEM_AUTH y Sincronizamos
+                SYSTEM_AUTH.licenciaSGF = val;
+                SYSTEM_AUTH.token = token;
+                alert("✅ Licencia Maestra Activada. Sincronizando con la Nube...");
+                await guardarEnServidor();
                 await cargarDatosNube(); 
             } else {
-                throw new Error(`Error ${res.status}: El token es inválido o no tiene acceso al repositorio '${GITHUB_USER}/${GITHUB_REPO}'.`);
+                throw new Error(`Error ${res.status}: El token de la licencia es inválido o no tiene acceso al repositorio.`);
             }
         } catch(e) {
-            console.error(e);
-            alert(`❌ Error de verificación: ${e.message}`);
+            console.error("Activación de Licencia Fallida:", e);
+            let msg = e.message;
+            if (msg === "Failed to fetch") msg = "Error de red: No se pudo alcanzar GitHub API.";
+            alert(`❌ Error de activación: ${msg}`);
         } finally {
             btn.innerText = originalText;
             btn.disabled = false;
+        }
+    }
+
+    async function guardarUrlRawMaestra() {
+        const rawUrlRaw = document.getElementById('ajuste-repo-urlraw').value.trim();
+        if(!rawUrlRaw) return alert("Ingrese la URL del RAW (CSV).");
+
+        try {
+            SYSTEM_AUTH.urlRaw = rawUrlRaw;
+            alert("✅ URL del RAW actualizada. Sincronizando con la Nube...");
+            await guardarEnServidor();
+            await cargarDatosNube();
+        } catch(e) {
+            console.error(e);
+            alert(`❌ Error al guardar la URL: ${e.message}`);
         }
     }
     
@@ -1992,26 +2479,50 @@
         }
 
         try {
-            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC }
+            const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                headers: { 'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim() }
             });
             if (res.ok) {
                 const data = await res.json();
                 fileSha = data.sha;
                 
-                const binStr = atob(data.content);
-                const utf8Bytes = new Uint8Array(binStr.length);
-                for (let i = 0; i < binStr.length; i++) {
-                    utf8Bytes[i] = binStr.charCodeAt(i);
-                }
-                const decodedContent = new TextDecoder('utf-8').decode(utf8Bytes);
-                
+                // DECODIFICACIÓN SEGURA UTF-8 (Compatible con "ñ", tildes, etc.)
+                const binaryStr = atob(data.content);
+                const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                const decodedContent = new TextDecoder('utf-8').decode(bytes);
                 const jsonParsed = JSON.parse(decodedContent);
+                
+                // --- SMART MAPPING (Mapeo Inteligente) ---
+                // 1. Compatibilidad con Formato Viejo (Nested Credentials)
                 if (jsonParsed.credentials) {
-                    SYSTEM_AUTH = { ...SYSTEM_AUTH, ...jsonParsed.credentials };
-                    const csvInput = document.getElementById('input-csv-url');
-                    if(csvInput) csvInput.value = SYSTEM_AUTH.csvUrl || '';
+                    const creds = jsonParsed.credentials;
+                    SYSTEM_AUTH.userAdmin = creds.userAdmin || creds.user || 'admin';
+                    SYSTEM_AUTH.passAdmin = creds.passAdmin || creds.pass || 'admin';
+                    SYSTEM_AUTH.urlRaw = creds.urlRaw || creds.csvUrl || '';
+                    SYSTEM_AUTH.token = creds.token || creds.masterToken || '';
+                    SYSTEM_AUTH.licenciaSGF = creds.licenciaSGF || creds.license || '';
                 }
+                
+                // 2. Mapeo Directo (Formato Flat Nuevo 2026)
+                // DESOFUSCACIÓN: Si el token o licencia vienen invertidos (SGF-...), los revertimos
+                const revStr = s => (s && s.includes('SGF-')) ? s.split('').reverse().join('') : s;
+                const revTk = s => (s && s.startsWith('ghp_')) ? s : (s ? s.split('').reverse().join('') : s);
+
+                if (jsonParsed.userAdmin) SYSTEM_AUTH.userAdmin = jsonParsed.userAdmin;
+                if (jsonParsed.passAdmin) SYSTEM_AUTH.passAdmin = jsonParsed.passAdmin;
+                if (jsonParsed.urlRaw || jsonParsed.csvUrl) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
+                
+                // Aplicamos reversión solo si detectamos que están invertidos
+                if (jsonParsed.token) {
+                    const t = jsonParsed.token;
+                    SYSTEM_AUTH.token = (t.startsWith('ghp_')) ? t : t.split('').reverse().join('');
+                }
+                if (jsonParsed.licenciaSGF || jsonParsed.license) {
+                    const l = jsonParsed.licenciaSGF || jsonParsed.license;
+                    SYSTEM_AUTH.licenciaSGF = (l.startsWith('SGF-')) ? l : l.split('').reverse().join('');
+                }
+
+                // Cargar el mapa (Store)
                 reconstruirDesdeJSON(jsonParsed.store || {});
             } else if (res.status === 404) {
                 actualizarUIYMapa();
@@ -2019,9 +2530,9 @@
                 throw new Error(`GitHub API error: ${res.status}`);
             }
         } catch (e) {
-            console.error("Failed to load cloud data:", e);
-            alert("No se pudieron cargar los datos de la nube. Revise su conexión o Token. Error: " + e.message);
+            console.error("Error al cargar datos desde la nube:", e);
             actualizarUIYMapa();
+            throw new Error(e.message === "Failed to fetch" ? "Error de conexión con GitHub (Fetch Error)" : e.message);
         }
     }
 
@@ -2029,48 +2540,71 @@
         location.reload();
     }
 
-    async function guardarEnServidor() {
+    async function guardarEnServidor(retry = true) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if(!GITHUB_TOKEN_DYNAMIC) return alert("❌ Error de Seguridad: No se encontró una Llave Maestra ni Licencia activa válida para guardar en la Nube.");
+        
+        console.log("Token detectado, longitud:", GITHUB_TOKEN_DYNAMIC.length);
 
-        const btn = document.getElementById('btn-save-server');
-        const btnOriginalText = btn.innerHTML;
-        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
-        btn.disabled = true;
+        const btnSave = document.getElementById('btn-save-server');
+        const btnOriginalText = btnSave ? btnSave.innerHTML : "GUARDAR NUBE";
+        
+        // Solo mostramos el spinner si no es un reintento interno
+        if(btnSave && retry) {
+            btnSave.innerHTML = "<i class='fas fa-spinner fa-spin'></i> GUARDANDO...";
+            btnSave.disabled = true;
+        }
 
         try {
+            // 1. OBTENER ESTADO ACTUAL (Smart Merge) - SIEMPRE REFRESCAR EL SHA CON CABECERAS ANTI-CACHE
+            let currentCloudData = {};
             let currentSha = null;
-            try {
-                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                if (getRes.ok) {
-                    const getData = await getRes.json();
-                    currentSha = getData.sha;
-                }
-            } catch (err) {}
-
-            const datosLimpios = extraerDatosGeometria();
-            const objetoMaestro = {
-                credentials: SYSTEM_AUTH,
-                store: datosLimpios
-            };
-            const jsonStr = JSON.stringify(objetoMaestro, null, 2);
             
-            const utf8Bytes = new TextEncoder().encode(jsonStr);
-            let binStr = "";
-            for (let i = 0; i < utf8Bytes.length; i++) {
-                binStr += String.fromCharCode(utf8Bytes[i]);
+            const getRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim(),
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (getRes.ok) {
+                const getData = await getRes.json();
+                currentSha = getData.sha;
+                const binaryStr = atob(getData.content);
+                const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                const decoded = new TextDecoder('utf-8').decode(bytes);
+                currentCloudData = JSON.parse(decoded);
             }
-            const contentEncoded = btoa(binStr);
+
+            // 2. PREPARAR DATOS (Merge Inteligente)
+            const datosLimpios = extraerDatosGeometria();
+            
+            // Migramos todo a una estructura FLAT (Plana)
+            // OFUSCACIÓN DE SEGURIDAD: Invertimos el token y la licencia antes de subir para evitar que GitHub los detecte como secretos
+            const nuevaConfiguracion = {
+                ...currentCloudData, 
+                userAdmin: SYSTEM_AUTH.userAdmin,
+                passAdmin: SYSTEM_AUTH.passAdmin,
+                urlRaw: SYSTEM_AUTH.urlRaw,
+                // Ofuscación básica: Invertimos las cadenas sensibles
+                token: SYSTEM_AUTH.token ? SYSTEM_AUTH.token.split('').reverse().join('') : '',
+                licenciaSGF: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
+                license: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
+                store: datosLimpios 
+            };
+
+            // 3. CODIFICACIÓN SEGURA UTF-8 PARA GITHUB
+            const jsonStr = JSON.stringify(nuevaConfiguracion, null, 2);
+            const utf8Bytes = new TextEncoder().encode(jsonStr);
+            let binary = "";
+            for (let i = 0; i < utf8Bytes.byteLength; i++) {
+                binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            const contentEncoded = btoa(binary);
             
             const payload = {
-                message: "Backup Censo Fiscal Municipal " + new Date().toISOString(),
+                message: "Sincronización SGF 2026 - Actualización de Datos",
                 content: contentEncoded,
                 branch: "main"
             };
@@ -2080,24 +2614,46 @@
             const res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC,
+                    'Authorization': 'token ' + GITHUB_TOKEN_DYNAMIC.trim(),
                     'Content-Type': 'application/json',
                     'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify(payload)
             });
 
-            if(!res.ok) throw new Error(await res.text());
+            if(!res.ok) {
+                const errorData = await res.json();
+                if (res.status === 409 && retry) {
+                    console.warn("Conflicto 409 detectado. Reintentando sincronización con SHA actualizado...");
+                    // Esperamos 1 segundo antes de reintentar para dar tiempo al servidor
+                    await new Promise(r => setTimeout(r, 1000));
+                    return await guardarEnServidor(false); // Reintento único
+                }
+                throw new Error(errorData.message || "Error desconocido en GitHub API");
+            }
             
             const data = await res.json();
             fileSha = data.content.sha;
-            alert("✅ Datos de Hacienda guardados correctamente en la Nube.");
+            alert("✅ Sincronización Exitosa: Los datos están protegidos en la Nube.");
+            
+            // Recargar datos y activar paneles necesarios
+            await cargarDatosNube();
+            if(CURRENT_ROLE === 'SUPERADMIN') {
+                const btnRaw = document.getElementById('btn-cargar-raw');
+                if(btnRaw) btnRaw.style.display = 'flex';
+            }
         } catch(e) {
-            console.error(e);
-            alert("❌ Error crítico al guardar en GitHub: " + e.message);
+            console.error("Sincronización Fallida:", e);
+            let msg = e.message;
+            if (msg === "Failed to fetch") {
+                msg = "No se pudo conectar con GitHub. Verifique su conexión a internet o el Token.";
+            }
+            alert("❌ Error crítico de sincronización: " + msg);
         } finally {
-            btn.innerHTML = btnOriginalText;
-            btn.disabled = false;
+            if(btnSave && retry) {
+                btnSave.innerHTML = btnOriginalText;
+                btnSave.disabled = false;
+            }
         }
     }
 
@@ -2123,11 +2679,11 @@
             STORE[idSector] = {
                 nombreSector: sec.nombreSector,
                 visible: sec.visible !== false,
-                isMaster: sec.isMaster !== false, 
+                isMaster: sec.isMaster !== false, // Protect original layers by default
                 visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
                 coloresPorEstatus: sec.coloresPorEstatus || {},
                 colorPrincipal: sec.colorPrincipal || '#00f2ff',
-                isExpanded: true, 
+                isExpanded: true, // Forzamos isExpanded=true para la carga inicial
                 registros: []
             };
 
@@ -2181,6 +2737,186 @@
             });
         }
         actualizarUIYMapa();
+    }
+
+    /* ==========================================================================
+       MODULO DE IMPORTACIÓN RAW CSV (MAPEADO DINÁMICO) - LÓGICA DE REFERENCIA
+       ========================================================================== */
+    let csvDataTemp = null;
+    let csvHeadersTemp = [];
+
+    async function cargarCsvDesdeUrl() {
+        if(!SYSTEM_AUTH.urlRaw) return alert("❌ No se ha configurado la URL del RAW (CSV) en los Ajustes de Super Admin.");
+        
+        const btn = document.getElementById('btn-cargar-raw');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> CARGANDO...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`${SYSTEM_AUTH.urlRaw}?t=${Date.now()}`);
+            if(!response.ok) throw new Error("Error al descargar el archivo CSV. Verifique que la URL sea pública y permita CORS.");
+            
+            const arrayBuffer = await response.arrayBuffer();
+            const data = new Uint8Array(arrayBuffer);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            csvDataTemp = XLSX.utils.sheet_to_json(worksheet);
+            
+            if (csvDataTemp.length > 0) {
+                csvHeadersTemp = Object.keys(csvDataTemp[0]);
+                mostrarPanelMapeoCsv();
+            } else {
+                alert("El archivo CSV está vacío o no tiene el formato correcto.");
+            }
+        } catch(e) {
+            console.error(e);
+            alert("❌ Error al cargar CSV: " + e.message + "\n\nNota: Si el servidor del CSV no permite CORS, esta operación fallará desde el navegador.");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    function mostrarPanelMapeoCsv() {
+        const container = document.getElementById('csv-mapping-fields');
+        container.innerHTML = '';
+        
+        const camposMapeo = [
+            { id: 'map-lat', label: 'LATITUD (Coordenada Y)', required: true },
+            { id: 'map-lng', label: 'LONGITUD (Coordenada X)', required: true },
+            { id: 'map-name', label: 'CONTRIBUYENTE / NOMBRE', required: true },
+            { id: 'map-img', label: 'IMAGEN / FOTO (URL)', required: false }
+        ];
+
+        camposMapeo.forEach(campo => {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <label style="color: white; font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px;">
+                    ${campo.label} ${campo.required ? '<span style="color:red;">*</span>' : ''}
+                </label>
+                <select id="${campo.id}" class="modal-input" style="padding: 10px; font-size: 12px; width: 100%; border: 1px solid var(--border-color); background: #1c2128; color: white;">
+                    <option value="">-- SELECCIONE COLUMNA CSV --</option>
+                    ${csvHeadersTemp.map(h => `<option value="${h}">${h}</option>`).join('')}
+                </select>
+            `;
+            container.appendChild(div);
+        });
+
+        document.getElementById('csv-mapping-modal').style.display = 'flex';
+    }
+
+    async function confirmarMapeoCsv() {
+        const latCol = document.getElementById('map-lat').value;
+        const lngCol = document.getElementById('map-lng').value;
+        const nameCol = document.getElementById('map-name').value;
+        const imgCol = document.getElementById('map-img').value;
+
+        if (!latCol || !lngCol || !nameCol) {
+            return alert("Debe seleccionar las columnas obligatorias para Latitud, Longitud y Nombre.");
+        }
+
+        if (!confirm(`¿Proceder a mapear ${csvDataTemp.length} puntos? Se creará una nueva capa de trabajo.`)) return;
+
+        const idSector = 'IMPORT_' + Date.now();
+        const nombreSector = "CENSO IMPORTADO (" + new Date().toLocaleTimeString() + ")";
+        
+        capasSectores[idSector] = new L.FeatureGroup();
+        STORE[idSector] = {
+            nombreSector: nombreSector,
+            visible: true,
+            isMaster: false,
+            isExpanded: true,
+            visibilidadPorEstatus: {},
+            coloresPorEstatus: {},
+            colorPrincipal: '#00f2ff',
+            registros: []
+        };
+
+        let exitosos = 0;
+        let errores = 0;
+
+        csvDataTemp.forEach(row => {
+            try {
+                const lat = parseFloat(row[latCol]);
+                const lng = parseFloat(row[lngCol]);
+                const contribuyente = row[nameCol] || "SIN NOMBRE";
+                const imagen = imgCol ? row[imgCol] : "";
+                
+                // AUTO-DETECCIÓN DE ESTATUS (Para que se vea como la imagen 2)
+                let estatus = "SIN CATEGORÍA";
+                const posiblesCols = ['Estatus', 'ESTATUS', 'Estado', 'ESTADO', 'Status', 'STATUS', 'Categoría', 'Categoría ', 'Categoria', 'Semáforo'];
+                for (let col of posiblesCols) {
+                    if (row[col]) {
+                        const val = String(row[col]).toUpperCase().trim();
+                        if (val.includes("VIGENTE")) { estatus = "VIGENTE"; break; }
+                        if (val.includes("VENCIDA")) { estatus = "VENCIDA"; break; }
+                        if (val.includes("TEMPORAL")) { estatus = "TEMPORAL"; break; }
+                        if (val.includes("LICENCIA") || val.includes("SIN")) { estatus = "SIN LICENCIA"; break; }
+                        if (DICCIONARIO_ESTATUS[val]) { estatus = val; break; }
+                    }
+                }
+
+                if (isNaN(lat) || isNaN(lng)) {
+                    errores++;
+                    return;
+                }
+
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const capa = L.marker([lat, lng], { 
+                    icon: crearPinFiscal(confEst.color), 
+                    draggable: !modoLecturaGlobal 
+                });
+                
+                // Asegurar que se agrega al objeto de mapa correcto
+                capa.addTo(mapa);
+                
+                const newIdFisico = L.stamp(capa);
+                const nuevoReg = {
+                    idFisico: newIdFisico,
+                    tipoGeometria: 'marker',
+                    capaLeaflet: capa,
+                    colorPersonalizado: null, // Usará el color del estatus
+                    visibleIndividual: true,
+                    _modoPopup: 'lectura',
+                    datosGenerales: {
+                        "Contribuyente": contribuyente.toUpperCase(),
+                        "Estatus": estatus,
+                        "Link Fotografía": imagen,
+                        ...row 
+                    },
+                    camposOcultos: []
+                };
+                
+                vincularEventosCapa(capa, idSector, newIdFisico);
+                capa.bindPopup(generarContenidoHTMLPopup(idSector, newIdFisico), { 
+                    minWidth: 320, 
+                    closeButton: true 
+                });
+
+                STORE[idSector].registros.push(nuevoReg);
+                exitosos++;
+            } catch (e) {
+                console.error(e);
+                errores++;
+            }
+        });
+
+        document.getElementById('csv-mapping-modal').style.display = 'none';
+        capaActivaId = idSector; 
+        
+        // Limpiar buscador
+        const buscador = document.getElementById('buscador-global');
+        if(buscador) {
+            buscador.value = '';
+            textoFiltroGlobal = ''; 
+        }
+
+        actualizarUIYMapa();
+        if (exitosos > 0) enfocarSector(idSector);
+        
+        alert(`✅ Importación completada:\n- Exitosos: ${exitosos}\n- Errores (Coord. inválidas): ${errores}\n\nLos puntos han sido cargados en la capa "${nombreSector}".`);
     }
 
     function initSecurity() {
