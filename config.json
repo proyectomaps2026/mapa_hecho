@@ -10,10 +10,10 @@
       "nombreSector": "CENSO IMPORTADO (13:26:28)",
       "visible": true,
       "isMaster": false,
-      "isExpanded": true,
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {},
       "colorPrincipal": "#00f2ff",
+      "isExpanded": false,
       "registros": []
     }
   }
