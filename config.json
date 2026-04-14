@@ -16,5 +16,13 @@
       "isExpanded": false,
       "registros": []
     }
+  },
+  "wordConfig": {
+    "columnas": [
+      "Contribuyente",
+      "RIF",
+      "Estatus",
+      "Dirección"
+    ]
   }
 }
