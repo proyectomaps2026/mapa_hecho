@@ -44,23 +44,6 @@
         
         #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: 1; }
 
-        /* BANNER DE ALERTA DE LICENCIA */
-        #license-banner {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            background: #FF8C00;
-            color: #ffffff;
-            text-align: center;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 900;
-            z-index: 999999;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
         /* ==========================================================================
            2. COMPONENTES DE INTERFAZ (UI)
            ========================================================================== */
@@ -218,11 +201,6 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
 
-<!-- BANNER DE ALERTA PREVENTIVA LICENCIA (OPCIONAL) -->
-<div id="license-banner" style="display: none; position: absolute; top: 0; left: 0; right: 0; background: #FF8C00; color: #ffffff; text-align: center; padding: 12px; font-size: 14px; font-weight: 900; z-index: 999999; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-transform: uppercase;">
-    ⚠️ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> días. Avise al Administrador.
-</div>
-
 <!-- MODAL BLOQUEO TOTAL POR LICENCIA -->
 <div id="license-lock-overlay" class="modal-overlay">
     <div class="glass-panel modal-box">
@@ -316,64 +294,55 @@
     let capaActivaId = null; 
     let textoFiltroGlobal = "";
 
+    // Objeto maestro de autenticación (igual que en el Master)
+    let SYSTEM_AUTH = { 
+        token: '', 
+        licenciaSGF: '' 
+    };
+
     // Evitar inspección básica
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Análisis de Licencia Seguro
+    // La función EXCELENTE de análisis de licencia del Master, traída con precisión.
     function analizarLicenciaSGF(licStr) {
-        if(!licStr || typeof licStr !== 'string') return { valid: false, expired: true, days: 0 };
+        if(!licStr) return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
-        if(parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true, days: 0 };
+        if(parts[0] !== 'SGF' || parts.length !== 4) return { valid: false, expired: true, days: 0 };
+
+        let dateStr;
         try {
+            // Protección de padding Base64 por si acaso
             let b64 = parts[3].trim();
-            while (b64.length % 4 !== 0) { b64 += '='; }
-            
-            const decodedStr = atob(b64);
-            const dateStr = decodedStr.replace(/[-/]/g, '');
-            if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
-            
-            const expYear = parseInt(dateStr.substring(0,4));
-            const expMonth = parseInt(dateStr.substring(4,6)) - 1;
-            const expDay = parseInt(dateStr.substring(6,8));
-            
-            const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
-            const diffDays = Math.ceil((expDate - new Date()) / (1000 * 60 * 60 * 24));
-            
-            return { valid: true, expired: diffDays <= 0, days: diffDays };
-        } catch(e) { 
-            return { valid: false, expired: true, days: 0 }; 
+            while (b64.length % 4 !== 0) b64 += '=';
+            dateStr = atob(b64); 
+        } catch(e) {
+            return { valid: false, expired: true, days: 0 };
         }
+
+        // LIMPIEZA DE GUIONES: Igual que el máster
+        dateStr = dateStr.replace(/[-/]/g, '');
+
+        if(dateStr.length !== 8) return { valid: false, expired: true, days: 0 };
+        
+        const expYear = parseInt(dateStr.substring(0,4));
+        const expMonth = parseInt(dateStr.substring(4,6)) - 1;
+        const expDay = parseInt(dateStr.substring(6,8));
+        
+        const expDate = new Date(expYear, expMonth, expDay, 23, 59, 59);
+        const today = new Date();
+        const diffTime = expDate - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        return { 
+            valid: true, 
+            expired: diffDays <= 0, 
+            days: diffDays 
+        };
     }
 
     /* ==========================================================================
-       CONEXIÓN DE LECTURA DIRECTA A GITHUB (MOTOR INFALIBLE)
+       CONEXIÓN DIRECTA Y CARGA DEL MAPA (SIN CACHÉ)
        ========================================================================== */
-    async function obtenerDatosJSON() {
-        // Obtenemos los datos directamente desde RAW para evitar los cortes de la API con archivos pesados
-        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?nocache=${Date.now()}`;
-        
-        try {
-            const res = await fetch(rawUrl);
-            if (res.ok) {
-                console.log("✅ Datos obtenidos del servidor RAW.");
-                return await res.json();
-            }
-        } catch(e) { 
-            console.warn("Fallo lectura RAW GitHub, intentando ruta local."); 
-        }
-
-        // Fallback local
-        try {
-            const resLocal = await fetch(`${FILE_PATH}?nocache=${Date.now()}`);
-            if (resLocal.ok) {
-                console.log("✅ Datos obtenidos de ruta local.");
-                return await resLocal.json();
-            }
-        } catch(e) {}
-        
-        throw new Error("No se pudo obtener la base de datos.");
-    }
-
     async function iniciarSistemaVisor() {
         const badgeLicencia = document.getElementById('visor-license-text');
         const boxLicencia = document.getElementById('visor-license-box');
@@ -381,57 +350,102 @@
         const lockTitle = document.getElementById('lock-title');
         const lockDesc = document.getElementById('lock-desc');
 
+        let configFinal = null;
+
+        // PASO 1: EXTRAER EL TOKEN DESDE EL CONFIG.JSON LOCAL O DE PAGES
         try {
-            // 1. OBTENER DATOS (Usa el motor de conexión directa)
-            const configData = await obtenerDatosJSON();
-            
-            // 2. VALIDAR LICENCIA
-            let rawLic = configData.licenciaSGF || configData.license || "";
-            let finalLic = rawLic;
-            // Si la licencia viene directa del Master, está invertida por seguridad
-            if (rawLic && !rawLic.startsWith('SGF-')) {
-                finalLic = rawLic.split('').reverse().join('');
-            }
-            
-            const estatusLicencia = analizarLicenciaSGF(finalLic);
-            
-            if (!estatusLicencia.valid || estatusLicencia.expired) {
-                // BLOQUEAR SISTEMA VISUALMENTE
-                badgeLicencia.innerHTML = "LICENCIA VENCIDA O INACTIVA";
-                boxLicencia.style.background = "rgba(218, 54, 51, 0.2)";
-                boxLicencia.style.borderColor = "var(--color-vencida)";
-                boxLicencia.style.color = "var(--color-vencida)";
+            const resLocal = await fetch(`${FILE_PATH}?t=${Date.now()}`);
+            if (resLocal.ok) {
+                const config = await resLocal.json();
                 
-                lockTitle.innerText = "SISTEMA BLOQUEADO";
-                lockDesc.innerHTML = "Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.";
-                if(lockOverlay) lockOverlay.style.display = 'flex';
-            } else {
-                // ACTIVAR SISTEMA
-                badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${estatusLicencia.days} Días`;
-                boxLicencia.style.background = "rgba(35, 134, 54, 0.2)";
-                boxLicencia.style.borderColor = "var(--color-vigente)";
-                boxLicencia.style.color = "white";
-                if(lockOverlay) lockOverlay.style.display = 'none';
+                if (config.token) {
+                    SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
+                }
+                if (config.licenciaSGF || config.license) {
+                    const l = config.licenciaSGF || config.license;
+                    SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
+                }
+                
+                configFinal = config; // Salvavidas inicial
             }
+        } catch (e) {
+            console.warn("No se pudo precargar localmente.", e);
+        }
 
-            // 3. CONSTRUIR EL MAPA SIEMPRE (Detrás del bloqueo si lo hay para que funcione el Word)
-            reconstruirDesdeJSON(configData.store || {});
+        // PASO 2: CONECTAR A LA API DE GITHUB (Asegura actualización en vivo evadiendo caché)
+        if (SYSTEM_AUTH.token) {
+            try {
+                const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${Date.now()}`, {
+                    headers: { 
+                        'Authorization': 'token ' + SYSTEM_AUTH.token,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate'
+                    }
+                });
+                
+                if (resApi.ok) {
+                    const data = await resApi.json();
+                    // Importante para archivos pesados: Quitar saltos de línea del Base64
+                    const base64Clean = data.content.replace(/\s/g, ''); 
+                    const binaryStr = atob(base64Clean);
+                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
+                    const decodedContent = new TextDecoder('utf-8').decode(bytes);
+                    
+                    configFinal = JSON.parse(decodedContent);
+                    console.log("✅ Datos obtenidos EN TIEMPO REAL desde el servidor.");
+                    
+                    // Actualizar licencia por si el Máster subió una nueva
+                    if (configFinal.licenciaSGF || configFinal.license) {
+                        const l = configFinal.licenciaSGF || configFinal.license;
+                        SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
+                    }
+                }
+            } catch(e) {
+                console.warn("Fallo API GitHub. Intentando fallback...", e);
+            }
+        }
 
-        } catch (error) {
-            console.error("Error crítico de carga:", error);
+        // SI TODO FALLA, CORTAMOS CON ERROR
+        if (!configFinal) {
             badgeLicencia.innerHTML = "Error de Lectura";
             boxLicencia.style.background = "rgba(218, 54, 51, 0.2)";
             boxLicencia.style.borderColor = "var(--color-vencida)";
             boxLicencia.style.color = "var(--color-vencida)";
             
             lockTitle.innerText = "ERROR DE CONEXIÓN";
-            lockDesc.innerHTML = "No se pudo leer la base de datos del censo.<br>Verifique su conexión a internet o la disponibilidad del servidor.";
+            lockDesc.innerHTML = "No se pudo leer la base de datos del censo.<br>Verifique su conexión a internet.";
             if(lockOverlay) lockOverlay.style.display = 'flex';
+            return;
         }
+
+        // PASO 3: VALIDAR LA LICENCIA
+        const estatusLicencia = analizarLicenciaSGF(SYSTEM_AUTH.licenciaSGF);
+        
+        if (!estatusLicencia.valid || estatusLicencia.expired) {
+            // BLOQUEAR SISTEMA
+            badgeLicencia.innerHTML = "LICENCIA VENCIDA O INACTIVA";
+            boxLicencia.style.background = "rgba(218, 54, 51, 0.2)";
+            boxLicencia.style.borderColor = "var(--color-vencida)";
+            boxLicencia.style.color = "var(--color-vencida)";
+            
+            lockTitle.innerText = "SISTEMA BLOQUEADO";
+            lockDesc.innerHTML = "Licencia vencida o no ingresada por el Administrador.<br>El visor se encuentra inhabilitado por seguridad.";
+            if(lockOverlay) lockOverlay.style.display = 'flex';
+        } else {
+            // ACTIVAR SISTEMA
+            badgeLicencia.innerHTML = `Licencia del Sistema Cloud: ${estatusLicencia.days} Días`;
+            boxLicencia.style.background = "rgba(35, 134, 54, 0.2)";
+            boxLicencia.style.borderColor = "var(--color-vigente)";
+            boxLicencia.style.color = "white";
+            if(lockOverlay) lockOverlay.style.display = 'none';
+        }
+
+        // PASO 4: CONSTRUIR EL MAPA SIEMPRE (Incluso bloqueado para que el Word sirva)
+        reconstruirDesdeJSON(configFinal.store || {});
     }
 
     /* ==========================================================================
-       CONSTRUCTOR DEL MAPA (Dibuja los pines leídos del JSON con protección)
+       CONSTRUCTOR DEL MAPA (Dibuja los pines leídos del JSON)
        ========================================================================== */
     function reconstruirDesdeJSON(storeData) {
         STORE = {};
@@ -446,9 +460,14 @@
         for(let idSector in storeData) {
             const sec = storeData[idSector];
             capasSectores[idSector] = new L.FeatureGroup();
+            
             STORE[idSector] = {
-                nombreSector: sec.nombreSector, visible: true, isMaster: true, isExpanded: false,
-                coloresPorEstatus: sec.coloresPorEstatus || {}, registros: []
+                nombreSector: sec.nombreSector, 
+                visible: sec.visible !== false, 
+                isMaster: true, // Siempre TRUE porque viene de la nube, no se puede borrar
+                isExpanded: true,
+                coloresPorEstatus: sec.coloresPorEstatus || {}, 
+                registros: []
             };
 
             if(sec.registros) {
@@ -479,7 +498,7 @@
                             vincularEventosCapa(capa, idSector, newIdFisico);
                         }
                     } catch (err) {
-                        console.warn("Punto omitido por error de datos:", err);
+                        console.warn("Punto omitido por error en sus coordenadas.");
                     }
                 });
             }
@@ -488,7 +507,6 @@
         const keys = Object.keys(STORE);
         if(keys.length > 0) { 
             capaActivaId = keys[0]; 
-            STORE[capaActivaId].isExpanded = true; 
         }
         
         actualizarUIYMapa();
@@ -500,6 +518,7 @@
             } catch(e){}
         }
     }
+
 
     /* ==========================================================================
        RESPALDO WORD (DOCUMENTACIÓN OFICIAL)
@@ -618,7 +637,7 @@
     }
 
     /* ==========================================================================
-       CONFIGURACIÓN DEL MAPA Y RENDERIZADO BÁSICO
+       CONFIGURACIÓN DEL MAPA
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - VISOR');
