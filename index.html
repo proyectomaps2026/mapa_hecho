@@ -218,12 +218,12 @@
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
 
-<!-- BANNER DE ALERTA PREVENTIVA LICENCIA -->
+<!-- BANNER DE ALERTA PREVENTIVA LICENCIA (OPCIONAL) -->
 <div id="license-banner" style="display: none; position: absolute; top: 0; left: 0; right: 0; background: #FF8C00; color: #ffffff; text-align: center; padding: 12px; font-size: 14px; font-weight: 900; z-index: 999999; box-shadow: 0 4px 15px rgba(0,0,0,0.6); text-transform: uppercase;">
     ⚠️ ADVERTENCIA DE SISTEMA: La licencia de servidores expira en <span id="dias-restantes"></span> días. Avise al Administrador.
 </div>
 
-<!-- MODAL BLOQUEO TOTAL POR LICENCIA (O ERROR DE DATOS) -->
+<!-- MODAL BLOQUEO TOTAL POR LICENCIA -->
 <div id="license-lock-overlay" class="modal-overlay">
     <div class="glass-panel modal-box">
         <i class="fas fa-lock" style="font-size: 44px; color: var(--color-vencida); margin-bottom: 16px;"></i>
@@ -319,14 +319,13 @@
     // Evitar inspección básica
     document.addEventListener('contextmenu', e => e.preventDefault());
 
-    // Análisis de Licencia Seguro (Soluciona el error de Padding Base64)
+    // Análisis de Licencia Seguro
     function analizarLicenciaSGF(licStr) {
         if(!licStr || typeof licStr !== 'string') return { valid: false, expired: true, days: 0 };
         const parts = licStr.split('-');
         if(parts[0] !== 'SGF' || parts.length < 4) return { valid: false, expired: true, days: 0 };
         try {
             let b64 = parts[3].trim();
-            // Solución para el error de decodificación Base64 en strings grandes
             while (b64.length % 4 !== 0) { b64 += '='; }
             
             const decodedStr = atob(b64);
@@ -342,7 +341,6 @@
             
             return { valid: true, expired: diffDays <= 0, days: diffDays };
         } catch(e) { 
-            console.error("Error parseando licencia SGF:", e);
             return { valid: false, expired: true, days: 0 }; 
         }
     }
@@ -351,48 +349,29 @@
        CONEXIÓN DE LECTURA DIRECTA A GITHUB (MOTOR INFALIBLE)
        ========================================================================== */
     async function obtenerDatosJSON() {
-        let configFinal = null;
-
-        // Opción 1: Obtener la configuración local (Para sacar el Token y poder usar API anti-caché)
+        // Obtenemos los datos directamente desde RAW para evitar los cortes de la API con archivos pesados
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?nocache=${Date.now()}`;
+        
         try {
-            const resLocal = await fetch(`${FILE_PATH}?nocache=${Date.now()}`);
-            if (resLocal.ok) configFinal = await resLocal.json();
-        } catch(e) { console.warn("Fallo lectura local:", e); }
-
-        // Opción 2: Si tenemos Token, usamos la API de GitHub para asegurar que los datos son 100% en vivo
-        if (configFinal && configFinal.token) {
-            let tokenMaster = configFinal.token.startsWith('ghp_') ? configFinal.token : configFinal.token.split('').reverse().join('');
-            try {
-                const resApi = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?nocache=${Date.now()}`, {
-                    headers: { 'Authorization': 'token ' + tokenMaster, 'Accept': 'application/vnd.github.v3+json', 'Cache-Control': 'no-cache, no-store, must-revalidate' }
-                });
-
-                if (resApi.ok) {
-                    const data = await resApi.json();
-                    // FIX CRÍTICO: Limpiar saltos de línea del Base64 que enviaba la API para archivos grandes
-                    const base64Clean = data.content.replace(/\s/g, ''); 
-                    const binaryStr = atob(base64Clean);
-                    const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
-                    const decodedContent = new TextDecoder('utf-8').decode(bytes);
-                    console.log("✅ Datos obtenidos EN TIEMPO REAL vía API GitHub.");
-                    return JSON.parse(decodedContent);
-                }
-            } catch(apiErr) { console.warn("Fallo API Github, pasando a RAW:", apiErr); }
+            const res = await fetch(rawUrl);
+            if (res.ok) {
+                console.log("✅ Datos obtenidos del servidor RAW.");
+                return await res.json();
+            }
+        } catch(e) { 
+            console.warn("Fallo lectura RAW GitHub, intentando ruta local."); 
         }
 
-        // Opción 3: Fallback a RAW público si la API falló
+        // Fallback local
         try {
-            const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?nocache=${Date.now()}`;
-            const resRaw = await fetch(rawUrl);
-            if (resRaw.ok) {
-                console.log("✅ Datos obtenidos vía RAW GitHub.");
-                return await resRaw.json();
+            const resLocal = await fetch(`${FILE_PATH}?nocache=${Date.now()}`);
+            if (resLocal.ok) {
+                console.log("✅ Datos obtenidos de ruta local.");
+                return await resLocal.json();
             }
-        } catch(e) { console.warn("Fallo lectura RAW."); }
-
-        // Si falló todo lo anterior, retornar lo local si lo hubiere
-        if (configFinal) return configFinal;
-        throw new Error("No se pudo conectar a la base de datos.");
+        } catch(e) {}
+        
+        throw new Error("No se pudo obtener la base de datos.");
     }
 
     async function iniciarSistemaVisor() {
@@ -403,7 +382,7 @@
         const lockDesc = document.getElementById('lock-desc');
 
         try {
-            // 1. OBTENER DATOS (Usa el motor de conexión infalible)
+            // 1. OBTENER DATOS (Usa el motor de conexión directa)
             const configData = await obtenerDatosJSON();
             
             // 2. VALIDAR LICENCIA
@@ -435,7 +414,7 @@
                 if(lockOverlay) lockOverlay.style.display = 'none';
             }
 
-            // 3. CONSTRUIR EL MAPA SIEMPRE (Detrás del bloqueo si lo hay, para que funcione el Backup Word)
+            // 3. CONSTRUIR EL MAPA SIEMPRE (Detrás del bloqueo si lo hay para que funcione el Word)
             reconstruirDesdeJSON(configData.store || {});
 
         } catch (error) {
@@ -452,7 +431,7 @@
     }
 
     /* ==========================================================================
-       CONSTRUCTOR DEL MAPA (Dibuja los pines leídos del JSON)
+       CONSTRUCTOR DEL MAPA (Dibuja los pines leídos del JSON con protección)
        ========================================================================== */
     function reconstruirDesdeJSON(storeData) {
         STORE = {};
@@ -474,39 +453,53 @@
 
             if(sec.registros) {
                 sec.registros.forEach(reg => {
-                    let capa;
-                    const estActual = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
-                    const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                    let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
-                    
-                    if (reg.tipoGeometria === 'marker' && reg.coords) {
-                        capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { icon: crearPinFiscal(colorBase), draggable: false });
-                    } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
-                        capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
-                    }
+                    try {
+                        let capa;
+                        const estActual = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
+                        const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                        let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
+                        
+                        if (reg.tipoGeometria === 'marker' && reg.coords) {
+                            capa = L.marker([parseFloat(reg.coords.lat), parseFloat(reg.coords.lng)], { icon: crearPinFiscal(colorBase), draggable: false });
+                        } else if ((reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') && reg.coords) {
+                            capa = L.polygon(analizarCoordenadasProfundas(reg.coords), { color: colorBase, fillColor: colorBase, fillOpacity: 0.2, weight: 3 });
+                        }
 
-                    if(capa) {
-                        const newIdFisico = L.stamp(capa);
-                        STORE[idSector].registros.push({ 
-                            idFisico: newIdFisico, 
-                            tipoGeometria: reg.tipoGeometria, 
-                            capaLeaflet: capa, 
-                            colorPersonalizado: reg.colorPersonalizado, 
-                            visibleIndividual: reg.visibleIndividual !== false,
-                            datosGenerales: reg.datosGenerales || {}, 
-                            camposOcultos: reg.camposOcultos || [] 
-                        });
-                        vincularEventosCapa(capa, idSector, newIdFisico);
+                        if(capa) {
+                            const newIdFisico = L.stamp(capa);
+                            STORE[idSector].registros.push({ 
+                                idFisico: newIdFisico, 
+                                tipoGeometria: reg.tipoGeometria, 
+                                capaLeaflet: capa, 
+                                colorPersonalizado: reg.colorPersonalizado, 
+                                visibleIndividual: reg.visibleIndividual !== false,
+                                datosGenerales: reg.datosGenerales || {}, 
+                                camposOcultos: reg.camposOcultos || [] 
+                            });
+                            vincularEventosCapa(capa, idSector, newIdFisico);
+                        }
+                    } catch (err) {
+                        console.warn("Punto omitido por error de datos:", err);
                     }
                 });
             }
         }
         
         const keys = Object.keys(STORE);
-        if(keys.length > 0) { capaActivaId = keys[0]; STORE[capaActivaId].isExpanded = true; }
+        if(keys.length > 0) { 
+            capaActivaId = keys[0]; 
+            STORE[capaActivaId].isExpanded = true; 
+        }
+        
         actualizarUIYMapa();
-    }
 
+        // CENTRAR CÁMARA AUTOMÁTICAMENTE AL TERMINAR DE CARGAR
+        if (capaMaestraSectores.getLayers().length > 0) {
+            try {
+                mapa.fitBounds(capaMaestraSectores.getBounds(), { padding: [30, 30] });
+            } catch(e){}
+        }
+    }
 
     /* ==========================================================================
        RESPALDO WORD (DOCUMENTACIÓN OFICIAL)
@@ -625,7 +618,7 @@
     }
 
     /* ==========================================================================
-       CONFIGURACIÓN DEL MAPA
+       CONFIGURACIÓN DEL MAPA Y RENDERIZADO BÁSICO
        ========================================================================== */
     const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - VISOR');
@@ -760,6 +753,8 @@
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
             if (!capasSectores[idSector]) capasSectores[idSector] = new L.FeatureGroup();
+            
+            // Limpiar visualmente para repintar
             capasSectores[idSector].clearLayers();
 
             const gruposPorEstatus = {};
@@ -933,7 +928,7 @@
         return { porEstatus, total, textoCompacto };
     }
 
-    // ARRANQUE DIRECTO (Llamada inicial)
+    // ARRANQUE DIRECTO (Llamada inicial al cargar la página)
     window.onload = () => { iniciarSistemaVisor(); };
 
 </script>
