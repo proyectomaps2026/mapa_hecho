@@ -115,7 +115,7 @@
             padding: 10px; 
             border-radius: 8px; 
             font-size: 11px; 
-            margin-bottom: 15px; 
+            margin-top: 10px; 
             font-weight: 800; 
             text-align: center; 
             display: none; 
@@ -154,7 +154,7 @@
         .local-row:hover { color: white; background: rgba(255,255,255,0.08); }
 
         .sidebar-footer { padding: 20px; display: grid; grid-template-columns: 1fr; gap: 12px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2); }
-        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; padding: 14px; border-radius: 8px; font-size: 11px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border-color); color: white; padding: 14px; border-radius: 8px; font-size: 11px; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.05); }
 
         /* POPUPS */
@@ -251,6 +251,54 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
+<!-- NUEVO MODAL: DASHBOARD EJECUTIVO -->
+<div id="dashboard-modal" class="modal-overlay" style="z-index: 12000;">
+    <div class="glass-panel modal-box" style="width: 600px; max-width: 90vw; padding: 30px; text-align: left; border-top: 5px solid var(--cyan-neon);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="margin: 0; color: var(--cyan-neon); font-size: 20px; font-weight: 900; letter-spacing: 1px;"><i class="fas fa-chart-pie"></i> DASHBOARD EJECUTIVO</h2>
+            <i class="fas fa-times" style="color: white; font-size: 20px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='var(--color-vencida)'" onmouseout="this.style.color='white'" onclick="document.getElementById('dashboard-modal').style.display='none'"></i>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--cyan-neon); text-align: center;">
+                <i class="fas fa-users" style="font-size: 24px; color: var(--cyan-neon); margin-bottom: 10px;"></i>
+                <div style="font-size: 11px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Total Censo</div>
+                <div id="dash-total" style="font-size: 28px; font-weight: 900; color: white;">0</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--color-vigente); text-align: center;">
+                <i class="fas fa-check-circle" style="font-size: 24px; color: var(--color-vigente); margin-bottom: 10px;"></i>
+                <div style="font-size: 11px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Vigentes</div>
+                <div id="dash-vigentes" style="font-size: 28px; font-weight: 900; color: var(--color-vigente);">0</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--color-vencida); text-align: center;">
+                <i class="fas fa-times-circle" style="font-size: 24px; color: var(--color-vencida); margin-bottom: 10px;"></i>
+                <div style="font-size: 11px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Vencidos / Sin Lic</div>
+                <div id="dash-vencidos" style="font-size: 28px; font-weight: 900; color: var(--color-vencida);">0</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 800;">
+                <span style="color: #a5b0bf;">PROGRESO DEL CENSO VS META (20,000)</span>
+                <span id="dash-progreso-txt" style="color: var(--cyan-neon);">0%</span>
+            </div>
+            <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 12px; overflow: hidden;">
+                <div id="dash-progreso-bar" style="height: 100%; background: var(--cyan-neon); width: 0%; transition: width 1s ease-out;"></div>
+            </div>
+        </div>
+
+        <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 800;">
+                <span style="color: #a5b0bf;">EFICIENCIA FISCAL (Vigentes vs Total)</span>
+                <span id="dash-eficiencia-txt" style="color: var(--color-vigente);">0%</span>
+            </div>
+            <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 12px; overflow: hidden;">
+                <div id="dash-eficiencia-bar" style="height: 100%; background: var(--color-vigente); width: 0%; transition: width 1s ease-out;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="map"></div>
 
 <nav class="ui-layer glass-panel top-nav">
@@ -268,11 +316,16 @@
             <i class="fas fa-draw-polygon"></i>
         </button>
 
+        <!-- NUEVO BOTÓN: MÉTRICAS / DASHBOARD -->
+        <button class="btn tool-btn" title="Ver Dashboard de Métricas" onclick="abrirDashboard()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; background: rgba(0, 242, 255, 0.1); border-color: var(--cyan-neon); color: var(--cyan-neon);">
+            <i class="fas fa-chart-line" style="margin-right: 8px;"></i> MÉTRICAS
+        </button>
+
         <button class="btn tool-btn" title="Generar Reporte Fotográfico" onclick="previsualizarCaptura()" style="width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #6e7681;">
             <svg style="margin-right: 8px; width: 16px; height: 16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
                 <circle cx="12" cy="13" r="3"></circle>
-            </svg> GENERAR REPORTE
+            </svg> REPORTE FOTO
         </button>
     </div>
 </nav>
@@ -294,8 +347,8 @@
             <i class="fas fa-key"></i> <span id="visor-license-text">Licencia del Sistema Cloud: Verificando...</span>
         </div>
 
-        <!-- ALERTA DE LICENCIA (NUEVO) -->
-        <div id="license-warning-box" class="license-alert" style="margin-top: 10px;">
+        <!-- ALERTA DE LICENCIA -->
+        <div id="license-warning-box" class="license-alert">
             <i class="fas fa-exclamation-triangle"></i> ATENCIÓN: Su licencia vence en <span id="license-days-count">X</span> días.
         </div>
     </div>
@@ -308,6 +361,11 @@
         </button>
         <button class="btn btn-outline" onclick="descargarRespaldoWord()" style="grid-column: span 1; border-color: var(--cyan-neon); color: var(--cyan-neon);">
             <i class="fas fa-file-word"></i> DESCARGAR RESPALDO WORD
+        </button>
+        
+        <!-- NUEVO BOTÓN: REGRESAR AL DASHBOARD PRINCIPAL -->
+        <button class="btn btn-outline" onclick="regresarDashboardPrincipal()" style="grid-column: span 2; border-color: #8e44ad; color: #8e44ad; background: rgba(142, 68, 173, 0.1);">
+            <i class="fas fa-arrow-left"></i> REGRESAR AL PANEL PRINCIPAL
         </button>
     </div>
 </aside>
@@ -452,7 +510,7 @@
             return;
         }
 
-        // PASO 3: VALIDAR LA LICENCIA
+        // PASO 3: VALIDAR LA LICENCIA Y ESTABLECER ALERTAS
         const estatusLicencia = analizarLicenciaSGF(SYSTEM_AUTH.licenciaSGF);
         
         if (!estatusLicencia.valid || estatusLicencia.expired) {
@@ -492,6 +550,79 @@
 
         // PASO 4: CONSTRUIR EL MAPA SIEMPRE (Incluso bloqueado para que el Word sirva)
         reconstruirDesdeJSON(configFinal.store || {});
+    }
+
+    /* ==========================================================================
+       FUNCIONES DEL DASHBOARD Y NAVEGACIÓN
+       ========================================================================== */
+    function abrirDashboard() {
+        let totalCenso = 0;
+        let vigentes = 0;
+        let vencidos = 0;
+
+        const META_CENSO = 20000; // Meta de registros manual
+
+        // Recorrer el objeto STORE (Panel Lateral)
+        for(let idSector in STORE) {
+            const sector = STORE[idSector];
+            if(sector.registros) {
+                sector.registros.forEach(reg => {
+                    // Solo contar marcadores (puntos de contribuyentes), no áreas/polígonos
+                    if (reg.tipoGeometria === 'marker') {
+                        totalCenso++;
+                        const estatus = reg.datosGenerales["Estatus"] ? reg.datosGenerales["Estatus"].toUpperCase().trim() : "";
+                        
+                        if (estatus.includes("VIGENTE")) {
+                            vigentes++;
+                        } else if (estatus.includes("VENCIDA") || estatus.includes("SIN LICENCIA")) {
+                            vencidos++;
+                        }
+                    }
+                });
+            }
+        }
+
+        // Actualizar DOM del Modal
+        document.getElementById('dash-total').innerText = totalCenso.toLocaleString();
+        document.getElementById('dash-vigentes').innerText = vigentes.toLocaleString();
+        document.getElementById('dash-vencidos').innerText = vencidos.toLocaleString();
+
+        // Mostrar Modal (Para que las barras se animen correctamente)
+        document.getElementById('dashboard-modal').style.display = 'flex';
+
+        // Calcular Progreso Meta (Pequeño delay para la transición visual)
+        setTimeout(() => {
+            let porcentajeMeta = totalCenso > 0 ? (totalCenso / META_CENSO) * 100 : 0;
+            if(porcentajeMeta > 100) porcentajeMeta = 100;
+            document.getElementById('dash-progreso-txt').innerText = porcentajeMeta.toFixed(1) + '%';
+            document.getElementById('dash-progreso-bar').style.width = porcentajeMeta + '%';
+
+            // Calcular Eficiencia
+            let porcentajeEficiencia = totalCenso > 0 ? (vigentes / totalCenso) * 100 : 0;
+            document.getElementById('dash-eficiencia-txt').innerText = porcentajeEficiencia.toFixed(1) + '%';
+            document.getElementById('dash-eficiencia-bar').style.width = porcentajeEficiencia + '%';
+        }, 100);
+    }
+
+    function regresarDashboardPrincipal() {
+        /*
+        =======================================================================================
+        INSTRUCCIONES PARA CAMBIAR LA URL DEL DASHBOARD PRINCIPAL:
+        La URL actual es: https://hacienda.preview.softr.app/panel-de-control-hacienda
+        
+        Para mantenerla oculta, está convertida a código Base64 usando la función "atob".
+        El texto 'aHR0cHM6Ly9oYWNpZW5kYS5wcmV2aWV3LnNvZnRyLmFwcC9wYW5lbC1kZS1jb250cm9sLWhhY2llbmRh' 
+        es exactamente esa URL encriptada.
+
+        Si deseas cambiar la URL en el futuro:
+        Opción A (Fácil): Borra la palabra "atob" y el código raro, y escribe tu URL entre comillas normales.
+        Ejemplo: window.location.href = "https://tu-nueva-url.com";
+        
+        Opción B (Oculta): Ve a una página como https://www.base64encode.org/ , pega tu nueva URL,
+        cópia el resultado, y pégalo adentro del atob('AQUI_TU_NUEVO_CODIGO').
+        =======================================================================================
+        */
+        window.location.href = atob('aHR0cHM6Ly9oYWNpZW5kYS5wcmV2aWV3LnNvZnRyLmFwcC9wYW5lbC1kZS1jb250cm9sLWhhY2llbmRh');
     }
 
     /* ==========================================================================
