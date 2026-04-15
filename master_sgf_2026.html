@@ -793,14 +793,18 @@
         
         localStorage.setItem('sgf_license', val);
         SYSTEM_AUTH.licenciaSGF = val;
-        alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.");
+        SYSTEM_AUTH.token = est.tokenRev.split('').reverse().join('');
+        
+        alert("Licencia Activada con éxito. Guarde este código en un lugar seguro.\nSincronizando con la nube para evitar retrocesos...");
         const lockOv = document.getElementById('license-lock-overlay');
         if (lockOv) lockOv.style.display = 'none';
+        
         validarLicenciaYBloqueo();
+        await guardarEnServidor();
         await cargarDatosNube();
     }
 
-    function actualizarLicenciaInterna() {
+    async function actualizarLicenciaInterna() {
         const val = document.getElementById('input-update-license').value.trim();
         if(!val) return alert("Ingrese el código de licencia.");
         const est = analizarLicenciaSGF(val);
@@ -808,8 +812,12 @@
         
         localStorage.setItem('sgf_license', val);
         SYSTEM_AUTH.licenciaSGF = val;
-        alert("Licencia Renovada con éxito.");
+        SYSTEM_AUTH.token = est.tokenRev.split('').reverse().join('');
+        
+        alert("Licencia Renovada con éxito.\nSincronizando actualización a la Nube (GitHub)...");
         validarLicenciaYBloqueo();
+        
+        await guardarEnServidor();
     }
 
     /* ==========================================================================
@@ -2220,7 +2228,7 @@
             return { lat: parseFloat(coords.lat), lng: parseFloat(coords.lng) };
         }
         return coords;
-    };
+    }
     
     function reconstruirDesdeJSON(datosCargados) {
         STORE = {};
