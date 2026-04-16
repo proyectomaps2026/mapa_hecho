@@ -1398,9 +1398,12 @@
             const colorFinal = registro.colorPersonalizado || confEst.color;
             const imgUrl = registro.datosGenerales["Link Fotografía"];
             
+            // --- MODIFICACIÓN DE SEGURIDAD PARA EL VISOR (CAMPOS OCULTOS) ---
+            const isFotoOculta = registro.camposOcultos && registro.camposOcultos.includes("Link Fotografía");
+
             html += `
             <div class="pop-cover">
-                ${(imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" style="cursor: zoom-in; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="abrirVisorImagen('${imgUrl}')" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
+                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" style="cursor: zoom-in; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="abrirVisorImagen('${imgUrl}')" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
                 <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
             </div>
             <div class="pop-content">`;
@@ -1408,6 +1411,11 @@
             html += `<div id="view-mode-${idFisico}">`;
             for(let clave in registro.datosGenerales) {
                 if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                
+                // Aplicar seguridad: Si está oculto, no lo renderiza
+                const isOculto = registro.camposOcultos && registro.camposOcultos.includes(clave);
+                if(isOculto) continue; 
+
                 html += `<div class="read-field"><span class="read-label">${clave}</span><div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div></div>`;
             }
             if(!STORE[idSector].isMaster) html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN (SIMULACIÓN)</button>`;
@@ -1417,6 +1425,11 @@
                 html += `<div id="edit-mode-${idFisico}" style="display: none;">`;
                 for(let clave in registro.datosGenerales) {
                     if(clave === "Estatus" || clave === "Link Fotografía") continue;
+                    
+                    // Aplicar seguridad en modo edición de simulación también
+                    const isOculto = registro.camposOcultos && registro.camposOcultos.includes(clave);
+                    if(isOculto) continue;
+
                     html += `<div class="form-group"><span class="form-label">${clave}</span><input type="text" class="form-input" value="${registro.datosGenerales[clave]}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;"></div>`;
                 }
                 html += `<div class="form-group" style="background: #f4f6f8; padding: 10px; border-radius: 8px;"><span class="form-label" style="color: #111;">ESTADO FISCAL</span><select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>`;
