@@ -259,27 +259,32 @@
             <i class="fas fa-times" style="color: white; font-size: 20px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='var(--color-vencida)'" onmouseout="this.style.color='white'" onclick="document.getElementById('dashboard-modal').style.display='none'"></i>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--cyan-neon); text-align: center;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+            <div style="background: rgba(0,0,0,0.5); padding: 15px 10px; border-radius: 12px; border: 1px solid var(--cyan-neon); text-align: center;">
                 <i class="fas fa-users" style="font-size: 24px; color: var(--cyan-neon); margin-bottom: 10px;"></i>
-                <div style="font-size: 11px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Total Censo</div>
-                <div id="dash-total" style="font-size: 28px; font-weight: 900; color: white;">0</div>
+                <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Total Censo</div>
+                <div id="dash-total" style="font-size: 24px; font-weight: 900; color: white;">0</div>
             </div>
-            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--color-vigente); text-align: center;">
+            <div style="background: rgba(0,0,0,0.5); padding: 15px 10px; border-radius: 12px; border: 1px solid var(--color-vigente); text-align: center;">
                 <i class="fas fa-check-circle" style="font-size: 24px; color: var(--color-vigente); margin-bottom: 10px;"></i>
-                <div style="font-size: 11px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Vigentes</div>
-                <div id="dash-vigentes" style="font-size: 28px; font-weight: 900; color: var(--color-vigente);">0</div>
+                <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Vigentes</div>
+                <div id="dash-vigentes" style="font-size: 24px; font-weight: 900; color: var(--color-vigente);">0</div>
             </div>
-            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--color-vencida); text-align: center;">
+            <div style="background: rgba(0,0,0,0.5); padding: 15px 10px; border-radius: 12px; border: 1px solid var(--color-vencida); text-align: center;">
                 <i class="fas fa-times-circle" style="font-size: 24px; color: var(--color-vencida); margin-bottom: 10px;"></i>
-                <div style="font-size: 11px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Vencidos / Sin Lic</div>
-                <div id="dash-vencidos" style="font-size: 28px; font-weight: 900; color: var(--color-vencida);">0</div>
+                <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Vencidos</div>
+                <div id="dash-vencidos" style="font-size: 24px; font-weight: 900; color: var(--color-vencida);">0</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.5); padding: 15px 10px; border-radius: 12px; border: 1px solid var(--color-vencida); text-align: center;">
+                <i class="fas fa-ban" style="font-size: 24px; color: var(--color-vencida); margin-bottom: 10px;"></i>
+                <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Sin Licencia</div>
+                <div id="dash-sin-licencia" style="font-size: 24px; font-weight: 900; color: var(--color-vencida);">0</div>
             </div>
         </div>
 
         <div style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 800;">
-                <span style="color: #a5b0bf;">PROGRESO DEL CENSO VS META (20,000)</span>
+                <span style="color: #a5b0bf;">PROGRESO DEL CENSO VS META (1,000)</span>
                 <span id="dash-progreso-txt" style="color: var(--cyan-neon);">0%</span>
             </div>
             <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 12px; overflow: hidden;">
@@ -559,8 +564,9 @@
         let totalCenso = 0;
         let vigentes = 0;
         let vencidos = 0;
+        let sinLicencia = 0;
 
-        const META_CENSO = 20000; // Meta de registros manual
+        const META_CENSO = 1000; // Meta de registros manual
 
         // Recorrer el objeto STORE (Panel Lateral)
         for(let idSector in STORE) {
@@ -574,8 +580,10 @@
                         
                         if (estatus.includes("VIGENTE")) {
                             vigentes++;
-                        } else if (estatus.includes("VENCIDA") || estatus.includes("SIN LICENCIA")) {
+                        } else if (estatus.includes("VENCIDA")) {
                             vencidos++;
+                        } else if (estatus.includes("SIN LICENCIA")) {
+                            sinLicencia++;
                         }
                     }
                 });
@@ -586,6 +594,7 @@
         document.getElementById('dash-total').innerText = totalCenso.toLocaleString();
         document.getElementById('dash-vigentes').innerText = vigentes.toLocaleString();
         document.getElementById('dash-vencidos').innerText = vencidos.toLocaleString();
+        document.getElementById('dash-sin-licencia').innerText = sinLicencia.toLocaleString();
 
         // Mostrar Modal (Para que las barras se animen correctamente)
         document.getElementById('dashboard-modal').style.display = 'flex';
