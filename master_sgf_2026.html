@@ -117,10 +117,11 @@
         .sector-card { margin-bottom: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.3); overflow: hidden; transition: all 0.3s ease; }
         .sector-card.is-active { border-color: var(--cyan-neon); background: rgba(0, 242, 255, 0.03); box-shadow: 0 0 20px rgba(0, 242, 255, 0.05); }
         
-        .sector-header { padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent; cursor: pointer; gap: 15px; }
+        /* CORRECCIÓN PROFESIONAL DEL FLEXBOX (Evita que el bote de basura se salga) */
+        .sector-header { padding: 12px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid transparent; cursor: pointer; gap: 8px; }
         .sector-header:hover { background: rgba(255,255,255,0.05); }
-        .sector-title-group { display: flex; align-items: center; gap: 15px; flex: 1; }
-        .sector-controls { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+        .sector-title-group { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .sector-controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
         
         .radio-active { appearance: none; width: 16px; height: 16px; border: 2px solid #6e7681; border-radius: 50%; outline: none; cursor: pointer; position: relative; flex-shrink: 0; }
         .radio-active:checked { border-color: var(--cyan-neon); }
@@ -1434,12 +1435,12 @@
                                onclick="event.stopPropagation();"
                                ondblclick="enfocarSector('${idSector}')"
                                onchange="actualizarNombreSector('${idSector}', this.value)" 
-                               style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:13px; font-weight:800; font-family:inherit; width: 140px; outline:none; text-transform:uppercase;">
+                               style="background:transparent; border:none; border-bottom: 1px dashed rgba(255,255,255,0.2); color:var(--text-main); font-size:12px; font-weight:800; font-family:inherit; width: 100%; min-width: 60px; outline:none; text-transform:uppercase; text-overflow: ellipsis; overflow: hidden;">
                     </div>
                     
                     <div class="sector-controls">
                         ${CURRENT_ROLE === 'SUPERADMIN' ? `
-                        <select style="font-size:9px; font-weight:bold; background:rgba(0,0,0,0.5); color:#a5b0bf; border:1px solid var(--border-color); border-radius:4px; padding:2px 4px; outline:none; cursor:pointer;" 
+                        <select style="font-size:9px; font-weight:bold; background:rgba(0,0,0,0.5); color:#a5b0bf; border:1px solid var(--border-color); border-radius:4px; padding:3px; outline:none; cursor:pointer; max-width: 80px;" 
                                 onclick="event.stopPropagation();" 
                                 onchange="cambiarAsignacionCapa('${idSector}', this.value)">
                             <option value="ALL" ${sectorData.visibleFor === 'ALL' ? 'selected' : ''}>👁️ AMBOS</option>
@@ -1888,6 +1889,7 @@
         capasSectores[id] = new L.FeatureGroup();
         STORE[id] = { 
             nombreSector: nombre.toUpperCase(), 
+            owner: CURRENT_ROLE, 
             visibleFor: CURRENT_ROLE === 'SUPERADMIN' ? 'ALL' : CURRENT_ROLE,
             visible: true, 
             isMaster: false,
@@ -1911,6 +1913,7 @@
         
         STORE[newId] = {
             nombreSector: nombre.toUpperCase(),
+            owner: CURRENT_ROLE,
             visibleFor: CURRENT_ROLE === 'SUPERADMIN' ? sectorOriginal.visibleFor : CURRENT_ROLE,
             visible: true,
             isMaster: false, 
@@ -2196,6 +2199,7 @@
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
+        // Obtenemos el botón correcto asumiendo la posición
         const btn = document.querySelector('#ajustes-servidor button:nth-of-type(2)');
         const originalText = btn.innerText;
         btn.innerText = "VERIFICANDO...";
