@@ -1,4 +1,3 @@
---- START OF FILE text/html ---
 
 <!DOCTYPE html>
 <html lang="es">
@@ -257,7 +256,7 @@
 <div id="dashboard-modal" class="modal-overlay" style="z-index: 12000;">
     <div class="glass-panel modal-box" style="width: 750px; max-width: 95vw; padding: 30px; text-align: left; border-top: 5px solid var(--cyan-neon);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-            <h2 style="margin: 0; color: var(--cyan-neon); font-size: 20px; font-weight: 900; letter-spacing: 1px;"><i class="fas fa-chart-pie"></i> DASHBOARD EJECUTIVO</h2>
+            <h2 id="dash-main-title" style="margin: 0; color: var(--cyan-neon); font-size: 20px; font-weight: 900; letter-spacing: 1px;"><i class="fas fa-chart-pie"></i> DASHBOARD EJECUTIVO</h2>
             <i class="fas fa-times" style="color: white; font-size: 20px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='var(--color-vencida)'" onmouseout="this.style.color='white'" onclick="document.getElementById('dashboard-modal').style.display='none'"></i>
         </div>
 
@@ -353,6 +352,16 @@
     <div class="sidebar-header">
         <h1>VISOR EJECUTIVO</h1>
         <p id="indicador-capa-activa">HACIENDA MUNICIPAL</p>
+
+        <!-- NUEVO FILTRO GLOBAL DEL VISOR -->
+        <div style="margin-top: 15px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 6px; display: block; text-transform: uppercase;">Filtrar Vista (Mapa, Word y Métricas)</label>
+            <select id="filtro-vista-visor" class="form-select" style="background: #111; color: var(--cyan-neon); border-color: var(--cyan-neon); font-size: 11px; padding: 6px; margin: 0; width: 100%;" onchange="cambiarVistaVisor(this.value)">
+                <option value="ALL">CONSOLIDADO GLOBAL (SUMA DE ADMINS)</option>
+                <option value="ADMIN">SOLO DATOS DE ADMIN 1</option>
+                <option value="ADMIN2">SOLO DATOS DE ADMIN 2</option>
+            </select>
+        </div>
         
         <!-- ETIQUETA LICENCIA DEL SISTEMA CLOUD -->
         <div class="visor-license-box" id="visor-license-box">
@@ -440,11 +449,15 @@
     let capaActivaId = null; 
     let textoFiltroGlobal = "";
 
-    // Objeto maestro de autenticación (Actualizado con Meta Dinámica)
+    // Filtro Global del Visor Ejecutivo
+    window.visorViewFilter = 'ALL';
+
+    // Objeto maestro de autenticación (Actualizado con Metas Individuales)
     let SYSTEM_AUTH = { 
         token: '', 
         licenciaSGF: '',
-        metaCenso: 1000
+        metaCensoAdmin1: 1000,
+        metaCensoAdmin2: 1000
     };
 
     // Analizador de licencia SGF
@@ -510,9 +523,9 @@
                     const l = config.licenciaSGF || config.license;
                     SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
                 }
-                if (config.metaCenso !== undefined) {
-                    SYSTEM_AUTH.metaCenso = config.metaCenso;
-                }
+                if (config.metaCensoAdmin1 !== undefined) SYSTEM_AUTH.metaCensoAdmin1 = config.metaCensoAdmin1;
+                if (config.metaCensoAdmin2 !== undefined) SYSTEM_AUTH.metaCensoAdmin2 = config.metaCensoAdmin2;
+                if (config.metaCenso !== undefined && config.metaCensoAdmin1 === undefined) SYSTEM_AUTH.metaCensoAdmin1 = config.metaCenso;
                 
                 configFinal = config; 
             }
@@ -545,9 +558,9 @@
                         const l = configFinal.licenciaSGF || configFinal.license;
                         SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
                     }
-                    if (configFinal.metaCenso !== undefined) {
-                        SYSTEM_AUTH.metaCenso = configFinal.metaCenso;
-                    }
+                    if (configFinal.metaCensoAdmin1 !== undefined) SYSTEM_AUTH.metaCensoAdmin1 = configFinal.metaCensoAdmin1;
+                    if (configFinal.metaCensoAdmin2 !== undefined) SYSTEM_AUTH.metaCensoAdmin2 = configFinal.metaCensoAdmin2;
+                    if (configFinal.metaCenso !== undefined && configFinal.metaCensoAdmin1 === undefined) SYSTEM_AUTH.metaCensoAdmin1 = configFinal.metaCenso;
                 }
             } catch(e) {
                 console.warn("Fallo API GitHub. Intentando fallback...", e);
@@ -611,8 +624,13 @@
     }
 
     /* ==========================================================================
-       FUNCIONES DEL DASHBOARD Y NAVEGACIÓN
+       FUNCIONES DEL DASHBOARD, VISOR Y NAVEGACIÓN
        ========================================================================== */
+    function cambiarVistaVisor(val) {
+        window.visorViewFilter = val;
+        actualizarUIYMapa();
+    }
+
     function abrirDashboard() {
         let totalCenso = 0;
         let vigentes = 0;
@@ -620,54 +638,67 @@
         let sinLicencia = 0;
         let temporales = 0;
 
-        // META DINÁMICA DE CENSO
-        const META_CENSO = SYSTEM_AUTH.metaCenso || 1000; 
+        let META_CENSO = 0;
+        let tituloDashboard = "DASHBOARD EJECUTIVO";
 
-        // Recorrer el objeto STORE (Panel Lateral)
+        // Determinar qué meta usar y qué título mostrar
+        if (window.visorViewFilter === 'ADMIN') {
+            META_CENSO = SYSTEM_AUTH.metaCensoAdmin1 || 1000;
+            tituloDashboard = "MÉTRICAS: ADMIN 1";
+        } else if (window.visorViewFilter === 'ADMIN2') {
+            META_CENSO = SYSTEM_AUTH.metaCensoAdmin2 || 1000;
+            tituloDashboard = "MÉTRICAS: ADMIN 2";
+        } else {
+            META_CENSO = (SYSTEM_AUTH.metaCensoAdmin1 || 1000) + (SYSTEM_AUTH.metaCensoAdmin2 || 1000);
+            tituloDashboard = "MÉTRICAS: CONSOLIDADO GLOBAL";
+        }
+
+        // Recorrer el objeto STORE evaluando el filtro actual
         for(let idSector in STORE) {
             const sector = STORE[idSector];
-            if(sector.registros) {
+
+            let canView = false;
+            if (window.visorViewFilter === 'ALL') {
+                canView = true;
+            } else if (window.visorViewFilter === 'ADMIN') {
+                canView = (sector.visibleFor === 'ADMIN' || sector.visibleFor === 'ALL');
+            } else if (window.visorViewFilter === 'ADMIN2') {
+                canView = (sector.visibleFor === 'ADMIN2' || sector.visibleFor === 'ALL');
+            }
+
+            if(canView && sector.registros) {
                 sector.registros.forEach(reg => {
-                    // Solo contar marcadores (puntos de contribuyentes), no áreas/polígonos
                     if (reg.tipoGeometria === 'marker') {
                         totalCenso++;
                         const estatus = reg.datosGenerales["Estatus"] ? reg.datosGenerales["Estatus"].toUpperCase().trim() : "";
                         
-                        if (estatus.includes("VIGENTE")) {
-                            vigentes++;
-                        } else if (estatus.includes("VENCIDA")) {
-                            vencidos++;
-                        } else if (estatus.includes("SIN LICENCIA")) {
-                            sinLicencia++;
-                        } else if (estatus.includes("TEMPORAL")) {
-                            temporales++;
-                        }
+                        if (estatus.includes("VIGENTE")) vigentes++;
+                        else if (estatus.includes("VENCIDA")) vencidos++;
+                        else if (estatus.includes("SIN LICENCIA")) sinLicencia++;
+                        else if (estatus.includes("TEMPORAL")) temporales++;
                     }
                 });
             }
         }
 
         // Actualizar DOM del Modal
+        document.getElementById('dash-main-title').innerHTML = `<i class="fas fa-chart-pie"></i> ${tituloDashboard}`;
         document.getElementById('dash-total').innerText = totalCenso.toLocaleString();
         document.getElementById('dash-vigentes').innerText = vigentes.toLocaleString();
         document.getElementById('dash-vencidos').innerText = vencidos.toLocaleString();
         document.getElementById('dash-sin-licencia').innerText = sinLicencia.toLocaleString();
         document.getElementById('dash-temporales').innerText = temporales.toLocaleString();
 
-        // Actualizar texto de la meta dinámicamente
         document.getElementById('dash-meta-title').innerText = `PROGRESO DEL CENSO VS META (${META_CENSO.toLocaleString()})`;
 
-        // Mostrar Modal (Para que las barras se animen correctamente)
         document.getElementById('dashboard-modal').style.display = 'flex';
 
-        // Calcular Progreso Meta (Pequeño delay para la transición visual)
         setTimeout(() => {
             let porcentajeMeta = totalCenso > 0 ? (totalCenso / META_CENSO) * 100 : 0;
             if(porcentajeMeta > 100) porcentajeMeta = 100;
             document.getElementById('dash-progreso-txt').innerText = porcentajeMeta.toFixed(1) + '%';
             document.getElementById('dash-progreso-bar').style.width = porcentajeMeta + '%';
 
-            // Calcular Eficiencia
             let porcentajeEficiencia = totalCenso > 0 ? (vigentes / totalCenso) * 100 : 0;
             document.getElementById('dash-eficiencia-txt').innerText = porcentajeEficiencia.toFixed(1) + '%';
             document.getElementById('dash-eficiencia-bar').style.width = porcentajeEficiencia + '%';
@@ -675,23 +706,6 @@
     }
 
     function regresarDashboardPrincipal() {
-        /*
-        =======================================================================================
-        INSTRUCCIONES PARA CAMBIAR LA URL DEL DASHBOARD PRINCIPAL:
-        La URL actual es: https://hacienda.preview.softr.app/panel-de-control-hacienda
-        
-        Para mantenerla oculta, está convertida a código Base64 usando la función "atob".
-        El texto 'aHR0cHM6Ly9oYWNpZW5kYS5wcmV2aWV3LnNvZnRyLmFwcC9wYW5lbC1kZS1jb250cm9sLWhhY2llbmRh' 
-        es exactamente esa URL encriptada.
-
-        Si deseas cambiar la URL en el futuro:
-        Opción A (Fácil): Borra la palabra "atob" y el código raro, y escribe tu URL entre comillas normales.
-        Ejemplo: window.location.href = "https://tu-nueva-url.com";
-        
-        Opción B (Oculta): Ve a una página como https://www.base64encode.org/ , pega tu nueva URL,
-        cópia el resultado, y pégalo adentro del atob('AQUI_TU_NUEVO_CODIGO').
-        =======================================================================================
-        */
         window.location.href = atob('aHR0cHM6Ly9oYWNpZW5kYS5wcmV2aWV3LnNvZnRyLmFwcC9wYW5lbC1kZS1jb250cm9sLWhhY2llbmRh');
     }
 
@@ -712,10 +726,20 @@
             const sec = storeData[idSector];
             capasSectores[idSector] = new L.FeatureGroup();
             
+            // Reconstruir la propiedad de permisos visuales desde la Nube
+            let assignedTo = sec.visibleFor;
+            if (!assignedTo) {
+                if (sec.owner === 'ADMIN2') assignedTo = 'ADMIN2';
+                else if (sec.owner === 'ADMIN') assignedTo = 'ADMIN';
+                else assignedTo = 'ALL';
+            }
+
             STORE[idSector] = {
                 nombreSector: sec.nombreSector, 
+                visibleFor: assignedTo,
+                owner: sec.owner || 'ADMIN',
                 visible: sec.visible !== false, 
-                isMaster: true, // Siempre TRUE porque viene de la nube, no se puede borrar
+                isMaster: true,
                 isExpanded: true,
                 coloresPorEstatus: sec.coloresPorEstatus || {}, 
                 registros: []
@@ -730,7 +754,6 @@
                         let colorBase = STORE[idSector].coloresPorEstatus[estActual] || confEst.color;
                         
                         if (reg.tipoGeometria === 'marker') {
-                            // LECTURA DE COORDENADAS A PRUEBA DE FALLOS
                             let latParseada, lngParseada;
                             if (reg.coords && reg.coords.lat !== undefined) {
                                 latParseada = parseFloat(reg.coords.lat);
@@ -789,7 +812,7 @@
 
 
     /* ==========================================================================
-       RESPALDO WORD (FORMATO EJECUTIVO DE ALTO NIVEL)
+       RESPALDO WORD (FILTRADO SEGÚN LA VISTA EJECUTIVA ACTIVA)
        ========================================================================== */
     function descargarRespaldoWord() {
         if (typeof docx === 'undefined') return alert("Error: La librería de generación no se cargó.");
@@ -799,7 +822,30 @@
         const systemId = `SGF-CLOUD-${new Date().getFullYear()}`;
 
         const allRecords = [];
-        Object.values(STORE).forEach(sector => allRecords.push(...sector.registros));
+        
+        // Iterar usando el Filtro Visual del Visor
+        Object.values(STORE).forEach(sector => {
+            let canView = false;
+            if (window.visorViewFilter === 'ALL') {
+                canView = true;
+            } else if (window.visorViewFilter === 'ADMIN') {
+                canView = (sector.visibleFor === 'ADMIN' || sector.visibleFor === 'ALL');
+            } else if (window.visorViewFilter === 'ADMIN2') {
+                canView = (sector.visibleFor === 'ADMIN2' || sector.visibleFor === 'ALL');
+            }
+
+            if(sector.visible && canView) {
+                sector.registros.forEach(reg => {
+                    if (reg.tipoGeometria === 'marker') {
+                        allRecords.push(reg);
+                    }
+                });
+            }
+        });
+
+        if (allRecords.length === 0) {
+            return alert("No hay registros en la vista actual para generar el Word.");
+        }
 
         const tableRows = [];
         const headerRow = new TableRow({
@@ -981,7 +1027,7 @@
         if(!nombre) return;
         const id = 'sec_' + Date.now();
         capasSectores[id] = new L.FeatureGroup();
-        STORE[id] = { nombreSector: nombre.toUpperCase(), visible: true, isMaster: false, isExpanded: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
+        STORE[id] = { nombreSector: nombre.toUpperCase(), visibleFor: window.visorViewFilter, visible: true, isMaster: false, isExpanded: true, visibilidadPorEstatus: {}, coloresPorEstatus: {}, registros: [] };
         capaActivaId = id;
         actualizarUIYMapa();
     }
@@ -994,7 +1040,7 @@
         const newId = 'sec_' + Date.now();
         capasSectores[newId] = new L.FeatureGroup();
         STORE[newId] = {
-            nombreSector: nombre.toUpperCase(), visible: true, isMaster: false, isExpanded: true,
+            nombreSector: nombre.toUpperCase(), visibleFor: sectorOriginal.visibleFor, visible: true, isMaster: false, isExpanded: true,
             visibilidadPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.visibilidadPorEstatus || {})),
             coloresPorEstatus: JSON.parse(JSON.stringify(sectorOriginal.coloresPorEstatus || {})), colorPrincipal: sectorOriginal.colorPrincipal, registros: []
         };
@@ -1044,6 +1090,24 @@
         
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
+
+            // APLICAR FILTRO VISUAL GLOBAL
+            let canView = false;
+            if (window.visorViewFilter === 'ALL') {
+                canView = true;
+            } else if (window.visorViewFilter === 'ADMIN') {
+                canView = (sectorData.visibleFor === 'ADMIN' || sectorData.visibleFor === 'ALL');
+            } else if (window.visorViewFilter === 'ADMIN2') {
+                canView = (sectorData.visibleFor === 'ADMIN2' || sectorData.visibleFor === 'ALL');
+            }
+
+            if (!canView) {
+                if (capasSectores[idSector] && capaMaestraSectores.hasLayer(capasSectores[idSector])) {
+                    capaMaestraSectores.removeLayer(capasSectores[idSector]);
+                }
+                continue; 
+            }
+
             if (!capasSectores[idSector]) capasSectores[idSector] = new L.FeatureGroup();
             
             // Limpiar visualmente para repintar
