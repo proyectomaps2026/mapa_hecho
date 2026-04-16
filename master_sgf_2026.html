@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -483,7 +482,7 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
-            <!-- SECCION: META DE CENSO DINAMICA -->
+            <!-- SECCION: META DE CENSO DINAMICA INDIVIDUAL -->
             <div id="seccion-meta-censo">
                 <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">META DINÁMICA DE CENSADOS</label>
                 <input type="number" id="ajuste-meta" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Meta (Ej. 1000)">
@@ -507,7 +506,7 @@
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
             <!-- NUEVO: FILTRO DE VISTA PARA SUPER ADMIN -->
-            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">VISTA DE CAPAS (MULTIUSUARIO)</label>
+            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">VISTA DE CAPAS GLOBALES</label>
             <select id="filtro-vista-sa" class="modal-select" style="padding: 8px; font-size: 11px; margin-bottom: 12px; height: auto;" onchange="cambiarVistaSuperAdmin(this.value)">
                 <option value="ALL">VER TODAS LAS CAPAS</option>
                 <option value="ADMIN">VER SOLO CAPAS ADMIN 1</option>
@@ -629,7 +628,8 @@
         passAdmin2: 'admin2',
         urlRaw: '', 
         urlRaw2: '',
-        metaCenso: 1000,
+        metaCensoAdmin1: 1000,
+        metaCensoAdmin2: 1000,
         token: '', 
         licenciaSGF: '',
         wordConfig: { columnas: ['Contribuyente', 'RIF', 'Estatus', 'Dirección'] }
@@ -650,7 +650,12 @@
                 if (config.passAdmin2 !== undefined) SYSTEM_AUTH.passAdmin2 = config.passAdmin2;
                 if (config.urlRaw !== undefined || config.csvUrl !== undefined) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
                 if (config.urlRaw2 !== undefined) SYSTEM_AUTH.urlRaw2 = config.urlRaw2;
-                if (config.metaCenso !== undefined) SYSTEM_AUTH.metaCenso = config.metaCenso;
+                
+                // Carga individual de Metas
+                if (config.metaCensoAdmin1 !== undefined) SYSTEM_AUTH.metaCensoAdmin1 = config.metaCensoAdmin1;
+                if (config.metaCensoAdmin2 !== undefined) SYSTEM_AUTH.metaCensoAdmin2 = config.metaCensoAdmin2;
+                if (config.metaCenso !== undefined && config.metaCensoAdmin1 === undefined) SYSTEM_AUTH.metaCensoAdmin1 = config.metaCenso; // Legacy fallback
+                
                 if (config.wordConfig !== undefined) SYSTEM_AUTH.wordConfig = config.wordConfig;
                 
                 if (config.token) {
@@ -955,7 +960,7 @@
     }
 
     /* ==========================================================================
-       RESPALDO WORD (DINÁMICO SEGÚN CONFIGURACIÓN)
+       RESPALDO WORD (DINÁMICO SEGÚN CONFIGURACIÓN Y PERMISOS)
        ========================================================================== */
     function descargarRespaldoWord() {
         if (typeof docx === 'undefined') {
@@ -973,8 +978,19 @@
                    : ['Contribuyente', 'RIF', 'Estatus'];
 
         const allRecords = [];
+        
+        // FILTRO ESTRICTO DE VISIBILIDAD PARA EL WORD
         Object.values(STORE).forEach(sector => {
-            if(sector.visible) {
+            let canView = false;
+            if (CURRENT_ROLE === 'SUPERADMIN') {
+                canView = true;
+            } else if (CURRENT_ROLE === 'ADMIN') {
+                canView = (sector.visibleFor === 'ALL' || sector.visibleFor === 'ADMIN');
+            } else if (CURRENT_ROLE === 'ADMIN2') {
+                canView = (sector.visibleFor === 'ALL' || sector.visibleFor === 'ADMIN2');
+            }
+
+            if(sector.visible && canView) {
                 sector.registros.forEach(reg => {
                     if (reg.tipoGeometria === 'marker') {
                         allRecords.push(reg);
@@ -982,6 +998,10 @@
                 });
             }
         });
+
+        if (allRecords.length === 0) {
+            return alert("No hay registros visibles en sus capas asignadas para exportar.");
+        }
 
         const tableRows = [];
         
@@ -1289,7 +1309,7 @@
     }
     
     function toggleSectorBodyManual(e, idSector) {
-        if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active')) return;
+        if(e.target.tagName === 'INPUT' || e.target.tagName === 'I' || e.target.classList.contains('radio-active') || e.target.tagName === 'SELECT') return;
         if(STORE[idSector].isExpanded === undefined) STORE[idSector].isExpanded = true;
         STORE[idSector].isExpanded = !STORE[idSector].isExpanded;
         actualizarUIYMapa();
@@ -1319,28 +1339,35 @@
         actualizarUIYMapa();
     }
 
+    function cambiarAsignacionCapa(idSector, valorVisibilidad) {
+        if(!STORE[idSector]) return;
+        STORE[idSector].visibleFor = valorVisibilidad;
+        actualizarUIYMapa();
+        alert("Permiso de capa actualizado en memoria.\nRecuerde hacer clic en 'GUARDAR NUBE' para aplicar los cambios.");
+    }
+
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
         contenedor.innerHTML = "";
         
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
-            const owner = sectorData.owner || 'ADMIN'; 
-
+            
             // ==========================================
-            // FILTRO ESTRICTO DE SEGURIDAD MULTIUSUARIO
+            // FILTRO ESTRICTO DE SEGURIDAD MULTIUSUARIO (MIGRADO A visibleFor)
             // ==========================================
-            if (CURRENT_ROLE === 'ADMIN') {
-                // Admin 1 ve sus propias capas y cualquier capa isMaster
-                if (owner !== 'ADMIN' && !sectorData.isMaster && owner !== 'SUPERADMIN') continue;
+            let canView = false;
+            if (CURRENT_ROLE === 'SUPERADMIN') {
+                if (window.superAdminViewFilter === 'ALL') canView = true;
+                else if (window.superAdminViewFilter === 'ADMIN' && (sectorData.visibleFor === 'ADMIN' || sectorData.visibleFor === 'ALL')) canView = true;
+                else if (window.superAdminViewFilter === 'ADMIN2' && (sectorData.visibleFor === 'ADMIN2' || sectorData.visibleFor === 'ALL')) canView = true;
+            } else if (CURRENT_ROLE === 'ADMIN') {
+                canView = (sectorData.visibleFor === 'ALL' || sectorData.visibleFor === 'ADMIN');
             } else if (CURRENT_ROLE === 'ADMIN2') {
-                // Admin 2 ve sus propias capas y cualquier capa isMaster
-                if (owner !== 'ADMIN2' && !sectorData.isMaster && owner !== 'SUPERADMIN') continue;
-            } else if (CURRENT_ROLE === 'SUPERADMIN') {
-                // Super Admin obedece al filtro de vista seleccionado
-                if (window.superAdminViewFilter === 'ADMIN' && owner !== 'ADMIN') continue;
-                if (window.superAdminViewFilter === 'ADMIN2' && owner !== 'ADMIN2') continue;
+                canView = (sectorData.visibleFor === 'ALL' || sectorData.visibleFor === 'ADMIN2');
             }
+
+            if(!canView) continue;
 
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
@@ -1412,6 +1439,13 @@
                     
                     <div class="sector-controls">
                         ${CURRENT_ROLE === 'SUPERADMIN' ? `
+                        <select style="font-size:9px; font-weight:bold; background:rgba(0,0,0,0.5); color:#a5b0bf; border:1px solid var(--border-color); border-radius:4px; padding:2px 4px; outline:none; cursor:pointer;" 
+                                onclick="event.stopPropagation();" 
+                                onchange="cambiarAsignacionCapa('${idSector}', this.value)">
+                            <option value="ALL" ${sectorData.visibleFor === 'ALL' ? 'selected' : ''}>👁️ AMBOS</option>
+                            <option value="ADMIN" ${sectorData.visibleFor === 'ADMIN' ? 'selected' : ''}>👁️ ADMIN 1</option>
+                            <option value="ADMIN2" ${sectorData.visibleFor === 'ADMIN2' ? 'selected' : ''}>👁️ ADMIN 2</option>
+                        </select>
                         <i class="fas ${sectorData.isMaster ? 'fa-lock' : 'fa-lock-open'}" 
                            title="${sectorData.isMaster ? 'Desbloquear Capa' : 'Bloquear Capa'}" 
                            style="color: ${sectorData.isMaster ? 'var(--cyan-neon)' : '#6e7681'}; cursor: pointer; font-size: 13px; transition: 0.2s;" 
@@ -1854,7 +1888,7 @@
         capasSectores[id] = new L.FeatureGroup();
         STORE[id] = { 
             nombreSector: nombre.toUpperCase(), 
-            owner: CURRENT_ROLE, 
+            visibleFor: CURRENT_ROLE === 'SUPERADMIN' ? 'ALL' : CURRENT_ROLE,
             visible: true, 
             isMaster: false,
             isExpanded: true,
@@ -1877,7 +1911,7 @@
         
         STORE[newId] = {
             nombreSector: nombre.toUpperCase(),
-            owner: CURRENT_ROLE,
+            visibleFor: CURRENT_ROLE === 'SUPERADMIN' ? sectorOriginal.visibleFor : CURRENT_ROLE,
             visible: true,
             isMaster: false, 
             isExpanded: true,
@@ -2072,8 +2106,13 @@
         const div = document.getElementById('ajustes-cuenta');
         if (div.style.display === 'none') {
             div.style.display = 'block';
-            document.getElementById('ajuste-meta').value = SYSTEM_AUTH.metaCenso || 1000;
-            document.getElementById('ajuste-user').value = CURRENT_ROLE === 'ADMIN2' ? SYSTEM_AUTH.userAdmin2 : SYSTEM_AUTH.userAdmin;
+            if (CURRENT_ROLE === 'ADMIN') {
+                document.getElementById('ajuste-meta').value = SYSTEM_AUTH.metaCensoAdmin1 || 1000;
+                document.getElementById('ajuste-user').value = SYSTEM_AUTH.userAdmin;
+            } else if (CURRENT_ROLE === 'ADMIN2') {
+                document.getElementById('ajuste-meta').value = SYSTEM_AUTH.metaCensoAdmin2 || 1000;
+                document.getElementById('ajuste-user').value = SYSTEM_AUTH.userAdmin2;
+            }
         } else {
             div.style.display = 'none';
         }
@@ -2104,8 +2143,14 @@
     function cambiarMetaCenso() {
         const val = parseInt(document.getElementById('ajuste-meta').value);
         if(isNaN(val) || val <= 0) return alert("Ingrese un número válido para la meta de censo.");
-        SYSTEM_AUTH.metaCenso = val;
-        alert("Meta actualizada a " + val + " exitosamente.\nGuardando en la Nube...");
+        
+        if (CURRENT_ROLE === 'ADMIN') {
+            SYSTEM_AUTH.metaCensoAdmin1 = val;
+        } else if (CURRENT_ROLE === 'ADMIN2') {
+            SYSTEM_AUTH.metaCensoAdmin2 = val;
+        }
+        
+        alert("Meta individual actualizada a " + val + " exitosamente.\nGuardando en la Nube...");
         guardarEnServidor();
     }
 
@@ -2151,7 +2196,6 @@
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
-        // Obtenemos el botón correcto asumiendo la posición
         const btn = document.querySelector('#ajustes-servidor button:nth-of-type(2)');
         const originalText = btn.innerText;
         btn.innerText = "VERIFICANDO...";
@@ -2242,7 +2286,12 @@
                 if (jsonParsed.passAdmin2 !== undefined) SYSTEM_AUTH.passAdmin2 = jsonParsed.passAdmin2;
                 if (jsonParsed.urlRaw !== undefined || jsonParsed.csvUrl !== undefined) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
                 if (jsonParsed.urlRaw2 !== undefined) SYSTEM_AUTH.urlRaw2 = jsonParsed.urlRaw2;
-                if (jsonParsed.metaCenso !== undefined) SYSTEM_AUTH.metaCenso = jsonParsed.metaCenso;
+                
+                // Carga de Metas Individuales
+                if (jsonParsed.metaCensoAdmin1 !== undefined) SYSTEM_AUTH.metaCensoAdmin1 = jsonParsed.metaCensoAdmin1;
+                if (jsonParsed.metaCensoAdmin2 !== undefined) SYSTEM_AUTH.metaCensoAdmin2 = jsonParsed.metaCensoAdmin2;
+                if (jsonParsed.metaCenso !== undefined && jsonParsed.metaCensoAdmin1 === undefined) SYSTEM_AUTH.metaCensoAdmin1 = jsonParsed.metaCenso;
+
                 if (jsonParsed.wordConfig !== undefined) SYSTEM_AUTH.wordConfig = jsonParsed.wordConfig;
                 
                 if (jsonParsed.token) {
@@ -2314,7 +2363,8 @@
                 passAdmin2: SYSTEM_AUTH.passAdmin2,
                 urlRaw: SYSTEM_AUTH.urlRaw,
                 urlRaw2: SYSTEM_AUTH.urlRaw2,
-                metaCenso: SYSTEM_AUTH.metaCenso,
+                metaCensoAdmin1: SYSTEM_AUTH.metaCensoAdmin1,
+                metaCensoAdmin2: SYSTEM_AUTH.metaCensoAdmin2,
                 token: SYSTEM_AUTH.token ? SYSTEM_AUTH.token.split('').reverse().join('') : '',
                 licenciaSGF: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
                 license: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
@@ -2403,9 +2453,17 @@
             const sec = datosCargados[idSector];
             capasSectores[idSector] = new L.FeatureGroup();
             
+            // Migración y compatibilidad hacia atrás
+            let assignedTo = sec.visibleFor;
+            if (!assignedTo) {
+                if (sec.owner === 'ADMIN2') assignedTo = 'ADMIN2';
+                else if (sec.owner === 'ADMIN') assignedTo = 'ADMIN';
+                else assignedTo = 'ALL';
+            }
+
             STORE[idSector] = {
                 nombreSector: sec.nombreSector,
-                owner: sec.owner || 'ADMIN',
+                visibleFor: assignedTo,
                 visible: sec.visible !== false,
                 isMaster: sec.isMaster !== false, 
                 visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
@@ -2567,7 +2625,7 @@
         capasSectores[idSector] = new L.FeatureGroup();
         STORE[idSector] = {
             nombreSector: nombreSector,
-            owner: window.tempImportOwner || CURRENT_ROLE,
+            visibleFor: window.tempImportOwner || 'ALL',
             visible: true,
             isMaster: true,
             isExpanded: true,
