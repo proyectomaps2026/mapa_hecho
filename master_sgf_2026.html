@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1221,18 +1222,32 @@
 
     mapa.on(L.Draw.Event.CREATED, (evento) => {
         const idFisico = L.stamp(evento.layer);
+        const esArea = (evento.layerType === 'polygon' || evento.layerType === 'rectangle');
         
+        let nombreDefecto = "NUEVO ESTABLECIMIENTO";
+        let estatusDefecto = "CENSO / NUEVO";
+        let colorInicial = DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
+
+        // MAGIA: Si es un cuadro/polígono, le creamos un estatus único (segundo submenú) 
+        // para que no se sume al "CENSO / NUEVO" existente y puedas colorearlo independiente.
+        if (esArea) {
+            const extUnica = idFisico.toString().slice(-4);
+            nombreDefecto = "BLOQUE " + extUnica;
+            estatusDefecto = "CUADRO " + extUnica;
+            
+            // Le asignamos el color cyan por defecto en la memoria para que el selector funcione
+            if (!STORE[capaActiva].coloresPorEstatus) STORE[capaActiva].coloresPorEstatus = {};
+            STORE[capaActiva].coloresPorEstatus[estatusDefecto] = colorInicial;
+        }
+
         if(evento.layer instanceof L.Marker) {
             if (!modoLecturaGlobal) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
-        } else if (evento.layer instanceof L.Polygon || evento.layer instanceof L.Rectangle) {
-            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
+        } else if (esArea) {
+            evento.layer.setStyle({ color: colorInicial, fillColor: colorInicial, fillOpacity: 0.2 });
             if (!modoLecturaGlobal) evento.layer.editing.enable();
             evento.layer.on('edit', () => actualizarUIYMapa());
         }
-
-        const esArea = (evento.layerType === 'polygon' || evento.layerType === 'rectangle');
-        const nombreDefecto = esArea ? "BLOQUE DE FISCALIZACIÓN" : "NUEVO ESTABLECIMIENTO";
 
         const nuevoRegistro = {
             idFisico: idFisico,
@@ -1246,7 +1261,7 @@
                 "Teléfono": "0414-0000000",
                 "Metros Cuadrados": "0 m2",
                 "Fecha Fiscalización": new Date().toISOString().split('T')[0],
-                "Estatus": "CENSO / NUEVO",
+                "Estatus": estatusDefecto,
                 "Link Fotografía": ""
             },
             camposOcultos: []
