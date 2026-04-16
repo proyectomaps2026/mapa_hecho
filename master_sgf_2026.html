@@ -437,9 +437,12 @@
             <i class="fas fa-file-word" style="color: #2b579a; margin-right: 8px;"></i> REPORTE WORD
         </button>
 
-        <!-- BOTÓN EXCLUSIVO SUPER ADMIN WOLGFAN -->
-        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW desde GitHub" onclick="cargarRawCSV()" style="display:none; width: auto; padding: 0 20px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
-            <i class="fas fa-download" style="margin-right: 8px;"></i> CARGAR RAW (NUBE)
+        <!-- BOTONES EXCLUSIVOS SUPER ADMIN WOLGFAN -->
+        <button class="btn tool-btn" id="btn-cargar-raw" title="Cargar RAW (Admin 1)" onclick="cargarRawCSV(1)" style="display:none; width: auto; padding: 0 10px; font-size: 12px; font-weight: 900; color: white; background: #8e44ad;">
+            <i class="fas fa-download"></i> RAW 1
+        </button>
+        <button class="btn tool-btn" id="btn-cargar-raw-2" title="Cargar RAW (Admin 2)" onclick="cargarRawCSV(2)" style="display:none; width: auto; padding: 0 10px; font-size: 12px; font-weight: 900; color: white; background: #e67e22;">
+            <i class="fas fa-download"></i> RAW 2
         </button>
 
         <!-- BOTÓN GUARDAR NUBE (GITHUB API) -->
@@ -472,13 +475,22 @@
     <div class="layers-container" id="arbol-datos">
         </div>
     
-    <!-- MÓDULO DE CAMBIO DE CLAVE EN SIDEBAR -->
+    <!-- MÓDULO DE CAMBIO DE CLAVE Y METAS EN SIDEBAR -->
     <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
-        <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="document.getElementById('ajustes-cuenta').style.display = document.getElementById('ajustes-cuenta').style.display === 'none' ? 'block' : 'none'">
+        <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleAjustesCuenta()">
             <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
+            <!-- SECCION: META DE CENSO DINAMICA -->
+            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">META DINÁMICA DE CENSADOS</label>
+            <input type="number" id="ajuste-meta" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Meta (Ej. 1000)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 15px; color: var(--cyan-neon); border-color: var(--cyan-neon);" onclick="cambiarMetaCenso()"><i class="fas fa-bullseye"></i> GUARDAR META DE CENSO</button>
+            
+            <hr style="border-top: 1px solid var(--border-color); margin: 10px 0;">
+
+            <!-- SECCION: CREDENCIALES -->
+            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">ACTUALIZAR MIS CREDENCIALES</label>
             <input type="text" id="ajuste-user" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nuevo Usuario">
             <input type="password" id="ajuste-pass" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Nueva Clave">
             <button class="btn btn-save" style="width: 100%; padding: 8px; font-size: 10px;" onclick="cambiarCredenciales()">ACTUALIZAR Y GUARDAR NUBE</button>
@@ -497,8 +509,12 @@
             <input type="password" id="ajuste-repo-licencia" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Licencia SGF Maestra">
             <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px;" onclick="verificarYGuardarLicenciaMaestra()">ACTIVAR LICENCIA MAESTRA</button>
             
-            <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (CSV)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URL DEL RAW</button>
+            <input type="text" id="ajuste-repo-urlraw" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 4px;" placeholder="URL del RAW (Admin 1)">
+            <input type="text" id="ajuste-repo-urlraw2" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="URL del RAW (Admin 2)">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URLs RAW</button>
+
+            <hr style="border-top: 1px solid var(--border-color); margin: 15px 0;">
+            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; color: var(--color-vencida); border-color: var(--color-vencida);" onclick="resetearClavesAdmins()"><i class="fas fa-undo"></i> RESETEAR CLAVES A DEFAULT</button>
         </div>
     </div>
 
@@ -534,20 +550,39 @@
     document.addEventListener('contextmenu', e => e.preventDefault());
     
     document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I') || (e.ctrlKey && e.key === 'U')) {
+        if (e.key === 'F12' || 
+           (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+           (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'P'))) {
             e.preventDefault();
+            bloquearPantallaInspeccion();
         }
     });
 
+    function bloquearPantallaInspeccion() {
+        document.getElementById('map').style.display = 'none';
+        document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+    }
+
+    // Detector de Consola (Ancho/Alto)
     setInterval(function() {
         const widthThreshold = window.outerWidth - window.innerWidth > 160;
         const heightThreshold = window.outerHeight - window.innerHeight > 160;
         if(widthThreshold || heightThreshold) {
             console.clear();
-            document.getElementById('map').style.display = 'none';
-            document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+            bloquearPantallaInspeccion();
         }
     }, 1000);
+
+    // Debugger Loop (Crashea la pestaña Sources si intentan inspeccionar el código)
+    setInterval(() => {
+        let inicio = performance.now();
+        debugger; 
+        let fin = performance.now();
+        if (fin - inicio > 100) {
+            document.body.innerHTML = '';
+            window.location.replace("about:blank");
+        }
+    }, 500);
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -574,12 +609,16 @@
     let SYSTEM_AUTH = { 
         userAdmin: 'admin', 
         passAdmin: 'admin', 
+        userAdmin2: 'admin2', 
+        passAdmin2: 'admin2',
         urlRaw: '', 
+        urlRaw2: '',
+        metaCenso: 1000,
         token: '', 
         licenciaSGF: '',
         wordConfig: { columnas: ['Contribuyente', 'RIF', 'Estatus', 'Dirección'] }
     }; 
-    let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN'
+    let CURRENT_ROLE = null; // 'SUPERADMIN' | 'ADMIN' | 'ADMIN2'
     let CHECK_LICENSE_INTERVAL = null;
 
     // PROTOCOLO PORTABILIDAD TOTAL: Carga inicial de config.json
@@ -589,10 +628,14 @@
             if (res.ok) {
                 const config = await res.json();
                 
-                if (config.userAdmin) SYSTEM_AUTH.userAdmin = config.userAdmin;
-                if (config.passAdmin) SYSTEM_AUTH.passAdmin = config.passAdmin;
-                if (config.urlRaw || config.csvUrl) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
-                if (config.wordConfig) SYSTEM_AUTH.wordConfig = config.wordConfig;
+                if (config.userAdmin !== undefined) SYSTEM_AUTH.userAdmin = config.userAdmin;
+                if (config.passAdmin !== undefined) SYSTEM_AUTH.passAdmin = config.passAdmin;
+                if (config.userAdmin2 !== undefined) SYSTEM_AUTH.userAdmin2 = config.userAdmin2;
+                if (config.passAdmin2 !== undefined) SYSTEM_AUTH.passAdmin2 = config.passAdmin2;
+                if (config.urlRaw !== undefined || config.csvUrl !== undefined) SYSTEM_AUTH.urlRaw = config.urlRaw || config.csvUrl;
+                if (config.urlRaw2 !== undefined) SYSTEM_AUTH.urlRaw2 = config.urlRaw2;
+                if (config.metaCenso !== undefined) SYSTEM_AUTH.metaCenso = config.metaCenso;
+                if (config.wordConfig !== undefined) SYSTEM_AUTH.wordConfig = config.wordConfig;
                 
                 if (config.token) {
                     SYSTEM_AUTH.token = config.token.startsWith('ghp_') ? config.token : config.token.split('').reverse().join('');
@@ -695,10 +738,9 @@
             document.getElementById('panel-superadmin').style.display = 'block';
             
             const btnRaw = document.getElementById('btn-cargar-raw');
-            if(btnRaw) {
-                btnRaw.style.display = 'flex';
-                btnRaw.disabled = false;
-            }
+            const btnRaw2 = document.getElementById('btn-cargar-raw-2');
+            if(btnRaw) { btnRaw.style.display = 'flex'; btnRaw.disabled = false; }
+            if(btnRaw2) { btnRaw2.style.display = 'flex'; btnRaw2.disabled = false; }
             
             const panelAdmin = document.getElementById('panel-admin-licencia');
             if(panelAdmin) panelAdmin.remove();
@@ -715,13 +757,35 @@
 
         await cargarDatosNube();
 
+        // COMPROBACIÓN ADMIN 1
         if (user === SYSTEM_AUTH.userAdmin && pass === SYSTEM_AUTH.passAdmin) {
             CURRENT_ROLE = 'ADMIN';
-            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA';
+            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA 1';
             document.getElementById('panel-admin-licencia').style.display = 'block';
             
             const btnRaw = document.getElementById('btn-cargar-raw');
+            const btnRaw2 = document.getElementById('btn-cargar-raw-2');
             if(btnRaw) btnRaw.remove();
+            if(btnRaw2) btnRaw2.remove();
+            const pnlSup = document.getElementById('panel-superadmin');
+            if(pnlSup) pnlSup.remove();
+
+            document.getElementById('login-overlay').style.display = 'none';
+            actualizarUIYMapa();
+            iniciarCicloLicenciaAdmin();
+            return;
+        }
+
+        // COMPROBACIÓN ADMIN 2
+        if (user === SYSTEM_AUTH.userAdmin2 && pass === SYSTEM_AUTH.passAdmin2) {
+            CURRENT_ROLE = 'ADMIN2';
+            document.getElementById('rol-indicador').innerHTML = '<i class="fas fa-user-shield"></i> SESIÓN: ADMIN HACIENDA 2';
+            document.getElementById('panel-admin-licencia').style.display = 'block';
+            
+            const btnRaw = document.getElementById('btn-cargar-raw');
+            const btnRaw2 = document.getElementById('btn-cargar-raw-2');
+            if(btnRaw) btnRaw.remove();
+            if(btnRaw2) btnRaw2.remove();
             const pnlSup = document.getElementById('panel-superadmin');
             if(pnlSup) pnlSup.remove();
 
@@ -747,7 +811,7 @@
     }
 
     function validarLicenciaYBloqueo() {
-        if(CURRENT_ROLE !== 'ADMIN') return;
+        if(CURRENT_ROLE !== 'ADMIN' && CURRENT_ROLE !== 'ADMIN2') return;
         
         const lic = obtenerCadenaLicencia();
         const est = analizarLicenciaSGF(lic);
@@ -1233,6 +1297,11 @@
         
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
+            const owner = sectorData.owner || 'ADMIN'; // Compatibilidad retroactiva
+
+            // FILTRO DE SEGURIDAD MULTIUSUARIO
+            if (CURRENT_ROLE === 'ADMIN2' && owner !== 'ADMIN2') continue;
+            if (CURRENT_ROLE === 'ADMIN' && owner === 'ADMIN2') continue;
 
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
@@ -1746,6 +1815,7 @@
         capasSectores[id] = new L.FeatureGroup();
         STORE[id] = { 
             nombreSector: nombre.toUpperCase(), 
+            owner: CURRENT_ROLE, 
             visible: true, 
             isMaster: false,
             isExpanded: true,
@@ -1768,6 +1838,7 @@
         
         STORE[newId] = {
             nombreSector: nombre.toUpperCase(),
+            owner: CURRENT_ROLE,
             visible: true,
             isMaster: false, 
             isExpanded: true,
@@ -1958,20 +2029,54 @@
         document.getElementById('login-pass').value = '';
     }
 
+    function toggleAjustesCuenta() {
+        const div = document.getElementById('ajustes-cuenta');
+        if (div.style.display === 'none') {
+            div.style.display = 'block';
+            document.getElementById('ajuste-meta').value = SYSTEM_AUTH.metaCenso || 1000;
+            document.getElementById('ajuste-user').value = CURRENT_ROLE === 'ADMIN2' ? SYSTEM_AUTH.userAdmin2 : SYSTEM_AUTH.userAdmin;
+        } else {
+            div.style.display = 'none';
+        }
+    }
+
     function cambiarCredenciales() {
         const nu = document.getElementById('ajuste-user').value.trim();
         const np = document.getElementById('ajuste-pass').value.trim();
         
         if(!nu || !np) return alert("Ingrese un usuario y una clave válidos.");
-        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de la cuenta 'admin'?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
+        if(!confirm("⚠️ ¿Está seguro de cambiar las credenciales de su cuenta?\nDeberá usar estas nuevas credenciales la próxima vez.")) return;
         
-        SYSTEM_AUTH.userAdmin = nu;
-        SYSTEM_AUTH.passAdmin = np;
+        if(CURRENT_ROLE === 'ADMIN2') {
+            SYSTEM_AUTH.userAdmin2 = nu;
+            SYSTEM_AUTH.passAdmin2 = np;
+        } else {
+            SYSTEM_AUTH.userAdmin = nu;
+            SYSTEM_AUTH.passAdmin = np;
+        }
         
         document.getElementById('ajuste-user').value = "";
         document.getElementById('ajuste-pass').value = "";
         
         alert("Credenciales actualizadas en memoria.\nSincronizando con la Nube...");
+        guardarEnServidor();
+    }
+
+    function cambiarMetaCenso() {
+        const val = parseInt(document.getElementById('ajuste-meta').value);
+        if(isNaN(val) || val <= 0) return alert("Ingrese un número válido para la meta de censo.");
+        SYSTEM_AUTH.metaCenso = val;
+        alert("Meta actualizada a " + val + " exitosamente.\nGuardando en la Nube...");
+        guardarEnServidor();
+    }
+
+    function resetearClavesAdmins() {
+        if(!confirm("⚠️ ALERTA: ¿Desea resetear las contraseñas de admin 1 y admin 2 a sus valores por defecto ('admin' y 'admin2')?")) return;
+        SYSTEM_AUTH.userAdmin = 'admin';
+        SYSTEM_AUTH.passAdmin = 'admin';
+        SYSTEM_AUTH.userAdmin2 = 'admin2';
+        SYSTEM_AUTH.passAdmin2 = 'admin2';
+        alert("Claves reseteadas en memoria.\nGuardando en la Nube...");
         guardarEnServidor();
     }
     
@@ -1981,6 +2086,7 @@
             div.style.display = 'block';
             document.getElementById('ajuste-repo-licencia').value = SYSTEM_AUTH.licenciaSGF || '';
             document.getElementById('ajuste-repo-urlraw').value = SYSTEM_AUTH.urlRaw || '';
+            document.getElementById('ajuste-repo-urlraw2').value = SYSTEM_AUTH.urlRaw2 || '';
         } else {
             div.style.display = 'none';
         }
@@ -2001,7 +2107,7 @@
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
-        const btn = document.querySelector('#ajustes-servidor button');
+        const btn = document.querySelector('#ajustes-servidor button:nth-child(3)');
         const originalText = btn.innerText;
         btn.innerText = "VERIFICANDO...";
         btn.disabled = true;
@@ -2037,17 +2143,19 @@
     }
 
     async function guardarUrlRawMaestra() {
-        const rawUrlRaw = document.getElementById('ajuste-repo-urlraw').value.trim();
-        if(!rawUrlRaw) return alert("Ingrese la URL del RAW (CSV).");
+        const raw1 = document.getElementById('ajuste-repo-urlraw').value.trim();
+        const raw2 = document.getElementById('ajuste-repo-urlraw2').value.trim();
+        if(!raw1 && !raw2) return alert("Ingrese al menos una URL del RAW (CSV).");
 
         try {
-            SYSTEM_AUTH.urlRaw = rawUrlRaw;
-            alert("✅ URL del RAW actualizada. Sincronizando con la Nube...");
+            SYSTEM_AUTH.urlRaw = raw1;
+            SYSTEM_AUTH.urlRaw2 = raw2;
+            alert("✅ URLs del RAW actualizadas. Sincronizando con la Nube...");
             await guardarEnServidor();
             await cargarDatosNube();
         } catch(e) {
             console.error(e);
-            alert(`❌ Error al guardar la URL: ${e.message}`);
+            alert(`❌ Error al guardar las URLs: ${e.message}`);
         }
     }
     
@@ -2083,10 +2191,14 @@
                 const revStr = s => (s && s.includes('SGF-')) ? s.split('').reverse().join('') : s;
                 const revTk = s => (s && s.startsWith('ghp_')) ? s : (s ? s.split('').reverse().join('') : s);
 
-                if (jsonParsed.userAdmin) SYSTEM_AUTH.userAdmin = jsonParsed.userAdmin;
-                if (jsonParsed.passAdmin) SYSTEM_AUTH.passAdmin = jsonParsed.passAdmin;
-                if (jsonParsed.urlRaw || jsonParsed.csvUrl) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
-                if (jsonParsed.wordConfig) SYSTEM_AUTH.wordConfig = jsonParsed.wordConfig;
+                if (jsonParsed.userAdmin !== undefined) SYSTEM_AUTH.userAdmin = jsonParsed.userAdmin;
+                if (jsonParsed.passAdmin !== undefined) SYSTEM_AUTH.passAdmin = jsonParsed.passAdmin;
+                if (jsonParsed.userAdmin2 !== undefined) SYSTEM_AUTH.userAdmin2 = jsonParsed.userAdmin2;
+                if (jsonParsed.passAdmin2 !== undefined) SYSTEM_AUTH.passAdmin2 = jsonParsed.passAdmin2;
+                if (jsonParsed.urlRaw !== undefined || jsonParsed.csvUrl !== undefined) SYSTEM_AUTH.urlRaw = jsonParsed.urlRaw || jsonParsed.csvUrl;
+                if (jsonParsed.urlRaw2 !== undefined) SYSTEM_AUTH.urlRaw2 = jsonParsed.urlRaw2;
+                if (jsonParsed.metaCenso !== undefined) SYSTEM_AUTH.metaCenso = jsonParsed.metaCenso;
+                if (jsonParsed.wordConfig !== undefined) SYSTEM_AUTH.wordConfig = jsonParsed.wordConfig;
                 
                 if (jsonParsed.token) {
                     const t = jsonParsed.token;
@@ -2153,7 +2265,11 @@
                 ...currentCloudData, 
                 userAdmin: SYSTEM_AUTH.userAdmin,
                 passAdmin: SYSTEM_AUTH.passAdmin,
+                userAdmin2: SYSTEM_AUTH.userAdmin2,
+                passAdmin2: SYSTEM_AUTH.passAdmin2,
                 urlRaw: SYSTEM_AUTH.urlRaw,
+                urlRaw2: SYSTEM_AUTH.urlRaw2,
+                metaCenso: SYSTEM_AUTH.metaCenso,
                 token: SYSTEM_AUTH.token ? SYSTEM_AUTH.token.split('').reverse().join('') : '',
                 licenciaSGF: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
                 license: SYSTEM_AUTH.licenciaSGF ? SYSTEM_AUTH.licenciaSGF.split('').reverse().join('') : '',
@@ -2204,7 +2320,9 @@
             await cargarDatosNube();
             if(CURRENT_ROLE === 'SUPERADMIN') {
                 const btnRaw = document.getElementById('btn-cargar-raw');
+                const btnRaw2 = document.getElementById('btn-cargar-raw-2');
                 if(btnRaw) btnRaw.style.display = 'flex';
+                if(btnRaw2) btnRaw2.style.display = 'flex';
             }
         } catch(e) {
             console.error("Sincronización Fallida:", e);
@@ -2242,6 +2360,7 @@
             
             STORE[idSector] = {
                 nombreSector: sec.nombreSector,
+                owner: sec.owner || 'ADMIN',
                 visible: sec.visible !== false,
                 isMaster: sec.isMaster !== false, 
                 visibilidadPorEstatus: sec.visibilidadPorEstatus || {},
@@ -2321,17 +2440,21 @@
     let RAW_CSV_DATA = [];
     let RAW_CSV_HEADERS = [];
 
-    async function cargarRawCSV() {
-        if(!SYSTEM_AUTH.urlRaw) return alert("❌ No se ha configurado la URL del RAW (CSV) en los Ajustes de Súper Admin.");
+    async function cargarRawCSV(adminId = 1) {
+        const urlStr = adminId === 2 ? SYSTEM_AUTH.urlRaw2 : SYSTEM_AUTH.urlRaw;
+        window.tempImportOwner = adminId === 2 ? 'ADMIN2' : 'ADMIN';
+
+        if(!urlStr) return alert(`❌ No se ha configurado la URL del RAW ${adminId} en los Ajustes de Súper Admin.`);
         
-        const btn = document.getElementById('btn-cargar-raw');
+        const btnId = adminId === 2 ? 'btn-cargar-raw-2' : 'btn-cargar-raw';
+        const btn = document.getElementById(btnId);
         const originalText = btn.innerHTML;
         btn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> CARGANDO...";
         btn.disabled = true;
 
         try {
-            const res = await fetch(`${SYSTEM_AUTH.urlRaw}?t=${Date.now()}`);
-            if(!res.ok) throw new Error("No se pudo obtener el archivo CSV desde GitHub.");
+            const res = await fetch(`${urlStr}?t=${Date.now()}`);
+            if(!res.ok) throw new Error(`No se pudo obtener el archivo CSV RAW ${adminId} desde GitHub.`);
             
             const arrayBuffer = await res.arrayBuffer();
             const texto = new TextDecoder('utf-8').decode(arrayBuffer);
@@ -2399,6 +2522,7 @@
         capasSectores[idSector] = new L.FeatureGroup();
         STORE[idSector] = {
             nombreSector: nombreSector,
+            owner: window.tempImportOwner || CURRENT_ROLE,
             visible: true,
             isMaster: true,
             isExpanded: true,
