@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -562,17 +561,17 @@
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V5)
+       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V6)
        ========================================================================== */
     (function() {
         let bloqueado = false;
         
-        // Función centralizada para bloquear la pantalla totalmente en blanco/negro (Sin pausar)
+        // Función centralizada para destruir la página y dejarla en blanco total
         function bloquearPantallaInspeccion() {
             if(bloqueado) return;
             bloqueado = true;
-            document.head.innerHTML = '<style>body{margin:0;padding:0;background:#000;overflow:hidden;}</style>';
-            document.body.innerHTML = '<div style="display:flex; height:100vh; width:100vw; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px; position:fixed; top:0; left:0; z-index:999999999;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+            document.documentElement.innerHTML = '';
+            window.location.replace("about:blank");
         }
 
         // 1. Bloqueo de Teclado
@@ -601,7 +600,7 @@
             }
         }, 250);
 
-        // 4. Detección silenciosa de consola sin usar "debugger" (obligatorio bloqueo directo)
+        // 4. Detección silenciosa de consola sin usar "debugger"
         const devtools = new Image();
         Object.defineProperty(devtools, 'id', {
             get: function() {
@@ -1510,7 +1509,7 @@
                                    title="Seleccionar todos">
                             <i class="fas fa-trash-alt sector-trash" 
                                style="font-size: 13px; margin: 0;"
-                               onclick="eliminarSeleccionadosEnCat('${idSector}', '${idContenedor}', '${estatus}')" 
+                               onclick="eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
                                title="Eliminar seleccionados"></i>
                         </div>` : ''}
                     </div>
