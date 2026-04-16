@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1228,16 +1227,14 @@
         let estatusDefecto = "CENSO / NUEVO";
         let colorInicial = DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
 
-        // MAGIA: Si es un cuadro/polígono, le creamos un estatus único (segundo submenú) 
-        // para que no se sume al "CENSO / NUEVO" existente y puedas colorearlo independiente.
         if (esArea) {
-            const extUnica = idFisico.toString().slice(-4);
-            nombreDefecto = "BLOQUE " + extUnica;
-            estatusDefecto = "CUADRO " + extUnica;
+            nombreDefecto = "CUADRO";
+            estatusDefecto = "CUADRO";
             
-            // Le asignamos el color cyan por defecto en la memoria para que el selector funcione
             if (!STORE[capaActiva].coloresPorEstatus) STORE[capaActiva].coloresPorEstatus = {};
-            STORE[capaActiva].coloresPorEstatus[estatusDefecto] = colorInicial;
+            if (!STORE[capaActiva].coloresPorEstatus[estatusDefecto]) {
+                STORE[capaActiva].coloresPorEstatus[estatusDefecto] = colorInicial;
+            }
         }
 
         if(evento.layer instanceof L.Marker) {
@@ -1577,7 +1574,7 @@
     }
 
     /* ==========================================================================
-       FASE 3: DOBLE VISTA EN POPUP
+       FASE 3: DOBLE VISTA EN POPUP UNIFICADA (PUNTOS Y POLIGONOS)
        ========================================================================== */
     function vincularEventosCapa(capaFisica, idSector, idFisico) {
         capaFisica.on('click', () => {
@@ -1635,157 +1632,136 @@
     function generarContenidoHTMLPopup(idSector, idFisico, forzarEdicion = false) {
         const sectorData = STORE[idSector];
         const registro = sectorData.registros.find(r => String(r.idFisico) === String(idFisico));
-        let html = `<div class="pop-wrapper">`;
+        
+        const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+        
+        const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
+        const colorFinal = registro.colorPersonalizado || colorSector;
+        
+        const imgUrl = registro.datosGenerales["Link Fotografía"];
+        const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
 
+        let html = `<div class="pop-wrapper">`;
+        
+        // COVER
+        html += `
+        <div class="pop-cover">
+            ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" style="cursor: zoom-in; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="abrirVisorImagen('${imgUrl}')" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas ${registro.tipoGeometria === 'marker' ? 'fa-store' : 'fa-draw-polygon'}" style="font-size: 50px; color: #333;"></i>`}
+            <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
+        </div>
+        <div class="pop-content">`;
+
+        // VIEW MODE
+        html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
+        
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(registro.capaLeaflet);
-            
             let listaEstatusHTML = '';
             const claves = Object.keys(rep.porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
             
             claves.forEach(est => {
                 const cantidad = rep.porEstatus[est];
-                const confEst = DICCIONARIO_ESTATUS[est] || { color: '#6e7681' };
-                let colorBase = confEst.color;
-                
+                const cEst = DICCIONARIO_ESTATUS[est] || { color: '#6e7681' };
+                let cBase = cEst.color;
                 listaEstatusHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eaeaea;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #eaeaea;">
                     <span style="font-weight: 800; color: #111; font-size: 11px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-                        <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${colorBase}; box-shadow: 0 0 4px rgba(0,0,0,0.4);"></span>
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${cBase};"></span>
                         ${est}
                     </span>
-                    <span style="font-weight: 900; color: #0056b3; font-size: 14px;">${cantidad}</span>
+                    <span style="font-weight: 900; color: #0056b3; font-size: 12px;">${cantidad}</span>
                 </div>`;
             });
 
             html += `
-            <div style="padding: 20px; background: #fff;">
-                <h3 style="margin: 0 0 5px; font-size: 13px; font-weight: 900; color: #111; border-bottom: 2px solid var(--color-temporal); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
-                    <i class="fas fa-chart-pie" style="color: var(--color-temporal); margin-right: 5px;"></i> RESUMEN DEL ÁREA
-                </h3>
-                
-                <div style="font-size: 13px; font-weight: 900; color: #0056b3; text-align: center; margin-bottom: 15px; text-transform: uppercase; word-break: break-word;">
-                    ${registro.datosGenerales["Contribuyente"] || 'BLOQUE DE FISCALIZACIÓN'}
+            <div style="background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                <h3 style="margin: 0 0 10px; font-size: 11px; font-weight: 900; color: #111; text-transform: uppercase; text-align: center;"><i class="fas fa-chart-pie" style="color: var(--color-temporal);"></i> RESUMEN DEL ÁREA</h3>
+                <div style="max-height: 150px; overflow-y: auto; margin-bottom: 10px;">
+                    ${listaEstatusHTML || '<div style="color: #888; font-size: 10px; text-align: center;">No hay contribuyentes aquí.</div>'}
                 </div>
-                
-                <div style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
-                    ${listaEstatusHTML || '<div style="color: #888; font-size: 11px; font-weight: bold; text-align: center; padding: 15px 0;">No hay contribuyentes dentro de esta área.</div>'}
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid #d0d7de; padding-top: 8px;">
+                    <span style="font-weight: 900; color: #656d76; font-size: 10px;">TOTAL INTERNO</span>
+                    <span style="font-weight: 900; color: var(--color-vencida); font-size: 14px;">${rep.total}</span>
                 </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #f6f8fa; padding: 12px 15px; border-radius: 8px; border: 1px solid #d0d7de;">
-                    <span style="font-weight: 900; color: #656d76; font-size: 11px; text-transform: uppercase;">TOTAL REGISTROS</span>
-                    <span style="font-weight: 900; color: var(--color-vencida); font-size: 18px;">${rep.total}</span>
-                </div>`;
-                
-            if(!modoLecturaGlobal && (!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN')) {
-                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')"><i class="fas fa-trash"></i> ELIMINAR ÁREA</button>`;
-            }
-                
-            html += `</div>`;
-        } 
-        else {
-            const estActual = registro.datosGenerales["Estatus"];
-            const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-            
-            const colorSector = (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
-            const colorFinal = registro.colorPersonalizado || colorSector;
-            
-            const imgUrl = registro.datosGenerales["Link Fotografía"];
-            const isFotoOculta = registro.camposOcultos.includes("Link Fotografía");
+            </div>`;
+        }
+
+        for(let clave in registro.datosGenerales) {
+            if(clave === "Estatus" || clave === "Link Fotografía") continue;
+            const isOculto = registro.camposOcultos.includes(clave);
+            if(isOculto) continue; 
             
             html += `
-            <div class="pop-cover">
-                ${(!isFotoOculta && imgUrl && imgUrl.length > 10) ? `<img src="${imgUrl}" style="cursor: zoom-in; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" onclick="abrirVisorImagen('${imgUrl}')" onerror="this.src='https://via.placeholder.com/400x160/111/fff?text=IMAGEN+ROTA'">` : `<i class="fas fa-store" style="font-size: 50px; color: #333;"></i>`}
-                <div class="pop-badge" id="badge-estatus-${idFisico}" style="background: ${colorFinal};">${estActual}</div>
-            </div>
-            <div class="pop-content">`;
-
-            html += `<div id="view-mode-${idFisico}" style="display: ${forzarEdicion ? 'none' : 'block'};">`;
-            for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                const isOculto = registro.camposOcultos.includes(clave);
-                if(isOculto) continue; 
-                
-                html += `
-                <div class="read-field">
-                    <span class="read-label">${clave}</span>
-                    <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
-                </div>`;
-            }
-            
-            if(!modoLecturaGlobal && (!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN')) {
-                html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
-            }
-            html += `</div>`;
-
-            html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
-            for(let clave in registro.datosGenerales) {
-                if(clave === "Estatus" || clave === "Link Fotografía") continue;
-                const isOculto = registro.camposOcultos.includes(clave);
-                
-                html += `
-                <div class="form-group">
-                    <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
-                    <span class="form-label">${clave}</span>
-                    <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
-                           ${isOculto ? 'type="password"' : ''} 
-                           onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;">
-                </div>`;
-            }
-
-            html += `
-            <div class="form-group">
-                <span class="form-label" style="color: #656d76;">ESTADO FISCAL</span>
-                <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">
-                    ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <span class="form-label" style="color: #656d76;">COLOR DE MARCADOR (PERSONALIZADO)</span>
-                <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
-            </div>
-
-            <div class="form-group">
-                <i class="fas ${isFotoOculta ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', 'Link Fotografía')"></i>
-                <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
-                <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
-            </div>
-            
-            <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
-            
-            if(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') {
-                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')"><i class="fas fa-trash"></i> ELIMINAR REGISTRO</button>`;
-            }
-            
-            html += `</div>`;
+            <div class="read-field">
+                <span class="read-label">${clave}</span>
+                <div class="read-value" id="view-val-${idFisico}-${clave.replace(/\s/g,'')}">${registro.datosGenerales[clave] || '-'}</div>
+            </div>`;
         }
         
+        if(!modoLecturaGlobal && (!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN')) {
+            html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')"><i class="fas fa-pen"></i> MODO EDICIÓN</button>`;
+        }
         html += `</div>`;
+
+        // EDIT MODE
+        html += `<div id="edit-mode-${idFisico}" style="display: ${forzarEdicion ? 'block' : 'none'};">`;
+        for(let clave in registro.datosGenerales) {
+            if(clave === "Estatus" || clave === "Link Fotografía") continue;
+            const isOculto = registro.camposOcultos.includes(clave);
+            
+            html += `
+            <div class="form-group">
+                <i class="fas ${isOculto ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', '${clave}')"></i>
+                <span class="form-label">${clave}</span>
+                <input type="text" class="form-input" value="${registro.datosGenerales[clave]}" 
+                       ${isOculto ? 'type="password"' : ''} 
+                       onchange="actualizarDatoCampo('${idSector}', '${idFisico}', '${clave}', this.value); document.getElementById('view-val-${idFisico}-${clave.replace(/\s/g,'')}').innerText = this.value;">
+            </div>`;
+        }
+
+        html += `
+        <div class="form-group">
+            <span class="form-label" style="color: #656d76;">ESTADO FISCAL</span>
+            <select class="form-select" onchange="cambiarEstatusFisico('${idSector}', '${idFisico}', this.value)">
+                ${Object.keys(DICCIONARIO_ESTATUS).map(k => `<option value="${k}" ${estActual === k ? 'selected' : ''}>${k}</option>`).join('')}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <span class="form-label" style="color: #656d76;">COLOR DE MARCADOR/ÁREA</span>
+            <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
+        </div>
+
+        <div class="form-group">
+            <i class="fas ${isFotoOculta ? 'fa-eye-slash is-hidden' : 'fa-eye'} eye-btn" onclick="ejecutarToggleOjo(event, '${idSector}', '${idFisico}', 'Link Fotografía')"></i>
+            <span class="form-label">URL FOTOGRAFÍA O DRIVE</span>
+            <input type="password" class="form-input input-oculto" value="${imgUrl || ''}" onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Link Fotografía', this.value)">
+        </div>
+        
+        <button class="btn-popup-action btn-save" onclick="toggleModoPopup('${idFisico}', 'view')"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
+        
+        if(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') {
+            html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')"><i class="fas fa-trash"></i> ELIMINAR REGISTRO</button>`;
+        }
+        
+        html += `</div>`; 
+        html += `</div></div>`;
         return html;
     }
 
     function cambiarColorPin(idSector, idFisico, colorHex) {
         if(modoLecturaGlobal) return;
-        const regOrigen = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!regOrigen) return;
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!reg) return;
 
-        const estatusTarget = regOrigen.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        reg.colorPersonalizado = colorHex;
 
-        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
-
-        STORE[idSector].registros.forEach(reg => {
-            const estActual = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-            if (estActual === estatusTarget) {
-                reg.colorPersonalizado = colorHex;
-                if (reg.tipoGeometria === 'marker') {
-                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-                }
-            }
-        });
+        if (reg.tipoGeometria === 'marker') {
+            reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+            reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+        }
 
         actualizarUIYMapa();
         const badge = document.getElementById(`badge-estatus-${idFisico}`);
