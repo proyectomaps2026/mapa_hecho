@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -475,19 +476,20 @@
     <div class="layers-container" id="arbol-datos">
         </div>
     
-    <!-- MÓDULO DE CAMBIO DE CLAVE Y METAS EN SIDEBAR -->
-    <div style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
+    <!-- MÓDULO DE CAMBIO DE CLAVE Y METAS EN SIDEBAR (Solo Admins) -->
+    <div id="panel-ajustes-cuenta" style="padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.3);">
         <div style="font-size: 11px; font-weight: 800; color: var(--cyan-neon); margin-bottom: 10px; cursor: pointer; display: flex; justify-content: space-between;" onclick="toggleAjustesCuenta()">
             <span><i class="fas fa-cog"></i> AJUSTES DE CUENTA</span>
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-cuenta" style="display: none; padding-top: 5px;">
             <!-- SECCION: META DE CENSO DINAMICA -->
-            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">META DINÁMICA DE CENSADOS</label>
-            <input type="number" id="ajuste-meta" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Meta (Ej. 1000)">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 15px; color: var(--cyan-neon); border-color: var(--cyan-neon);" onclick="cambiarMetaCenso()"><i class="fas fa-bullseye"></i> GUARDAR META DE CENSO</button>
-            
-            <hr style="border-top: 1px solid var(--border-color); margin: 10px 0;">
+            <div id="seccion-meta-censo">
+                <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">META DINÁMICA DE CENSADOS</label>
+                <input type="number" id="ajuste-meta" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Meta (Ej. 1000)">
+                <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 15px; color: var(--cyan-neon); border-color: var(--cyan-neon);" onclick="cambiarMetaCenso()"><i class="fas fa-bullseye"></i> GUARDAR META DE CENSO</button>
+                <hr style="border-top: 1px solid var(--border-color); margin: 10px 0;">
+            </div>
 
             <!-- SECCION: CREDENCIALES -->
             <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">ACTUALIZAR MIS CREDENCIALES</label>
@@ -504,6 +506,14 @@
             <i class="fas fa-chevron-down"></i>
         </div>
         <div id="ajustes-servidor" style="display: none; padding-top: 5px;">
+            <!-- NUEVO: FILTRO DE VISTA PARA SUPER ADMIN -->
+            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">VISTA DE CAPAS (MULTIUSUARIO)</label>
+            <select id="filtro-vista-sa" class="modal-select" style="padding: 8px; font-size: 11px; margin-bottom: 12px; height: auto;" onchange="cambiarVistaSuperAdmin(this.value)">
+                <option value="ALL">VER TODAS LAS CAPAS</option>
+                <option value="ADMIN">VER SOLO CAPAS ADMIN 1</option>
+                <option value="ADMIN2">VER SOLO CAPAS ADMIN 2</option>
+            </select>
+
             <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; margin-bottom: 12px; border-color: #2b579a; color: #2b579a;" onclick="abrirConfigWord()"><i class="fas fa-file-word"></i> CONFIGURAR CUADROS WORD</button>
 
             <input type="password" id="ajuste-repo-licencia" class="modal-input" style="padding: 8px; font-size: 11px; margin-bottom: 8px;" placeholder="Licencia SGF Maestra">
@@ -514,7 +524,13 @@
             <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px;" onclick="guardarUrlRawMaestra()">GUARDAR URLs RAW</button>
 
             <hr style="border-top: 1px solid var(--border-color); margin: 15px 0;">
-            <button class="btn btn-outline" style="width: 100%; padding: 8px; font-size: 10px; color: var(--color-vencida); border-color: var(--color-vencida);" onclick="resetearClavesAdmins()"><i class="fas fa-undo"></i> RESETEAR CLAVES A DEFAULT</button>
+            
+            <!-- NUEVO: BOTONES DE RESETEO INDIVIDUALES -->
+            <label style="font-size: 10px; color: #a5b0bf; font-weight: bold; margin-bottom: 5px; display: block;">RESETEO DE CREDENCIALES A DEFAULT</label>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline" style="flex: 1; padding: 8px; font-size: 9px; color: var(--color-vencida); border-color: var(--color-vencida);" onclick="resetearClave('ADMIN')"><i class="fas fa-undo"></i> ADMIN 1</button>
+                <button class="btn btn-outline" style="flex: 1; padding: 8px; font-size: 9px; color: #e67e22; border-color: #e67e22;" onclick="resetearClave('ADMIN2')"><i class="fas fa-undo"></i> ADMIN 2</button>
+            </div>
         </div>
     </div>
 
@@ -744,6 +760,10 @@
             
             const panelAdmin = document.getElementById('panel-admin-licencia');
             if(panelAdmin) panelAdmin.remove();
+
+            // OCULTAR PANEL DE AJUSTES (META Y CLAVE) AL SUPER ADMIN
+            const panelAjustes = document.getElementById('panel-ajustes-cuenta');
+            if(panelAjustes) panelAjustes.style.display = 'none';
 
             const licLockS = document.getElementById('license-lock-overlay');
             if (licLockS) licLockS.style.display = 'none';
@@ -1134,6 +1154,9 @@
     let modoLecturaGlobal = false;
     let textoFiltroGlobal = "";
 
+    // FILTRO DE VISTA PARA SUPER ADMIN
+    window.superAdminViewFilter = 'ALL';
+
     const DICCIONARIO_ESTATUS = {
         "VIGENTE": { color: "#238636" },
         "VENCIDA": { color: "#da3633" },
@@ -1291,17 +1314,33 @@
     /* ==========================================================================
        FASE 2: EL MOTOR STATE-DRIVEN (INDEPENDENCIA ABSOLUTA DE CAPAS)
        ========================================================================== */
+    function cambiarVistaSuperAdmin(val) {
+        window.superAdminViewFilter = val;
+        actualizarUIYMapa();
+    }
+
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
         contenedor.innerHTML = "";
         
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
-            const owner = sectorData.owner || 'ADMIN'; // Compatibilidad retroactiva
+            const owner = sectorData.owner || 'ADMIN'; 
 
-            // FILTRO DE SEGURIDAD MULTIUSUARIO
-            if (CURRENT_ROLE === 'ADMIN2' && owner !== 'ADMIN2') continue;
-            if (CURRENT_ROLE === 'ADMIN' && owner === 'ADMIN2') continue;
+            // ==========================================
+            // FILTRO ESTRICTO DE SEGURIDAD MULTIUSUARIO
+            // ==========================================
+            if (CURRENT_ROLE === 'ADMIN') {
+                // Admin 1 ve sus propias capas y cualquier capa isMaster
+                if (owner !== 'ADMIN' && !sectorData.isMaster && owner !== 'SUPERADMIN') continue;
+            } else if (CURRENT_ROLE === 'ADMIN2') {
+                // Admin 2 ve sus propias capas y cualquier capa isMaster
+                if (owner !== 'ADMIN2' && !sectorData.isMaster && owner !== 'SUPERADMIN') continue;
+            } else if (CURRENT_ROLE === 'SUPERADMIN') {
+                // Super Admin obedece al filtro de vista seleccionado
+                if (window.superAdminViewFilter === 'ADMIN' && owner !== 'ADMIN') continue;
+                if (window.superAdminViewFilter === 'ADMIN2' && owner !== 'ADMIN2') continue;
+            }
 
             if (!capasSectores[idSector]) {
                 capasSectores[idSector] = new L.FeatureGroup();
@@ -2070,13 +2109,17 @@
         guardarEnServidor();
     }
 
-    function resetearClavesAdmins() {
-        if(!confirm("⚠️ ALERTA: ¿Desea resetear las contraseñas de admin 1 y admin 2 a sus valores por defecto ('admin' y 'admin2')?")) return;
-        SYSTEM_AUTH.userAdmin = 'admin';
-        SYSTEM_AUTH.passAdmin = 'admin';
-        SYSTEM_AUTH.userAdmin2 = 'admin2';
-        SYSTEM_AUTH.passAdmin2 = 'admin2';
-        alert("Claves reseteadas en memoria.\nGuardando en la Nube...");
+    function resetearClave(target) {
+        if (target === 'ADMIN') {
+            if(!confirm("⚠️ ALERTA: ¿Desea resetear las credenciales del ADMIN 1 a sus valores de fábrica ('admin' / 'admin')?")) return;
+            SYSTEM_AUTH.userAdmin = 'admin';
+            SYSTEM_AUTH.passAdmin = 'admin';
+        } else if (target === 'ADMIN2') {
+            if(!confirm("⚠️ ALERTA: ¿Desea resetear las credenciales del ADMIN 2 a sus valores de fábrica ('admin2' / 'admin2')?")) return;
+            SYSTEM_AUTH.userAdmin2 = 'admin2';
+            SYSTEM_AUTH.passAdmin2 = 'admin2';
+        }
+        alert("Credenciales reseteadas en memoria.\nGuardando en la Nube...");
         guardarEnServidor();
     }
     
@@ -2087,6 +2130,7 @@
             document.getElementById('ajuste-repo-licencia').value = SYSTEM_AUTH.licenciaSGF || '';
             document.getElementById('ajuste-repo-urlraw').value = SYSTEM_AUTH.urlRaw || '';
             document.getElementById('ajuste-repo-urlraw2').value = SYSTEM_AUTH.urlRaw2 || '';
+            document.getElementById('filtro-vista-sa').value = window.superAdminViewFilter;
         } else {
             div.style.display = 'none';
         }
@@ -2107,7 +2151,8 @@
         const est = analizarLicenciaSGF(val);
         if(!est.valid || est.expired) return alert("Licencia Inválida o ya Expirada.");
 
-        const btn = document.querySelector('#ajustes-servidor button:nth-child(3)');
+        // Obtenemos el botón correcto asumiendo la posición
+        const btn = document.querySelector('#ajustes-servidor button:nth-of-type(2)');
         const originalText = btn.innerText;
         btn.innerText = "VERIFICANDO...";
         btn.disabled = true;
