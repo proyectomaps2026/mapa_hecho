@@ -33,27 +33,6 @@
             --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
         }
 
-        /* --- PARCHE CRÍTICO PLATINIUM --- */
-        .status-dot { display: none !important; } 
-        .status-header { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 15px !important; padding: 12px 16px !important; background: rgba(255, 255, 255, 0.03); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); transition: background 0.2s;}
-        .status-header:hover { background: rgba(255,255,255,0.05) !important; }
-        .status-header span:not(.status-badge) { color: #fff !important; background: transparent !important; padding: 0 !important; } 
-        .status-badge { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; padding: 2px 10px !important; border-radius: 20px !important; font-size: 11px !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; flex-shrink: 0; text-align: center; font-weight: 800; font-family: 'Inter', sans-serif;}
-
-        input[type="color"].status-color-square {
-            -webkit-appearance: none;
-            border: none;
-            width: 16px;
-            height: 16px;
-            padding: 0;
-            border-radius: 4px;
-            cursor: pointer;
-            background: transparent;
-            flex-shrink: 0;
-        }
-        input[type="color"].status-color-square::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"].status-color-square::-webkit-color-swatch { border: none; border-radius: 4px; }
-
         * { box-sizing: border-box; }
         
         body, html { 
@@ -993,7 +972,7 @@
        RESPALDO WORD (FILTRADO SEGÚN LA VISTA EJECUTIVA ACTIVA)
        ========================================================================== */
     function descargarRespaldoWord() {
-        if (typeof docx === 'undefined') return alert("Error: La librería de generation no se cargó.");
+        if (typeof docx === 'undefined') return alert("Error: La librería de generación no se cargó.");
         if (Object.keys(STORE).length === 0) return alert("No hay datos cargados para generar un respaldo.");
 
         const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
@@ -1080,7 +1059,7 @@
     }
 
     /* ==========================================================================
-       MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN
+       MÓDULO DE CAPTURA FOTOGRÁFICA DE ALTA PRECISIÓN (CON MARCA DE AGUA Y FIX)
        ========================================================================== */
     function previsualizarCaptura() {
         const modalCapture = document.getElementById('capture-modal');
@@ -1090,6 +1069,7 @@
         modalCapture.style.display = 'flex';
         mapa.invalidateSize();
 
+        // MARCA DE AGUA DEL CUADRO BLANCO (Mantenida igual)
         const watermark = document.createElement('div');
         watermark.id = 'report-watermark';
         watermark.innerHTML = `
@@ -1104,6 +1084,13 @@
         watermark.style.cssText = 'position:absolute; bottom:30px; right:30px; background:rgba(255,255,255,0.95); padding:15px 20px; border-radius:8px; z-index:99999; box-shadow:0 10px 30px rgba(0,0,0,0.4); border: 1px solid rgba(0,0,0,0.1);';
         document.getElementById('map').appendChild(watermark);
 
+        // NUEVA MARCA DE AGUA: PATRÓN REPETITIVO EN TODO EL MAPA
+        const patternOverlay = document.createElement('div');
+        patternOverlay.id = 'pattern-watermark';
+        const svgPattern = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><text x="50%" y="50%" transform="rotate(-35 150 150)" fill="rgba(255,255,255,0.12)" stroke="rgba(0,0,0,0.1)" stroke-width="1" font-family="Arial, sans-serif" font-size="20" font-weight="900" letter-spacing="2" text-anchor="middle">VISOR EJECUTIVO</text></svg>`;
+        patternOverlay.style.cssText = `position:absolute; top:0; left:0; width:100%; height:100%; z-index:99998; pointer-events:none; background-image:url("data:image/svg+xml;utf8,${encodeURIComponent(svgPattern)}"); background-repeat:repeat;`;
+        document.getElementById('map').appendChild(patternOverlay);
+
         setTimeout(() => {
             modalCapture.style.display = 'none'; 
             setTimeout(() => {
@@ -1113,9 +1100,23 @@
                 const uiLayers = document.querySelectorAll('.ui-layer, .leaflet-control-container, .footer-protegido');
                 uiLayers.forEach(el => el.style.visibility = 'hidden');
 
-                html2canvas(document.body, { x: mapCanvas.left, y: mapCanvas.top, width: mapCanvas.width, height: mapCanvas.height, scrollX: 0, scrollY: 0, scroll: false, useCORS: true, allowTaint: false, scale: 2 }).then(canvas => {
+                html2canvas(document.body, { 
+                    x: mapCanvas.left, 
+                    y: mapCanvas.top, 
+                    width: mapCanvas.width, 
+                    height: mapCanvas.height, 
+                    scrollX: 0, 
+                    scrollY: 0, 
+                    scroll: false, 
+                    useCORS: true, 
+                    allowTaint: false, 
+                    scale: 2 
+                }).then(canvas => {
                     uiLayers.forEach(el => el.style.visibility = 'visible');
+                    
+                    // LIMPIAR MARCAS DE AGUA DESPUÉS DE LA FOTO
                     if(document.getElementById('report-watermark')) document.getElementById('report-watermark').remove();
+                    if(document.getElementById('pattern-watermark')) document.getElementById('pattern-watermark').remove();
 
                     const imageLink = document.createElement('a');
                     imageLink.download = `REPORTE_HACIENDA_AYACUCHO_${Date.now()}.png`;
@@ -1126,7 +1127,11 @@
                     setTimeout(() => { modalSuccess.style.display = 'none'; }, 3000);
                 }).catch(err => {
                     uiLayers.forEach(el => el.style.visibility = 'visible');
+                    
+                    // LIMPIAR MARCAS DE AGUA SI HAY ERROR
                     if(document.getElementById('report-watermark')) document.getElementById('report-watermark').remove();
+                    if(document.getElementById('pattern-watermark')) document.getElementById('pattern-watermark').remove();
+                    
                     alert("Error al capturar imagen. Revise consola.");
                 });
             }, 1500); 
@@ -1134,9 +1139,14 @@
     }
 
     /* ==========================================================================
-       CONFIGURACIÓN DEL MAPA
+       CONFIGURACIÓN DEL MAPA (CON PREFERENCIA DE CANVAS PARA EXPORTACIÓN)
        ========================================================================== */
-    const mapa = L.map('map', { center: [8.02611, -72.25244], zoom: 16, zoomControl: false });
+    const mapa = L.map('map', { 
+        center: [8.02611, -72.25244], 
+        zoom: 16, 
+        zoomControl: false,
+        preferCanvas: true // <-- SOLUCIÓN PARA QUE LOS POLÍGONOS NO SE DESFASEN EN LA FOTO
+    });
     mapa.attributionControl.setPrefix('PROYECTO HACIENDA 2026 - VISOR');
 
     const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { subdomains:['mt0','mt1','mt2','mt3'], maxZoom: 21 });
@@ -1456,6 +1466,24 @@
         document.getElementById('visor-imagen-modal').style.display = 'flex';
     }
 
+    function cambiarColorPin(idSector, idFisico, colorHex) {
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!reg) return;
+
+        reg.colorPersonalizado = colorHex;
+        const estatusTarget = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
+
+        if (reg.tipoGeometria === 'marker') {
+            reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+            reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+        }
+
+        actualizarUIYMapa();
+    }
+
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
         const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!registro) return;
@@ -1522,12 +1550,20 @@
             html += `</div>`; // Fin de view-mode
             
             if(!STORE[idSector].isMaster) {
+                const estActual = registro.datosGenerales["Estatus"] || "CUADRO";
+                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const colorFinal = registro.colorPersonalizado || (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
+
                 html += `<div id="edit-mode-${idFisico}" style="display: none;">`;
                 html += `
                 <div class="form-group">
                     <span class="form-label">Nombre del Área</span>
                     <input type="text" class="form-input" value="${registro.datosGenerales["Contribuyente"] || 'CUADRO'}" 
                            onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Contribuyente', this.value);">
+                </div>
+                <div class="form-group">
+                    <span class="form-label" style="color: #656d76;">COLOR DE ÁREA</span>
+                    <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal || '#00f2ff'}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
                 </div>`;
                 html += `<button class="btn-popup-action btn-save" onclick="abrirPopupDinamico('${idSector}', '${idFisico}', false)"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
                 html += `</div>`;
@@ -1652,3 +1688,4 @@
 </script>
 </body>
 </html>
+
