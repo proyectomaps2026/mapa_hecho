@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -561,7 +562,7 @@
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V3)
+       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V4)
        ========================================================================== */
     (function() {
         // Función centralizada para bloquear la pantalla
@@ -585,33 +586,33 @@
         // 2. Bloqueo total e inmediato del Clic Derecho
         document.addEventListener('contextmenu', e => {
             e.preventDefault();
-            bloquearPantallaInspeccion();
         });
         
-        // 3. Detección de consola abierta por cambio de tamaño
+        // 3. Detección de consola abierta por cambio de tamaño (La defensa principal e inmediata)
         setInterval(() => {
             const widthThreshold = window.outerWidth - window.innerWidth > 160;
             const heightThreshold = window.outerHeight - window.innerHeight > 160;
             if (widthThreshold || heightThreshold) {
                 bloquearPantallaInspeccion();
             }
-        }, 500);
+        }, 250);
 
-        // 4. Bucle Anti-Depuración (la trampa final)
+        // 4. Bucle Anti-Depuración (la trampa final si logran evadir lo anterior)
         function antiDebug() {
             const inicio = performance.now();
             debugger; 
             const fin = performance.now();
             if (fin - inicio > 100) {
-                document.body.innerHTML = ''; // Limpia el contenido visible
-                window.location.replace("about:blank"); // Autodestruye la página
+                bloquearPantallaInspeccion(); // Se activa si el usuario interactúa con el debugger
+                // Y como medida final, se intenta autodestruir la página
+                setTimeout(() => {
+                    document.body.innerHTML = '';
+                    window.location.replace("about:blank");
+                }, 100);
             }
         }
-        
-        // Ejecuta la trampa anti-debug repetidamente
         setInterval(antiDebug, 500);
-        // Y una vez al inicio para una comprobación inmediata
-        antiDebug();
+        antiDebug(); // Comprobación inicial
     })();
 </script>
 
