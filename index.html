@@ -253,13 +253,13 @@
 
 <!-- NUEVO MODAL: DASHBOARD EJECUTIVO -->
 <div id="dashboard-modal" class="modal-overlay" style="z-index: 12000;">
-    <div class="glass-panel modal-box" style="width: 600px; max-width: 90vw; padding: 30px; text-align: left; border-top: 5px solid var(--cyan-neon);">
+    <div class="glass-panel modal-box" style="width: 750px; max-width: 95vw; padding: 30px; text-align: left; border-top: 5px solid var(--cyan-neon);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <h2 style="margin: 0; color: var(--cyan-neon); font-size: 20px; font-weight: 900; letter-spacing: 1px;"><i class="fas fa-chart-pie"></i> DASHBOARD EJECUTIVO</h2>
             <i class="fas fa-times" style="color: white; font-size: 20px; cursor: pointer; transition: 0.2s;" onmouseover="this.style.color='var(--color-vencida)'" onmouseout="this.style.color='white'" onclick="document.getElementById('dashboard-modal').style.display='none'"></i>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px;">
             <div style="background: rgba(0,0,0,0.5); padding: 15px 10px; border-radius: 12px; border: 1px solid var(--cyan-neon); text-align: center;">
                 <i class="fas fa-users" style="font-size: 24px; color: var(--cyan-neon); margin-bottom: 10px;"></i>
                 <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Total Censo</div>
@@ -279,6 +279,11 @@
                 <i class="fas fa-ban" style="font-size: 24px; color: var(--color-vencida); margin-bottom: 10px;"></i>
                 <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Sin Licencia</div>
                 <div id="dash-sin-licencia" style="font-size: 24px; font-weight: 900; color: var(--color-vencida);">0</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.5); padding: 15px 10px; border-radius: 12px; border: 1px solid var(--color-temporal); text-align: center;">
+                <i class="fas fa-hourglass-half" style="font-size: 24px; color: var(--color-temporal); margin-bottom: 10px;"></i>
+                <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Temporales</div>
+                <div id="dash-temporales" style="font-size: 24px; font-weight: 900; color: var(--color-temporal);">0</div>
             </div>
         </div>
 
@@ -565,6 +570,7 @@
         let vigentes = 0;
         let vencidos = 0;
         let sinLicencia = 0;
+        let temporales = 0;
 
         const META_CENSO = 1000; // Meta de registros manual
 
@@ -584,6 +590,8 @@
                             vencidos++;
                         } else if (estatus.includes("SIN LICENCIA")) {
                             sinLicencia++;
+                        } else if (estatus.includes("TEMPORAL")) {
+                            temporales++;
                         }
                     }
                 });
@@ -595,6 +603,7 @@
         document.getElementById('dash-vigentes').innerText = vigentes.toLocaleString();
         document.getElementById('dash-vencidos').innerText = vencidos.toLocaleString();
         document.getElementById('dash-sin-licencia').innerText = sinLicencia.toLocaleString();
+        document.getElementById('dash-temporales').innerText = temporales.toLocaleString();
 
         // Mostrar Modal (Para que las barras se animen correctamente)
         document.getElementById('dashboard-modal').style.display = 'flex';
