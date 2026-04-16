@@ -221,6 +221,12 @@
 </head>
 <body>
 
+<!-- BANNER FLOTANTE DE FILTRO ACTIVO (PARA SIMULACIONES Y MÉTRICAS) -->
+<div id="active-filter-banner" style="display:none; position:absolute; top:90px; left:50%; transform:translateX(-50%); z-index:10000; background:rgba(0,0,0,0.85); border:2px solid var(--cyan-neon); padding:12px 25px; border-radius:30px; color:white; font-size:13px; font-weight:900; align-items:center; gap:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); backdrop-filter: blur(5px);">
+    <span><i class="fas fa-filter" style="color: var(--cyan-neon);"></i> FILTRO ACTIVO: <span id="active-filter-text" style="color: var(--color-temporal);"></span></span>
+    <i class="fas fa-times-circle" style="color:var(--color-vencida); cursor:pointer; font-size:18px; transition: 0.2s;" onmouseover="this.style.filter='brightness(1.5)'" onmouseout="this.style.filter='brightness(1)'" onclick="limpiarFiltroDashboard()" title="Quitar Filtro Especial"></i>
+</div>
+
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Visor Ejecutivo - Alcaldía Bolivariana de Ayacucho</div>
 
@@ -251,7 +257,7 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
-<!-- NUEVO MODAL: DASHBOARD EJECUTIVO (CON ASEO E INMUEBLES) -->
+<!-- NUEVO MODAL: DASHBOARD EJECUTIVO (CON ASEO E INMUEBLES Y FILTROS) -->
 <div id="dashboard-modal" class="modal-overlay" style="z-index: 12000;">
     <div class="glass-panel modal-box" style="width: 750px; max-width: 95vw; padding: 30px; text-align: left; border-top: 5px solid var(--cyan-neon);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -287,9 +293,9 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE TASAS E IMPUESTOS ADICIONALES (NUEVO) -->
+        <!-- SECCIÓN DE TASAS E IMPUESTOS ADICIONALES (ACTUALIZADA) -->
         <h3 style="color: var(--text-main); font-size: 12px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 15px; text-transform: uppercase;">
-            <i class="fas fa-file-invoice-dollar" style="color: var(--cyan-neon); margin-right: 5px;"></i> Solvencia de Tasas e Impuestos
+            <i class="fas fa-file-invoice-dollar" style="color: var(--cyan-neon); margin-right: 5px;"></i> OTROS
         </h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
             <!-- Aseo Box -->
@@ -299,8 +305,8 @@
                     <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Aseo Urbano</div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 18px; font-weight: 900; color: var(--color-vigente);">SÍ PAGAN: <span id="dash-aseo-si">0</span></div>
-                    <div style="font-size: 14px; font-weight: 700; color: var(--color-vencida);">MOROSOS: <span id="dash-aseo-no">0</span></div>
+                    <div style="font-size: 16px; font-weight: 900; color: var(--color-vigente); cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='rgba(35, 134, 54, 0.2)'" onmouseout="this.style.background='transparent'" onclick="aplicarFiltroDashboard('ASEO_SI')" title="Ver contribuyentes al día en el mapa">SÍ: <span id="dash-aseo-si">0</span></div>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--color-vencida); cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: 0.2s; margin-top: 4px;" onmouseover="this.style.background='rgba(218, 54, 51, 0.2)'" onmouseout="this.style.background='transparent'" onclick="aplicarFiltroDashboard('ASEO_NO')" title="Ver morosos en el mapa">NO: <span id="dash-aseo-no">0</span></div>
                 </div>
             </div>
             <!-- Inmuebles Box -->
@@ -310,8 +316,8 @@
                     <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Imp. Inmuebles</div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 18px; font-weight: 900; color: var(--color-vigente);">SÍ PAGAN: <span id="dash-inmuebles-si">0</span></div>
-                    <div style="font-size: 14px; font-weight: 700; color: var(--color-vencida);">MOROSOS: <span id="dash-inmuebles-no">0</span></div>
+                    <div style="font-size: 16px; font-weight: 900; color: var(--color-vigente); cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: 0.2s;" onmouseover="this.style.background='rgba(35, 134, 54, 0.2)'" onmouseout="this.style.background='transparent'" onclick="aplicarFiltroDashboard('INMUEBLES_SI')" title="Ver contribuyentes al día en el mapa">SÍ: <span id="dash-inmuebles-si">0</span></div>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--color-vencida); cursor: pointer; padding: 2px 6px; border-radius: 6px; transition: 0.2s; margin-top: 4px;" onmouseover="this.style.background='rgba(218, 54, 51, 0.2)'" onmouseout="this.style.background='transparent'" onclick="aplicarFiltroDashboard('INMUEBLES_NO')" title="Ver morosos en el mapa">NO: <span id="dash-inmuebles-no">0</span></div>
                 </div>
             </div>
         </div>
@@ -326,7 +332,7 @@
             </div>
         </div>
 
-        <div>
+        <div style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 800;">
                 <span style="color: #a5b0bf;">EFICIENCIA FISCAL (Vigentes vs Total)</span>
                 <span id="dash-eficiencia-txt" style="color: var(--color-vigente);">0%</span>
@@ -335,6 +341,29 @@
                 <div id="dash-eficiencia-bar" style="height: 100%; background: var(--color-vigente); width: 0%; transition: width 1s ease-out;"></div>
             </div>
         </div>
+
+        <!-- NUEVAS BARRAS DE PORCENTAJE (ASEO E INMUEBLES) -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 10px; font-weight: 800;">
+                    <span style="color: #a5b0bf;">CUMPLIMIENTO ASEO URBANO</span>
+                    <span id="dash-aseo-progreso-txt" style="color: #8e44ad;">0%</span>
+                </div>
+                <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; overflow: hidden;">
+                    <div id="dash-aseo-progreso-bar" style="height: 100%; background: #8e44ad; width: 0%; transition: width 1s ease-out;"></div>
+                </div>
+            </div>
+            <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 10px; font-weight: 800;">
+                    <span style="color: #a5b0bf;">CUMPLIMIENTO IMP. INMUEBLES</span>
+                    <span id="dash-inmuebles-progreso-txt" style="color: #e67e22;">0%</span>
+                </div>
+                <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 8px; overflow: hidden;">
+                    <div id="dash-inmuebles-progreso-bar" style="height: 100%; background: #e67e22; width: 0%; transition: width 1s ease-out;"></div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -492,6 +521,9 @@
 
     // Filtro Global del Visor Ejecutivo
     window.visorViewFilter = 'ALL';
+    
+    // NUEVA VARIABLE: Filtro Especial desde el Dashboard
+    let filtroEspecialDash = null; // Puede ser 'ASEO_SI', 'ASEO_NO', 'INMUEBLES_SI', 'INMUEBLES_NO'
 
     // Objeto maestro de autenticación (Actualizado con Metas Individuales)
     let SYSTEM_AUTH = { 
@@ -695,6 +727,30 @@
         return ["NO", "MOROSO", "DEUDA", "VENCIDO", "SIN PAGO", "N/A"].includes(val) || val.startsWith("N") || val.startsWith("M") || val.startsWith("D");
     }
 
+    // NUEVA FUNCIÓN: Aplica el filtro especial y actualiza la UI
+    function aplicarFiltroDashboard(tipo) {
+        filtroEspecialDash = tipo;
+        document.getElementById('dashboard-modal').style.display = 'none'; // Cierra el modal para ver el mapa
+        
+        const banner = document.getElementById('active-filter-banner');
+        const text = document.getElementById('active-filter-text');
+        
+        if(tipo === 'ASEO_SI') text.innerText = "ASEO URBANO (SÍ PAGAN)";
+        else if(tipo === 'ASEO_NO') text.innerText = "ASEO URBANO (NO PAGAN / MOROSOS)";
+        else if(tipo === 'INMUEBLES_SI') text.innerText = "IMP. INMUEBLES (SÍ PAGAN)";
+        else if(tipo === 'INMUEBLES_NO') text.innerText = "IMP. INMUEBLES (NO PAGAN / MOROSOS)";
+        
+        banner.style.display = 'flex';
+        actualizarUIYMapa();
+    }
+
+    // NUEVA FUNCIÓN: Limpia el filtro especial
+    function limpiarFiltroDashboard() {
+        filtroEspecialDash = null;
+        document.getElementById('active-filter-banner').style.display = 'none';
+        actualizarUIYMapa();
+    }
+
     function abrirDashboard() {
         let totalCenso = 0;
         let vigentes = 0;
@@ -751,6 +807,8 @@
                             if (isPositivePayment(vAseo)) aseoSi++;
                             else if (isNegativePayment(vAseo)) aseoNo++;
                             else aseoNo++; // Ante la duda o valor raro que no es "SI", contamos como moroso/no
+                        } else {
+                            aseoNo++; // Si el campo no existe o está vacío
                         }
 
                         // LÓGICA INTELIGENTE PARA INMUEBLES
@@ -759,6 +817,8 @@
                             if (isPositivePayment(vInm)) inmueblesSi++;
                             else if (isNegativePayment(vInm)) inmueblesNo++;
                             else inmueblesNo++;
+                        } else {
+                            inmueblesNo++;
                         }
                     }
                 });
@@ -791,6 +851,14 @@
             let porcentajeEficiencia = totalCenso > 0 ? (vigentes / totalCenso) * 100 : 0;
             document.getElementById('dash-eficiencia-txt').innerText = porcentajeEficiencia.toFixed(1) + '%';
             document.getElementById('dash-eficiencia-bar').style.width = porcentajeEficiencia + '%';
+
+            let porcentajeAseo = totalCenso > 0 ? (aseoSi / totalCenso) * 100 : 0;
+            document.getElementById('dash-aseo-progreso-txt').innerText = porcentajeAseo.toFixed(1) + '%';
+            document.getElementById('dash-aseo-progreso-bar').style.width = porcentajeAseo + '%';
+
+            let porcentajeInmuebles = totalCenso > 0 ? (inmueblesSi / totalCenso) * 100 : 0;
+            document.getElementById('dash-inmuebles-progreso-txt').innerText = porcentajeInmuebles.toFixed(1) + '%';
+            document.getElementById('dash-inmuebles-progreso-bar').style.width = porcentajeInmuebles + '%';
         }, 100);
     }
 
@@ -1208,9 +1276,33 @@
             if (sectorData.registros) {
                 sectorData.registros.forEach(reg => {
                     if(reg.visibleIndividual === undefined) reg.visibleIndividual = true;
-                    const estatus = (reg.datosGenerales && reg.datosGenerales["Estatus"]) ? reg.datosGenerales["Estatus"] : "SIN CATEGORÍA";
-                    const searchString = reg.datosGenerales ? Object.values(reg.datosGenerales).join(" ").toLowerCase() : "";
-                    const cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+                    const d = reg.datosGenerales || {};
+                    const estatus = d["Estatus"] ? d["Estatus"] : "SIN CATEGORÍA";
+                    const searchString = d ? Object.values(d).join(" ").toLowerCase() : "";
+                    
+                    let cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
+
+                    // ==========================================
+                    // NUEVO: FILTRO ESPECIAL DESDE EL DASHBOARD
+                    // ==========================================
+                    if (cumpleFiltro && filtroEspecialDash) {
+                        if (filtroEspecialDash === 'ASEO_SI' || filtroEspecialDash === 'ASEO_NO') {
+                            const vAseo = getPropValueDynamically(d, ["Aseo Urbano", "Aseo", "Pago Aseo", "Servicio Aseo"]);
+                            if (filtroEspecialDash === 'ASEO_SI') {
+                                cumpleFiltro = isPositivePayment(vAseo);
+                            } else {
+                                // Para ASEO_NO, consideramos NO, N/A o nulo/vacío
+                                cumpleFiltro = !isPositivePayment(vAseo); 
+                            }
+                        } else if (filtroEspecialDash === 'INMUEBLES_SI' || filtroEspecialDash === 'INMUEBLES_NO') {
+                            const vInm = getPropValueDynamically(d, ["Impuesto Inmuebles", "Inmuebles", "Inmueble", "Pago Inmuebles"]);
+                            if (filtroEspecialDash === 'INMUEBLES_SI') {
+                                cumpleFiltro = isPositivePayment(vInm);
+                            } else {
+                                cumpleFiltro = !isPositivePayment(vInm);
+                            }
+                        }
+                    }
 
                     if (sectorData.visible && reg.visibleIndividual && cumpleFiltro) {
                         if (reg.capaLeaflet) capasSectores[idSector].addLayer(reg.capaLeaflet);
@@ -1253,7 +1345,7 @@
                         <div class="status-row-label">${estatus}</div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
                     </div>
-                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
+                    <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' || filtroEspecialDash ? 'block' : 'none'};">`;
 
                 gruposPorEstatus[estatus].lista.forEach(local => {
                     htmlSector += `
