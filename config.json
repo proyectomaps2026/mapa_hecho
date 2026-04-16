@@ -14,7 +14,7 @@
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {},
       "colorPrincipal": "#8e44ad",
-      "isExpanded": false,
+      "isExpanded": true,
       "registros": [
         {
           "idFisico": 91,
@@ -186,8 +186,8 @@
             "Control_Fecha"
           ],
           "coords": {
-            "lat": 8.03257708859179,
-            "lng": -72.26401972087594
+            "lat": 8.032480294172613,
+            "lng": -72.26401895284654
           }
         },
         {
@@ -1470,8 +1470,8 @@
             "Control_Fecha"
           ],
           "coords": {
-            "lat": 8.0325546,
-            "lng": -72.2640022
+            "lat": 8.03244576034967,
+            "lng": -72.26395457983018
           }
         },
         {
@@ -3524,10 +3524,11 @@
       "coloresPorEstatus": {
         "CENSO / NUEVO": "#fb00ff",
         "CUADRO 544": "#00ff2a",
-        "CUADRO": "#2bff00"
+        "CUADRO": "#2bff00",
+        "CUADRO 1": "#00ffb3"
       },
       "colorPrincipal": "#00f2ff",
-      "isExpanded": false,
+      "isExpanded": true,
       "registros": [
         {
           "idFisico": 151,
@@ -3552,8 +3553,8 @@
                 "lng": -72.26253837347032
               },
               {
-                "lat": 8.032578442701979,
-                "lng": -72.26401895284654
+                "lat": 8.032613159413609,
+                "lng": -72.26400822401048
               },
               {
                 "lat": 8.031633058814121,
@@ -3573,7 +3574,7 @@
           "visibleIndividual": true,
           "_modoPopup": "lectura",
           "datosGenerales": {
-            "Contribuyente": "CUADRO",
+            "Contribuyente": "BLOQUE 2 DE FISCALIZACION",
             "RIF": "J-00000000-0",
             "Teléfono": "0414-0000000",
             "Metros Cuadrados": "0 m2",
@@ -3599,6 +3600,42 @@
               {
                 "lat": 8.028140528829717,
                 "lng": -72.26472437381746
+              }
+            ]
+          ]
+        },
+        {
+          "idFisico": 823,
+          "tipoGeometria": "polygon",
+          "colorPersonalizado": "#00ffb3",
+          "visibleIndividual": true,
+          "datosGenerales": {
+            "Contribuyente": "BLOQUE 3 DE FISCALIZACION",
+            "RIF": "J-00000000-0",
+            "Teléfono": "0414-0000000",
+            "Metros Cuadrados": "0 m2",
+            "Fecha Fiscalización": "2026-04-16",
+            "Estatus": "CUADRO 1",
+            "Link Fotografía": ""
+          },
+          "camposOcultos": [],
+          "coords": [
+            [
+              {
+                "lat": 8.032605188854127,
+                "lng": -72.26400822401048
+              },
+              {
+                "lat": 8.029309179037671,
+                "lng": -72.26632297039033
+              },
+              {
+                "lat": 8.030956027116936,
+                "lng": -72.26849019527437
+              },
+              {
+                "lat": 8.03418013759816,
+                "lng": -72.26604938507081
               }
             ]
           ]
