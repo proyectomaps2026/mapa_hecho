@@ -277,9 +277,42 @@
             text-align: center; 
             display: none; 
         }
+
+        /* NUEVO: ESTILOS PARA MENÚ DE CLIC DERECHO PERSONALIZADO */
+        #custom-context-menu {
+            position: fixed;
+            display: none;
+            z-index: 100000;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: var(--shadow-heavy);
+            padding: 5px 0;
+            list-style: none;
+            margin: 0;
+            min-width: 120px;
+        }
+        #custom-context-menu li {
+            padding: 8px 15px;
+            font-size: 12px;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        #custom-context-menu li:hover {
+            background: var(--cyan-neon);
+            color: var(--bg-dark);
+        }
     </style>
 </head>
 <body>
+
+<!-- NUEVO: MENÚ DE CLIC DERECHO PERSONALIZADO -->
+<ul id="custom-context-menu">
+    <li data-action="cut">Cortar</li>
+    <li data-action="copy">Copiar</li>
+    <li data-action="paste">Pegar</li>
+</ul>
 
 <!-- SELLO PROTECTOR INFERIOR -->
 <div class="footer-protegido">© 2026 - Sistema Protegido - Alcaldía Bolivariana de Ayacucho</div>
@@ -562,12 +595,11 @@
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA
+       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V2)
        ========================================================================== */
     (function() {
         // Función centralizada para bloquear la pantalla
         function bloquearPantallaInspeccion() {
-            // Detener cualquier posible ejecución de scripts maliciosos
             setTimeout(() => {
                 document.head.innerHTML = '<style>body{margin:0;padding:0;}</style>';
                 document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
@@ -578,12 +610,34 @@
         document.addEventListener('contextmenu', e => {
             const target = e.target;
             const isFormField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+            const contextMenu = document.getElementById('custom-context-menu');
+
+            e.preventDefault(); 
             
-            // Permite el menú solo en campos de formulario, bloquea todo lo demás.
-            if (!isFormField) {
-                e.preventDefault();
+            if (isFormField) {
+                contextMenu.style.top = `${e.clientY}px`;
+                contextMenu.style.left = `${e.clientX}px`;
+                contextMenu.style.display = 'block';
+                contextMenu.dataset.targetId = target.id;
+            } else {
                 bloquearPantallaInspeccion();
             }
+        });
+
+        document.addEventListener('click', () => {
+             document.getElementById('custom-context-menu').style.display = 'none';
+        });
+
+        document.getElementById('custom-context-menu').addEventListener('click', e => {
+            const action = e.target.getAttribute('data-action');
+            if(action) {
+                try {
+                    document.execCommand(action);
+                } catch (err) {
+                    console.warn('Acción no soportada por el navegador:', err);
+                }
+            }
+            document.getElementById('custom-context-menu').style.display = 'none';
         });
         
         document.addEventListener('keydown', e => {
