@@ -17,7 +17,7 @@
       "isExpanded": true,
       "registros": [
         {
-          "idFisico": 273,
+          "idFisico": 91,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -58,14 +58,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.030899324375499,
             "lng": -72.26284046349849
           }
         },
         {
-          "idFisico": 274,
+          "idFisico": 92,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -106,14 +116,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "SÍ"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.032384689531884,
             "lng": -72.26379722728966
           }
         },
         {
-          "idFisico": 275,
+          "idFisico": 93,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -154,14 +174,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.03257708859179,
             "lng": -72.26401972087594
           }
         },
         {
-          "idFisico": 276,
+          "idFisico": 94,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -202,14 +232,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.032072140914662,
             "lng": -72.26339020335043
           }
         },
         {
-          "idFisico": 277,
+          "idFisico": 95,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -250,14 +291,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.030892756068749,
             "lng": -72.26345552842392
           }
         },
         {
-          "idFisico": 278,
+          "idFisico": 96,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -298,14 +350,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.031783744247441,
             "lng": -72.2632040033534
           }
         },
         {
-          "idFisico": 279,
+          "idFisico": 97,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -346,14 +408,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.031749001174239,
             "lng": -72.26296597902663
           }
         },
         {
-          "idFisico": 280,
+          "idFisico": 98,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -394,14 +466,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.032362044483438,
             "lng": -72.26415781184302
           }
         },
         {
-          "idFisico": 281,
+          "idFisico": 99,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#238636",
           "visibleIndividual": true,
@@ -442,14 +525,25 @@
             "Conformidad de Uso": "SÍ",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Foto Licencia Vigente",
+            "ID_Auditoria",
+            "Editor_Responsable",
+            "Fecha_Ultima_Edicion",
+            "Foto Fachada",
+            "Control_Usuario",
+            "Record_ID_Ref",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.030032,
             "lng": -72.2639244
           }
         },
         {
-          "idFisico": 282,
+          "idFisico": 100,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -490,14 +584,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0301265,
             "lng": -72.2633849
           }
         },
         {
-          "idFisico": 283,
+          "idFisico": 101,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -538,14 +642,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0297296,
             "lng": -72.26615
           }
         },
         {
-          "idFisico": 284,
+          "idFisico": 102,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -586,14 +700,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0311827,
             "lng": -72.2652863
           }
         },
         {
-          "idFisico": 285,
+          "idFisico": 103,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -634,14 +758,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0306957,
             "lng": -72.2652563
           }
         },
         {
-          "idFisico": 286,
+          "idFisico": 104,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -682,14 +816,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0323229,
             "lng": -72.2636856
           }
         },
         {
-          "idFisico": 287,
+          "idFisico": 105,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -730,14 +875,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0310995,
             "lng": -72.2627567
           }
         },
         {
-          "idFisico": 288,
+          "idFisico": 106,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -778,14 +933,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0308462,
             "lng": -72.2634544
           }
         },
         {
-          "idFisico": 289,
+          "idFisico": 107,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -826,14 +991,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0324108,
             "lng": -72.2639954
           }
         },
         {
-          "idFisico": 290,
+          "idFisico": 108,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -874,14 +1049,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0308515,
             "lng": -72.2630167
           }
         },
         {
-          "idFisico": 291,
+          "idFisico": 109,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -922,14 +1107,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0322692,
             "lng": -72.2644681
           }
         },
         {
-          "idFisico": 292,
+          "idFisico": 110,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -970,14 +1166,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0312301,
             "lng": -72.2653496
           }
         },
         {
-          "idFisico": 293,
+          "idFisico": 111,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1018,14 +1225,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0311701,
             "lng": -72.2627054
           }
         },
         {
-          "idFisico": 294,
+          "idFisico": 112,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1066,14 +1284,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.031222,
             "lng": -72.2637252
           }
         },
         {
-          "idFisico": 295,
+          "idFisico": 113,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1114,14 +1342,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0311953,
             "lng": -72.2637367
           }
         },
         {
-          "idFisico": 296,
+          "idFisico": 114,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1162,14 +1400,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0311953,
             "lng": -72.2637367
           }
         },
         {
-          "idFisico": 297,
+          "idFisico": 115,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1210,14 +1458,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0325546,
             "lng": -72.2640022
           }
         },
         {
-          "idFisico": 298,
+          "idFisico": 116,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1258,14 +1516,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0307286,
             "lng": -72.2631846
           }
         },
         {
-          "idFisico": 299,
+          "idFisico": 117,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1306,14 +1574,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0318739,
             "lng": -72.2633503
           }
         },
         {
-          "idFisico": 300,
+          "idFisico": 118,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1354,14 +1632,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0318449,
             "lng": -72.2634113
           }
         },
         {
-          "idFisico": 301,
+          "idFisico": 119,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1402,14 +1690,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0311915,
             "lng": -72.2637368
           }
         },
         {
-          "idFisico": 302,
+          "idFisico": 120,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1450,14 +1748,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0322164,
             "lng": -72.2635379
           }
         },
         {
-          "idFisico": 303,
+          "idFisico": 121,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1498,14 +1806,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0294861,
             "lng": -72.2648753
           }
         },
         {
-          "idFisico": 304,
+          "idFisico": 122,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1546,14 +1864,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0324128,
             "lng": -72.2637109
           }
         },
         {
-          "idFisico": 305,
+          "idFisico": 123,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1594,14 +1923,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0306578,
             "lng": -72.2652525
           }
         },
         {
-          "idFisico": 306,
+          "idFisico": 124,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1642,14 +1981,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0317816,
             "lng": -72.2630038
           }
         },
         {
-          "idFisico": 307,
+          "idFisico": 125,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1690,14 +2040,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0294636,
             "lng": -72.2643375
           }
         },
         {
-          "idFisico": 308,
+          "idFisico": 126,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1738,14 +2098,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0296156,
             "lng": -72.2647105
           }
         },
         {
-          "idFisico": 309,
+          "idFisico": 127,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#fbbc04",
           "visibleIndividual": true,
@@ -1786,14 +2156,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Foto Licencia Vigente",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Editor_Responsable",
+            "Fecha_Ultima_Edicion",
+            "Control_Usuario"
+          ],
           "coords": {
             "lat": 8.0314041,
             "lng": -72.2638789
           }
         },
         {
-          "idFisico": 310,
+          "idFisico": 128,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#238636",
           "visibleIndividual": true,
@@ -1834,14 +2215,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Foto Licencia Vigente",
+            "ID_Auditoria",
+            "Editor_Responsable",
+            "Fecha_Ultima_Edicion",
+            "Foto Fachada",
+            "Control_Usuario",
+            "Record_ID_Ref",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.031389364952778,
             "lng": -72.26428098245539
           }
         },
         {
-          "idFisico": 311,
+          "idFisico": 129,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1882,14 +2274,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.032241,
             "lng": -72.2644224
           }
         },
         {
-          "idFisico": 312,
+          "idFisico": 130,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1930,14 +2333,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0301179,
             "lng": -72.2644944
           }
         },
         {
-          "idFisico": 313,
+          "idFisico": 131,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -1978,14 +2391,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "SÍ"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0311471,
             "lng": -72.2627225
           }
         },
         {
-          "idFisico": 314,
+          "idFisico": 132,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2026,14 +2449,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0315537,
             "lng": -72.2656337
           }
         },
         {
-          "idFisico": 315,
+          "idFisico": 133,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2074,14 +2507,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0320504,
             "lng": -72.2634633
           }
         },
         {
-          "idFisico": 316,
+          "idFisico": 134,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2122,14 +2565,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0317806,
             "lng": -72.2644799
           }
         },
         {
-          "idFisico": 317,
+          "idFisico": 135,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2170,14 +2623,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0318787,
             "lng": -72.263437
           }
         },
         {
-          "idFisico": 318,
+          "idFisico": 136,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2218,14 +2682,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0318449,
             "lng": -72.2634113
           }
         },
         {
-          "idFisico": 319,
+          "idFisico": 137,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2266,14 +2740,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0312206,
             "lng": -72.2637418
           }
         },
         {
-          "idFisico": 320,
+          "idFisico": 138,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2314,14 +2798,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0300544,
             "lng": -72.26458
           }
         },
         {
-          "idFisico": 321,
+          "idFisico": 139,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2362,14 +2856,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0319107,
             "lng": -72.2632263
           }
         },
         {
-          "idFisico": 322,
+          "idFisico": 140,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2410,14 +2915,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0291105,
             "lng": -72.2658161
           }
         },
         {
-          "idFisico": 323,
+          "idFisico": 141,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2458,14 +2973,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.031832,
             "lng": -72.2634003
           }
         },
         {
-          "idFisico": 324,
+          "idFisico": 142,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2506,14 +3031,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0300595,
             "lng": -72.2650616
           }
         },
         {
-          "idFisico": 325,
+          "idFisico": 143,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2554,14 +3089,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0314162,
             "lng": -72.2648046
           }
         },
         {
-          "idFisico": 326,
+          "idFisico": 144,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2602,14 +3147,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.0311939,
             "lng": -72.2637506
           }
         },
         {
-          "idFisico": 327,
+          "idFisico": 145,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2650,14 +3206,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0324418,
             "lng": -72.263914
           }
         },
         {
-          "idFisico": 328,
+          "idFisico": 146,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2698,14 +3264,25 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": ""
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "Control_Fecha",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Foto Licencia Vencida"
+          ],
           "coords": {
             "lat": 8.032451,
             "lng": -72.2639792
           }
         },
         {
-          "idFisico": 329,
+          "idFisico": 147,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2746,14 +3323,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0311596,
             "lng": -72.2627108
           }
         },
         {
-          "idFisico": 330,
+          "idFisico": 148,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2794,14 +3381,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0304288,
             "lng": -72.2641817
           }
         },
         {
-          "idFisico": 331,
+          "idFisico": 149,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2842,14 +3439,24 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0306956,
             "lng": -72.2632053
           }
         },
         {
-          "idFisico": 332,
+          "idFisico": 150,
           "tipoGeometria": "marker",
           "colorPersonalizado": "#da3633",
           "visibleIndividual": true,
@@ -2890,7 +3497,17 @@
             "Conformidad de Uso": "NO",
             "Licencia temporal": "NO"
           },
-          "camposOcultos": [],
+          "camposOcultos": [
+            "Fiscal Responsable",
+            "AI Field Example",
+            "Record_ID_Ref",
+            "ID_Auditoria",
+            "Foto Fachada",
+            "Fecha_Ultima_Edicion",
+            "Editor_Responsable",
+            "Control_Usuario",
+            "Control_Fecha"
+          ],
           "coords": {
             "lat": 8.0300314,
             "lng": -72.2645269
