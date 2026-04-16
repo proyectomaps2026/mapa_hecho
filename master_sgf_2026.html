@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -845,7 +844,7 @@
     async function iniciarCicloLicenciaAdmin() {
         validarLicenciaYBloqueo();
         CHECK_LICENSE_INTERVAL = setInterval(async () => {
-            await cargarDatosNube(true); // <--- CORRECCIÓN DE FALLA: Verifica credenciales sin destruir tu memoria local
+            await cargarDatosNube(true); // Mantenemos el parche de segundo plano activo
             validarLicenciaYBloqueo();
         }, 60000);
     }
@@ -1232,6 +1231,10 @@
             evento.layer.on('edit', () => actualizarUIYMapa());
         }
 
+        // CORRECCIÓN: Diferenciamos el nombre dependiendo de si es punto o bloque
+        const esArea = (evento.layerType === 'polygon' || evento.layerType === 'rectangle');
+        const nombreDefecto = esArea ? "BLOQUE DE FISCALIZACIÓN" : "NUEVO ESTABLECIMIENTO";
+
         const nuevoRegistro = {
             idFisico: idFisico,
             tipoGeometria: evento.layerType,
@@ -1239,7 +1242,7 @@
             colorPersonalizado: null, 
             visibleIndividual: true,
             datosGenerales: { 
-                "Contribuyente": "NUEVO ESTABLECIMIENTO", 
+                "Contribuyente": nombreDefecto, 
                 "RIF": "J-00000000-0",
                 "Teléfono": "0414-0000000",
                 "Metros Cuadrados": "0 m2",
@@ -1517,14 +1520,19 @@
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
                 gruposPorEstatus[estatus].lista.forEach(local => {
+                    // CORRECCIÓN: Renderizamos un <input> en lugar de un simple span para poder editar los nombres de los polígonos/puntos desde el panel lateral
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
-                            <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; white-space: nowrap;">
                                 <input type="checkbox" class="check-visible" ${local.visibleIndividual ? 'checked' : ''} 
                                        title="Ocultar individualmente" 
                                        onclick="event.stopPropagation(); toggleVisibilidadIndividual('${idSector}', '${local.idFisico}', this.checked)">
                                        
-                                <span title="${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}">${local.datosGenerales["Contribuyente"] || 'SIN NOMBRE'}</span>
+                                <input type="text" value="${escHtmlBasico(local.datosGenerales["Contribuyente"] || 'SIN NOMBRE')}" 
+                                       title="Clic para editar el nombre de este registro/área"
+                                       onclick="event.stopPropagation();"
+                                       onchange="actualizarDatoCampo('${idSector}', '${local.idFisico}', 'Contribuyente', this.value)"
+                                       style="background:transparent; border:none; border-bottom:1px dashed rgba(255,255,255,0.3); color:#f0f3f6; font-size:11px; font-weight:800; font-family:inherit; width: 100%; min-width: 50px; outline:none; text-overflow: ellipsis; cursor: text; padding:2px 0;">
                             </div>
                             <div style="display:flex; align-items:center; gap:12px; padding-left:10px;">
                             ${(!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN') ? `
@@ -1640,11 +1648,16 @@
                 </div>`;
             });
 
+            // CORRECCIÓN: Se añade el nombre del contribuyente dinámico para el Bloque / Polígono
             html += `
             <div style="padding: 20px; background: #fff;">
-                <h3 style="margin: 0 0 15px; font-size: 13px; font-weight: 900; color: #111; border-bottom: 2px solid var(--color-temporal); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                <h3 style="margin: 0 0 5px; font-size: 13px; font-weight: 900; color: #111; border-bottom: 2px solid var(--color-temporal); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
                     <i class="fas fa-chart-pie" style="color: var(--color-temporal); margin-right: 5px;"></i> RESUMEN DEL ÁREA
                 </h3>
+                
+                <div style="font-size: 13px; font-weight: 900; color: #0056b3; text-align: center; margin-bottom: 15px; text-transform: uppercase; word-break: break-word;">
+                    ${registro.datosGenerales["Contribuyente"] || 'BLOQUE DE FISCALIZACIÓN'}
+                </div>
                 
                 <div style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
                     ${listaEstatusHTML || '<div style="color: #888; font-size: 11px; font-weight: bold; text-align: center; padding: 15px 0;">No hay contribuyentes dentro de esta área.</div>'}
@@ -1810,8 +1823,17 @@
         }
     }
 
+    // CORRECCIÓN: Si el popup está abierto, la vista cambia automáticamente al presionar 'Enter' u hacer clic fuera.
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
-        STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico)).datosGenerales[clave] = valor;
+        const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(registro) {
+            registro.datosGenerales[clave] = valor.toUpperCase();
+            if(mapa._popup && mapa._popup._source === registro.capaLeaflet) {
+                const isEditMode = (document.getElementById(`edit-mode-${idFisico}`) && document.getElementById(`edit-mode-${idFisico}`).style.display !== 'none');
+                const newHtml = generarContenidoHTMLPopup(idSector, idFisico, isEditMode);
+                registro.capaLeaflet.setPopupContent(newHtml);
+            }
+        }
         actualizarUIYMapa(); 
     }
 
