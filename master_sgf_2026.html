@@ -1227,7 +1227,6 @@
         let estatusDefecto = esArea ? "CUADRO" : "CENSO / NUEVO";
 
         if (esArea) {
-            // Aseguramos que el submenú "CUADRO" tenga un color inicial válido para que no sea negro/transparente
             if (!STORE[capaActiva].coloresPorEstatus) STORE[capaActiva].coloresPorEstatus = {};
             if (!STORE[capaActiva].coloresPorEstatus[estatusDefecto]) {
                 STORE[capaActiva].coloresPorEstatus[estatusDefecto] = DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
@@ -1238,7 +1237,7 @@
             if (!modoLecturaGlobal) evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
         } else if (esArea) {
-            const colorAUsar = STORE[capaActiva].coloresPorEstatus[estatusDefecto];
+            const colorAUsar = STORE[capaActiva].coloresPorEstatus[estatusDefecto] || DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
             evento.layer.setStyle({ color: colorAUsar, fillColor: colorAUsar, fillOpacity: 0.2 });
             if (!modoLecturaGlobal) evento.layer.editing.enable();
             evento.layer.on('edit', () => actualizarUIYMapa());
@@ -1644,32 +1643,37 @@
                 let colorBase = confEst.color;
                 
                 listaEstatusHTML += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eaeaea;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eaeaea;">
                     <span style="font-weight: 800; color: #111; font-size: 11px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-                        <span style="width: 12px; height: 12px; border-radius: 50%; background-color: ${colorBase}; box-shadow: 0 0 4px rgba(0,0,0,0.4);"></span>
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${colorBase}; box-shadow: 0 0 2px rgba(0,0,0,0.3);"></span>
                         ${est}
                     </span>
-                    <span style="font-weight: 900; color: #0056b3; font-size: 14px;">${cantidad}</span>
+                    <span style="font-weight: 900; color: #0056b3; font-size: 13px;">${cantidad}</span>
                 </div>`;
             });
 
             html += `
-            <div style="padding: 20px; background: #fff;">
-                <h3 style="margin: 0 0 5px; font-size: 13px; font-weight: 900; color: #111; border-bottom: 2px solid var(--color-temporal); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
-                    <i class="fas fa-chart-pie" style="color: var(--color-temporal); margin-right: 5px;"></i> RESUMEN DEL ÁREA
-                </h3>
+            <div style="padding: 15px; background: #fff;">
                 
-                <div style="font-size: 13px; font-weight: 900; color: #0056b3; text-align: center; margin-bottom: 15px; text-transform: uppercase; word-break: break-word;">
-                    ${registro.datosGenerales["Contribuyente"] || 'BLOQUE DE FISCALIZACIÓN'}
+                <!-- CAJA DE RESUMEN ESTILO IMAGEN SOLICITADA -->
+                <div style="background: #f8f9fa; border: 1px solid #e0e4e8; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                    <h3 style="margin: 0 0 10px; font-size: 12px; font-weight: 900; color: #111; text-transform: uppercase; text-align: center;">
+                        <i class="fas fa-chart-pie" style="color: var(--color-temporal); margin-right: 5px;"></i> RESUMEN DEL ÁREA
+                    </h3>
+                    
+                    <div style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
+                        ${listaEstatusHTML || '<div style="color: #888; font-size: 11px; font-weight: bold; text-align: center; padding: 10px 0;">No hay contribuyentes dentro de esta área.</div>'}
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d0d7de; padding-top: 10px; margin-top: 5px;">
+                        <span style="font-weight: 900; color: #656d76; font-size: 11px; text-transform: uppercase;">TOTAL INTERNO</span>
+                        <span style="font-weight: 900; color: var(--color-vencida); font-size: 15px;">${rep.total}</span>
+                    </div>
                 </div>
-                
-                <div style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;">
-                    ${listaEstatusHTML || '<div style="color: #888; font-size: 11px; font-weight: bold; text-align: center; padding: 15px 0;">No hay contribuyentes dentro de esta área.</div>'}
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; align-items: center; background: #f6f8fa; padding: 12px 15px; border-radius: 8px; border: 1px solid #d0d7de;">
-                    <span style="font-weight: 900; color: #656d76; font-size: 11px; text-transform: uppercase;">TOTAL REGISTROS</span>
-                    <span style="font-weight: 900; color: var(--color-vencida); font-size: 18px;">${rep.total}</span>
+
+                <!-- NOMBRE DEL CUADRO DEBAJO -->
+                <div style="font-size: 14px; font-weight: 900; color: #0056b3; text-align: center; margin-bottom: 15px; text-transform: uppercase; word-break: break-word;">
+                    ${registro.datosGenerales["Contribuyente"] || 'CUADRO'}
                 </div>`;
                 
             if(!modoLecturaGlobal && (!sectorData.isMaster || CURRENT_ROLE === 'SUPERADMIN')) {
@@ -2822,3 +2826,4 @@
 </script>
 </body>
 </html>
+
