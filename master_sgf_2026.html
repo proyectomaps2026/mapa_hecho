@@ -562,33 +562,37 @@
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V4)
+       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA (V5)
        ========================================================================== */
     (function() {
-        // Función centralizada para bloquear la pantalla
+        let bloqueado = false;
+        
+        // Función centralizada para bloquear la pantalla totalmente en blanco/negro (Sin pausar)
         function bloquearPantallaInspeccion() {
-            setTimeout(() => {
-                document.head.innerHTML = '<style>body{margin:0;padding:0;}</style>';
-                document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
-            }, 0);
+            if(bloqueado) return;
+            bloqueado = true;
+            document.head.innerHTML = '<style>body{margin:0;padding:0;background:#000;overflow:hidden;}</style>';
+            document.body.innerHTML = '<div style="display:flex; height:100vh; width:100vw; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px; position:fixed; top:0; left:0; z-index:999999999;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
         }
 
         // 1. Bloqueo de Teclado
-        document.addEventListener('keydown', e => {
+        window.addEventListener('keydown', e => {
             if (e.key === 'F12' || 
                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
                (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'P'))) {
                 e.preventDefault();
+                e.stopPropagation();
                 bloquearPantallaInspeccion();
             }
-        });
+        }, true);
 
-        // 2. Bloqueo total e inmediato del Clic Derecho
-        document.addEventListener('contextmenu', e => {
+        // 2. Bloqueo total e inmediato del Clic Derecho en toda la ventana (Atrapa Popups)
+        window.addEventListener('contextmenu', e => {
             e.preventDefault();
-        });
+            e.stopPropagation();
+        }, true);
         
-        // 3. Detección de consola abierta por cambio de tamaño (La defensa principal e inmediata)
+        // 3. Detección de consola abierta por cambio de tamaño
         setInterval(() => {
             const widthThreshold = window.outerWidth - window.innerWidth > 160;
             const heightThreshold = window.outerHeight - window.innerHeight > 160;
@@ -597,22 +601,17 @@
             }
         }, 250);
 
-        // 4. Bucle Anti-Depuración (la trampa final si logran evadir lo anterior)
-        function antiDebug() {
-            const inicio = performance.now();
-            debugger; 
-            const fin = performance.now();
-            if (fin - inicio > 100) {
-                bloquearPantallaInspeccion(); // Se activa si el usuario interactúa con el debugger
-                // Y como medida final, se intenta autodestruir la página
-                setTimeout(() => {
-                    document.body.innerHTML = '';
-                    window.location.replace("about:blank");
-                }, 100);
+        // 4. Detección silenciosa de consola sin usar "debugger" (obligatorio bloqueo directo)
+        const devtools = new Image();
+        Object.defineProperty(devtools, 'id', {
+            get: function() {
+                bloquearPantallaInspeccion();
             }
-        }
-        setInterval(antiDebug, 500);
-        antiDebug(); // Comprobación inicial
+        });
+        setInterval(() => {
+            console.log(devtools);
+            console.clear();
+        }, 500);
     })();
 </script>
 
@@ -1511,7 +1510,7 @@
                                    title="Seleccionar todos">
                             <i class="fas fa-trash-alt sector-trash" 
                                style="font-size: 13px; margin: 0;"
-                               onclick="eliminarSeleccionadosEnCat('${idSector}', '${idAcordeon}', '${estatus}')" 
+                               onclick="eliminarSeleccionadosEnCat('${idSector}', '${idContenedor}', '${estatus}')" 
                                title="Eliminar seleccionados"></i>
                         </div>` : ''}
                     </div>
