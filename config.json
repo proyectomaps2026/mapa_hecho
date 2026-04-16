@@ -14,7 +14,7 @@
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {},
       "colorPrincipal": "#8e44ad",
-      "isExpanded": true,
+      "isExpanded": false,
       "registros": [
         {
           "idFisico": 91,
@@ -3527,7 +3527,7 @@
         "CUADRO": "#2bff00"
       },
       "colorPrincipal": "#00f2ff",
-      "isExpanded": true,
+      "isExpanded": false,
       "registros": [
         {
           "idFisico": 151,
@@ -3618,6 +3618,6 @@
   "passAdmin2": "admin2",
   "urlRaw2": "",
   "metaCenso": 500,
-  "metaCensoAdmin1": 500,
+  "metaCensoAdmin1": 635,
   "metaCensoAdmin2": 100
 }
