@@ -3523,7 +3523,8 @@
       "visibilidadPorEstatus": {},
       "coloresPorEstatus": {
         "CENSO / NUEVO": "#fb00ff",
-        "CUADRO 544": "#00ff2a"
+        "CUADRO 544": "#00ff2a",
+        "CUADRO": "#2bff00"
       },
       "colorPrincipal": "#00f2ff",
       "isExpanded": true,
@@ -3566,38 +3567,37 @@
           ]
         },
         {
-          "idFisico": 544,
+          "idFisico": 481,
           "tipoGeometria": "polygon",
-          "colorPersonalizado": "#00ff2a",
+          "colorPersonalizado": "#2bff00",
           "visibleIndividual": true,
           "datosGenerales": {
-            "Contribuyente": "BLOQUE 2 DEL PLAN PILOTO",
+            "Contribuyente": "CUADRO",
             "RIF": "J-00000000-0",
             "Teléfono": "0414-0000000",
             "Metros Cuadrados": "0 m2",
             "Fecha Fiscalización": "2026-04-16",
-            "Estatus": "CUADRO 544",
+            "Estatus": "CUADRO",
             "Link Fotografía": ""
           },
           "camposOcultos": [],
-          "_modoPopup": "lectura",
           "coords": [
             [
               {
-                "lat": 8.028002345958612,
-                "lng": -72.2648048400879
+                "lat": 8.030395124318945,
+                "lng": -72.26312041282655
               },
               {
-                "lat": 8.030504386392439,
-                "lng": -72.26312309503557
+                "lat": 8.031585614345005,
+                "lng": -72.26474046707155
               },
               {
-                "lat": 8.031625106957485,
-                "lng": -72.26468414068223
+                "lat": 8.029300295589547,
+                "lng": -72.26629614830019
               },
               {
-                "lat": 8.029155063950894,
-                "lng": -72.26636052131654
+                "lat": 8.028258611146182,
+                "lng": -72.26453661918642
               }
             ]
           ]
