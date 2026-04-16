@@ -251,7 +251,7 @@
     <span>✅ Reporte Generado con Éxito.</span>
 </div>
 
-<!-- NUEVO MODAL: DASHBOARD EJECUTIVO -->
+<!-- NUEVO MODAL: DASHBOARD EJECUTIVO (CON ASEO E INMUEBLES) -->
 <div id="dashboard-modal" class="modal-overlay" style="z-index: 12000;">
     <div class="glass-panel modal-box" style="width: 750px; max-width: 95vw; padding: 30px; text-align: left; border-top: 5px solid var(--cyan-neon);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
@@ -284,6 +284,35 @@
                 <i class="fas fa-hourglass-half" style="font-size: 24px; color: var(--color-temporal); margin-bottom: 10px;"></i>
                 <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Temporales</div>
                 <div id="dash-temporales" style="font-size: 24px; font-weight: 900; color: var(--color-temporal);">0</div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE TASAS E IMPUESTOS ADICIONALES (NUEVO) -->
+        <h3 style="color: var(--text-main); font-size: 12px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-bottom: 15px; text-transform: uppercase;">
+            <i class="fas fa-file-invoice-dollar" style="color: var(--cyan-neon); margin-right: 5px;"></i> Solvencia de Tasas e Impuestos
+        </h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+            <!-- Aseo Box -->
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; border: 1px solid #8e44ad; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <i class="fas fa-trash" style="font-size: 24px; color: #8e44ad; margin-bottom: 5px;"></i>
+                    <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Aseo Urbano</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 18px; font-weight: 900; color: var(--color-vigente);">SÍ PAGAN: <span id="dash-aseo-si">0</span></div>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--color-vencida);">MOROSOS: <span id="dash-aseo-no">0</span></div>
+                </div>
+            </div>
+            <!-- Inmuebles Box -->
+            <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; border: 1px solid #e67e22; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <i class="fas fa-home" style="font-size: 24px; color: #e67e22; margin-bottom: 5px;"></i>
+                    <div style="font-size: 10px; color: #a5b0bf; font-weight: 800; text-transform: uppercase;">Imp. Inmuebles</div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 18px; font-weight: 900; color: var(--color-vigente);">SÍ PAGAN: <span id="dash-inmuebles-si">0</span></div>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--color-vencida);">MOROSOS: <span id="dash-inmuebles-no">0</span></div>
+                </div>
             </div>
         </div>
 
@@ -643,12 +672,38 @@
         actualizarUIYMapa();
     }
 
+    // Función auxiliar para buscar propiedades dinámicamente ignorando mayúsculas/minúsculas
+    function getPropValueDynamically(datos, keysToSearch) {
+        if (!datos) return null;
+        for(let k of keysToSearch) {
+            const actualKey = Object.keys(datos).find(key => key.toLowerCase().trim() === k.toLowerCase());
+            if(actualKey && datos[actualKey] !== "") return datos[actualKey];
+        }
+        return null;
+    }
+
+    // Funciones de validación de pago (Positivo o Negativo)
+    function isPositivePayment(val) {
+        if(!val) return false;
+        val = val.toUpperCase().trim();
+        return ["SI", "SÍ", "YES", "SOLVENTE", "PAGADO", "ACTIVO", "AL DIA", "AL DÍA"].includes(val) || val.startsWith("S");
+    }
+
+    function isNegativePayment(val) {
+        if(!val) return false;
+        val = val.toUpperCase().trim();
+        return ["NO", "MOROSO", "DEUDA", "VENCIDO", "SIN PAGO", "N/A"].includes(val) || val.startsWith("N") || val.startsWith("M") || val.startsWith("D");
+    }
+
     function abrirDashboard() {
         let totalCenso = 0;
         let vigentes = 0;
         let vencidos = 0;
         let sinLicencia = 0;
         let temporales = 0;
+
+        let aseoSi = 0; let aseoNo = 0;
+        let inmueblesSi = 0; let inmueblesNo = 0;
 
         let META_CENSO = 0;
         let tituloDashboard = "DASHBOARD EJECUTIVO";
@@ -682,12 +737,29 @@
                 sector.registros.forEach(reg => {
                     if (reg.tipoGeometria === 'marker') {
                         totalCenso++;
-                        const estatus = reg.datosGenerales["Estatus"] ? reg.datosGenerales["Estatus"].toUpperCase().trim() : "";
+                        const d = reg.datosGenerales || {};
+                        const estatus = d["Estatus"] ? d["Estatus"].toUpperCase().trim() : "";
                         
                         if (estatus.includes("VIGENTE")) vigentes++;
                         else if (estatus.includes("VENCIDA")) vencidos++;
                         else if (estatus.includes("SIN LICENCIA")) sinLicencia++;
                         else if (estatus.includes("TEMPORAL")) temporales++;
+
+                        // LÓGICA INTELIGENTE PARA ASEO
+                        const vAseo = getPropValueDynamically(d, ["Aseo Urbano", "Aseo", "Pago Aseo", "Servicio Aseo"]);
+                        if (vAseo !== null) {
+                            if (isPositivePayment(vAseo)) aseoSi++;
+                            else if (isNegativePayment(vAseo)) aseoNo++;
+                            else aseoNo++; // Ante la duda o valor raro que no es "SI", contamos como moroso/no
+                        }
+
+                        // LÓGICA INTELIGENTE PARA INMUEBLES
+                        const vInm = getPropValueDynamically(d, ["Impuesto Inmuebles", "Inmuebles", "Inmueble", "Pago Inmuebles"]);
+                        if (vInm !== null) {
+                            if (isPositivePayment(vInm)) inmueblesSi++;
+                            else if (isNegativePayment(vInm)) inmueblesNo++;
+                            else inmueblesNo++;
+                        }
                     }
                 });
             }
@@ -700,6 +772,11 @@
         document.getElementById('dash-vencidos').innerText = vencidos.toLocaleString();
         document.getElementById('dash-sin-licencia').innerText = sinLicencia.toLocaleString();
         document.getElementById('dash-temporales').innerText = temporales.toLocaleString();
+
+        document.getElementById('dash-aseo-si').innerText = aseoSi.toLocaleString();
+        document.getElementById('dash-aseo-no').innerText = aseoNo.toLocaleString();
+        document.getElementById('dash-inmuebles-si').innerText = inmueblesSi.toLocaleString();
+        document.getElementById('dash-inmuebles-no').innerText = inmueblesNo.toLocaleString();
 
         document.getElementById('dash-meta-title').innerText = `PROGRESO DEL CENSO VS META (${META_CENSO.toLocaleString()})`;
 
