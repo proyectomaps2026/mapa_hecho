@@ -1223,10 +1223,17 @@
         const idFisico = L.stamp(evento.layer);
         const esArea = (evento.layerType === 'polygon' || evento.layerType === 'rectangle');
         
-        let nombreDefecto = esArea ? "CUADRO" : "NUEVO ESTABLECIMIENTO";
-        let estatusDefecto = esArea ? "CUADRO" : "CENSO / NUEVO";
+        let nombreDefecto = "NUEVO ESTABLECIMIENTO";
+        let estatusDefecto = "CENSO / NUEVO";
 
         if (esArea) {
+            let num = 1;
+            while(STORE[capaActiva].registros.some(r => r.datosGenerales["Estatus"] === "CUADRO " + num)) {
+                num++;
+            }
+            nombreDefecto = "CUADRO " + num;
+            estatusDefecto = "CUADRO " + num;
+
             if (!STORE[capaActiva].coloresPorEstatus) STORE[capaActiva].coloresPorEstatus = {};
             if (!STORE[capaActiva].coloresPorEstatus[estatusDefecto]) {
                 STORE[capaActiva].coloresPorEstatus[estatusDefecto] = DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
