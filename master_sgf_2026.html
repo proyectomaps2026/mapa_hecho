@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -561,44 +562,59 @@
 
 <script>
     /* ==========================================================================
-       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
+       MODO FANTASMA: BLINDAJE PROFESIONAL ANTI-INSPECCIÓN Y ANTI-DESCARGA
        ========================================================================== */
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    
-    document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || 
-           (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
-           (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'P'))) {
-            e.preventDefault();
-            bloquearPantallaInspeccion();
+    (function() {
+        // Función centralizada para bloquear la pantalla
+        function bloquearPantallaInspeccion() {
+            // Detener cualquier posible ejecución de scripts maliciosos
+            setTimeout(() => {
+                document.head.innerHTML = '<style>body{margin:0;padding:0;}</style>';
+                document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+            }, 0);
         }
-    });
 
-    function bloquearPantallaInspeccion() {
-        document.getElementById('map').style.display = 'none';
-        document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
-    }
+        // 1. Bloqueo de Teclado y Clic Derecho INTELIGENTE
+        document.addEventListener('contextmenu', e => {
+            const target = e.target;
+            const isFormField = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+            
+            // Permite el menú solo en campos de formulario, bloquea todo lo demás.
+            if (!isFormField) {
+                e.preventDefault();
+                bloquearPantallaInspeccion();
+            }
+        });
+        
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || 
+               (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+               (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'P'))) {
+                e.preventDefault();
+                bloquearPantallaInspeccion();
+            }
+        });
 
-    // Detector de Consola (Ancho/Alto)
-    setInterval(function() {
-        const widthThreshold = window.outerWidth - window.innerWidth > 160;
-        const heightThreshold = window.outerHeight - window.innerHeight > 160;
-        if(widthThreshold || heightThreshold) {
-            console.clear();
-            bloquearPantallaInspeccion();
-        }
-    }, 1000);
+        // 2. Detección de consola abierta por cambio de tamaño
+        setInterval(() => {
+            const widthThreshold = window.outerWidth - window.innerWidth > 160;
+            const heightThreshold = window.outerHeight - window.innerHeight > 160;
+            if (widthThreshold || heightThreshold) {
+                bloquearPantallaInspeccion();
+            }
+        }, 1000);
 
-    // Debugger Loop (Crashea la pestaña Sources si intentan inspeccionar el código)
-    setInterval(() => {
-        let inicio = performance.now();
-        debugger; 
-        let fin = performance.now();
-        if (fin - inicio > 100) {
-            document.body.innerHTML = '';
-            window.location.replace("about:blank");
-        }
-    }, 500);
+        // 3. Bucle Anti-Depuración (hace la pestaña "Fuentes" inutilizable)
+        setInterval(() => {
+            const inicio = performance.now();
+            debugger; 
+            const fin = performance.now();
+            if (fin - inicio > 100) {
+                document.body.innerHTML = '';
+                window.location.replace("about:blank");
+            }
+        }, 500);
+    })();
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1889,7 +1905,6 @@
         capasSectores[id] = new L.FeatureGroup();
         STORE[id] = { 
             nombreSector: nombre.toUpperCase(), 
-            owner: CURRENT_ROLE, 
             visibleFor: CURRENT_ROLE === 'SUPERADMIN' ? 'ALL' : CURRENT_ROLE,
             visible: true, 
             isMaster: false,
@@ -1913,7 +1928,6 @@
         
         STORE[newId] = {
             nombreSector: nombre.toUpperCase(),
-            owner: CURRENT_ROLE,
             visibleFor: CURRENT_ROLE === 'SUPERADMIN' ? sectorOriginal.visibleFor : CURRENT_ROLE,
             visible: true,
             isMaster: false, 
