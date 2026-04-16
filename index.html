@@ -1146,19 +1146,32 @@
 
     mapa.on(L.Draw.Event.CREATED, (evento) => {
         const idFisico = L.stamp(evento.layer);
+        const esArea = (evento.layerType === 'polygon' || evento.layerType === 'rectangle');
         
+        let nombreDefecto = esArea ? "CUADRO" : "NUEVO ESTABLECIMIENTO SIMULADO";
+        let estatusDefecto = esArea ? "CUADRO" : "CENSO / NUEVO";
+        let colorInicial = DICCIONARIO_ESTATUS["CENSO / NUEVO"].color;
+
+        if (esArea) {
+            if (!STORE[capaActivaId].coloresPorEstatus) STORE[capaActivaId].coloresPorEstatus = {};
+            if (!STORE[capaActivaId].coloresPorEstatus[estatusDefecto]) {
+                STORE[capaActivaId].coloresPorEstatus[estatusDefecto] = colorInicial;
+            }
+        }
+
         if(evento.layer instanceof L.Marker) {
             evento.layer.options.draggable = true;
             evento.layer.on('dragend', () => actualizarUIYMapa());
-        } else {
-            evento.layer.setStyle({ color: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillColor: DICCIONARIO_ESTATUS["CENSO / NUEVO"].color, fillOpacity: 0.2 });
+        } else if (esArea) {
+            const colorAUsar = STORE[capaActivaId].coloresPorEstatus[estatusDefecto] || colorInicial;
+            evento.layer.setStyle({ color: colorAUsar, fillColor: colorAUsar, fillOpacity: 0.2 });
             evento.layer.editing.enable();
             evento.layer.on('edit', () => actualizarUIYMapa());
         }
 
         STORE[capaActivaId].registros.push({
             idFisico: idFisico, tipoGeometria: evento.layerType, capaLeaflet: evento.layer, colorPersonalizado: null, visibleIndividual: true,
-            datosGenerales: { "Contribuyente": "NUEVO ESTABLECIMIENTO SIMULADO", "Estatus": "CENSO / NUEVO" }, camposOcultos: []
+            datosGenerales: { "Contribuyente": nombreDefecto, "Estatus": estatusDefecto }, camposOcultos: []
         });
 
         vincularEventosCapa(evento.layer, capaActivaId, idFisico);
@@ -1381,6 +1394,24 @@
         document.getElementById('visor-imagen-modal').style.display = 'flex';
     }
 
+    function cambiarColorPin(idSector, idFisico, colorHex) {
+        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
+        if(!reg) return;
+
+        reg.colorPersonalizado = colorHex;
+        const estatusTarget = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
+
+        if (reg.tipoGeometria === 'marker') {
+            reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+            reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+        }
+
+        actualizarUIYMapa();
+    }
+
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
         const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(!registro) return;
@@ -1391,7 +1422,81 @@
         let html = `<div class="pop-wrapper">`;
         if(registro.tipoGeometria === 'polygon' || registro.tipoGeometria === 'rectangle') {
             const rep = calcularAuditoria(capaMapa);
-            html += `<div class="audit-report glass-panel"><h3 class="audit-title">RESUMEN DE ÁREA</h3><p class="audit-resumen-cuerpo">ESTATUS: ${rep.textoCompacto} · <span class="audit-total-inline">Total: ${rep.total}</span></p></div>`;
+            
+            let listaEstatusHTML = '';
+            const claves = Object.keys(rep.porEstatus).sort((a, b) => a.localeCompare(b, 'es'));
+            
+            claves.forEach(est => {
+                const cantidad = rep.porEstatus[est];
+                const confEst = DICCIONARIO_ESTATUS[est] || { color: '#6e7681' };
+                let colorBase = confEst.color;
+                for(let sid in STORE) {
+                    if(STORE[sid].coloresPorEstatus && STORE[sid].coloresPorEstatus[est]) {
+                        colorBase = STORE[sid].coloresPorEstatus[est];
+                        break;
+                    }
+                }
+                
+                listaEstatusHTML += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eaeaea;">
+                    <span style="font-weight: 800; color: #111; font-size: 11px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background-color: ${colorBase}; box-shadow: 0 0 2px rgba(0,0,0,0.3);"></span>
+                        ${est}
+                    </span>
+                    <span style="font-weight: 900; color: #0056b3; font-size: 13px;">${cantidad}</span>
+                </div>`;
+            });
+
+            html += `
+            <div style="padding: 15px; background: #fff;">
+                <div id="view-mode-${idFisico}">
+                    <div style="background: #f8f9fa; border: 1px solid #e0e4e8; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                        <h3 style="margin: 0 0 10px; font-size: 12px; font-weight: 900; color: #111; text-transform: uppercase; text-align: center;">
+                            <i class="fas fa-chart-pie" style="color: var(--color-temporal); margin-right: 5px;"></i> RESUMEN DEL ÁREA
+                        </h3>
+                        
+                        <div style="max-height: 200px; overflow-y: auto; margin-bottom: 10px;">
+                            ${listaEstatusHTML || '<div style="color: #888; font-size: 11px; font-weight: bold; text-align: center; padding: 10px 0;">No hay contribuyentes dentro de esta área.</div>'}
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #d0d7de; padding-top: 10px; margin-top: 5px;">
+                            <span style="font-weight: 900; color: #656d76; font-size: 11px; text-transform: uppercase;">TOTAL INTERNO</span>
+                            <span style="font-weight: 900; color: var(--color-vencida); font-size: 15px;">${rep.total}</span>
+                        </div>
+                    </div>
+
+                    <!-- NOMBRE DEL CUADRO DEBAJO -->
+                    <div style="font-size: 14px; font-weight: 900; color: #0056b3; text-align: center; margin-bottom: 15px; text-transform: uppercase; word-break: break-word;">
+                        ${registro.datosGenerales["Contribuyente"] || 'CUADRO'}
+                    </div>`;
+                    
+            if(!STORE[idSector].isMaster) {
+                html += `<button class="btn-popup-action btn-edit" onclick="toggleModoPopup('${idFisico}', 'edit')" style="background: var(--cyan-neon); color: #000; margin-bottom: 10px;"><i class="fas fa-pen"></i> EDITAR NOMBRE (SIMULACIÓN)</button>`;
+                html += `<button class="btn-popup-action btn-del" onclick="eliminarDelClon('${idSector}', '${idFisico}')"><i class="fas fa-trash"></i> ELIMINAR ÁREA</button>`;
+            }
+                
+            html += `</div>`; // Fin de view-mode
+            
+            if(!STORE[idSector].isMaster) {
+                const estActual = registro.datosGenerales["Estatus"] || "CUADRO";
+                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const colorFinal = registro.colorPersonalizado || (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
+
+                html += `<div id="edit-mode-${idFisico}" style="display: none;">`;
+                html += `
+                <div class="form-group">
+                    <span class="form-label">Nombre del Área</span>
+                    <input type="text" class="form-input" value="${registro.datosGenerales["Contribuyente"] || 'CUADRO'}" 
+                           onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Contribuyente', this.value);">
+                </div>
+                <div class="form-group">
+                    <span class="form-label" style="color: #656d76;">COLOR DE ÁREA</span>
+                    <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal || '#00f2ff'}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
+                </div>`;
+                html += `<button class="btn-popup-action btn-save" onclick="abrirPopupDinamico('${idSector}', '${idFisico}', false)"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
+                html += `</div>`;
+            }
+            html += `</div>`; // fin padding wrapper
         } else {
             const estActual = registro.datosGenerales["Estatus"] || "SIN CATEGORÍA";
             const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
@@ -1468,13 +1573,35 @@
     }
 
     function calcularAuditoria(poligonoActivo) {
-        const porEstatus = {}; let total = 0; const box = poligonoActivo.getBounds();
+        const porEstatus = {};
+        let total = 0;
+        const box = poligonoActivo.getBounds();
+        
+        const anillos = poligonoActivo.getLatLngs();
+        const verticesPoligono = anillos[0] || anillos; 
+
+        const puntoEnPoligonoExacto = (lat, lng, vertices) => {
+            let inside = false;
+            for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                const xi = vertices[i].lat, yi = vertices[i].lng;
+                const xj = vertices[j].lat, yj = vertices[j].lng;
+                const intersect = ((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        };
+
         for (let id in STORE) {
             STORE[id].registros.forEach((r) => {
                 if (r.tipoGeometria !== 'marker' || !r.capaLeaflet) return;
-                let ll; try { ll = r.capaLeaflet.getLatLng(); } catch (e) { return; }
+                let ll;
+                try { ll = r.capaLeaflet.getLatLng(); } catch (e) { return; }
+                
                 if (!ll || !box.contains(ll)) return;
-                total++; const est = r.datosGenerales["Estatus"] || "SIN CATEGORÍA";
+                if (!puntoEnPoligonoExacto(ll.lat, ll.lng, verticesPoligono)) return;
+
+                total++;
+                const est = r.datosGenerales["Estatus"] || "SIN CATEGORÍA";
                 porEstatus[est] = (porEstatus[est] || 0) + 1;
             });
         }
