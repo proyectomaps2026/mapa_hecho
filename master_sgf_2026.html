@@ -844,7 +844,7 @@
     async function iniciarCicloLicenciaAdmin() {
         validarLicenciaYBloqueo();
         CHECK_LICENSE_INTERVAL = setInterval(async () => {
-            await cargarDatosNube(true); // Mantenemos el parche de segundo plano activo
+            await cargarDatosNube(true); // Verifica credenciales sin destruir la memoria local
             validarLicenciaYBloqueo();
         }, 60000);
     }
@@ -1231,7 +1231,6 @@
             evento.layer.on('edit', () => actualizarUIYMapa());
         }
 
-        // CORRECCIÓN: Diferenciamos el nombre dependiendo de si es punto o bloque
         const esArea = (evento.layerType === 'polygon' || evento.layerType === 'rectangle');
         const nombreDefecto = esArea ? "BLOQUE DE FISCALIZACIÓN" : "NUEVO ESTABLECIMIENTO";
 
@@ -1371,9 +1370,6 @@
         for(let idSector in STORE) {
             const sectorData = STORE[idSector];
             
-            // ==========================================
-            // FILTRO ESTRICTO DE SEGURIDAD MULTIUSUARIO (MIGRADO A visibleFor)
-            // ==========================================
             let canView = false;
             if (CURRENT_ROLE === 'SUPERADMIN') {
                 if (window.superAdminViewFilter === 'ALL') canView = true;
@@ -1520,7 +1516,6 @@
                     <div class="local-list" id="${idAcordeon}" style="display: ${textoFiltroGlobal !== '' ? 'block' : 'none'};">`;
 
                 gruposPorEstatus[estatus].lista.forEach(local => {
-                    // CORRECCIÓN: Renderizamos un <input> en lugar de un simple span para poder editar los nombres de los polígonos/puntos desde el panel lateral
                     htmlSector += `
                         <div class="local-row" onclick="abrirPopupDinamico('${idSector}', '${local.idFisico}', true)">
                             <div style="flex:1; display:flex; align-items:center; gap:8px; overflow: hidden; white-space: nowrap;">
@@ -1648,7 +1643,6 @@
                 </div>`;
             });
 
-            // CORRECCIÓN: Se añade el nombre del contribuyente dinámico para el Bloque / Polígono
             html += `
             <div style="padding: 20px; background: #fff;">
                 <h3 style="margin: 0 0 5px; font-size: 13px; font-weight: 900; color: #111; border-bottom: 2px solid var(--color-temporal); padding-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;">
@@ -1823,7 +1817,6 @@
         }
     }
 
-    // CORRECCIÓN: Si el popup está abierto, la vista cambia automáticamente al presionar 'Enter' u hacer clic fuera.
     function actualizarDatoCampo(idSector, idFisico, clave, valor) {
         const registro = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
         if(registro) {
@@ -2063,16 +2056,40 @@
         if(limites.isValid()) mapa.fitBounds(limites, { padding: [50, 50] });
     }
 
+    // CORRECCIÓN: Filtro con algoritmo Ray-Casting (Punto en polígono exacto)
     function calcularAuditoria(poligonoActivo) {
         const porEstatus = {};
         let total = 0;
         const box = poligonoActivo.getBounds();
+        
+        // Extraemos las coordenadas del polígono para análisis exacto.
+        const anillos = poligonoActivo.getLatLngs();
+        const verticesPoligono = anillos[0] || anillos; 
+
+        // Algoritmo matemático para comprobar si el punto está estrictamente dentro de la figura
+        const puntoEnPoligonoExacto = (lat, lng, vertices) => {
+            let inside = false;
+            for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+                const xi = vertices[i].lat, yi = vertices[i].lng;
+                const xj = vertices[j].lat, yj = vertices[j].lng;
+                const intersect = ((yi > lng) !== (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        };
+
         for (let id in STORE) {
             STORE[id].registros.forEach((r) => {
                 if (r.tipoGeometria !== 'marker' || !r.capaLeaflet) return;
                 let ll;
                 try { ll = r.capaLeaflet.getLatLng(); } catch (e) { return; }
+                
+                // 1. Filtro rápido Bounding Box rectangular
                 if (!ll || !box.contains(ll)) return;
+                
+                // 2. Filtro preciso matemático de figura (Evita falsos positivos en polígonos cercanos o diagonales)
+                if (!puntoEnPoligonoExacto(ll.lat, ll.lng, verticesPoligono)) return;
+
                 total++;
                 const est = obtenerEstatusParaCuadro(r);
                 porEstatus[est] = (porEstatus[est] || 0) + 1;
@@ -2286,7 +2303,6 @@
         }
     }
     
-    // CORRECCIÓN DE FALLA: Añadido parámetro "soloCredenciales"
     async function cargarDatosNube(soloCredenciales = false) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if (!GITHUB_TOKEN_DYNAMIC) {
