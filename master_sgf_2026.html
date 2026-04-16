@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -844,7 +845,7 @@
     async function iniciarCicloLicenciaAdmin() {
         validarLicenciaYBloqueo();
         CHECK_LICENSE_INTERVAL = setInterval(async () => {
-            await cargarDatosNube();
+            await cargarDatosNube(true); // <--- CORRECCIÓN DE FALLA: Verifica credenciales sin destruir tu memoria local
             validarLicenciaYBloqueo();
         }, 60000);
     }
@@ -2263,10 +2264,11 @@
         }
     }
     
-    async function cargarDatosNube() {
+    // CORRECCIÓN DE FALLA: Añadido parámetro "soloCredenciales"
+    async function cargarDatosNube(soloCredenciales = false) {
         const GITHUB_TOKEN_DYNAMIC = getRealToken();
         if (!GITHUB_TOKEN_DYNAMIC) {
-            actualizarUIYMapa();
+            if(!soloCredenciales) actualizarUIYMapa();
             return;
         }
 
@@ -2276,7 +2278,10 @@
             });
             if (res.ok) {
                 const data = await res.json();
-                fileSha = data.sha;
+                
+                if(!soloCredenciales) {
+                    fileSha = data.sha;
+                }
                 
                 const binaryStr = atob(data.content);
                 const bytes = new Uint8Array([...binaryStr].map(c => c.charCodeAt(0)));
@@ -2318,15 +2323,18 @@
                     SYSTEM_AUTH.licenciaSGF = (l.startsWith('SGF-')) ? l : l.split('').reverse().join('');
                 }
 
-                reconstruirDesdeJSON(jsonParsed.store || {});
+                // SI SOLO ESTAMOS VALIDANDO LA LICENCIA EN SEGUNDO PLANO, EVITAMOS SOBRESCRIBIR LA MEMORIA DE TRABAJO (STORE)
+                if(!soloCredenciales) {
+                    reconstruirDesdeJSON(jsonParsed.store || {});
+                }
             } else if (res.status === 404) {
-                actualizarUIYMapa();
+                if(!soloCredenciales) actualizarUIYMapa();
             } else {
                 throw new Error(`GitHub API error: ${res.status}`);
             }
         } catch (e) {
             console.error("Error al cargar datos desde la nube:", e);
-            actualizarUIYMapa();
+            if(!soloCredenciales) actualizarUIYMapa();
             throw new Error(e.message === "Failed to fetch" ? "Error de conexión con GitHub (Fetch Error)" : e.message);
         }
     }
