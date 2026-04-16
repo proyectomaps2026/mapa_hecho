@@ -1,3 +1,5 @@
+--- START OF FILE text/html ---
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -289,7 +291,7 @@
 
         <div style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; font-weight: 800;">
-                <span style="color: #a5b0bf;">PROGRESO DEL CENSO VS META (1,000)</span>
+                <span id="dash-meta-title" style="color: #a5b0bf;">PROGRESO DEL CENSO VS META</span>
                 <span id="dash-progreso-txt" style="color: var(--cyan-neon);">0%</span>
             </div>
             <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; height: 12px; overflow: hidden;">
@@ -380,6 +382,48 @@
     </div>
 </aside>
 
+<script>
+    /* ==========================================================================
+       MODO FANTASMA: BLINDAJE ANTI-INSPECCIÓN (F12) Y BLOQUEOS
+       ========================================================================== */
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || 
+           (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+           (e.ctrlKey && (e.key === 'U' || e.key === 'S' || e.key === 'P'))) {
+            e.preventDefault();
+            bloquearPantallaInspeccion();
+        }
+    });
+
+    function bloquearPantallaInspeccion() {
+        document.getElementById('map').style.display = 'none';
+        document.body.innerHTML = '<div style="display:flex; height:100vh; justify-content:center; align-items:center; background:#000; color:#da3633; font-family:Inter,sans-serif; font-size:24px; font-weight:900; text-align:center; padding:20px;">⚠️ ACCESO DENEGADO<br>SISTEMA PROTEGIDO<br>ALCALDÍA BOLIVARIANA DE AYACUCHO</div>';
+    }
+
+    // Detector de Consola (Ancho/Alto)
+    setInterval(function() {
+        const widthThreshold = window.outerWidth - window.innerWidth > 160;
+        const heightThreshold = window.outerHeight - window.innerHeight > 160;
+        if(widthThreshold || heightThreshold) {
+            console.clear();
+            bloquearPantallaInspeccion();
+        }
+    }, 1000);
+
+    // Debugger Loop (Crashea la pestaña Sources si intentan inspeccionar el código)
+    setInterval(() => {
+        let inicio = performance.now();
+        debugger; 
+        let fin = performance.now();
+        if (fin - inicio > 100) {
+            document.body.innerHTML = '';
+            window.location.replace("about:blank");
+        }
+    }, 500);
+</script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
@@ -396,14 +440,12 @@
     let capaActivaId = null; 
     let textoFiltroGlobal = "";
 
-    // Objeto maestro de autenticación
+    // Objeto maestro de autenticación (Actualizado con Meta Dinámica)
     let SYSTEM_AUTH = { 
         token: '', 
-        licenciaSGF: '' 
+        licenciaSGF: '',
+        metaCenso: 1000
     };
-
-    // Evitar inspección básica
-    document.addEventListener('contextmenu', e => e.preventDefault());
 
     // Analizador de licencia SGF
     function analizarLicenciaSGF(licStr) {
@@ -468,6 +510,9 @@
                     const l = config.licenciaSGF || config.license;
                     SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
                 }
+                if (config.metaCenso !== undefined) {
+                    SYSTEM_AUTH.metaCenso = config.metaCenso;
+                }
                 
                 configFinal = config; 
             }
@@ -499,6 +544,9 @@
                     if (configFinal.licenciaSGF || configFinal.license) {
                         const l = configFinal.licenciaSGF || configFinal.license;
                         SYSTEM_AUTH.licenciaSGF = l.startsWith('SGF-') ? l : l.split('').reverse().join('');
+                    }
+                    if (configFinal.metaCenso !== undefined) {
+                        SYSTEM_AUTH.metaCenso = configFinal.metaCenso;
                     }
                 }
             } catch(e) {
@@ -572,7 +620,8 @@
         let sinLicencia = 0;
         let temporales = 0;
 
-        const META_CENSO = 1000; // Meta de registros manual
+        // META DINÁMICA DE CENSO
+        const META_CENSO = SYSTEM_AUTH.metaCenso || 1000; 
 
         // Recorrer el objeto STORE (Panel Lateral)
         for(let idSector in STORE) {
@@ -604,6 +653,9 @@
         document.getElementById('dash-vencidos').innerText = vencidos.toLocaleString();
         document.getElementById('dash-sin-licencia').innerText = sinLicencia.toLocaleString();
         document.getElementById('dash-temporales').innerText = temporales.toLocaleString();
+
+        // Actualizar texto de la meta dinámicamente
+        document.getElementById('dash-meta-title').innerText = `PROGRESO DEL CENSO VS META (${META_CENSO.toLocaleString()})`;
 
         // Mostrar Modal (Para que las barras se animen correctamente)
         document.getElementById('dashboard-modal').style.display = 'flex';
