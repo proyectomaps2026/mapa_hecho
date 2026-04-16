@@ -33,6 +33,27 @@
             --shadow-heavy: 0 12px 48px rgba(0,0,0,0.7);
         }
 
+        /* --- PARCHE CRÍTICO PLATINIUM --- */
+        .status-dot { display: none !important; } 
+        .status-header { display: flex !important; justify-content: space-between !important; align-items: center !important; gap: 15px !important; padding: 12px 16px !important; background: rgba(255, 255, 255, 0.03); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); transition: background 0.2s;}
+        .status-header:hover { background: rgba(255,255,255,0.05) !important; }
+        .status-header span:not(.status-badge) { color: #fff !important; background: transparent !important; padding: 0 !important; } 
+        .status-badge { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; padding: 2px 10px !important; border-radius: 20px !important; font-size: 11px !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; flex-shrink: 0; text-align: center; font-weight: 800; font-family: 'Inter', sans-serif;}
+
+        input[type="color"].status-color-square {
+            -webkit-appearance: none;
+            border: none;
+            width: 16px;
+            height: 16px;
+            padding: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+            flex-shrink: 0;
+        }
+        input[type="color"].status-color-square::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"].status-color-square::-webkit-color-swatch { border: none; border-radius: 4px; }
+
         * { box-sizing: border-box; }
         
         body, html { 
@@ -146,7 +167,7 @@
         .status-group { border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.01); }
         .status-header { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; }
         .status-header:hover { background: rgba(255,255,255,0.04); }
-        .status-row-label { flex: 1; min-width: 0; font-weight: 600; font-size: 12px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .status-row-label { flex: 1; min-width: 0; font-weight: 600; font-size: 12px; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
         .status-count { background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; color: var(--text-main); text-align: center; }
 
         .local-list { background: rgba(0,0,0,0.5); max-height: 250px; overflow-y: auto; }
@@ -972,7 +993,7 @@
        RESPALDO WORD (FILTRADO SEGÚN LA VISTA EJECUTIVA ACTIVA)
        ========================================================================== */
     function descargarRespaldoWord() {
-        if (typeof docx === 'undefined') return alert("Error: La librería de generación no se cargó.");
+        if (typeof docx === 'undefined') return alert("Error: La librería de generation no se cargó.");
         if (Object.keys(STORE).length === 0) return alert("No hay datos cargados para generar un respaldo.");
 
         const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, Header, Footer, PageNumber } = docx;
@@ -1254,6 +1275,38 @@
     function ejecutarMotorBusqueda() { textoFiltroGlobal = document.getElementById('buscador-global').value.toLowerCase(); actualizarUIYMapa(); }
     function enfocarSector(idSector) { if(STORE[idSector].visible) mapa.fitBounds(capasSectores[idSector].getBounds(), { padding: [50, 50] }); }
 
+    function cambiarColorEstatusSector(idSector, estatus, colorHex) {
+        if (!STORE[idSector]) return;
+        if (STORE[idSector].isMaster) {
+            actualizarUIYMapa(); // Revert visual change if user tried to change master
+            return alert("Capa Base Protegida. Clone la capa o cree una simulación para cambiar colores.");
+        }
+        
+        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
+        STORE[idSector].coloresPorEstatus[estatus] = colorHex;
+        
+        STORE[idSector].registros.forEach(reg => {
+            const d = reg.datosGenerales || {};
+            const estActual = d['Estatus'] || "SIN CATEGORÍA";
+            if (String(estActual).trim().toUpperCase() === String(estatus).trim().toUpperCase()) {
+                reg.colorPersonalizado = colorHex;
+                if (reg.tipoGeometria === 'marker') {
+                    reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
+                } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
+                    reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
+                }
+                
+                // Actualizar el popup si está abierto para reflejar el color
+                if(mapa._popup && mapa._popup._source === reg.capaLeaflet) {
+                   const newHtml = generarContenidoHTMLPopup(idSector, reg.idFisico, false);
+                   reg.capaLeaflet.setPopupContent(newHtml);
+                }
+            }
+        });
+        
+        actualizarUIYMapa();
+    }
+
     function actualizarUIYMapa() {
         const contenedor = document.getElementById('arbol-datos');
         contenedor.innerHTML = "";
@@ -1296,7 +1349,7 @@
                     let cumpleFiltro = textoFiltroGlobal === "" || searchString.includes(textoFiltroGlobal);
 
                     // ==========================================
-                    // NUEVO: FILTRO ESPECIAL DESDE EL DASHBOARD
+                    // FILTRO ESPECIAL DESDE EL DASHBOARD
                     // ==========================================
                     if (cumpleFiltro && filtroEspecialDash) {
                         if (filtroEspecialDash === 'ASEO_SI' || filtroEspecialDash === 'ASEO_NO') {
@@ -1304,7 +1357,6 @@
                             if (filtroEspecialDash === 'ASEO_SI') {
                                 cumpleFiltro = isPositivePayment(vAseo);
                             } else {
-                                // Para ASEO_NO, consideramos NO, N/A o nulo/vacío
                                 cumpleFiltro = !isPositivePayment(vAseo); 
                             }
                         } else if (filtroEspecialDash === 'INMUEBLES_SI' || filtroEspecialDash === 'INMUEBLES_NO') {
@@ -1351,10 +1403,20 @@
                 <div class="sector-body" style="display: ${STORE[idSector].isExpanded ? 'block' : 'none'};">`;
 
             for(let estatus in gruposPorEstatus) {
+                const confEst = DICCIONARIO_ESTATUS[estatus] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
+                const colorActual = (sectorData.coloresPorEstatus && sectorData.coloresPorEstatus[estatus]) ? sectorData.coloresPorEstatus[estatus] : confEst.color;
+
                 const idAcordeon = `lista-${idSector}-${estatus.replace(/\s+/g, '')}`;
+                
                 htmlSector += `
                 <div class="status-group">
                     <div class="status-header" onclick="document.getElementById('${idAcordeon}').style.display = document.getElementById('${idAcordeon}').style.display === 'none' ? 'block' : 'none'">
+                        
+                        <input type="color" class="status-color-square" title="Color de Categoría" value="${colorActual}"
+                               onclick="event.stopPropagation();"
+                               onchange="cambiarColorEstatusSector('${idSector}', '${estatus}', this.value)" 
+                               ${sectorData.isMaster ? 'disabled' : ''} style="margin-right: 10px;">
+                               
                         <div class="status-row-label">${estatus}</div>
                         <span class="status-count">${gruposPorEstatus[estatus].conteo}</span>
                     </div>
@@ -1392,24 +1454,6 @@
     function abrirVisorImagen(url) {
         document.getElementById('visor-imagen-src').src = url;
         document.getElementById('visor-imagen-modal').style.display = 'flex';
-    }
-
-    function cambiarColorPin(idSector, idFisico, colorHex) {
-        const reg = STORE[idSector].registros.find(r => String(r.idFisico) === String(idFisico));
-        if(!reg) return;
-
-        reg.colorPersonalizado = colorHex;
-        const estatusTarget = reg.datosGenerales["Estatus"] || "SIN CATEGORÍA";
-        if(!STORE[idSector].coloresPorEstatus) STORE[idSector].coloresPorEstatus = {};
-        STORE[idSector].coloresPorEstatus[estatusTarget] = colorHex;
-
-        if (reg.tipoGeometria === 'marker') {
-            reg.capaLeaflet.setIcon(crearPinFiscal(colorHex));
-        } else if (reg.tipoGeometria === 'polygon' || reg.tipoGeometria === 'rectangle') {
-            reg.capaLeaflet.setStyle({ color: colorHex, fillColor: colorHex, fillOpacity: 0.2 });
-        }
-
-        actualizarUIYMapa();
     }
 
     function abrirPopupDinamico(idSector, idFisico, centrarMapa = false) {
@@ -1478,20 +1522,12 @@
             html += `</div>`; // Fin de view-mode
             
             if(!STORE[idSector].isMaster) {
-                const estActual = registro.datosGenerales["Estatus"] || "CUADRO";
-                const confEst = DICCIONARIO_ESTATUS[estActual] || DICCIONARIO_ESTATUS["SIN CATEGORÍA"];
-                const colorFinal = registro.colorPersonalizado || (STORE[idSector].coloresPorEstatus && STORE[idSector].coloresPorEstatus[estActual]) ? STORE[idSector].coloresPorEstatus[estActual] : confEst.color;
-
                 html += `<div id="edit-mode-${idFisico}" style="display: none;">`;
                 html += `
                 <div class="form-group">
                     <span class="form-label">Nombre del Área</span>
                     <input type="text" class="form-input" value="${registro.datosGenerales["Contribuyente"] || 'CUADRO'}" 
                            onchange="actualizarDatoCampo('${idSector}', '${idFisico}', 'Contribuyente', this.value);">
-                </div>
-                <div class="form-group">
-                    <span class="form-label" style="color: #656d76;">COLOR DE ÁREA</span>
-                    <input type="color" style="width: 100%; height: 32px; border: 1px solid #d0d7de; cursor: pointer; border-radius: 6px; background: transparent; padding: 0; margin-top: 5px;" value="${colorFinal || '#00f2ff'}" onchange="cambiarColorPin('${idSector}', '${idFisico}', this.value)">
                 </div>`;
                 html += `<button class="btn-popup-action btn-save" onclick="abrirPopupDinamico('${idSector}', '${idFisico}', false)"><i class="fas fa-save"></i> GUARDAR Y VOLVER</button>`;
                 html += `</div>`;
